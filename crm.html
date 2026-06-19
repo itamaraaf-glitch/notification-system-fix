@@ -175,6 +175,9 @@ input:focus,select:focus,textarea:focus{border-color:#e63946}
 .spinner{width:20px;height:20px;border:2px solid #2e3350;border-top-color:#e63946;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* WORK PLAN / POTENTIAL */
+.pot-empty{font-size:11px;color:#5a6080;padding:6px 0}
+
 /* PRINT */
 @media print{
   #sidebar,#topbar,.btn,.abtn,.lout,th.cb-th,td.cb-td,.tft,.cb-row{display:none!important}
@@ -250,6 +253,8 @@ input:focus,select:focus,textarea:focus{border-color:#e63946}
   <div class="ni" id="nv-meetings" onclick="nav('meetings')"><span>🤝</span> <span>יעד פגישות</span></div>
   <div class="nsec">לקוחות</div>
   <div class="ni" id="nv-clients" onclick="nav('clients')"><span>🏢</span> <span>כרטיסי לקוח</span></div>
+  <div class="nsec">תכנון</div>
+  <div class="ni" id="nv-workplan" onclick="nav('workplan')"><span>🎯</span> <span>תוכנית עבודה</span></div>
   <div class="nsec">ייצוא</div>
   <div class="ni" id="nv-export" onclick="nav('export')"><span>📥</span> <span>ייצוא</span></div>
 </div>
@@ -504,6 +509,39 @@ input:focus,select:focus,textarea:focus{border-color:#e63946}
   </div>
 </div>
 
+<!-- WORKPLAN -->
+<div class="sec" id="sec-workplan">
+  <div class="shdr">
+    <div class="stit">🎯 תוכנית עבודה – מוצרים פוטנציאליים</div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <input type="text" class="srch" placeholder="חיפוש לקוח / מוצר..." oninput="filt(event,'wptb')">
+      <select id="wp-pri-filter" onchange="rWorkPlan()" style="min-width:110px;font-size:11px">
+        <option value="">כל העדיפויות</option>
+        <option value="גבוהה">🔴 גבוהה</option>
+        <option value="בינונית">🟠 בינונית</option>
+        <option value="נמוכה">🟢 נמוכה</option>
+      </select>
+      <select id="wp-status-filter" onchange="rWorkPlan()" style="min-width:120px;font-size:11px">
+        <option value="">כל הסטטוסים</option>
+        <option value="ליד חדש">ליד חדש</option>
+        <option value="בתהליך">בתהליך</option>
+        <option value="הצעה נשלחה">הצעה נשלחה</option>
+        <option value="ממתין לאישור">ממתין לאישור</option>
+        <option value="נסגר">נסגר</option>
+      </select>
+      <button class="btn" onclick="exportExcel('workplan')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+    </div>
+  </div>
+  <div class="krow" id="wpkrow"></div>
+  <div class="tw">
+    <div class="tscroll"><table><thead><tr>
+      <th>לקוח</th><th>סוג מוצר</th><th>שם / פרטים</th><th>שווי משוער ₪</th>
+      <th>עדיפות</th><th>יעד סגירה</th><th>ימים</th><th>סטטוס</th><th>הערות / פעולה הבאה</th><th>פעולות</th>
+    </tr></thead><tbody id="wptb"></tbody></table></div>
+    <div class="tft" id="wpft"></div>
+  </div>
+</div>
+
 </div><!-- /main -->
 </div><!-- /layout -->
 </div><!-- /app -->
@@ -636,6 +674,13 @@ input:focus,select:focus,textarea:focus{border-color:#e63946}
     </div>
   </div>
   <div id="client-sections"></div>
+  <div class="msec" style="border:1px solid rgba(123,94,167,.4)">
+    <div class="msec-hdr">
+      <span style="color:#7b5ea7">🎯 מוצרים פוטנציאליים – טרם נרכשו</span>
+      <button class="btn btns" onclick="addPotentialProduct()" style="background:#7b5ea7;color:#fff;border-color:#7b5ea7">+ הוסף מוצר</button>
+    </div>
+    <div id="potential-container"><div class="pot-empty">אין מוצרים פוטנציאליים – לחץ + להוספה</div></div>
+  </div>
   <div class="fg" style="margin-bottom:10px">
     <div class="gf"><label>הערות כלליות</label><textarea id="cl-gen-notes" rows="2"></textarea></div>
   </div>
@@ -736,7 +781,7 @@ function nav(s){
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
   document.getElementById('sec-'+s).classList.add('active');
   const el=document.getElementById('nv-'+s);if(el)el.classList.add('active');
-  const fns={dashboard:rDash,alerts:rAlerts,deals:rDeals,tenders:rTenders,dists:rDists,salary:rSalary,meetings:rMeetings,export:updateExportCounts,clients:rClients};
+  const fns={dashboard:rDash,alerts:rAlerts,deals:rDeals,tenders:rTenders,dists:rDists,salary:rSalary,meetings:rMeetings,workplan:rWorkPlan,export:updateExportCounts,clients:rClients};
   if(fns[s])fns[s]();
   setTimeout(initDragScrolls,100);
 }
@@ -752,7 +797,7 @@ function filt(ev,...ids){
 }
 
 // ===== RENDER ALL =====
-function rAll(){rDash();rDeals();rTenders();rDists();rSalary();rMeetings();rAlerts();rClients();updateExportCounts();setTimeout(initDragScrolls,100);}
+function rAll(){rDash();rDeals();rTenders();rDists();rSalary();rMeetings();rAlerts();rClients();rWorkPlan();updateExportCounts();setTimeout(initDragScrolls,100);}
 
 // ===== ALERTS =====
 function getAlerts(){
@@ -972,6 +1017,37 @@ function populateItems(type,items=[]){
   items.forEach(item=>addItem(type,item));
 }
 
+// ===== POTENTIAL PRODUCTS =====
+const PRODUCT_TYPES=['קו תקשורת','FortiGate','Cisco','HP / Aruba','Juniper','CYBIZ / אבטחה','Starlink','מרכזייה (PBX)','Microsoft 365','Helpdesk','שרתים','אחר'];
+const POT_STATUSES=['ליד חדש','בתהליך','הצעה נשלחה','ממתין לאישור','נסגר'];
+
+function addPotentialProduct(data={}){
+  const cont=document.getElementById('potential-container');if(!cont)return;
+  cont.querySelectorAll('.pot-empty').forEach(e=>e.remove());
+  const idx=cont.children.length;
+  const typeOpts=PRODUCT_TYPES.map(t=>`<option ${data.productType===t?'selected':''}>${t}</option>`).join('');
+  const stOpts=POT_STATUSES.map(s=>`<option ${data.status===s?'selected':''}>${s}</option>`).join('');
+  const priOpts=['גבוהה','בינונית','נמוכה'].map(p=>`<option ${(data.priority===p||((!data.priority)&&p==='בינונית'))?'selected':''}>${p}</option>`).join('');
+  const div=document.createElement('div');
+  div.className='item-row';div.style.cssText='border-right:3px solid #7b5ea7;';
+  div.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:10px;font-weight:700;color:#7b5ea7">#${idx+1}</span><button type="button" onclick="this.closest('.item-row').remove()" style="background:none;border:none;color:#e63946;cursor:pointer;font-size:16px;line-height:1">✕</button></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px"><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">סוג מוצר</label><select data-key="productType">${typeOpts}</select></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">שם / פרטים</label><input type="text" data-key="product" value="${(data.product||'').replace(/"/g,'&quot;')}" placeholder="תיאור המוצר"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">שווי משוער ₪</label><input type="number" data-key="estimatedValue" value="${data.estimatedValue||''}"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">עדיפות</label><select data-key="priority">${priOpts}</select></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">יעד סגירה</label><input type="date" data-key="targetDate" value="${data.targetDate||''}"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">סטטוס</label><select data-key="status">${stOpts}</select></div><div style="grid-column:1/-1;display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">הערות / פעולה הבאה</label><input type="text" data-key="notes" value="${(data.notes||'').replace(/"/g,'&quot;')}" placeholder="מה הפעולה הבאה?"></div></div>`;
+  cont.appendChild(div);
+}
+
+function getPotentialData(){
+  const cont=document.getElementById('potential-container');if(!cont)return[];
+  return Array.from(cont.querySelectorAll('.item-row')).map(row=>{
+    const obj={};row.querySelectorAll('[data-key]').forEach(el=>obj[el.dataset.key]=el.value);return obj;
+  });
+}
+
+function populatePotentialProducts(items=[]){
+  const cont=document.getElementById('potential-container');if(!cont)return;
+  cont.innerHTML='';
+  if(!items.length){cont.innerHTML='<div class="pot-empty">אין מוצרים פוטנציאליים – לחץ + להוספה</div>';return;}
+  items.forEach(item=>addPotentialProduct(item));
+}
+
 function getExpiryWarnings(client){
   const warns=[];
   Object.keys(ITEM_CFG).forEach(type=>{
@@ -996,6 +1072,15 @@ function getClientAlerts(){
       });
     });
   });
+  D.clients.forEach(c=>{
+    (c.potential||[]).forEach(p=>{
+      if(p.status!=='נסגר'&&p.targetDate){
+        const d=db(nd(),p.targetDate);
+        if(d<0)alerts.push({type:'warn',h:`יעד סגירה עבר – ${c.name}`,s:`${p.productType||p.product||'מוצר'}: ${Math.abs(d)} ימים באיחור`});
+        else if(d<=7)alerts.push({type:'info',h:`יעד סגירה קרוב – ${c.name}`,s:`${p.productType||p.product||'מוצר'}: ${d} ימים`});
+      }
+    });
+  });
   return alerts;
 }
 
@@ -1012,6 +1097,7 @@ function openClientModal(id){
   document.getElementById('cl-status').value=c.status||'לקוח פעיל';
   document.getElementById('cl-gen-notes').value=c.genNotes||'';
   Object.keys(ITEM_CFG).forEach(type=>populateItems(type,c[type]||[]));
+  populatePotentialProducts(c.potential||[]);
   document.getElementById('mclient').classList.add('open');
 }
 
@@ -1020,6 +1106,7 @@ function saveClient(){
   if(!name){alert('יש להזין שם חברה');return;}
   const row={name,contact:document.getElementById('cl-contact').value,phone:document.getElementById('cl-phone').value,email:document.getElementById('cl-email').value,address:document.getElementById('cl-address').value,status:document.getElementById('cl-status').value,genNotes:document.getElementById('cl-gen-notes').value};
   Object.keys(ITEM_CFG).forEach(type=>{row[type]=getItemData(type);});
+  row.potential=getPotentialData();
   if(EI){dbUpdate('clients',EI,row);}else{dbInsert('clients',row);}
   closeM('mclient');rClients();
 }
@@ -1053,10 +1140,40 @@ function rClients(){
         </div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">${tags||'<span style="font-size:10px;color:#5a6080">אין שירותים</span>'}</div>
+      ${(c.potential||[]).filter(p=>p.status!=='נסגר').length?`<div style="font-size:10px;color:#7b5ea7;margin-bottom:4px;padding:3px 6px;background:rgba(123,94,167,.1);border-radius:4px;border:1px solid rgba(123,94,167,.3)">🎯 ${(c.potential||[]).filter(p=>p.status!=='נסגר').length} מוצרים פוטנציאליים | ${fmt((c.potential||[]).filter(p=>p.status!=='נסגר').reduce((s,p)=>s+(+p.estimatedValue||0),0))}</div>`:''}
       ${warnHtml}
       ${c.genNotes?`<div style="font-size:10px;color:#9ca3c4;margin-top:4px;padding-top:4px;border-top:1px solid #2e3350">${c.genNotes}</div>`:''}
     </div>`;
   }).join('');
+}
+
+// ===== WORK PLAN =====
+function rWorkPlan(){
+  const priF=(document.getElementById('wp-pri-filter')||{}).value||'';
+  const stF=(document.getElementById('wp-status-filter')||{}).value||'';
+  let all=[];
+  D.clients.forEach(c=>{(c.potential||[]).forEach(p=>{all.push({...p,clientName:c.name,clientId:c.id});});});
+  if(priF)all=all.filter(p=>p.priority===priF);
+  if(stF)all=all.filter(p=>p.status===stF);
+  const priO={'גבוהה':0,'בינונית':1,'נמוכה':2};
+  all.sort((a,b)=>{const pa=priO[a.priority]??1,pb=priO[b.priority]??1;if(pa!==pb)return pa-pb;return(a.targetDate||'').localeCompare(b.targetDate||'');});
+  const totalVal=all.reduce((s,p)=>s+(+p.estimatedValue||0),0);
+  const high=all.filter(p=>p.priority==='גבוהה').length;
+  const inProg=all.filter(p=>['בתהליך','הצעה נשלחה','ממתין לאישור'].includes(p.status)).length;
+  const closed=all.filter(p=>p.status==='נסגר').length;
+  const kwEl=document.getElementById('wpkrow');
+  if(kwEl)kwEl.innerHTML=`<div class="kc p"><div class="lb">סה"כ מוצרים</div><div class="vl">${all.length}</div></div><div class="kc r"><div class="lb">עדיפות גבוהה</div><div class="vl">${high}</div></div><div class="kc"><div class="lb">בתהליך</div><div class="vl">${inProg}</div></div><div class="kc g"><div class="lb">נסגרו</div><div class="vl">${closed}</div></div><div class="kc y"><div class="lb">שווי פוטנציאלי</div><div class="vl">₪${Math.round(totalVal/1000)}K</div></div>`;
+  const tbEl=document.getElementById('wptb');
+  if(tbEl)tbEl.innerHTML=all.map(p=>{
+    const priB=p.priority==='גבוהה'?'<span class="badge br">🔴 גבוהה</span>':p.priority==='בינונית'?'<span class="badge by">🟠 בינונית</span>':'<span class="badge bg">🟢 נמוכה</span>';
+    const stB=p.status==='נסגר'?'<span class="badge bg">נסגר ✓</span>':p.status==='בתהליך'?'<span class="badge bb">בתהליך</span>':p.status==='הצעה נשלחה'?'<span class="badge by">הצעה נשלחה</span>':p.status==='ממתין לאישור'?'<span class="badge by">ממתין לאישור</span>':'<span class="badge bgr">ליד חדש</span>';
+    let dH='–';
+    if(p.targetDate&&p.status!=='נסגר'){const d=db(nd(),p.targetDate);dH=d<0?`<b style="color:#e63946">עבר ${Math.abs(d)}י</b>`:`<b style="color:${d<=7?'#f4a261':'#2ec4b6'}">${d}י</b>`;}
+    const rc=p.priority==='גבוהה'?'pr':p.priority==='בינונית'?'po':'pg';
+    return`<tr class="${rc}"><td style="font-weight:600;color:#4cc9f0;cursor:pointer;white-space:nowrap" onclick="openClientModal('${p.clientId}')">${p.clientName}</td><td style="white-space:nowrap">${p.productType||'–'}</td><td style="font-weight:600">${p.product||'–'}</td><td class="nb">${p.estimatedValue?fmt(+p.estimatedValue):'–'}</td><td>${priB}</td><td style="font-size:10px;white-space:nowrap">${p.targetDate||'–'}</td><td>${dH}</td><td>${stB}</td><td style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis">${p.notes||'–'}</td><td><button class="btn btns" onclick="openClientModal('${p.clientId}')">✏️ ערוך</button></td></tr>`;
+  }).join('')||'<tr><td colspan="10" style="text-align:center;padding:24px;color:#9ca3c4">אין מוצרים פוטנציאליים – פתח כרטיס לקוח והוסף מוצרים</td></tr>';
+  const ftEl=document.getElementById('wpft');
+  if(ftEl)ftEl.innerHTML=`<span class="fi">מוצרים: <b>${all.length}</b></span><span class="fi">שווי פוטנציאלי: <b class="ny">${fmt(totalVal)}</b></span><span class="fi">עדיפות גבוהה: <b style="color:#e63946">${high}</b></span><span class="fi">בתהליך: <b class="nb">${inProg}</b></span><span class="fi">נסגרו: <b class="ng">${closed}</b></span>`;
 }
 
 // ===== MODALS =====
@@ -1194,6 +1311,7 @@ function exportExcel(section){
     case'salary':hdrs=['מס פרויקט','שם לקוח','כמות','יעד','סגירה','יתרה','סטטוס','סוג','הערות'];rows=D.salary.map(s=>[s.pj||'',s.cl||'',s.qt||1,s.tr||0,s.cl2||0,s.pv||0,s.st||'',s.ty==='service'?'שירות':'ציוד',s.no||'']);break;
     case'meetings':hdrs=['תאריך','שם לקוח','מס פגישה','התקיימה','הערות'];rows=D.meetings.map(m=>[m.dt||'',m.cl||'',m.nu||'',m.hl||'',m.no||'']);break;
     case'clients':hdrs=['שם חברה','איש קשר','טלפון','אימייל','כתובת','סטטוס','קווים','FORTI','CISCO','M365','STARLINK','הערות'];rows=D.clients.map(c=>[c.name||'',c.contact||'',c.phone||'',c.email||'',c.address||'',c.status||'',(c.lines||[]).length,(c.forti||[]).length,(c.cisco||[]).length,(c.ms365||[]).length,(c.starlink||[]).length,c.genNotes||'']);break;
+    case'workplan':{let allPots=[];D.clients.forEach(c=>{(c.potential||[]).forEach(p=>{allPots.push({...p,clientName:c.name});});});hdrs=['לקוח','סוג מוצר','שם מוצר','שווי משוער','עדיפות','יעד סגירה','סטטוס','הערות'];rows=allPots.map(p=>[p.clientName||'',p.productType||'',p.product||'',p.estimatedValue||0,p.priority||'',p.targetDate||'',p.status||'',p.notes||'']);break;}
     default:return;
   }
   dlCSV(section,toCSV(hdrs,rows));
