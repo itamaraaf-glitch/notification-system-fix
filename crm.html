@@ -487,6 +487,7 @@ input:focus,select:focus,textarea:focus{border-color:#e63946}
     <div style="display:flex;gap:6px;align-items:center">
       <input type="text" class="srch" id="client-search" placeholder="חיפוש לקוח..." oninput="filterClients()">
       <button class="btn btnp" onclick="openClientModal(null)">+ לקוח חדש</button>
+      <button class="btn" onclick="manualSyncDeals()" style="background:#7b5ea7;color:#fff;border-color:#7b5ea7" title="סנכרן עסקאות סגורות לכרטיסי לקוח">🔄 סנכרן עסקאות</button>
       <button class="btn" onclick="exportExcel('clients')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
     </div>
   </div>
@@ -752,6 +753,7 @@ function loadAll(){
       if(!D.deals.length)seedData();
     }else{seedData();}
   }catch(e){console.error(e);seedData();}
+  syncAllDealsToClients();
   rAll();
 }
 setInterval(()=>{try{if(D.deals.length)localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}},30000);
@@ -1147,6 +1149,69 @@ function rClients(){
   }).join('');
 }
 
+// ===== DEAL → CLIENT AUTO SYNC =====
+function mapDealToItemType(deal){
+  const inf=(deal.inf||'').toUpperCase();
+  const srv=(deal.srv||'').toLowerCase();
+  if(inf==='STARLINK'||srv.includes('starlink')||srv.includes('סטארלינק'))return'starlink';
+  if(inf==='CYBIZ'||srv.includes('cybiz')||srv.includes('ciso')||srv.includes('semi-soc')||srv.includes(' soc'))return'cybiz';
+  if(inf==='365'||srv.includes('365')||srv.includes('microsoft'))return'ms365';
+  if(srv.includes('forti'))return'forti';
+  if(srv.includes('cisco'))return'cisco';
+  if(srv.includes('מרכזי')||srv.includes('pbx'))return'pbx';
+  if(srv.includes('hp')||srv.includes('aruba'))return'hp';
+  if(srv.includes('juniper'))return'juniper';
+  return'lines';
+}
+
+function buildItemFromDeal(deal,type){
+  const note=`עסקה #${deal.num||''}  |  ${deal.date||''}  |  ${deal.ct||''}`;
+  const mo=deal.mv||deal.v||'';
+  switch(type){
+    case'lines':return{lineType:deal.inf&&deal.inf.includes('הוט')?'HOT':deal.inf==='RF'?'RF':'צד ג׳',speed:deal.srv||'',ip:'',expiry:'',monthly:mo,notes:note};
+    case'forti':return{model:deal.srv||'',sn:'',license:'UTM/ATP',expiry:'',notes:note};
+    case'cisco':return{model:deal.srv||'',sn:'',sw:'',expiry:'',notes:note};
+    case'hp':return{model:deal.srv||'',sn:'',expiry:'',notes:note};
+    case'juniper':return{model:deal.srv||'',sn:'',expiry:'',notes:note};
+    case'cybiz':return{solution:deal.srv||'',expiry:'',monthly:mo,notes:note};
+    case'starlink':return{unit:'',expiry:'',monthly:mo,notes:note};
+    case'pbx':return{brand:'',model:deal.srv||'',expiry:'',extensions:'',notes:note};
+    case'ms365':return{plan:'Business Standard',licenses:'',expiry:'',monthly:mo,notes:note};
+    default:return{name:deal.srv||'',vendor:'HOT Business',expiry:'',monthly:mo,notes:note};
+  }
+}
+
+function syncDealToClient(deal){
+  if(deal.st!=='נסגר')return false;
+  let client=D.clients.find(c=>(c.name||'').trim().toLowerCase()===(deal.co||'').trim().toLowerCase());
+  if(client&&(client.syncedDeals||[]).includes(deal.id))return false;
+  if(!client){
+    client={name:deal.co||'',contact:deal.ct||'',phone:'',email:'',address:'',status:'לקוח פעיל',genNotes:'',potential:[],syncedDeals:[]};
+    Object.keys(ITEM_CFG).forEach(t=>{client[t]=[];});
+  }
+  if(!client.syncedDeals)client.syncedDeals=[];
+  const type=mapDealToItemType(deal);
+  if(!client[type])client[type]=[];
+  client[type].push(buildItemFromDeal(deal,type));
+  client.syncedDeals.push(deal.id);
+  if(client.id){dbUpdate('clients',client.id,client);}
+  else{dbInsert('clients',client);}
+  return true;
+}
+
+function syncAllDealsToClients(){
+  let count=0;
+  D.deals.filter(d=>d.st==='נסגר').forEach(d=>{if(syncDealToClient(d))count++;});
+  if(count)saveAll();
+  return count;
+}
+
+function manualSyncDeals(){
+  const count=syncAllDealsToClients();
+  rAll();
+  alert(count?`✅ סונכרנו ${count} עסקאות ללקוחות בהצלחה`:'✓ כל העסקאות כבר מסונכרנות');
+}
+
 // ===== WORK PLAN =====
 function rWorkPlan(){
   const priF=(document.getElementById('wp-pri-filter')||{}).value||'';
@@ -1208,7 +1273,10 @@ function closeM(id){document.getElementById(id).classList.remove('open');EI=null
 function saveDeal(){
   const row={date:document.getElementById('dd').value,co:document.getElementById('dco').value,inf:document.getElementById('din').value,srv:document.getElementById('dsr').value,v:+document.getElementById('dv').value,mv:+document.getElementById('dmv').value,di:+document.getElementById('ddi').value,dn:+document.getElementById('ddn').value,ot:+document.getElementById('dot').value,otc:+document.getElementById('dotc').value,ct:document.getElementById('dct').value,ch:+document.getElementById('dch').value,st:document.getElementById('dst2').value,ty:document.getElementById('dty').value,no:document.getElementById('dno').value};
   if(!row.co){alert('יש להזין שם חברה');return;}
-  if(EI){dbUpdate('deals',EI,row);}else{row.num=D.deals.length+1;dbInsert('deals',row);}
+  let savedDeal;
+  if(EI){dbUpdate('deals',EI,row);savedDeal=D.deals.find(x=>x.id==EI);}
+  else{row.num=D.deals.length+1;savedDeal=dbInsert('deals',row);}
+  if(savedDeal&&savedDeal.st==='נסגר')syncDealToClient(savedDeal);
   closeM('mdeal');loadAll();
 }
 function saveTender(){
