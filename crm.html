@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>CRM | HOT Business v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Heebo',sans-serif;background:#0f1117;color:#e8eaf6;font-size:13px;height:100vh;overflow:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:#2e3350;border-radius:3px}
+
+/* LOGIN */
+#login{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.lcard{background:#1a1d27;border:1px solid #2e3350;border-radius:14px;padding:36px 40px;width:360px;text-align:center}
+.llogo{font-size:24px;font-weight:800;color:#e63946;margin-bottom:4px}
+.llogo span{color:#e8eaf6}
+.lsub{font-size:12px;color:#9ca3c4;margin-bottom:28px}
+.lg{display:flex;flex-direction:column;gap:4px;margin-bottom:14px;text-align:right}
+.lg label{font-size:11px;font-weight:600;color:#9ca3c4}
+.lg input{background:#22263a;border:1px solid #2e3350;color:#e8eaf6;border-radius:8px;padding:9px 12px;font-family:'Heebo',sans-serif;font-size:13px;outline:none;width:100%}
+.lg input:focus{border-color:#e63946}
+.lbtn{width:100%;padding:10px;background:#e63946;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Heebo',sans-serif;margin-top:4px}
+.lbtn:hover{background:#c1121f}
+.lerr{font-size:11px;color:#e63946;margin-top:8px;min-height:16px}
+
+/* APP */
+#app{display:none;flex-direction:column;height:100vh;overflow:hidden}
+#topbar{background:#1a1d27;border-bottom:1px solid #2e3350;display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:50px;flex-shrink:0;gap:8px}
+.logo{font-size:16px;font-weight:800;color:#e63946}
+.logo span{color:#e8eaf6}
+.dstrip{font-size:11px;color:#9ca3c4;display:flex;gap:10px}
+.dstrip b{color:#2ec4b6}
+.tbr{display:flex;align-items:center;gap:6px}
+.uchip{font-size:11px;color:#9ca3c4;background:#22263a;border:1px solid #2e3350;border-radius:20px;padding:3px 10px}
+.uchip b{color:#e8eaf6}
+.abtn{background:#e63946;color:#fff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;border:none;cursor:pointer}
+.lout{background:none;border:1px solid #2e3350;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:#9ca3c4;font-family:'Heebo',sans-serif}
+.lout:hover{background:#22263a}
+.save-ind{font-size:11px;color:#2ec4b6;display:none;background:rgba(46,196,182,.12);border:1px solid rgba(46,196,182,.3);border-radius:20px;padding:3px 10px}
+.save-ind.show{display:flex;align-items:center;gap:4px;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+
+#layout{display:flex;flex:1;overflow:hidden}
+#sidebar{width:168px;min-width:168px;background:#1a1d27;border-left:1px solid #2e3350;overflow-y:auto;padding:6px 0;flex-shrink:0}
+.nsec{padding:8px 12px 2px;font-size:9px;font-weight:700;color:#5a6080;text-transform:uppercase;letter-spacing:.8px}
+.ni{display:flex;align-items:center;gap:7px;padding:7px 12px;cursor:pointer;font-size:12px;color:#9ca3c4;border-right:3px solid transparent}
+.ni:hover{background:#22263a;color:#e8eaf6}
+.ni.active{background:#22263a;color:#e63946;border-right-color:#e63946;font-weight:600}
+#main{flex:1;overflow-y:auto;padding:16px;background:#0f1117;height:100%}
+.sec{display:none}.sec.active{display:block}
+.shdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.stit{font-size:18px;font-weight:800}
+
+/* KPI CARDS */
+.krow{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.kc{background:#1a1d27;border:1px solid #2e3350;border-radius:10px;padding:12px 14px;border-right:3px solid #4cc9f0}
+.kc.g{border-right-color:#2ec4b6}.kc.r{border-right-color:#e63946}.kc.y{border-right-color:#f4a261}.kc.p{border-right-color:#7b5ea7}
+.kc .lb{font-size:10px;color:#9ca3c4;margin-bottom:3px}
+.kc .vl{font-size:20px;font-weight:800}
+.kc.g .vl{color:#2ec4b6}.kc.r .vl{color:#e63946}.kc.y .vl{color:#f4a261}.kc.p .vl{color:#7b5ea7}
+.kc .sb{font-size:10px;color:#5a6080;margin-top:2px}
+
+/* GRID PANELS */
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.dpanel{background:#1a1d27;border:1px solid #2e3350;border-radius:10px;padding:14px}
+.dpanel h4{font-size:12px;font-weight:600;color:#9ca3c4;margin-bottom:10px}
+
+/* ALERT CARDS */
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.ac{border-radius:10px;padding:12px 14px;border-right:4px solid}
+.ac.crit{background:rgba(230,57,70,.1);border-right-color:#e63946}
+.ac.warn{background:rgba(244,162,97,.1);border-right-color:#f4a261}
+.ac.info{background:rgba(76,201,240,.1);border-right-color:#4cc9f0}
+.ac .at{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}
+.ac.crit .at{color:#ff2d55}.ac.warn .at{color:#ff9500}.ac.info .at{color:#4cc9f0}
+.ac .ah{font-size:12px;font-weight:700;margin-bottom:2px}
+.ac .as{font-size:11px;color:#9ca3c4}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid #2e3350;margin-bottom:14px}
+.tab{padding:7px 14px;cursor:pointer;font-size:12px;color:#9ca3c4;border-bottom:2px solid transparent}
+.tab:hover{color:#e8eaf6}
+.tab.active{color:#e63946;border-bottom-color:#e63946;font-weight:600}
+
+/* TABLE WRAPPER */
+.tw{background:#1a1d27;border:1px solid #2e3350;border-radius:10px;overflow:hidden;margin-bottom:14px}
+.thdr{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-bottom:1px solid #2e3350;font-size:12px;font-weight:600;gap:8px;flex-wrap:wrap}
+.tscroll{overflow:auto;max-height:60vh;cursor:grab;user-select:none;-webkit-overflow-scrolling:touch}
+.tscroll:active{cursor:grabbing}
+table{width:max-content;min-width:100%;border-collapse:collapse;font-size:11px}
+th{position:sticky;top:0;z-index:2;padding:7px 10px;text-align:right;font-weight:600;color:#9ca3c4;font-size:10px;border-bottom:1px solid #2e3350;white-space:nowrap;background:#1e2235;text-transform:uppercase;letter-spacing:.3px;box-shadow:0 1px 0 #2e3350}
+td{padding:6px 10px;border-bottom:1px solid rgba(46,51,80,.4);color:#e8eaf6;vertical-align:middle;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.03)}
+.tft{background:#22263a;padding:7px 13px;display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid #2e3350}
+.cb-row{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(230,57,70,.08);border-top:1px solid rgba(230,57,70,.2);position:sticky;bottom:0;z-index:5}
+.cb-row button{padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:600;font-family:'Heebo',sans-serif}
+input[type=checkbox]{width:14px;height:14px;accent-color:#e63946;cursor:pointer}
+th.cb-th{width:32px;padding:4px 8px}
+td.cb-td{width:32px;padding:4px 8px}
+.fi{font-size:11px;color:#9ca3c4}.fi b{color:#e8eaf6}
+
+/* PRIORITY ROW COLORS */
+.pr td:first-child{border-right:3px solid #ff2d55}
+.po td:first-child{border-right:3px solid #ff9500}
+.py td:first-child{border-right:3px solid #ffd166}
+.pg td:first-child{border-right:3px solid #2ec4b6}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600;white-space:nowrap}
+.bg{background:rgba(46,196,182,.15);color:#2ec4b6;border:1px solid rgba(46,196,182,.3)}
+.br{background:rgba(230,57,70,.15);color:#e63946;border:1px solid rgba(230,57,70,.3)}
+.by{background:rgba(255,209,102,.15);color:#ffd166;border:1px solid rgba(255,209,102,.3)}
+.bb{background:rgba(76,201,240,.15);color:#4cc9f0;border:1px solid rgba(76,201,240,.3)}
+.bgr{background:rgba(90,96,128,.2);color:#9ca3c4;border:1px solid rgba(90,96,128,.3)}
+
+/* INPUTS */
+input[type=text],input[type=date],input[type=number],select,textarea{background:#22263a;border:1px solid #2e3350;color:#e8eaf6;border-radius:6px;padding:6px 9px;font-family:'Heebo',sans-serif;font-size:12px;outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:#e63946}
+.srch{min-width:130px;max-width:180px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;border:1px solid #2e3350;cursor:pointer;font-size:11px;font-weight:600;background:#22263a;color:#9ca3c4;font-family:'Heebo',sans-serif}
+.btn:hover{color:#e8eaf6;border-color:#9ca3c4}
+.btnp{background:#e63946;color:#fff;border-color:#e63946}.btnp:hover{background:#c1121f}
+.btns{padding:2px 7px;font-size:10px}
+.btnd{color:#e63946}.btnd:hover{background:rgba(230,57,70,.1)}
+.btnbk{background:#0078d4;color:#fff;border-color:#0078d4}.btnbk:hover{background:#005a9e}
+.btnwp{background:#25D366;color:#fff;border-color:#25D366}.btnwp:hover{background:#128C7E}
+
+/* MODAL */
+.mw{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center;padding:16px}
+.mw.open{display:flex}
+.modal{background:#1a1d27;border:1px solid #2e3350;border-radius:14px;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;padding:20px}
+.mhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.mhdr h3{font-size:15px;font-weight:700}
+.mcls{background:none;border:none;cursor:pointer;font-size:20px;color:#9ca3c4;line-height:1}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg .g{display:flex;flex-direction:column;gap:3px}
+.fg .g label,.fg .gf label{font-size:10px;font-weight:600;color:#9ca3c4}
+.fg .gf{grid-column:1/-1;display:flex;flex-direction:column;gap:3px}
+.msec{background:#22263a;border-radius:8px;padding:10px;margin-bottom:10px}
+.msec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.msec-hdr span{font-size:11px;font-weight:700}
+
+/* PROGRESS BAR */
+.pw{display:flex;align-items:center;gap:6px}
+.pb{flex:1;height:5px;background:#22263a;border-radius:3px;overflow:hidden;min-width:40px}
+.pf{height:100%;border-radius:3px}
+
+/* CIRCLE */
+.mcirc{width:90px;height:90px;position:relative;margin:0 auto 10px}
+.mcirc svg{transform:rotate(-90deg)}
+.mcirc .mn{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:16px;font-weight:800}
+.mcirc .mn span{font-size:10px;font-weight:400;color:#9ca3c4}
+
+/* COLORS */
+.ng{color:#2ec4b6;font-weight:700}.nr{color:#e63946;font-weight:700}
+.ny{color:#ffd166;font-weight:700}.nb{color:#4cc9f0;font-weight:700}
+
+/* CLIENT CARDS */
+.client-card{background:#1a1d27;border:1px solid #2e3350;border-radius:10px;padding:14px;cursor:pointer;transition:border-color .2s}
+.client-card:hover{border-color:#4cc9f0}
+.item-row{background:#1a1d27;border:1px solid #2e3350;border-radius:6px;padding:8px;margin-bottom:6px}
+
+/* EXPIRY WARNING */
+.exp-warn{background:rgba(230,57,70,.08);border:1px solid rgba(230,57,70,.25);border-radius:6px;padding:5px 8px;font-size:10px;color:#e63946;margin-top:6px}
+.exp-ok{background:rgba(46,196,182,.08);border:1px solid rgba(46,196,182,.25);border-radius:6px;padding:5px 8px;font-size:10px;color:#2ec4b6;margin-top:6px}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:#9ca3c4;gap:10px}
+.spinner{width:20px;height:20px;border:2px solid #2e3350;border-top-color:#e63946;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* PRINT */
+@media print{
+  #sidebar,#topbar,.btn,.abtn,.lout,th.cb-th,td.cb-td,.tft,.cb-row{display:none!important}
+  body,#main,#app,#layout{overflow:visible!important;height:auto!important}
+  .sec{display:block!important}
+  .tw{break-inside:avoid}
+}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  #sidebar{width:46px;min-width:46px}
+  .ni{justify-content:center;padding:8px 0;font-size:16px}
+  .ni span,.nsec{display:none}
+  .stit{font-size:14px}
+  .krow{grid-template-columns:repeat(2,1fr)}
+  .dgrid{grid-template-columns:1fr}
+  #topbar .dstrip{display:none}
+  .tscroll{max-height:50vh}
+}
+@media(max-width:480px){
+  #sidebar{display:none}
+  .krow{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="lcard">
+    <div class="llogo">CRM <span>| HOT Business</span></div>
+    <div class="lsub">מערכת ניהול יומית – כניסה מאובטחת</div>
+    <div class="lg"><label>שם משתמש</label><input type="text" id="lu" placeholder="שם משתמש" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="lg"><label>סיסמה</label><input type="password" id="lp" placeholder="סיסמה" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="lbtn" onclick="doLogin()">כניסה למערכת</button>
+    <div class="lerr" id="lerr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<div id="topbar">
+  <div class="logo">CRM <span>| HOT Business</span></div>
+  <div class="dstrip">
+    <span>תאריך: <b id="td">–</b></span>
+    <span>ימי עבודה: <b id="wd">–</b></span>
+    <span>עברו: <b id="wdp">–</b></span>
+  </div>
+  <div class="tbr">
+    <div class="uchip">👤 <b id="uname">–</b></div>
+    <span class="save-ind" id="saveind">💾 נשמר</span>
+    <button class="abtn" onclick="nav('alerts')">⚠ <span id="acnt">0</span></button>
+    <button class="btn btnbk" onclick="backupData()" title="גיבוי">💾</button>
+    <button class="btn" onclick="restoreData()" title="שחזור">📂</button>
+    <button class="lout" onclick="doLogout()">יציאה</button>
+  </div>
+</div>
+
+<div id="layout">
+<div id="sidebar">
+  <div class="nsec">ראשי</div>
+  <div class="ni active" id="nv-dashboard" onclick="nav('dashboard')"><span>📊</span> <span>לוח בקרה</span></div>
+  <div class="ni" id="nv-alerts" onclick="nav('alerts')"><span>⚠️</span> <span>התראות</span></div>
+  <div class="nsec">עסקאות</div>
+  <div class="ni" id="nv-deals" onclick="nav('deals')"><span>💼</span> <span>עסקאות</span></div>
+  <div class="nsec">מכרזים</div>
+  <div class="ni" id="nv-tenders" onclick="nav('tenders')"><span>📋</span> <span>מכרזים</span></div>
+  <div class="nsec">הפצות</div>
+  <div class="ni" id="nv-dists" onclick="nav('dists')"><span>🚀</span> <span>הפצות</span></div>
+  <div class="nsec">שכר</div>
+  <div class="ni" id="nv-salary" onclick="nav('salary')"><span>💰</span> <span>פרויקטי שכר</span></div>
+  <div class="nsec">פגישות</div>
+  <div class="ni" id="nv-meetings" onclick="nav('meetings')"><span>🤝</span> <span>יעד פגישות</span></div>
+  <div class="nsec">לקוחות</div>
+  <div class="ni" id="nv-clients" onclick="nav('clients')"><span>🏢</span> <span>כרטיסי לקוח</span></div>
+  <div class="nsec">ייצוא</div>
+  <div class="ni" id="nv-export" onclick="nav('export')"><span>📥</span> <span>ייצוא</span></div>
+</div>
+
+<div id="main">
+
+<!-- DASHBOARD -->
+<div class="sec active" id="sec-dashboard">
+  <div class="shdr"><div class="stit">📊 לוח בקרה</div><span style="font-size:11px;color:#5a6080">מחושב אוטומטית</span></div>
+  <div class="krow" id="krow"></div>
+  <div class="dgrid">
+    <div class="dpanel"><h4>📌 עדיפות פעולה</h4><div id="prilist" style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto"></div></div>
+    <div class="dpanel">
+      <h4>🎯 יעד פגישות חודשי</h4>
+      <div class="mcirc">
+        <svg width="90" height="90"><circle cx="45" cy="45" r="36" fill="none" stroke="#2e3350" stroke-width="7"/><circle id="mcirc" cx="45" cy="45" r="36" fill="none" stroke="#2ec4b6" stroke-width="7" stroke-dasharray="226" stroke-dashoffset="226" stroke-linecap="round"/></svg>
+        <div class="mn"><span id="mnum">0/15</span><span>פגישות</span></div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:#9ca3c4">יעד: 15/חודש &nbsp;|&nbsp; <span id="mpct" class="ng">0%</span></div>
+    </div>
+  </div>
+  <div class="dgrid">
+    <div class="dpanel"><h4>💼 סטטוס עסקאות</h4><div id="dspanel" style="display:flex;flex-direction:column;gap:6px"></div></div>
+    <div class="dpanel"><h4>📈 מדדים מהירים</h4><div id="qspanel" style="display:flex;flex-direction:column;gap:6px"></div></div>
+  </div>
+</div>
+
+<!-- ALERTS -->
+<div class="sec" id="sec-alerts">
+  <div class="shdr">
+    <div class="stit">⚠️ התראות פעילות</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span style="font-size:11px;color:#5a6080" id="alerts-count"></span>
+      <button class="btn btnwp" onclick="sendWhatsApp()">📱 WhatsApp</button>
+    </div>
+  </div>
+  <div class="agrid" id="alcont"></div>
+</div>
+
+<!-- DEALS -->
+<div class="sec" id="sec-deals">
+  <div class="shdr">
+    <div class="stit">💼 עסקאות</div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ltb','stb')">
+      <button class="btn btnp" onclick="openM('deal',null)">+ עסקה חדשה</button>
+      <button class="btn" onclick="exportExcel('deals')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+    </div>
+  </div>
+  <div class="tabs" id="deals-tabs">
+    <div class="tab active" onclick="swTab(this,'deals-tabs','lt','st','sumt');rDeals()">טווח ארוך</div>
+    <div class="tab" onclick="swTab(this,'deals-tabs','lt','st','sumt');rDeals()">טווח קצר</div>
+    <div class="tab" onclick="swTab(this,'deals-tabs','lt','st','sumt');rDealSum()">סיכום</div>
+  </div>
+  <div id="lt">
+    <div class="tw"><div class="thdr">📋 עסקאות טווח ארוך</div>
+    <div class="tscroll"><table><thead><tr>
+      <th class="cb-th"><input type="checkbox" id="chk-all-deals-long" onchange="toggleAll('deals-long',this.checked)"></th>
+      <th>⚡</th><th>תאריך</th><th>#</th><th>שם חברה</th><th>תשתית</th><th>שירות</th>
+      <th>שווי ₪</th><th>חודש נוכחי</th><th>הפצה</th><th>חודש הבא</th><th>OTC</th><th>OTC נסגר</th>
+      <th>מול מי</th><th>סיכוי</th><th>סטטוס</th><th>הערות</th><th>פעולות</th>
+    </tr></thead><tbody id="ltb"></tbody></table></div>
+    <div class="tft" id="lft"></div>
+    <div class="cb-row" id="selbar-deals-long" style="display:none">
+      <span id="selcnt-deals-long" style="font-size:11px;color:#e8eaf6"></span>
+      <button onclick="deleteSelected('deals-long')" style="background:#e63946;color:#fff">🗑 מחק נבחרים</button>
+      <button onclick="clearSel('deals-long')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+    </div></div>
+  </div>
+  <div id="st" style="display:none">
+    <div class="tw"><div class="thdr">⚡ עסקאות טווח קצר</div>
+    <div class="tscroll"><table><thead><tr>
+      <th class="cb-th"><input type="checkbox" id="chk-all-deals-short" onchange="toggleAll('deals-short',this.checked)"></th>
+      <th>⚡</th><th>תאריך</th><th>#</th><th>שם חברה</th><th>תשתית</th><th>שירות</th>
+      <th>שווי ₪</th><th>חודש נוכחי</th><th>הפצה</th><th>חודש הבא</th><th>OTC</th><th>OTC נסגר</th>
+      <th>מול מי</th><th>סיכוי</th><th>סטטוס</th><th>הערות</th><th>פעולות</th>
+    </tr></thead><tbody id="stb"></tbody></table></div>
+    <div class="tft" id="sft"></div>
+    <div class="cb-row" id="selbar-deals-short" style="display:none">
+      <span id="selcnt-deals-short" style="font-size:11px;color:#e8eaf6"></span>
+      <button onclick="deleteSelected('deals-short')" style="background:#e63946;color:#fff">🗑 מחק נבחרים</button>
+      <button onclick="clearSel('deals-short')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+    </div></div>
+  </div>
+  <div id="sumt" style="display:none"><div class="krow" id="dsk"></div><div class="tw" id="dst"></div></div>
+</div>
+
+<!-- TENDERS -->
+<div class="sec" id="sec-tenders">
+  <div class="shdr">
+    <div class="stit">📋 מכרזים</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ttb')">
+      <button class="btn btnp" onclick="openM('tender',null)">+ מכרז חדש</button>
+      <button class="btn" onclick="exportExcel('tenders')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+    </div>
+  </div>
+  <div class="tw"><div class="tscroll"><table><thead><tr>
+    <th class="cb-th"><input type="checkbox" id="chk-all-tenders" onchange="toggleAll('tenders',this.checked)"></th>
+    <th>⚡</th><th>הוגשה?</th><th>כמות</th><th>פרסום</th><th>שם מכרז</th><th>מס׳ פרויקט</th>
+    <th>קישור</th><th>הצעה</th><th>ימים לשאלות</th><th>סבב</th><th>הגשה</th>
+    <th>מטפל</th><th>מסמכים</th><th>צימוד</th><th>סכום ₪</th><th>הערות</th><th>פעולות</th>
+  </tr></thead><tbody id="ttb"></tbody></table></div>
+  <div class="tft" id="tft"></div>
+  <div class="cb-row" id="selbar-tenders" style="display:none">
+    <span id="selcnt-tenders" style="font-size:11px;color:#e8eaf6"></span>
+    <button onclick="deleteSelected('tenders')" style="background:#e63946;color:#fff">🗑 מחק נבחרים</button>
+    <button onclick="clearSel('tenders')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+  </div></div>
+</div>
+
+<!-- DISTS -->
+<div class="sec" id="sec-dists">
+  <div class="shdr">
+    <div class="stit">🚀 הפצות</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ldtb','sdtb')">
+      <button class="btn btnp" onclick="openM('dist',null)">+ הפצה חדשה</button>
+      <button class="btn" onclick="exportExcel('dists')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+    </div>
+  </div>
+  <div class="tabs" id="dists-tabs">
+    <div class="tab active" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt');rDists()">מרכזים / ארוך</div>
+    <div class="tab" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt');rDists()">הפצות – קצר</div>
+    <div class="tab" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt');rDistSum()">סיכום</div>
+  </div>
+  <div id="ldt">
+    <div class="tw"><div class="thdr">📦 מרכזים / ארוך טווח</div>
+    <div class="tscroll"><table><thead><tr>
+      <th class="cb-th"><input type="checkbox" id="chk-all-dists-long" onchange="toggleAll('dists-long',this.checked)"></th>
+      <th>⚡</th><th>מטפל</th><th>מס׳ פרויקט</th><th>שם חברה</th><th>לקוח</th><th>IT</th>
+      <th>פתרון</th><th>כתובת</th><th>הכנסה חודשית</th><th>ציוד</th><th>חוסרים</th><th>סטטוס</th><th>תאריך</th><th>ימים</th><th>הערות</th><th>פעולות</th>
+    </tr></thead><tbody id="ldtb"></tbody></table></div>
+    <div class="tft" id="ldft"></div>
+    <div class="cb-row" id="selbar-dists-long" style="display:none">
+      <span id="selcnt-dists-long" style="font-size:11px;color:#e8eaf6"></span>
+      <button onclick="deleteSelected('dists-long')" style="background:#e63946;color:#fff">🗑 מחק</button>
+      <button onclick="clearSel('dists-long')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+    </div></div>
+  </div>
+  <div id="sdt" style="display:none">
+    <div class="tw"><div class="thdr">⚡ הפצות – קצר טווח</div>
+    <div class="tscroll"><table><thead><tr>
+      <th class="cb-th"><input type="checkbox" id="chk-all-dists-short" onchange="toggleAll('dists-short',this.checked)"></th>
+      <th>⚡</th><th>מטפל</th><th>מס׳ פרויקט</th><th>שם חברה</th><th>לקוח</th><th>IT</th>
+      <th>פתרון</th><th>כתובת</th><th>הכנסה חודשית</th><th>ציוד</th><th>חוסרים</th><th>סטטוס</th><th>תאריך</th><th>ימים</th><th>הערות</th><th>פעולות</th>
+    </tr></thead><tbody id="sdtb"></tbody></table></div>
+    <div class="tft" id="sdft"></div>
+    <div class="cb-row" id="selbar-dists-short" style="display:none">
+      <span id="selcnt-dists-short" style="font-size:11px;color:#e8eaf6"></span>
+      <button onclick="deleteSelected('dists-short')" style="background:#e63946;color:#fff">🗑 מחק</button>
+      <button onclick="clearSel('dists-short')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+    </div></div>
+  </div>
+  <div id="sumdt" style="display:none"><div class="krow" id="dstk"></div></div>
+</div>
+
+<!-- SALARY -->
+<div class="sec" id="sec-salary">
+  <div class="shdr"><div class="stit">💰 פרויקטי שכר</div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btnp" onclick="openM('salary',null)">+ פרויקט לשכר</button>
+      <button class="btn" onclick="exportExcel('salary')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+    </div>
+  </div>
+  <div class="tabs" id="salary-tabs">
+    <div class="tab active" onclick="swTab(this,'salary-tabs','ssvc','seq','ssum');rSalary()">שירות</div>
+    <div class="tab" onclick="swTab(this,'salary-tabs','ssvc','seq','ssum');rSalary()">ציוד (OTC)</div>
+    <div class="tab" onclick="swTab(this,'salary-tabs','ssvc','seq','ssum');rSalSum()">סיכום</div>
+  </div>
+  <div id="ssvc">
+    <div class="tw"><div class="thdr">🔧 שירות</div>
+    <div class="tscroll"><table><thead><tr>
+      <th class="cb-th"><input type="checkbox" id="chk-all-salary-service" onchange="toggleAll('salary-service',this.checked)"></th>
+      <th>⚡</th><th>סטטוס</th><th>כמות</th><th>מס׳ פרויקט</th><th>שם לקוח</th>
+      <th>יעד ₪</th><th>סגירה ₪</th><th>יתרה</th><th>%</th><th>הערות</th><th>פעולות</th>
+    </tr></thead><tbody id="svctb"></tbody></table></div>
+    <div class="tft" id="svcft"></div>
+    <div class="cb-row" id="selbar-salary-service" style="display:none">
+      <span id="selcnt-salary-service" style="font-size:11px;color:#e8eaf6"></span>
+      <button onclick="deleteSelected('salary-service')" style="background:#e63946;color:#fff">🗑 מחק</button>
+      <button onclick="clearSel('salary-service')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+    </div></div>
+  </div>
+  <div id="seq" style="display:none">
+    <div class="tw"><div class="thdr">📦 ציוד (OTC)</div>
+    <div class="tscroll"><table><thead><tr>
+      <th class="cb-th"><input type="checkbox" id="chk-all-salary-equip" onchange="toggleAll('salary-equip',this.checked)"></th>
+      <th>⚡</th><th>סטטוס</th><th>כמות</th><th>מס׳ פרויקט</th><th>שם לקוח</th>
+      <th>יעד ₪</th><th>סגירה ₪</th><th>יתרה</th><th>%</th><th>הערות</th><th>פעולות</th>
+    </tr></thead><tbody id="eqtb"></tbody></table></div>
+    <div class="tft" id="eqft"></div>
+    <div class="cb-row" id="selbar-salary-equip" style="display:none">
+      <span id="selcnt-salary-equip" style="font-size:11px;color:#e8eaf6"></span>
+      <button onclick="deleteSelected('salary-equip')" style="background:#e63946;color:#fff">🗑 מחק</button>
+      <button onclick="clearSel('salary-equip')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+    </div></div>
+  </div>
+  <div id="ssum" style="display:none"><div class="krow" id="ssk"></div></div>
+</div>
+
+<!-- MEETINGS -->
+<div class="sec" id="sec-meetings">
+  <div class="shdr">
+    <div class="stit">🤝 יעד פגישות</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'mtb')">
+      <button class="btn btnp" onclick="openM('meeting',null)">+ פגישה חדשה</button>
+      <button class="btn" onclick="exportExcel('meetings')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+    </div>
+  </div>
+  <div class="krow" id="mkrow"></div>
+  <div class="tw"><div class="thdr">📅 פגישות – יעד 15/חודש</div>
+  <div class="tscroll"><table><thead><tr>
+    <th class="cb-th"><input type="checkbox" id="chk-all-meetings" onchange="toggleAll('meetings',this.checked)"></th>
+    <th>#</th><th>תאריך</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th><th>פעולות</th>
+  </tr></thead><tbody id="mtb"></tbody></table></div>
+  <div class="tft" id="mft"></div>
+  <div class="cb-row" id="selbar-meetings" style="display:none">
+    <span id="selcnt-meetings" style="font-size:11px;color:#e8eaf6"></span>
+    <button onclick="deleteSelected('meetings')" style="background:#e63946;color:#fff">🗑 מחק</button>
+    <button onclick="clearSel('meetings')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+  </div></div>
+</div>
+
+<!-- CLIENTS -->
+<div class="sec" id="sec-clients">
+  <div class="shdr">
+    <div class="stit">🏢 כרטיסי לקוח</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <input type="text" class="srch" id="client-search" placeholder="חיפוש לקוח..." oninput="filterClients()">
+      <button class="btn btnp" onclick="openClientModal(null)">+ לקוח חדש</button>
+      <button class="btn" onclick="exportExcel('clients')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+    </div>
+  </div>
+  <div id="clients-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px"></div>
+</div>
+
+<!-- EXPORT -->
+<div class="sec" id="sec-export">
+  <div class="shdr"><div class="stit">📥 ייצוא וגיבוי</div></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:20px">
+    <div class="tw" style="cursor:pointer" onclick="exportExcel('deals')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💼</div><div style="font-weight:700;margin-bottom:4px">עסקאות</div><div style="font-size:11px;color:#9ca3c4" id="exp-deals-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="exportExcel('tenders')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📋</div><div style="font-weight:700;margin-bottom:4px">מכרזים</div><div style="font-size:11px;color:#9ca3c4" id="exp-tenders-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="exportExcel('dists')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🚀</div><div style="font-weight:700;margin-bottom:4px">הפצות</div><div style="font-size:11px;color:#9ca3c4" id="exp-dists-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="exportExcel('salary')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💰</div><div style="font-weight:700;margin-bottom:4px">פרויקטי שכר</div><div style="font-size:11px;color:#9ca3c4" id="exp-salary-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="exportExcel('meetings')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🤝</div><div style="font-weight:700;margin-bottom:4px">פגישות</div><div style="font-size:11px;color:#9ca3c4" id="exp-meetings-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="exportExcel('clients')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🏢</div><div style="font-weight:700;margin-bottom:4px">כרטיסי לקוח</div><div style="font-size:11px;color:#9ca3c4" id="exp-clients-count">0 לקוחות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="exportAll()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📊</div><div style="font-weight:700;margin-bottom:4px">כל הנתונים</div><div style="font-size:11px;color:#9ca3c4">כל הנושאים</div><div style="margin-top:10px;background:#e63946;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא הכל</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="backupData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💾</div><div style="font-weight:700;margin-bottom:4px">גיבוי מלא</div><div style="font-size:11px;color:#9ca3c4">קובץ JSON לשחזור</div><div style="margin-top:10px;background:#0078d4;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">💾 הורד גיבוי</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="restoreData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📂</div><div style="font-weight:700;margin-bottom:4px">שחזור נתונים</div><div style="font-size:11px;color:#9ca3c4">מקובץ JSON</div><div style="margin-top:10px;background:#7b5ea7;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📂 שחזר מגיבוי</div></div></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /layout -->
+</div><!-- /app -->
+
+<!-- ===== MODALS ===== -->
+<!-- DEAL MODAL -->
+<div class="mw" id="mdeal"><div class="modal">
+  <div class="mhdr"><h3 id="dtit">עסקה חדשה</h3><button class="mcls" onclick="closeM('mdeal')">✕</button></div>
+  <div class="fg">
+    <div class="g"><label>תאריך</label><input type="date" id="dd"></div>
+    <div class="g"><label>שם חברה</label><input type="text" id="dco"></div>
+    <div class="g"><label>תשתית</label><select id="din"><option>הוט</option><option>צד ג׳</option><option>365</option><option>ציוד</option><option>הוט + צד ג׳</option><option>STARLINK</option><option>RF</option><option>CYBIZ</option><option>בינת</option><option>C-DATA</option><option>נימובס</option></select></div>
+    <div class="g"><label>שירות</label><input type="text" id="dsr"></div>
+    <div class="g"><label>שווי ₪</label><input type="number" id="dv" placeholder="0"></div>
+    <div class="g"><label>חודש נוכחי ₪</label><input type="number" id="dmv" placeholder="0"></div>
+    <div class="g"><label>הפצה ₪</label><input type="number" id="ddi" placeholder="0"></div>
+    <div class="g"><label>חודש הבא ₪</label><input type="number" id="ddn" placeholder="0"></div>
+    <div class="g"><label>OTC ₪</label><input type="number" id="dot" placeholder="0"></div>
+    <div class="g"><label>OTC נסגר ₪</label><input type="number" id="dotc" placeholder="0"></div>
+    <div class="g"><label>מול מי</label><input type="text" id="dct"></div>
+    <div class="g"><label>סיכוי</label><select id="dch"><option value="1">100% – נסגר</option><option value="0.99" selected>99%</option><option value="0.75">75%</option><option value="0.5">50%</option><option value="0.25">25%</option></select></div>
+    <div class="g"><label>סטטוס</label><select id="dst2"><option>ממתין לתשובה</option><option>נסגר</option><option>בטיפול</option><option>הוצאת הצעה</option><option>בעיה</option></select></div>
+    <div class="g"><label>סוג</label><select id="dty"><option value="long">טווח ארוך</option><option value="short">טווח קצר</option></select></div>
+    <div class="gf"><label>הערות</label><textarea id="dno" rows="2"></textarea></div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+    <button class="btn" onclick="closeM('mdeal')">ביטול</button>
+    <button class="btn btnp" onclick="saveDeal()">שמור עסקה</button>
+  </div>
+</div></div>
+
+<!-- TENDER MODAL -->
+<div class="mw" id="mtender"><div class="modal">
+  <div class="mhdr"><h3 id="ttit">מכרז חדש</h3><button class="mcls" onclick="closeM('mtender')">✕</button></div>
+  <div class="fg">
+    <div class="g"><label>שם מכרז</label><input type="text" id="tn"></div>
+    <div class="g"><label>מס׳ פרויקט</label><input type="text" id="tp"></div>
+    <div class="g"><label>תאריך פרסום</label><input type="date" id="tpb"></div>
+    <div class="g"><label>קישור</label><input type="text" id="tlk" placeholder="https://..."></div>
+    <div class="g"><label>הצעת מחיר</label><input type="date" id="tq"></div>
+    <div class="g"><label>מועד שאלות</label><input type="date" id="tqs"></div>
+    <div class="g"><label>מועד הגשה</label><input type="date" id="tdl"></div>
+    <div class="g"><label>סבב חתימות</label><input type="number" id="tr" placeholder="1"></div>
+    <div class="g"><label>מטפל</label><input type="text" id="th"></div>
+    <div class="g"><label>סכום ₪</label><input type="number" id="tam" placeholder="0"></div>
+    <div class="g"><label>כמות</label><input type="number" id="tqt" placeholder="1"></div>
+    <div class="g"><label>הוגשה?</label><select id="tsb"><option value="לא">לא</option><option value="כן">כן</option><option value="בתהליך">בתהליך</option></select></div>
+    <div class="g"><label>צימוד?</label><select id="tln"><option value="לא">לא</option><option value="כן">כן</option></select></div>
+    <div class="gf"><label>מסמכים</label><input type="text" id="tdc"></div>
+    <div class="gf"><label>הערות</label><textarea id="tno" rows="2"></textarea></div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+    <button class="btn" onclick="closeM('mtender')">ביטול</button>
+    <button class="btn btnp" onclick="saveTender()">שמור מכרז</button>
+  </div>
+</div></div>
+
+<!-- DIST MODAL -->
+<div class="mw" id="mdist"><div class="modal">
+  <div class="mhdr"><h3 id="ditit">הפצה חדשה</h3><button class="mcls" onclick="closeM('mdist')">✕</button></div>
+  <div class="fg">
+    <div class="g"><label>שם חברה</label><input type="text" id="dico"></div>
+    <div class="g"><label>מס׳ פרויקט</label><input type="text" id="diproj"></div>
+    <div class="g"><label>שם לקוח</label><input type="text" id="dicl"></div>
+    <div class="g"><label>מטפל</label><input type="text" id="dih"></div>
+    <div class="g"><label>איש קשר IT</label><input type="text" id="diit"></div>
+    <div class="g"><label>פתרון</label><input type="text" id="diso"></div>
+    <div class="g"><label>כתובת</label><input type="text" id="diad"></div>
+    <div class="g"><label>הכנסה חודשית ₪</label><input type="number" id="diin" placeholder="0"></div>
+    <div class="g"><label>ציוד ₪</label><input type="number" id="dieq" placeholder="0"></div>
+    <div class="g"><label>תאריך</label><input type="date" id="didt"></div>
+    <div class="g"><label>סטטוס</label><select id="dist2"><option>ממתין להפצה</option><option>הושלם</option><option>בהתקנה</option><option>בעיה</option></select></div>
+    <div class="g"><label>סוג</label><select id="dity"><option value="long">מרכז – ארוך</option><option value="short">הפצה – קצר</option></select></div>
+    <div class="gf"><label>חוסרים</label><textarea id="dimi" rows="2"></textarea></div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+    <button class="btn" onclick="closeM('mdist')">ביטול</button>
+    <button class="btn btnp" onclick="saveDist()">שמור הפצה</button>
+  </div>
+</div></div>
+
+<!-- SALARY MODAL -->
+<div class="mw" id="msalary"><div class="modal">
+  <div class="mhdr"><h3 id="sttit">פרויקט לשכר</h3><button class="mcls" onclick="closeM('msalary')">✕</button></div>
+  <div class="fg">
+    <div class="g"><label>מס׳ פרויקט</label><input type="text" id="spj"></div>
+    <div class="g"><label>שם לקוח</label><input type="text" id="scl"></div>
+    <div class="g"><label>כמות</label><input type="number" id="sqt" placeholder="1"></div>
+    <div class="g"><label>יעד ₪</label><input type="number" id="str" placeholder="0"></div>
+    <div class="g"><label>סגירה ₪</label><input type="number" id="scl2" placeholder="0"></div>
+    <div class="g"><label>יתרה קודמת ₪</label><input type="number" id="spv" placeholder="0"></div>
+    <div class="g"><label>סטטוס</label><select id="sst"><option>פתוח</option><option>בתהליך</option><option>סגור</option><option>חלקי</option></select></div>
+    <div class="g"><label>סוג</label><select id="sty"><option value="service">שירות</option><option value="equipment">ציוד (OTC)</option></select></div>
+    <div class="gf"><label>הערות</label><textarea id="sno" rows="2"></textarea></div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+    <button class="btn" onclick="closeM('msalary')">ביטול</button>
+    <button class="btn btnp" onclick="saveSal()">שמור</button>
+  </div>
+</div></div>
+
+<!-- MEETING MODAL -->
+<div class="mw" id="mmeeting"><div class="modal">
+  <div class="mhdr"><h3 id="metit">פגישה חדשה</h3><button class="mcls" onclick="closeM('mmeeting')">✕</button></div>
+  <div class="fg">
+    <div class="g"><label>תאריך</label><input type="date" id="mdt"></div>
+    <div class="g"><label>שם לקוח</label><input type="text" id="mcl"></div>
+    <div class="g"><label>מס׳ פגישה / פרויקט</label><input type="text" id="mnu"></div>
+    <div class="g"><label>התקיימה?</label><select id="mhl"><option value="כן">כן</option><option value="לא">לא</option><option value="מבוטל">מבוטל</option></select></div>
+    <div class="gf"><label>הערות</label><textarea id="mno" rows="2"></textarea></div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+    <button class="btn" onclick="closeM('mmeeting')">ביטול</button>
+    <button class="btn btnp" onclick="saveMeet()">שמור פגישה</button>
+  </div>
+</div></div>
+
+<!-- CLIENT MODAL -->
+<div class="mw" id="mclient"><div class="modal" style="max-width:820px">
+  <div class="mhdr"><h3 id="ctit">כרטיס לקוח חדש</h3><button class="mcls" onclick="closeM('mclient')">✕</button></div>
+  <div class="msec">
+    <div class="msec-hdr"><span style="color:#4cc9f0">📋 פרטי לקוח</span></div>
+    <div class="fg">
+      <div class="g"><label>שם חברה *</label><input type="text" id="cl-name"></div>
+      <div class="g"><label>איש קשר</label><input type="text" id="cl-contact"></div>
+      <div class="g"><label>טלפון</label><input type="text" id="cl-phone"></div>
+      <div class="g"><label>אימייל</label><input type="text" id="cl-email"></div>
+      <div class="g"><label>כתובת</label><input type="text" id="cl-address"></div>
+      <div class="g"><label>סטטוס</label><select id="cl-status"><option>לקוח פעיל</option><option>לקוח פוטנציאלי</option><option>לקוח לא פעיל</option><option>ליד חדש</option></select></div>
+    </div>
+  </div>
+  <div id="client-sections"></div>
+  <div class="fg" style="margin-bottom:10px">
+    <div class="gf"><label>הערות כלליות</label><textarea id="cl-gen-notes" rows="2"></textarea></div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn" onclick="closeM('mclient')">ביטול</button>
+    <button class="btn btnp" onclick="saveClient()">💾 שמור כרטיס לקוח</button>
+  </div>
+</div></div>
+
+<script>
+// ===== CONSTANTS & STATE =====
+const LS_KEY = 'cem_hot_v3';
+const USERS = [{u:'ITAMAR2026',p:'NOSHrit$2026',n:'איתמר ונדן'}];
+const MEETING_GOAL = 15;
+let D = {deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[]};
+let EI = null, ET = null;
+const SEL = {};
+
+// ===== UTILS =====
+const now = () => new Date();
+const nd = () => now().toISOString().split('T')[0];
+const fmt = n => (!n || n == 0) ? '–' : '₪' + Number(n).toLocaleString('he-IL');
+const db = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+function wdM(y,m){let c=0;const d=new Date(y,m,1);while(d.getMonth()===m){if(d.getDay()!==5&&d.getDay()!==6)c++;d.setDate(d.getDate()+1);}return c;}
+function wdP(y,m,dy){let c=0;for(let i=1;i<=dy;i++){const d=new Date(y,m,i);if(d.getDay()!==5&&d.getDay()!==6)c++;}return c;}
+
+// ===== SAVE INDICATOR =====
+function showSaved(){
+  const el=document.getElementById('saveind');
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+// ===== AUTH =====
+function doLogin(){
+  const u=document.getElementById('lu').value.trim(),p=document.getElementById('lp').value;
+  const f=USERS.find(x=>x.u===u&&x.p===p);
+  if(!f){document.getElementById('lerr').textContent='שם משתמש או סיסמה שגויים';return;}
+  document.getElementById('lerr').textContent='';
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('uname').textContent=f.n;
+  const n=now();
+  document.getElementById('td').textContent=n.toLocaleDateString('he-IL');
+  document.getElementById('wd').textContent=wdM(n.getFullYear(),n.getMonth());
+  document.getElementById('wdp').textContent=wdP(n.getFullYear(),n.getMonth(),n.getDate());
+  loadAll();
+}
+function doLogout(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('login').style.display='flex';
+  document.getElementById('lu').value='';
+  document.getElementById('lp').value='';
+}
+
+// ===== STORAGE =====
+function saveAll(){
+  try{localStorage.setItem(LS_KEY,JSON.stringify(D));showSaved();}
+  catch(e){console.error('שגיאת שמירה:',e);}
+}
+function loadAll(){
+  try{
+    const s=localStorage.getItem(LS_KEY);
+    if(s){
+      const p=JSON.parse(s);
+      D.deals=p.deals||[];D.tenders=p.tenders||[];D.dists=p.dists||[];
+      D.salary=p.salary||[];D.meetings=p.meetings||[];D.clients=p.clients||[];
+      if(!D.deals.length)seedData();
+    }else{seedData();}
+  }catch(e){console.error(e);seedData();}
+  rAll();
+}
+setInterval(()=>{try{if(D.deals.length)localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}},30000);
+window.addEventListener('beforeunload',()=>{try{localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}});
+
+// ===== ID / DB =====
+function genId(){return Date.now().toString(36)+Math.random().toString(36).substr(2);}
+function dbInsert(table,row){row.id=genId();D[table].push(row);saveAll();return row;}
+function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0)D[table][i]={...D[table][i],...row};saveAll();}
+function dbDelete(table,id){if(!confirm('למחוק פריט זה?'))return;D[table]=D[table].filter(x=>x.id!=id);saveAll();rAll();}
+
+// ===== PRIORITY =====
+function pri(item,type){
+  if(type==='deal'){if(item.st==='נסגר')return'g';if(item.date&&(now()-new Date(item.date))/(30*86400000)>3)return'r';if((item.v||0)>10000||(item.ot||0)>50000)return'o';return'y';}
+  if(type==='dist'){if(item.st==='הושלם')return'g';if(item.dt&&db(item.dt,nd())>7)return'r';if(item.mi)return'o';return'y';}
+  if(type==='sal'){if(item.st==='סגור')return'g';if((item.pv||0)>0)return'o';return'y';}
+  if(type==='ten'){if(item.submitted==='כן')return'g';if(item.deadline){const d=db(nd(),item.deadline);if(d<=3&&d>=0)return'r';if(d<=7)return'o';}return'y';}
+  return'y';
+}
+function pB(p){const m={r:'br',o:'by',y:'by',g:'bg'};const l={r:'🔴 קריטי',o:'🟠 דחוף',y:'🟡 מעקב',g:'🟢 תקין'};return`<span class="badge ${m[p]}">${l[p]}</span>`;}
+function sB(s){if(['נסגר','הושלם','סגור'].includes(s))return`<span class="badge bg">${s} ✓</span>`;if(['בטיפול','בהתקנה','בתהליך'].includes(s))return`<span class="badge bb">${s}</span>`;if(s==='בעיה')return`<span class="badge br">${s}</span>`;return`<span class="badge by">${s}</span>`;}
+function pC(p){return{r:'pr',o:'po',y:'py',g:'pg'}[p];}
+
+// ===== NAVIGATION =====
+function nav(s){
+  document.querySelectorAll('.sec').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
+  document.getElementById('sec-'+s).classList.add('active');
+  const el=document.getElementById('nv-'+s);if(el)el.classList.add('active');
+  const fns={dashboard:rDash,alerts:rAlerts,deals:rDeals,tenders:rTenders,dists:rDists,salary:rSalary,meetings:rMeetings,export:updateExportCounts,clients:rClients};
+  if(fns[s])fns[s]();
+  setTimeout(initDragScrolls,100);
+}
+function swTab(el,tabsId,t1,t2,t3){
+  document.getElementById(tabsId).querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const idx=Array.from(document.getElementById(tabsId).querySelectorAll('.tab')).indexOf(el);
+  [t1,t2,t3].forEach((id,i)=>{const e=document.getElementById(id);if(e)e.style.display=i===idx?'':'none';});
+}
+function filt(ev,...ids){
+  const q=ev.target.value.toLowerCase();
+  ids.forEach(id=>{const tb=document.getElementById(id);if(!tb)return;tb.querySelectorAll('tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none');});
+}
+
+// ===== RENDER ALL =====
+function rAll(){rDash();rDeals();rTenders();rDists();rSalary();rMeetings();rAlerts();rClients();updateExportCounts();setTimeout(initDragScrolls,100);}
+
+// ===== ALERTS =====
+function getAlerts(){
+  const a=[];const t=nd();
+  D.deals.forEach(d=>{if(d.date&&d.st!=='נסגר'&&(now()-new Date(d.date))/(30*86400000)>3)a.push({type:'crit',h:`עסקה ישנה – ${d.co}`,s:`פתוחה מעל 3 חודשים! שווי: ${fmt(d.v)}`});});
+  D.dists.forEach(d=>{if(d.dt&&d.st!=='הושלם'&&db(d.dt,t)>7)a.push({type:'crit',h:`הפצה תקועה – ${d.co}`,s:`${db(d.dt,t)} ימים ללא התקדמות`});});
+  D.salary.forEach(s=>{if(s.st!=='סגור'&&(s.pv||0)>0)a.push({type:'warn',h:`שכר לא ממומש – ${s.cl}`,s:`יתרה: ${fmt(s.pv)}`});});
+  D.tenders.forEach(t2=>{
+    if(t2.deadline){const dl=db(t,t2.deadline);if(dl>=0&&dl<=5&&t2.submitted!=='כן')a.push({type:'crit',h:`מכרז דחוף – ${t2.name}`,s:`נותרו ${dl} ימים!`});}
+    if(t2.questions){const dq=db(t,t2.questions);if(dq>=0&&dq<=2)a.push({type:'warn',h:`מועד שאלות – ${t2.name}`,s:`נותרו ${dq} ימים`});}
+  });
+  const held=D.meetings.filter(m=>m.hl==='כן').length;
+  if(held<10)a.push({type:'info',h:`יעד פגישות – ${held}/${MEETING_GOAL}`,s:`${MEETING_GOAL-held} פגישות נדרשות`});
+  a.push(...getClientAlerts());
+  document.getElementById('acnt').textContent=a.length;
+  return a;
+}
+function rAlerts(){
+  const a=getAlerts();
+  const cnt=document.getElementById('alerts-count');if(cnt)cnt.textContent=a.length+' התראות';
+  document.getElementById('alcont').innerHTML=a.length?a.map(x=>`<div class="ac ${x.type}"><div class="at">${x.type==='crit'?'🔴 קריטי':x.type==='warn'?'🟠 אזהרה':'ℹ מידע'}</div><div class="ah">${x.h}</div><div class="as">${x.s}</div></div>`).join(''):'<div class="ac info"><div class="at">מידע</div><div class="ah">✅ אין התראות פעילות</div></div>';
+}
+
+// ===== DASHBOARD =====
+function rDash(){
+  const al=getAlerts();
+  const tv=D.deals.reduce((s,d)=>s+(d.v||0),0),tot=D.deals.reduce((s,d)=>s+(d.otc||0),0),cls=D.deals.filter(d=>d.st==='נסגר').length;
+  const held=D.meetings.filter(m=>m.hl==='כן').length,pct=Math.round((held/MEETING_GOAL)*100);
+  document.getElementById('krow').innerHTML=`
+    <div class="kc r"><div class="lb">התראות</div><div class="vl">${al.length}</div><div class="sb">דורשות טיפול</div></div>
+    <div class="kc"><div class="lb">עסקאות</div><div class="vl">${D.deals.length}</div><div class="sb">${cls} נסגרו</div></div>
+    <div class="kc g"><div class="lb">שווי צבור</div><div class="vl">₪${Math.round(tv/1000)}K</div></div>
+    <div class="kc y"><div class="lb">OTC נסגר</div><div class="vl">₪${Math.round(tot/1000)}K</div></div>
+    <div class="kc p"><div class="lb">מכרזים</div><div class="vl">${D.tenders.length}</div></div>
+    <div class="kc g"><div class="lb">פגישות</div><div class="vl">${held}/${MEETING_GOAL}</div><div class="sb">${pct}%</div></div>`;
+  const pi=[];
+  D.deals.filter(d=>d.st!=='נסגר').forEach(d=>{const p=pri(d,'deal');if(p==='r'||p==='o')pi.push({p,t:d.co,s:d.srv||''});});
+  D.tenders.forEach(t=>{const p=pri(t,'ten');if(p==='r'||p==='o')pi.push({p,t:t.name,s:`מועד: ${t.deadline||'–'}`});});
+  D.dists.filter(d=>d.st!=='הושלם').forEach(d=>{const p=pri(d,'dist');if(p==='r')pi.push({p,t:d.co,s:d.st});});
+  pi.sort((a,b)=>a.p==='r'?-1:1);
+  document.getElementById('prilist').innerHTML=pi.length?pi.slice(0,8).map(i=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #2e3350">${pB(i.p)}<div><div style="font-size:11px;font-weight:600">${i.t}</div><div style="font-size:10px;color:#9ca3c4">${i.s}</div></div></div>`).join(''):'<div style="font-size:11px;color:#9ca3c4">✅ אין פריטים קריטיים</div>';
+  const off=226-(held/MEETING_GOAL)*226;
+  document.getElementById('mcirc').setAttribute('stroke-dashoffset',Math.max(0,off));
+  document.getElementById('mnum').innerHTML=`${held}<br><span>מתוך ${MEETING_GOAL}</span>`;
+  document.getElementById('mpct').textContent=pct+'%';
+  const ld=D.deals.filter(d=>d.ty==='long'),sd=D.deals.filter(d=>d.ty==='short'),tdist=D.deals.reduce((s,d)=>s+(d.di||0),0);
+  document.getElementById('dspanel').innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">ארוך טווח</span><b>${ld.length} עסקאות</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">קצר טווח</span><b>${sd.length} עסקאות</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">הפצות בפועל</span><b class="ng">${fmt(tdist)}</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">לקוחות</span><b>${D.clients.length}</b></div>`;
+  const sc=D.salary.filter(s=>s.st==='סגור').reduce((s,i)=>s+(i.cl2||0),0),so=D.salary.filter(s=>s.st!=='סגור').reduce((s,i)=>s+(i.tr||0),0);
+  document.getElementById('qspanel').innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">שכר נסגר</span><b class="ng">${fmt(sc)}</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">שכר ממתין</span><b class="ny">${fmt(so)}</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">מכרזים פעילים</span><b class="nb">${D.tenders.filter(t=>t.submitted!=='כן').length}</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">הוגשו</span><b class="ng">${D.tenders.filter(t=>t.submitted==='כן').length}</b></div>`;
+}
+
+// ===== DEALS =====
+function rDeals(){
+  ['long','short'].forEach(ty=>{
+    const tbId=ty==='long'?'ltb':'stb',ftId=ty==='long'?'lft':'sft';
+    const items=D.deals.filter(d=>d.ty===ty);
+    const sk=ty==='long'?'deals-long':'deals-short';
+    document.getElementById(tbId).innerHTML=items.map(d=>{
+      const p=pri(d,'deal');
+      const ib=d.inf&&d.inf.includes('הוט')?`<span class="badge bb">HOT</span>`:d.inf==='365'?`<span class="badge bgr">365</span>`:`<span class="badge bgr">${d.inf||'–'}</span>`;
+      const cc=d.ch>=1?'ng':d.ch>=0.75?'ny':'nr';
+      const chk=SEL[sk]&&SEL[sk].has(d.id)?'checked':'';
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${d.date||'–'}</td><td style="color:#9ca3c4">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
+    }).join('')||`<tr><td colspan="18" style="text-align:center;padding:14px;color:#9ca3c4">אין עסקאות</td></tr>`;
+    const tv=items.reduce((s,d)=>s+(d.v||0),0),td=items.reduce((s,d)=>s+(d.di||0),0),to=items.reduce((s,d)=>s+(d.otc||0),0);
+    document.getElementById(ftId).innerHTML=`<span class="fi">עסקאות: <b>${items.length}</b></span><span class="fi">שווי: <b>${fmt(tv)}</b></span><span class="fi">הפצות: <b>${fmt(td)}</b></span><span class="fi">OTC: <b>${fmt(to)}</b></span>`;
+    updateSelBar(sk);
+  });
+}
+function rDealSum(){
+  const l=D.deals.filter(d=>d.ty==='long'),s=D.deals.filter(d=>d.ty==='short'),sm=(arr,k)=>arr.reduce((a,d)=>a+(d[k]||0),0);
+  document.getElementById('dsk').innerHTML=`<div class="kc"><div class="lb">שווי ארוך</div><div class="vl">₪${Math.round(sm(l,'v')/1000)}K</div></div><div class="kc y"><div class="lb">שווי קצר</div><div class="vl">₪${Math.round(sm(s,'v')/1000)}K</div></div><div class="kc g"><div class="lb">סה"כ</div><div class="vl">₪${Math.round((sm(l,'v')+sm(s,'v'))/1000)}K</div></div><div class="kc g"><div class="lb">הפצות ארוך</div><div class="vl">₪${Math.round(sm(l,'di')/1000)}K</div></div><div class="kc y"><div class="lb">הפצות קצר</div><div class="vl">₪${Math.round(sm(s,'di')/1000)}K</div></div><div class="kc p"><div class="lb">OTC כולל</div><div class="vl">₪${Math.round((sm(l,'otc')+sm(s,'otc'))/1000)}K</div></div>`;
+  document.getElementById('dst').innerHTML=`<div class="thdr">סיכום עסקאות</div><div class="tscroll"><table><thead><tr style="background:#22263a"><th>קטגוריה</th><th>כמות</th><th>שווי</th><th>הפצות</th><th>OTC</th></tr></thead><tbody><tr><td style="font-weight:600">טווח ארוך</td><td>${l.length}</td><td>${fmt(sm(l,'v'))}</td><td>${fmt(sm(l,'di'))}</td><td>${fmt(sm(l,'otc'))}</td></tr><tr><td style="font-weight:600">טווח קצר</td><td>${s.length}</td><td>${fmt(sm(s,'v'))}</td><td>${fmt(sm(s,'di'))}</td><td>${fmt(sm(s,'otc'))}</td></tr><tr style="background:#22263a;font-weight:700"><td>סה"כ</td><td>${D.deals.length}</td><td>${fmt(sm(l,'v')+sm(s,'v'))}</td><td>${fmt(sm(l,'di')+sm(s,'di'))}</td><td>${fmt(sm(l,'otc')+sm(s,'otc'))}</td></tr></tbody></table></div>`;
+}
+
+// ===== TENDERS =====
+function rTenders(){
+  const t=nd();
+  document.getElementById('ttb').innerHTML=D.tenders.map(tn=>{
+    const p=pri(tn,'ten');
+    const sb2=tn.submitted==='כן'?'<span class="badge bg">הוגשה ✓</span>':tn.submitted==='בתהליך'?'<span class="badge by">בתהליך</span>':'<span class="badge br">לא</span>';
+    const lb=tn.linked==='כן'?'<span class="badge bg">כן</span>':'<span class="badge br">לא</span>';
+    let qd='–';if(tn.questions){const d=db(t,tn.questions);qd=d>=0?`<b style="color:${d<=2?'#e63946':'#f4a261'}">${d}י</b>`:'<span style="color:#5a6080">עבר</span>';}
+    const chk=SEL['tenders']&&SEL['tenders'].has(tn.id)?'checked':'';
+    return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-tenders" ${chk} onchange="toggleSel('tenders','${tn.id}')"></td><td>${pB(p)}</td><td>${sb2}</td><td>${tn.qty||1}</td><td style="font-size:10px">${tn.pub||'–'}</td><td style="font-weight:600;min-width:120px">${tn.name||''}</td><td style="font-size:10px">${tn.proj||'–'}</td><td>${tn.link?`<a href="${tn.link}" target="_blank" style="color:#4cc9f0;font-size:10px">🔗</a>`:'–'}</td><td style="font-size:10px">${tn.quote||'–'}</td><td>${qd}</td><td>${tn.rounds||'–'}</td><td style="font-weight:600;color:#e63946;font-size:10px">${tn.deadline||'–'}</td><td style="font-size:10px">${tn.handler||'–'}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.docs||'–'}</td><td>${lb}</td><td class="nb">${fmt(tn.amount)}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.notes||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('tender','${tn.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tenders','${tn.id}')">🗑</button></td></tr>`;
+  }).join('')||'<tr><td colspan="18" style="text-align:center;padding:14px;color:#9ca3c4">אין מכרזים</td></tr>';
+  const ta=D.tenders.reduce((s,t)=>s+(t.amount||0),0);
+  document.getElementById('tft').innerHTML=`<span class="fi">מכרזים: <b>${D.tenders.length}</b></span><span class="fi">הוגשו: <b>${D.tenders.filter(t=>t.submitted==='כן').length}</b></span><span class="fi">ממתינים: <b>${D.tenders.filter(t=>t.submitted!=='כן').length}</b></span><span class="fi">שווי: <b>${fmt(ta)}</b></span>`;
+  updateSelBar('tenders');
+}
+
+// ===== DISTS =====
+function rDists(){
+  ['long','short'].forEach(ty=>{
+    const tbId=ty==='long'?'ldtb':'sdtb',ftId=ty==='long'?'ldft':'sdft';
+    const items=D.dists.filter(d=>d.ty===ty);const t=nd();
+    const sk=ty==='long'?'dists-long':'dists-short';
+    document.getElementById(tbId).innerHTML=items.map(d=>{
+      const p=pri(d,'dist');
+      let days='–';if(d.dt){const diff=db(d.dt,t);const col=d.st!=='הושלם'&&diff>7?'#e63946':diff>3?'#f4a261':'#2ec4b6';days=`<b style="color:${col}">${diff}י</b>`;}
+      const chk=SEL[sk]&&SEL[sk].has(d.id)?'checked':'';
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${d.hd||'–'}</td><td style="font-size:10px;color:#4cc9f0;font-weight:600">${d.no||'–'}</td><td style="font-weight:600">${d.co||''}</td><td style="font-size:10px">${d.cl||'–'}</td><td style="font-size:10px">${d.it||'–'}</td><td>${d.so||'–'}</td><td style="font-size:10px">${d.ad||'–'}</td><td class="ng">${fmt(d.inc)}</td><td class="nb">${fmt(d.eq)}</td><td style="font-size:10px;color:${d.mi?'#f4a261':'#9ca3c4'}">${d.mi||'אין'}</td><td>${sB(d.st)}</td><td style="font-size:10px">${d.dt||'–'}</td><td>${days}</td><td style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">${d.notes||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('dist','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('dists','${d.id}')">🗑</button></td></tr>`;
+    }).join('')||`<tr><td colspan="17" style="text-align:center;padding:14px;color:#9ca3c4">אין הפצות</td></tr>`;
+    const ti=items.reduce((s,d)=>s+(d.inc||0),0),te=items.reduce((s,d)=>s+(d.eq||0),0);
+    document.getElementById(ftId).innerHTML=`<span class="fi">סה"כ: <b>${items.length}</b></span><span class="fi">הושלמו: <b>${items.filter(d=>d.st==='הושלם').length}</b></span><span class="fi">הכנסה: <b>${fmt(ti)}</b></span><span class="fi">ציוד: <b>${fmt(te)}</b></span>`;
+    updateSelBar(sk);
+  });
+}
+function rDistSum(){
+  const l=D.dists.filter(d=>d.ty==='long'),s=D.dists.filter(d=>d.ty==='short'),sm=(arr,k)=>arr.reduce((a,d)=>a+(d[k]||0),0);
+  document.getElementById('dstk').innerHTML=`<div class="kc"><div class="lb">מרכזים</div><div class="vl">${l.length}</div><div class="sb">${fmt(sm(l,'inc'))} חודשי</div></div><div class="kc y"><div class="lb">הפצות קצר</div><div class="vl">${s.length}</div><div class="sb">${fmt(sm(s,'inc'))} חודשי</div></div><div class="kc g"><div class="lb">הכנסה כוללת</div><div class="vl">₪${Math.round((sm(l,'inc')+sm(s,'inc'))/1000)}K</div></div><div class="kc p"><div class="lb">ציוד סה"כ</div><div class="vl">₪${Math.round((sm(l,'eq')+sm(s,'eq'))/1000)}K</div></div>`;
+}
+
+// ===== SALARY =====
+function rSalary(){
+  ['service','equipment'].forEach(ty=>{
+    const tbId=ty==='service'?'svctb':'eqtb',ftId=ty==='service'?'svcft':'eqft';
+    const items=D.salary.filter(s=>s.ty===ty);
+    const sk=ty==='service'?'salary-service':'salary-equip';
+    document.getElementById(tbId).innerHTML=items.map(s=>{
+      const pct=s.tr?Math.round(((s.cl2||0)/s.tr)*100):0,pc=pct>=100?'#2ec4b6':pct>=50?'#f4a261':'#e63946',p=pri(s,'sal');
+      const chk=SEL[sk]&&SEL[sk].has(s.id)?'checked':'';
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td>${sB(s.st)}</td><td>${s.qt||1}</td><td style="font-size:10px">${s.pj||''}</td><td style="font-weight:600">${s.cl||''}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'#2ec4b6'}">${fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${s.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
+    }).join('')||`<tr><td colspan="12" style="text-align:center;padding:14px;color:#9ca3c4">אין פרויקטים</td></tr>`;
+    const tt=items.reduce((s,i)=>s+(i.tr||0),0),tc=items.reduce((s,i)=>s+(i.cl2||0),0),tp=items.reduce((s,i)=>s+(i.pv||0),0);
+    const p2=tt?Math.round((tc/tt)*100):0;
+    document.getElementById(ftId).innerHTML=`<span class="fi">פרויקטים: <b>${items.length}</b></span><span class="fi">יעד: <b>${fmt(tt)}</b></span><span class="fi">נסגר: <b>${fmt(tc)}</b></span><span class="fi">יתרה: <b style="color:#e63946">${fmt(tp)}</b></span><span class="fi">עמידה: <b style="color:${p2>=100?'#2ec4b6':p2>=50?'#f4a261':'#e63946'}">${p2}%</b></span>`;
+    updateSelBar(sk);
+  });
+}
+function rSalSum(){
+  const sv=D.salary.filter(s=>s.ty==='service'),eq=D.salary.filter(s=>s.ty==='equipment'),sm=(arr,k)=>arr.reduce((s,i)=>s+(i[k]||0),0);
+  document.getElementById('ssk').innerHTML=`<div class="kc"><div class="lb">שירות – יעד</div><div class="vl">₪${Math.round(sm(sv,'tr')/1000)}K</div><div class="sb">${sv.length} פרויקטים</div></div><div class="kc g"><div class="lb">שירות – נסגר</div><div class="vl">₪${Math.round(sm(sv,'cl2')/1000)}K</div></div><div class="kc r"><div class="lb">שירות – יתרה</div><div class="vl">₪${Math.round(sm(sv,'pv')/1000)}K</div></div><div class="kc"><div class="lb">ציוד – יעד</div><div class="vl">₪${Math.round(sm(eq,'tr')/1000)}K</div><div class="sb">${eq.length} פרויקטים</div></div><div class="kc g"><div class="lb">ציוד – נסגר</div><div class="vl">₪${Math.round(sm(eq,'cl2')/1000)}K</div></div><div class="kc y"><div class="lb">סה"כ כולל</div><div class="vl">₪${Math.round((sm(sv,'tr')+sm(eq,'tr'))/1000)}K</div></div>`;
+}
+
+// ===== MEETINGS =====
+function rMeetings(){
+  const n=now(),wd=wdM(n.getFullYear(),n.getMonth()),wdp=wdP(n.getFullYear(),n.getMonth(),n.getDate());
+  const held=D.meetings.filter(m=>m.hl==='כן').length,pct=Math.round((held/MEETING_GOAL)*100),exp=Math.round((MEETING_GOAL/wd)*wdp);
+  document.getElementById('mkrow').innerHTML=`<div class="kc g"><div class="lb">התקיימו</div><div class="vl">${held}</div><div class="sb">מתוך ${MEETING_GOAL}</div></div><div class="kc"><div class="lb">% יעד</div><div class="vl">${pct}%</div></div><div class="kc y"><div class="lb">צפי עד היום</div><div class="vl">${exp}</div><div class="sb">${held>=exp?'✅ בקצב':'⚠ פיגור'}</div></div><div class="kc ${held>=MEETING_GOAL?'g':'r'}"><div class="lb">נדרש</div><div class="vl">${Math.max(0,MEETING_GOAL-held)}</div></div>`;
+  document.getElementById('mtb').innerHTML=D.meetings.map((m,i)=>{
+    const sb2=m.hl==='כן'?'<span class="badge bg">כן ✓</span>':m.hl==='מבוטל'?'<span class="badge br">מבוטל</span>':'<span class="badge by">לא</span>';
+    const chk=SEL['meetings']&&SEL['meetings'].has(m.id)?'checked':'';
+    return`<tr><td class="cb-td"><input type="checkbox" class="cb-item-meetings" ${chk} onchange="toggleSel('meetings','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px">${m.dt||'–'}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb2}</td><td style="font-size:10px">${m.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('meeting','${m.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('meetings','${m.id}')">🗑</button></td></tr>`;
+  }).join('')||`<tr><td colspan="8" style="text-align:center;padding:14px;color:#9ca3c4">אין פגישות</td></tr>`;
+  document.getElementById('mft').innerHTML=`<span class="fi">סה"כ: <b>${D.meetings.length}</b></span><span class="fi">התקיימו: <b>${held}</b></span><span class="fi">לא: <b>${D.meetings.filter(m=>m.hl!=='כן').length}</b></span><span class="fi">יעד: <b style="color:${pct>=100?'#2ec4b6':pct>=66?'#f4a261':'#e63946'}">${pct}%</b></span>`;
+  updateSelBar('meetings');
+}
+
+// ===== CLIENTS =====
+const ITEM_CFG = {
+  lines:{label:'📡 קו תקשורת',color:'#2ec4b6',fields:[{k:'lineType',l:'סוג',t:'sel',opts:['HOT','Bezeq','Partner','Cellcom','012','צד ג׳','STARLINK','RF']},{k:'speed',l:'מהירות',t:'text',ph:'100/50 מגה'},{k:'ip',l:'IP ציבורי',t:'text'},{k:'expiry',l:'תפוגה',t:'date'},{k:'monthly',l:'עלות ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]},
+  forti:{label:'🛡️ FortiGate',color:'#f4a261',fields:[{k:'model',l:'דגם',t:'text',ph:'FG-60F'},{k:'sn',l:'S/N',t:'text'},{k:'license',l:'רישוי',t:'text',ph:'UTM/ATP'},{k:'expiry',l:'תפוגת רישוי',t:'date'},{k:'notes',l:'הערות',t:'text'}]},
+  cisco:{label:'🔵 Cisco',color:'#4cc9f0',fields:[{k:'model',l:'דגם',t:'text',ph:'ISR 4431'},{k:'sn',l:'S/N',t:'text'},{k:'sw',l:'תוכנה',t:'text'},{k:'expiry',l:'תפוגת תמיכה',t:'date'},{k:'notes',l:'הערות',t:'text'}]},
+  hp:{label:'🟣 HP / Aruba',color:'#7b5ea7',fields:[{k:'model',l:'דגם',t:'text',ph:'Aruba 2930F'},{k:'sn',l:'S/N',t:'text'},{k:'expiry',l:'תפוגת אחריות',t:'date'},{k:'notes',l:'הערות',t:'text'}]},
+  juniper:{label:'🟢 Juniper',color:'#2ec4b6',fields:[{k:'model',l:'דגם',t:'text'},{k:'sn',l:'S/N',t:'text'},{k:'expiry',l:'תפוגת תמיכה',t:'date'},{k:'notes',l:'הערות',t:'text'}]},
+  cybiz:{label:'🔐 CYBIZ / אבטחה',color:'#e63946',fields:[{k:'solution',l:'פתרון',t:'text',ph:'CISO/DUO/SOC'},{k:'expiry',l:'תפוגה',t:'date'},{k:'monthly',l:'עלות חודשית ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]},
+  starlink:{label:'🛰️ Starlink',color:'#ffd166',fields:[{k:'unit',l:'מס׳ יחידה',t:'text'},{k:'expiry',l:'חידוש',t:'date'},{k:'monthly',l:'עלות חודשית ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]},
+  pbx:{label:'☎️ מרכזייה',color:'#4cc9f0',fields:[{k:'brand',l:'יצרן',t:'text',ph:'Yealink'},{k:'model',l:'דגם',t:'text'},{k:'expiry',l:'תפוגת אחריות',t:'date'},{k:'extensions',l:'שלוחות',t:'number'},{k:'notes',l:'הערות',t:'text'}]},
+  ms365:{label:'📧 Microsoft 365',color:'#0078d4',fields:[{k:'plan',l:'תוכנית',t:'sel',opts:['Business Basic','Business Standard','Business Premium','E3','E5']},{k:'licenses',l:'רישיונות',t:'number'},{k:'expiry',l:'תפוגה',t:'date'},{k:'monthly',l:'עלות ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]},
+  helpdesk:{label:'🎧 Helpdesk',color:'#2ec4b6',fields:[{k:'plan',l:'תוכנית',t:'text'},{k:'users',l:'משתמשים',t:'number'},{k:'expiry',l:'תפוגה',t:'date'},{k:'monthly',l:'עלות ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]},
+  servers:{label:'🖥️ שרתים',color:'#7b5ea7',fields:[{k:'brand',l:'יצרן',t:'sel',opts:['Dell','HP','IBM','Lenovo','אחר']},{k:'model',l:'דגם',t:'text'},{k:'sn',l:'S/N',t:'text'},{k:'expiry',l:'תפוגת אחריות',t:'date'},{k:'notes',l:'הערות',t:'text'}]},
+  extra:{label:'📝 פתרון נוסף',color:'#9ca3c4',fields:[{k:'name',l:'שם פתרון',t:'text'},{k:'vendor',l:'ספק',t:'text'},{k:'expiry',l:'תפוגה',t:'date'},{k:'monthly',l:'עלות ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]}
+};
+
+function buildClientSections(){
+  const cont=document.getElementById('client-sections');
+  if(!cont||cont.children.length)return;
+  Object.entries(ITEM_CFG).forEach(([type,cfg])=>{
+    const sec=document.createElement('div');
+    sec.className='msec';sec.id='csec-'+type;
+    sec.innerHTML=`<div class="msec-hdr"><span style="color:${cfg.color}">${cfg.label}</span><button class="btn btns" onclick="addItem('${type}')" style="background:${cfg.color};color:${cfg.color==='#ffd166'||cfg.color==='#4cc9f0'||cfg.color==='#2ec4b6'?'#000':'#fff'};border-color:${cfg.color}">+ הוסף</button></div><div id="${type}-container"></div>`;
+    cont.appendChild(sec);
+  });
+}
+
+function addItem(type,data={}){
+  const cfg=ITEM_CFG[type];if(!cfg)return;
+  const cont=document.getElementById(type+'-container');
+  const idx=cont.children.length;
+  const fieldsHtml=cfg.fields.map(f=>{
+    const v=data[f.k]!=null?data[f.k]:'';
+    let inp='';
+    if(f.t==='sel'){inp=`<select data-key="${f.k}">${(f.opts||[]).map(o=>`<option ${v===o?'selected':''}>${o}</option>`).join('')}</select>`;}
+    else{inp=`<input type="${f.t||'text'}" data-key="${f.k}" value="${String(v).replace(/"/g,'&quot;')}" placeholder="${f.ph||''}">`;}
+    return`<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">${f.l}</label>${inp}</div>`;
+  }).join('');
+  const div=document.createElement('div');
+  div.className='item-row';
+  div.style.cssText=`border-right:3px solid ${cfg.color};`;
+  div.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:10px;font-weight:700;color:${cfg.color}">#${idx+1}</span><button type="button" onclick="this.closest('.item-row').remove()" style="background:none;border:none;color:#e63946;cursor:pointer;font-size:16px;line-height:1">✕</button></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px">${fieldsHtml}</div>`;
+  cont.appendChild(div);
+}
+
+function getItemData(type){
+  const cont=document.getElementById(type+'-container');
+  if(!cont)return[];
+  return Array.from(cont.querySelectorAll('.item-row')).map(row=>{
+    const obj={};
+    row.querySelectorAll('[data-key]').forEach(el=>obj[el.dataset.key]=el.value);
+    return obj;
+  });
+}
+
+function populateItems(type,items=[]){
+  const cont=document.getElementById(type+'-container');
+  if(!cont)return;
+  cont.innerHTML='';
+  items.forEach(item=>addItem(type,item));
+}
+
+function getExpiryWarnings(client){
+  const warns=[];
+  Object.keys(ITEM_CFG).forEach(type=>{
+    (client[type]||[]).forEach(item=>{
+      if(item.expiry){const d=db(nd(),item.expiry);if(d>=0&&d<=30)warns.push(`${ITEM_CFG[type].label}: ${d}י לתפוגה`);}
+    });
+  });
+  return warns;
+}
+
+function getClientAlerts(){
+  const alerts=[];
+  D.clients.forEach(c=>{
+    Object.keys(ITEM_CFG).forEach(type=>{
+      (c[type]||[]).forEach(item=>{
+        if(item.expiry){
+          const d=db(nd(),item.expiry);
+          if(d>=0&&d<=30){
+            alerts.push({type:d<=7?'crit':'warn',h:`תפוגת ${ITEM_CFG[type].label} – ${c.name}`,s:d===0?'פג היום!':d+' ימים לתפוגה'});
+          }
+        }
+      });
+    });
+  });
+  return alerts;
+}
+
+function openClientModal(id){
+  EI=id;ET='client';
+  buildClientSections();
+  document.getElementById('ctit').textContent=id?'עריכת כרטיס לקוח':'כרטיס לקוח חדש';
+  const c=id?D.clients.find(x=>x.id==id)||{}:{};
+  document.getElementById('cl-name').value=c.name||'';
+  document.getElementById('cl-contact').value=c.contact||'';
+  document.getElementById('cl-phone').value=c.phone||'';
+  document.getElementById('cl-email').value=c.email||'';
+  document.getElementById('cl-address').value=c.address||'';
+  document.getElementById('cl-status').value=c.status||'לקוח פעיל';
+  document.getElementById('cl-gen-notes').value=c.genNotes||'';
+  Object.keys(ITEM_CFG).forEach(type=>populateItems(type,c[type]||[]));
+  document.getElementById('mclient').classList.add('open');
+}
+
+function saveClient(){
+  const name=document.getElementById('cl-name').value.trim();
+  if(!name){alert('יש להזין שם חברה');return;}
+  const row={name,contact:document.getElementById('cl-contact').value,phone:document.getElementById('cl-phone').value,email:document.getElementById('cl-email').value,address:document.getElementById('cl-address').value,status:document.getElementById('cl-status').value,genNotes:document.getElementById('cl-gen-notes').value};
+  Object.keys(ITEM_CFG).forEach(type=>{row[type]=getItemData(type);});
+  if(EI){dbUpdate('clients',EI,row);}else{dbInsert('clients',row);}
+  closeM('mclient');rClients();
+}
+
+function filterClients(){
+  const q=document.getElementById('client-search').value.toLowerCase();
+  document.querySelectorAll('.client-card').forEach(card=>{card.style.display=card.textContent.toLowerCase().includes(q)?'':'none';});
+}
+
+function rClients(){
+  const grid=document.getElementById('clients-grid');if(!grid)return;
+  if(!D.clients.length){grid.innerHTML='<div style="color:#9ca3c4;text-align:center;padding:40px;grid-column:1/-1">אין כרטיסי לקוח – לחץ + כדי להוסיף</div>';return;}
+  grid.innerHTML=D.clients.map(c=>{
+    const sc={r:'#e63946',y:'#f4a261',g:'#2ec4b6',b:'#4cc9f0'};
+    const stCol=c.status==='לקוח פעיל'?sc.g:c.status==='לקוח פוטנציאלי'?sc.b:c.status==='ליד חדש'?sc.y:sc.r;
+    const tags=[...(c.lines||[]).map(l=>`<span class="badge bb">📡 ${l.lineType||'קו'}</span>`),
+      ...(c.forti||[]).map(f=>`<span class="badge by">🛡️ FORTI ${f.model||''}</span>`),
+      ...(c.cisco||[]).map(ci=>`<span class="badge bb">🔵 CISCO</span>`),
+      ...(c.ms365||[]).map(m=>`<span class="badge bgr">📧 M365 ×${m.licenses||1}</span>`),
+      ...(c.starlink||[]).map(()=>`<span class="badge by">🛰️ STARLINK</span>`),
+      ...(c.cybiz||[]).map(()=>`<span class="badge br">🔐 CYBIZ</span>`),
+    ].join('');
+    const warns=getExpiryWarnings(c);
+    const warnHtml=warns.length?`<div class="exp-warn">⚠ ${warns.slice(0,2).join(' | ')}</div>`:'';
+    return`<div class="client-card" onclick="openClientModal('${c.id}')">
+      <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:8px">
+        <div><div style="font-size:13px;font-weight:700">${c.name||''}</div><div style="font-size:10px;color:#9ca3c4">${c.contact||''} ${c.phone?'· '+c.phone:''}</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span class="badge" style="background:${stCol}22;color:${stCol};border:1px solid ${stCol}44;font-size:9px">${c.status||''}</span>
+          <button class="btn btns btnd" onclick="event.stopPropagation();dbDelete('clients','${c.id}')" style="font-size:9px">🗑</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">${tags||'<span style="font-size:10px;color:#5a6080">אין שירותים</span>'}</div>
+      ${warnHtml}
+      ${c.genNotes?`<div style="font-size:10px;color:#9ca3c4;margin-top:4px;padding-top:4px;border-top:1px solid #2e3350">${c.genNotes}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ===== MODALS =====
+function openM(type,id){
+  EI=id;ET=type;const isNew=!id;
+  if(type==='deal'){
+    document.getElementById('dtit').textContent=isNew?'עסקה חדשה':'עריכת עסקה';
+    const d=isNew?{}:D.deals.find(x=>x.id==id)||{};
+    document.getElementById('dd').value=d.date||nd();document.getElementById('dco').value=d.co||'';document.getElementById('din').value=d.inf||'הוט';document.getElementById('dsr').value=d.srv||'';document.getElementById('dv').value=d.v||0;document.getElementById('dmv').value=d.mv||0;document.getElementById('ddi').value=d.di||0;document.getElementById('ddn').value=d.dn||0;document.getElementById('dot').value=d.ot||0;document.getElementById('dotc').value=d.otc||0;document.getElementById('dct').value=d.ct||'';document.getElementById('dch').value=d.ch||0.99;document.getElementById('dst2').value=d.st||'ממתין לתשובה';document.getElementById('dty').value=d.ty||'long';document.getElementById('dno').value=d.no||'';
+  }else if(type==='tender'){
+    document.getElementById('ttit').textContent=isNew?'מכרז חדש':'עריכת מכרז';
+    const t=isNew?{}:D.tenders.find(x=>x.id==id)||{};
+    document.getElementById('tn').value=t.name||'';document.getElementById('tp').value=t.proj||'';document.getElementById('tpb').value=t.pub||'';document.getElementById('tlk').value=t.link||'';document.getElementById('tq').value=t.quote||'';document.getElementById('tqs').value=t.questions||'';document.getElementById('tdl').value=t.deadline||'';document.getElementById('tr').value=t.rounds||1;document.getElementById('th').value=t.handler||'';document.getElementById('tam').value=t.amount||0;document.getElementById('tqt').value=t.qty||1;document.getElementById('tsb').value=t.submitted||'לא';document.getElementById('tln').value=t.linked||'לא';document.getElementById('tdc').value=t.docs||'';document.getElementById('tno').value=t.notes||'';
+  }else if(type==='dist'){
+    document.getElementById('ditit').textContent=isNew?'הפצה חדשה':'עריכת הפצה';
+    const d=isNew?{}:D.dists.find(x=>x.id==id)||{};
+    document.getElementById('dico').value=d.co||'';document.getElementById('diproj').value=d.no||'';document.getElementById('dicl').value=d.cl||'';document.getElementById('dih').value=d.hd||'';document.getElementById('diit').value=d.it||'';document.getElementById('diso').value=d.so||'';document.getElementById('diad').value=d.ad||'';document.getElementById('diin').value=d.inc||0;document.getElementById('dieq').value=d.eq||0;document.getElementById('didt').value=d.dt||'';document.getElementById('dist2').value=d.st||'ממתין להפצה';document.getElementById('dity').value=d.ty||'short';document.getElementById('dimi').value=d.mi||'';
+  }else if(type==='salary'){
+    document.getElementById('sttit').textContent=isNew?'פרויקט לשכר':'עריכת פרויקט';
+    const s=isNew?{}:D.salary.find(x=>x.id==id)||{};
+    document.getElementById('spj').value=s.pj||'';document.getElementById('scl').value=s.cl||'';document.getElementById('sqt').value=s.qt||1;document.getElementById('str').value=s.tr||0;document.getElementById('scl2').value=s.cl2||0;document.getElementById('spv').value=s.pv||0;document.getElementById('sst').value=s.st||'פתוח';document.getElementById('sty').value=s.ty||'service';document.getElementById('sno').value=s.no||'';
+  }else if(type==='meeting'){
+    document.getElementById('metit').textContent=isNew?'פגישה חדשה':'עריכת פגישה';
+    const m=isNew?{}:D.meetings.find(x=>x.id==id)||{};
+    document.getElementById('mdt').value=m.dt||nd();document.getElementById('mcl').value=m.cl||'';document.getElementById('mnu').value=m.nu||'';document.getElementById('mhl').value=m.hl||'כן';document.getElementById('mno').value=m.no||'';
+  }
+  document.getElementById('m'+type).classList.add('open');
+}
+function closeM(id){document.getElementById(id).classList.remove('open');EI=null;ET=null;}
+
+// ===== SAVE FUNCTIONS =====
+function saveDeal(){
+  const row={date:document.getElementById('dd').value,co:document.getElementById('dco').value,inf:document.getElementById('din').value,srv:document.getElementById('dsr').value,v:+document.getElementById('dv').value,mv:+document.getElementById('dmv').value,di:+document.getElementById('ddi').value,dn:+document.getElementById('ddn').value,ot:+document.getElementById('dot').value,otc:+document.getElementById('dotc').value,ct:document.getElementById('dct').value,ch:+document.getElementById('dch').value,st:document.getElementById('dst2').value,ty:document.getElementById('dty').value,no:document.getElementById('dno').value};
+  if(!row.co){alert('יש להזין שם חברה');return;}
+  if(EI){dbUpdate('deals',EI,row);}else{row.num=D.deals.length+1;dbInsert('deals',row);}
+  closeM('mdeal');loadAll();
+}
+function saveTender(){
+  const row={name:document.getElementById('tn').value,proj:document.getElementById('tp').value,pub:document.getElementById('tpb').value,link:document.getElementById('tlk').value,quote:document.getElementById('tq').value,questions:document.getElementById('tqs').value,deadline:document.getElementById('tdl').value,rounds:+document.getElementById('tr').value,handler:document.getElementById('th').value,amount:+document.getElementById('tam').value,qty:+document.getElementById('tqt').value,submitted:document.getElementById('tsb').value,linked:document.getElementById('tln').value,docs:document.getElementById('tdc').value,notes:document.getElementById('tno').value};
+  if(!row.name){alert('יש להזין שם מכרז');return;}
+  if(EI){dbUpdate('tenders',EI,row);}else{dbInsert('tenders',row);}
+  closeM('mtender');loadAll();
+}
+function saveDist(){
+  const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,hd:document.getElementById('dih').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,mi:document.getElementById('dimi').value};
+  if(!row.co){alert('יש להזין שם חברה');return;}
+  if(EI){dbUpdate('dists',EI,row);}else{dbInsert('dists',row);}
+  closeM('mdist');loadAll();
+}
+function saveSal(){
+  const row={pj:document.getElementById('spj').value,cl:document.getElementById('scl').value,qt:+document.getElementById('sqt').value,tr:+document.getElementById('str').value,cl2:+document.getElementById('scl2').value,pv:+document.getElementById('spv').value,st:document.getElementById('sst').value,ty:document.getElementById('sty').value,no:document.getElementById('sno').value};
+  if(!row.cl){alert('יש להזין שם לקוח');return;}
+  if(EI){dbUpdate('salary',EI,row);}else{dbInsert('salary',row);}
+  closeM('msalary');loadAll();
+}
+function saveMeet(){
+  const row={dt:document.getElementById('mdt').value,cl:document.getElementById('mcl').value,nu:document.getElementById('mnu').value,hl:document.getElementById('mhl').value,no:document.getElementById('mno').value};
+  if(!row.cl){alert('יש להזין שם לקוח');return;}
+  if(EI){dbUpdate('meetings',EI,row);}else{dbInsert('meetings',row);}
+  closeM('mmeeting');loadAll();
+}
+
+// ===== SELECTION =====
+function toggleSel(key,id){
+  if(!SEL[key])SEL[key]=new Set();
+  if(SEL[key].has(id))SEL[key].delete(id);else SEL[key].add(id);
+  updateSelBar(key);
+  const allCbs=document.querySelectorAll('.cb-item-'+key);
+  const chkAll=document.getElementById('chk-all-'+key);
+  if(chkAll)chkAll.checked=SEL[key].size===allCbs.length&&allCbs.length>0;
+}
+function toggleAll(key,checked){
+  if(!SEL[key])SEL[key]=new Set();
+  SEL[key].clear();
+  document.querySelectorAll('.cb-item-'+key).forEach(cb=>{
+    cb.checked=checked;
+    if(checked){const m=cb.getAttribute('onchange').match(/'([a-z0-9]+)'\)/);if(m)SEL[key].add(m[1]);}
+  });
+  updateSelBar(key);
+}
+function updateSelBar(key){
+  const bar=document.getElementById('selbar-'+key);if(!bar)return;
+  const n=SEL[key]?SEL[key].size:0;
+  bar.style.display=n>0?'flex':'none';
+  const cnt=document.getElementById('selcnt-'+key);
+  if(cnt)cnt.textContent=n+' פריטים נבחרו';
+}
+function clearSel(key){
+  SEL[key]=new Set();
+  document.querySelectorAll('.cb-item-'+key).forEach(cb=>cb.checked=false);
+  const ac=document.getElementById('chk-all-'+key);if(ac)ac.checked=false;
+  updateSelBar(key);
+}
+function deleteSelected(key){
+  if(!SEL[key]||SEL[key].size===0)return;
+  if(!confirm('למחוק '+SEL[key].size+' פריטים?'))return;
+  const tblMap={'deals-long':'deals','deals-short':'deals','tenders':'tenders','dists-long':'dists','dists-short':'dists','salary-service':'salary','salary-equip':'salary','meetings':'meetings'};
+  const tbl=tblMap[key];
+  if(tbl){D[tbl]=D[tbl].filter(x=>!SEL[key].has(x.id));saveAll();}
+  SEL[key]=new Set();rAll();
+}
+
+// ===== DRAG SCROLL =====
+function enableDragScroll(el){
+  if(el._dragInit)return;el._dragInit=true;
+  let drag=false,sx,sy,sl,st;
+  el.addEventListener('mousedown',e=>{
+    if(['INPUT','BUTTON','A','SELECT'].includes(e.target.tagName))return;
+    drag=true;el.classList.add('dragging');
+    sx=e.clientX;sy=e.clientY;sl=el.scrollLeft;st=el.scrollTop;e.preventDefault();
+  });
+  window.addEventListener('mouseup',()=>{drag=false;el.classList.remove('dragging');});
+  el.addEventListener('mousemove',e=>{if(!drag)return;el.scrollLeft=sl-(e.clientX-sx);el.scrollTop=st-(e.clientY-sy);});
+}
+function initDragScrolls(){document.querySelectorAll('.tscroll').forEach(enableDragScroll);}
+
+// ===== EXPORT =====
+function toCSV(hdrs,rows){
+  let out='﻿'+hdrs.join(',')+'\n';
+  rows.forEach(r=>{out+=r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')+'\n';});
+  return out;
+}
+function dlCSV(name,csv){
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download=name+'_'+nd()+'.csv';document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},500);
+}
+function exportExcel(section){
+  let hdrs,rows;
+  switch(section){
+    case'deals':hdrs=['תאריך','#','שם חברה','תשתית','שירות','שווי','חודש נוכחי','הפצה','חודש הבא','OTC','OTC נסגר','מול מי','סיכוי','סטטוס','סוג','הערות'];rows=D.deals.map(d=>[d.date||'',d.num||'',d.co||'',d.inf||'',d.srv||'',d.v||0,d.mv||0,d.di||0,d.dn||0,d.ot||0,d.otc||0,d.ct||'',Math.round((d.ch||0)*100)+'%',d.st||'',d.ty==='long'?'ארוך':'קצר',d.no||'']);break;
+    case'tenders':hdrs=['שם מכרז','מס פרויקט','פרסום','הצעה','שאלות','הגשה','סבבים','מטפל','סכום','כמות','הוגשה','צימוד','מסמכים','הערות'];rows=D.tenders.map(t=>[t.name||'',t.proj||'',t.pub||'',t.quote||'',t.questions||'',t.deadline||'',t.rounds||'',t.handler||'',t.amount||0,t.qty||1,t.submitted||'',t.linked||'',t.docs||'',t.notes||'']);break;
+    case'dists':hdrs=['מטפל','מס פרויקט','שם חברה','לקוח','IT','פתרון','כתובת','הכנסה חודשית','ציוד','חוסרים','סטטוס','תאריך','סוג'];rows=D.dists.map(d=>[d.hd||'',d.no||'',d.co||'',d.cl||'',d.it||'',d.so||'',d.ad||'',d.inc||0,d.eq||0,d.mi||'',d.st||'',d.dt||'',d.ty==='long'?'ארוך':'קצר']);break;
+    case'salary':hdrs=['מס פרויקט','שם לקוח','כמות','יעד','סגירה','יתרה','סטטוס','סוג','הערות'];rows=D.salary.map(s=>[s.pj||'',s.cl||'',s.qt||1,s.tr||0,s.cl2||0,s.pv||0,s.st||'',s.ty==='service'?'שירות':'ציוד',s.no||'']);break;
+    case'meetings':hdrs=['תאריך','שם לקוח','מס פגישה','התקיימה','הערות'];rows=D.meetings.map(m=>[m.dt||'',m.cl||'',m.nu||'',m.hl||'',m.no||'']);break;
+    case'clients':hdrs=['שם חברה','איש קשר','טלפון','אימייל','כתובת','סטטוס','קווים','FORTI','CISCO','M365','STARLINK','הערות'];rows=D.clients.map(c=>[c.name||'',c.contact||'',c.phone||'',c.email||'',c.address||'',c.status||'',(c.lines||[]).length,(c.forti||[]).length,(c.cisco||[]).length,(c.ms365||[]).length,(c.starlink||[]).length,c.genNotes||'']);break;
+    default:return;
+  }
+  dlCSV(section,toCSV(hdrs,rows));
+}
+function exportAll(){['deals','tenders','dists','salary','meetings','clients'].forEach((s,i)=>setTimeout(()=>exportExcel(s),i*350));}
+function updateExportCounts(){
+  const m={deals:D.deals.length,tenders:D.tenders.length,dists:D.dists.length,salary:D.salary.length,meetings:D.meetings.length,clients:D.clients.length};
+  Object.entries(m).forEach(([k,v])=>{const el=document.getElementById('exp-'+k+'-count');if(el)el.textContent=v+' רשומות';});
+}
+
+// ===== WHATSAPP =====
+function sendWhatsApp(){
+  const a=getAlerts();const n=now().toLocaleDateString('he-IL');
+  let msg=`📊 *CRM HOT Business – ${n}*\n⚠️ *${a.length} התראות פעילות*\n\n`;
+  a.slice(0,8).forEach(al=>{const ic=al.type==='crit'?'🔴':al.type==='warn'?'🟠':'ℹ️';msg+=`${ic} *${al.h}*\n${al.s}\n\n`;});
+  if(a.length>8)msg+=`...ועוד ${a.length-8} התראות\n\n`;
+  const held=D.meetings.filter(m=>m.hl==='כן').length;
+  msg+=`🤝 פגישות: ${held}/${MEETING_GOAL} (${Math.round(held/MEETING_GOAL*100)}%)\n`;
+  msg+=`💼 עסקאות: ${D.deals.length} | נסגרו: ${D.deals.filter(d=>d.st==='נסגר').length}\n`;
+  const tdist=D.deals.reduce((s,d)=>s+(d.di||0),0);
+  msg+=`💰 הפצות: ₪${Math.round(tdist/1000)}K`;
+  window.open('https://wa.me/?text='+encodeURIComponent(msg));
+}
+
+// ===== BACKUP / RESTORE =====
+function backupData(){
+  const json=JSON.stringify(D,null,2);
+  const blob=new Blob([json],{type:'application/json;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download='crm_backup_'+nd()+'.json';document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},500);
+}
+function restoreData(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const p=JSON.parse(ev.target.result);
+        if(confirm('זה ישחזר ויחליף את כל הנתונים הקיימים. להמשיך?')){
+          D={deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],...p};
+          saveAll();rAll();alert('✅ הנתונים שוחזרו בהצלחה!');
+        }
+      }catch(err){alert('שגיאה בפרסינג הקובץ: '+err.message);}
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')document.querySelectorAll('.mw.open').forEach(m=>m.classList.remove('open'));
+});
+
+// ===== SEED DATA =====
+function seedData(){
+  const g=()=>genId();
+  D.deals=[
+    {id:g(),date:'2026-01-15',num:1,co:'אופק חדש – עמק יזרעאל',inf:'צד ג׳',srv:'קו 600/300',v:1293,mv:1293,di:1293,dn:0,ot:0,otc:0,ct:'קובי אופק',ch:1,st:'נסגר',no:'',ty:'long'},
+    {id:g(),date:'2026-01-05',num:2,co:'RIBBON / ECI',inf:'ציוד',srv:'FORTINET',v:0,mv:0,di:0,dn:0,ot:375463,otc:0,ct:'מור',ch:0.99,st:'ממתין לתשובה',no:'',ty:'long'},
+    {id:g(),date:'2026-01-20',num:3,co:'א.ד דגן',inf:'הוט',srv:'סטארלינק',v:879,mv:0,di:0,dn:0,ot:0,otc:0,ct:'אפי',ch:0.99,st:'ממתין לתשובה',no:'',ty:'long'},
+    {id:g(),date:'2026-01-22',num:4,co:'ECI',inf:'365',srv:'תיבות 365',v:25267,mv:0,di:0,dn:0,ot:0,otc:0,ct:'מור',ch:0.99,st:'ממתין לתשובה',no:'',ty:'long'},
+    {id:g(),date:'2026-01-10',num:5,co:'אקטיב שירות',inf:'365',srv:'תיבות 365',v:1014,mv:0,di:0,dn:0,ot:0,otc:0,ct:'רמי',ch:0.99,st:'ממתין לתשובה',no:'',ty:'long'},
+    {id:g(),date:'2026-01-28',num:6,co:'עיריית גת',inf:'הוט',srv:'קו 380 מגה',v:1413,mv:1413,di:0,dn:0,ot:23364,otc:0,ct:'לירז',ch:0.99,st:'ממתין לתשובה',no:'FORTI',ty:'long'},
+    {id:g(),date:'2026-01-18',num:7,co:'מניידספייס',inf:'הוט',srv:'שדרוג רשת',v:1600,mv:0,di:0,dn:0,ot:0,otc:0,ct:'יקי',ch:0.99,st:'ממתין לתשובה',no:'',ty:'long'},
+    {id:g(),date:'2026-01-30',num:8,co:'מ.א פרדס חנה כרכור',inf:'הוט',srv:'חידוש רישוי',v:0,mv:0,di:0,dn:0,ot:14812,otc:0,ct:'אודי',ch:0.99,st:'ממתין לתשובה',no:'',ty:'long'},
+    {id:g(),date:'2026-01-15',num:9,co:'גליל עליון',inf:'הוט',srv:'מרכזייה + 365',v:14498,mv:0,di:0,dn:0,ot:18855,otc:0,ct:'שי',ch:0.99,st:'ממתין לתשובה',no:'',ty:'long'},
+    {id:g(),date:'2026-01-28',num:10,co:'ROOMS',inf:'הוט',srv:'2 קווים הסוללים',v:1850,mv:1850,di:1850,dn:0,ot:13824,otc:13824,ct:'שוקי',ch:1,st:'נסגר',no:'',ty:'long'},
+    {id:g(),date:'2026-02-01',num:11,co:'עיריית אופקים',inf:'הוט',srv:'365 + MSDN',v:27929,mv:0,di:0,dn:0,ot:62748,otc:0,ct:'ברנרד',ch:0.99,st:'ממתין לתשובה',no:'',ty:'long'},
+    {id:g(),date:'2026-01-20',num:12,co:'המועצה ריינה',inf:'הוט',srv:'פרויקט 365',v:7400,mv:0,di:0,dn:0,ot:41184,otc:0,ct:'עזרא',ch:0.99,st:'ממתין לתשובה',no:'',ty:'long'},
+    {id:g(),date:'2026-05-01',num:13,co:'מ.א פרדס חנה כרכור',inf:'הוט',srv:'חידוש רישוי – מאי',v:0,mv:0,di:0,dn:0,ot:137000,otc:137000,ct:'אודי',ch:1,st:'נסגר',no:'מאי 2026',ty:'long'},
+    {id:g(),date:'2026-05-01',num:14,co:'פרדס חנה',inf:'365',srv:'תיבות 365',v:6200,mv:6200,di:6200,dn:0,ot:0,otc:0,ct:'אוהד',ch:1,st:'נסגר',no:'מאי 2026',ty:'long'},
+    {id:g(),date:'2026-06-01',num:15,co:'ד.רוטשטיין',inf:'הוט',srv:'SEMI-SOC',v:6800,mv:0,di:0,dn:0,ot:0,otc:0,ct:'חי',ch:0.99,st:'ממתין לתשובה',no:'',ty:'long'},
+    {id:g(),date:'2026-01-28',num:16,co:'ROOMS',inf:'הוט',srv:'תוספת IP',v:210,mv:210,di:210,dn:0,ot:0,otc:0,ct:'שניר',ch:1,st:'נסגר',no:'',ty:'short'},
+    {id:g(),date:'2026-01-28',num:17,co:'פתרונות סולארים',inf:'הוט',srv:'סטארלינק',v:360,mv:360,di:360,dn:0,ot:1690,otc:1690,ct:'בנצי',ch:1,st:'נסגר',no:'',ty:'short'},
+    {id:g(),date:'2026-01-28',num:18,co:'קופיוטק',inf:'הוט',srv:'קו 100 PTP',v:600,mv:600,di:600,dn:0,ot:0,otc:0,ct:'אבי',ch:1,st:'נסגר',no:'',ty:'short'},
+    {id:g(),date:'2026-01-28',num:19,co:'מ.מ. ראמה',inf:'365',srv:'365',v:878,mv:878,di:878,dn:0,ot:0,otc:0,ct:'סברי',ch:1,st:'נסגר',no:'',ty:'short'},
+    {id:g(),date:'2026-01-28',num:20,co:'מ.זבולון',inf:'הוט',srv:'שדרוג קו 250',v:200,mv:200,di:200,dn:0,ot:0,otc:0,ct:'ינקלה',ch:1,st:'נסגר',no:'',ty:'short'},
+    {id:g(),date:'2026-01-28',num:21,co:'עיריית גת',inf:'הוט',srv:'סטארלינק',v:360,mv:360,di:360,dn:0,ot:1680,otc:1680,ct:'לירז',ch:1,st:'נסגר',no:'',ty:'short'},
+    {id:g(),date:'2026-03-05',num:22,co:'עיריית נשר',inf:'RF',srv:'חיבור מקלטים',v:1140,mv:1140,di:1140,dn:0,ot:0,otc:0,ct:'חיים',ch:1,st:'נסגר',no:'',ty:'short'},
+    {id:g(),date:'2026-03-05',num:23,co:'MIXERWORK',inf:'הוט',srv:'ציוד ותקשורת',v:2600,mv:0,di:0,dn:0,ot:43200,otc:0,ct:'ענת',ch:0.99,st:'ממתין לתשובה',no:'',ty:'short'},
+    {id:g(),date:'2026-03-05',num:24,co:'אמות השקעות',inf:'הוט',srv:'50 מגה + ציוד',v:300,mv:300,di:300,dn:0,ot:4606,otc:4606,ct:'טימור',ch:1,st:'נסגר',no:'',ty:'short'},
+    {id:g(),date:'2026-03-05',num:25,co:'imagesatintl',inf:'STARLINK',srv:'2 יחידות',v:796,mv:796,di:796,dn:0,ot:3380,otc:3380,ct:'יואל',ch:1,st:'נסגר',no:'',ty:'short'},
+    {id:g(),date:'2026-04-05',num:26,co:'ראמה',inf:'365',srv:'365',v:100,mv:100,di:100,dn:0,ot:0,otc:0,ct:'סברי',ch:1,st:'נסגר',no:'',ty:'short'},
+    {id:g(),date:'2026-04-05',num:27,co:'ECI',inf:'הוט',srv:'קו 500 מגה',v:2100,mv:2100,di:2100,dn:0,ot:0,otc:0,ct:'מור',ch:1,st:'נסגר',no:'',ty:'short'},
+    {id:g(),date:'2026-04-05',num:28,co:'א.א. רוטשטיין',inf:'הוט/נימובס',srv:'365 + אבטחה',v:8663,mv:8663,di:8663,dn:0,ot:0,otc:0,ct:'חי',ch:1,st:'נסגר',no:'',ty:'short'},
+    {id:g(),date:'2026-06-01',num:29,co:'אמות השקעות',inf:'הוט',srv:'קו 1G – שדרוג',v:2005,mv:2005,di:2005,dn:0,ot:0,otc:0,ct:'טימור',ch:1,st:'נסגר',no:'',ty:'short'},
+    {id:g(),date:'2026-06-01',num:30,co:'פרי טלקום',inf:'צד ג׳',srv:'קו 1G/MB500',v:2455,mv:2455,di:2455,dn:0,ot:0,otc:0,ct:'יהושוע',ch:1,st:'נסגר',no:'',ty:'short'},
+    {id:g(),date:'2026-06-01',num:31,co:'MIXERWORK',inf:'הוט/סלקום',srv:'שדרוג רשת',v:4165,mv:0,di:0,dn:0,ot:291600,otc:0,ct:'ענת/אלי',ch:0.99,st:'ממתין לתשובה',no:'',ty:'short'},
+    {id:g(),date:'2026-06-01',num:32,co:'בבילון',inf:'CYBIZ',srv:'CISO + DUO',v:10000,mv:0,di:0,dn:0,ot:0,otc:0,ct:'תמיר',ch:0.99,st:'ממתין לתשובה',no:'',ty:'short'},
+  ];
+  D.tenders=[
+    {id:g(),name:'מכרז 19/2026 – תקשורת ואבטחת מידע',proj:'19/2026',pub:'2026-05-20',quote:'2026-06-10',questions:'2026-06-15',deadline:'2026-06-18',rounds:1,handler:'איתמר',amount:500000,qty:1,submitted:'בתהליך',link:'',docs:'מסמכי מכרז פנימיים',linked:'לא',notes:'מכרז בקעה אלע׳רביה'},
+    {id:g(),name:'מכרז מכללה אקדמית צפת',proj:'37216',pub:'2026-01-01',quote:'',questions:'',deadline:'2026-06-30',rounds:1,handler:'איתמר',amount:0,qty:1,submitted:'לא',link:'',docs:'',linked:'לא',notes:'בקשת פתרון וירטואליזציה'},
+  ];
+  D.dists=[
+    {id:g(),co:'שפיר הנדסה',cl:'ניר',hd:'איתמר',it:'עידו',so:'קווי תמסורת',ad:'כביש 5',inc:4000,eq:150000,mi:'ממתין להפצה',st:'ממתין להפצה',dt:'2026-01-20',no:'37538',ty:'long'},
+    {id:g(),co:'המכללה האקדמית צפת',cl:'דניאל',hd:'איתמר',it:'דניאל',so:'פתרון תוכנה',ad:'צפת',inc:0,eq:0,mi:'ממתין להפצה',st:'ממתין להפצה',dt:'2026-01-20',no:'37216',ty:'long'},
+    {id:g(),co:'פתרונות סולארים',cl:'בנצי',hd:'איתמר',it:'בנצי',so:'סטארלינק',ad:'לא רלוונטי',inc:360,eq:1690,mi:'',st:'הושלם',dt:'2026-01-10',no:'37164',ty:'short'},
+    {id:g(),co:'קופיוטק',cl:'אבי',hd:'אורן',it:'אבי',so:'קו 100',ad:'עזריאה',inc:600,eq:0,mi:'',st:'הושלם',dt:'2026-01-31',no:'37613',ty:'short'},
+    {id:g(),co:'ROOMS הסוללים',cl:'שוקי',hd:'אביבית',it:'שוקי',so:'2 קווים',ad:'הסוללים',inc:1850,eq:13824,mi:'חסר סרטוט',st:'ממתין להפצה',dt:'2026-01-18',no:'37924',ty:'short'},
+    {id:g(),co:'אמות השקעות',cl:'טימור',hd:'איתמר',it:'עזריה',so:'קו 50 + נתב',ad:'פתח תקווה',inc:300,eq:4606,mi:'',st:'הושלם',dt:'2026-03-05',no:'40049',ty:'short'},
+    {id:g(),co:'עיריית אור יהודה',cl:'יואל',hd:'איתמר',it:'אולג',so:'מקלטים',ad:'אור יהודה',inc:3082,eq:0,mi:'',st:'הושלם',dt:'2026-03-05',no:'40205',ty:'short'},
+    {id:g(),co:'פרי טלקום',cl:'יהושוע',hd:'איתמר',it:'יהושוע',so:'קו 1G/MB500',ad:'צד ג׳',inc:2455,eq:0,mi:'',st:'הושלם',dt:'2026-06-01',no:'',ty:'short'},
+  ];
+  D.salary=[
+    {id:g(),pj:'37164',cl:'פתרונות סולארים',qt:1,tr:361,cl2:361,pv:0,st:'סגור',no:'בוצע',ty:'service'},
+    {id:g(),pj:'37613',cl:'קופיוטק',qt:1,tr:600,cl2:0,pv:600,st:'פתוח',no:'',ty:'service'},
+    {id:g(),pj:'37924',cl:'ROOMS הסוללים',qt:1,tr:1850,cl2:0,pv:1850,st:'פתוח',no:'',ty:'service'},
+    {id:g(),pj:'40049',cl:'אמות השקעות',qt:1,tr:300,cl2:300,pv:0,st:'סגור',no:'הושלם',ty:'service'},
+    {id:g(),pj:'40205',cl:'אור יהודה מקלטים',qt:1,tr:3082,cl2:3082,pv:0,st:'סגור',no:'הושלם',ty:'service'},
+    {id:g(),pj:'32107',cl:'בבילון – CYBIZ',qt:1,tr:36000,cl2:0,pv:36000,st:'פתוח',no:'בהתקנה',ty:'equipment'},
+    {id:g(),pj:'37164-S',cl:'פתרונות סולארים ציוד',qt:1,tr:1690,cl2:1690,pv:0,st:'סגור',no:'הושלם',ty:'equipment'},
+    {id:g(),pj:'37924-S',cl:'ROOMS הסוללים ציוד',qt:1,tr:13824,cl2:0,pv:13824,st:'פתוח',no:'בהתקנה',ty:'equipment'},
+    {id:g(),pj:'40049-S',cl:'אמות השקעות ציוד',qt:1,tr:4606,cl2:4606,pv:0,st:'סגור',no:'הושלם',ty:'equipment'},
+  ];
+  D.meetings=[
+    {id:g(),dt:'2026-01-15',cl:'שפיר הנדסה',nu:'37538',hl:'כן',no:''},{id:g(),dt:'2026-01-17',cl:'מכללת צפת',nu:'37543',hl:'כן',no:''},{id:g(),dt:'2026-01-18',cl:'שלדות',nu:'37544',hl:'כן',no:''},{id:g(),dt:'2026-01-19',cl:'ROOMS',nu:'37545',hl:'כן',no:''},{id:g(),dt:'2026-01-20',cl:'אקטיב שירות',nu:'37549',hl:'כן',no:''},{id:g(),dt:'2026-01-22',cl:'פרדס חנה',nu:'37551',hl:'כן',no:''},{id:g(),dt:'2026-01-25',cl:'אופק חדש',nu:'37555',hl:'כן',no:''},{id:g(),dt:'2026-01-26',cl:'גליל העליון',nu:'37690',hl:'כן',no:''},{id:g(),dt:'2026-01-27',cl:'בבילון',nu:'37696',hl:'כן',no:''},{id:g(),dt:'2026-01-28',cl:'דימונה',nu:'37884',hl:'כן',no:''},{id:g(),dt:'2026-01-29',cl:'ריינה',nu:'37885',hl:'כן',no:''},{id:g(),dt:'2026-01-31',cl:'מעלה יוסף',nu:'37887',hl:'כן',no:''},{id:g(),dt:'2026-02-10',cl:'שפיר הנדסה',nu:'39125',hl:'כן',no:''},{id:g(),dt:'2026-02-12',cl:'סימפליויה',nu:'38414',hl:'כן',no:''},{id:g(),dt:'2026-02-14',cl:'דימונה',nu:'39044',hl:'כן',no:''},{id:g(),dt:'2026-02-15',cl:'מכללה עזריאלי',nu:'39050',hl:'כן',no:''},{id:g(),dt:'2026-03-01',cl:'אוטומציה',nu:'40062',hl:'כן',no:''},{id:g(),dt:'2026-03-03',cl:'אמות',nu:'40049',hl:'כן',no:''},{id:g(),dt:'2026-03-05',cl:'MIXERWORK',nu:'40198',hl:'כן',no:''},{id:g(),dt:'2026-04-01',cl:'בבילון',nu:'41164',hl:'כן',no:''},{id:g(),dt:'2026-04-02',cl:'אפקון',nu:'40655',hl:'כן',no:''},{id:g(),dt:'2026-05-05',cl:'אוטומציה',nu:'41870',hl:'כן',no:''},{id:g(),dt:'2026-05-06',cl:'ד.רוטשטיין',nu:'41873',hl:'כן',no:''},{id:g(),dt:'2026-06-01',cl:'פרי טלקום',nu:'42100',hl:'כן',no:''},{id:g(),dt:'2026-06-02',cl:'ד.דגן',nu:'42103',hl:'כן',no:''},{id:g(),dt:'2026-06-08',cl:'MIXERWORK',nu:'42115',hl:'לא',no:'טרם התקיים'},
+  ];
+  D.clients=[];
+  saveAll();
+}
+</script>
+</body>
+</html>
+
