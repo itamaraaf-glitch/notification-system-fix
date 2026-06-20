@@ -304,10 +304,12 @@ input:focus,select:focus,textarea:focus{border-color:#e63946}
       <button class="btn" onclick="exportExcel('deals')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
     </div>
   </div>
+  <div id="month-banner"></div>
   <div class="tabs" id="deals-tabs">
-    <div class="tab active" onclick="swTab(this,'deals-tabs','lt','st','sumt');rDeals()">טווח ארוך</div>
-    <div class="tab" onclick="swTab(this,'deals-tabs','lt','st','sumt');rDeals()">טווח קצר</div>
-    <div class="tab" onclick="swTab(this,'deals-tabs','lt','st','sumt');rDealSum()">סיכום</div>
+    <div class="tab active" onclick="swTab(this,'deals-tabs','lt','st','sumt','archivt');rDeals()">טווח ארוך</div>
+    <div class="tab" onclick="swTab(this,'deals-tabs','lt','st','sumt','archivt');rDeals()">טווח קצר</div>
+    <div class="tab" onclick="swTab(this,'deals-tabs','lt','st','sumt','archivt');rDealSum()">סיכום</div>
+    <div class="tab" onclick="swTab(this,'deals-tabs','lt','st','sumt','archivt');rDealsArchive()">📦 ארכיון</div>
   </div>
   <div id="lt">
     <div class="tw"><div class="thdr">📋 עסקאות טווח ארוך</div>
@@ -340,6 +342,7 @@ input:focus,select:focus,textarea:focus{border-color:#e63946}
     </div></div>
   </div>
   <div id="sumt" style="display:none"><div class="krow" id="dsk"></div><div class="tw" id="dst"></div></div>
+  <div id="archivt" style="display:none"><div id="archive-deals-content" style="padding:4px 0"></div></div>
 </div>
 
 <!-- TENDERS -->
@@ -696,7 +699,7 @@ input:focus,select:focus,textarea:focus{border-color:#e63946}
 const LS_KEY = 'cem_hot_v3';
 const USERS = [{u:'ITAMAR2026',p:'NOSHrit$2026',n:'איתמר ונדן'}];
 const MEETING_GOAL = 15;
-let D = {deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[]};
+let D = {deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],lastCycleMonth:''};
 let EI = null, ET = null;
 const SEL = {};
 
@@ -750,10 +753,12 @@ function loadAll(){
       const p=JSON.parse(s);
       D.deals=p.deals||[];D.tenders=p.tenders||[];D.dists=p.dists||[];
       D.salary=p.salary||[];D.meetings=p.meetings||[];D.clients=p.clients||[];
+      D.archivedDeals=p.archivedDeals||[];D.lastCycleMonth=p.lastCycleMonth||'';
       if(!D.deals.length)seedData();
     }else{seedData();}
   }catch(e){console.error(e);seedData();}
   syncAllDealsToClients();
+  runMonthlyCycle();
   rAll();
 }
 setInterval(()=>{try{if(D.deals.length)localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}},30000);
@@ -787,11 +792,11 @@ function nav(s){
   if(fns[s])fns[s]();
   setTimeout(initDragScrolls,100);
 }
-function swTab(el,tabsId,t1,t2,t3){
+function swTab(el,tabsId,t1,t2,t3,t4){
   document.getElementById(tabsId).querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
   const idx=Array.from(document.getElementById(tabsId).querySelectorAll('.tab')).indexOf(el);
-  [t1,t2,t3].forEach((id,i)=>{const e=document.getElementById(id);if(e)e.style.display=i===idx?'':'none';});
+  [t1,t2,t3,t4].forEach((id,i)=>{const e=document.getElementById(id);if(e)e.style.display=i===idx?'':'none';});
 }
 function filt(ev,...ids){
   const q=ev.target.value.toLowerCase();
@@ -861,6 +866,14 @@ function rDash(){
 
 // ===== DEALS =====
 function rDeals(){
+  const curM=nd().substring(0,7);
+  // Month banner
+  const curDeals=D.deals.filter(d=>(d.date||'').substring(0,7)===curM);
+  const carry=D.deals.filter(d=>(d.date||'').substring(0,7)<curM&&d.st!=='נסגר');
+  const closedNow=D.deals.filter(d=>(d.date||'').substring(0,7)===curM&&d.st==='נסגר');
+  const arch=(D.archivedDeals||[]).length;
+  const mb=document.getElementById('month-banner');
+  if(mb)mb.innerHTML=`<div style="background:#1e2235;border:1px solid #2e3350;border-radius:8px;padding:9px 14px;margin-bottom:12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;color:#4cc9f0">📅 ${curMonthStr()}</span><span style="font-size:11px;color:#9ca3c4">עסקאות חדשות: <b style="color:#e8eaf6">${curDeals.length}</b></span><span style="font-size:11px;color:#9ca3c4">↩ עוברות מחודש קודם: <b style="color:#f4a261">${carry.length}</b></span><span style="font-size:11px;color:#9ca3c4">נסגרו החודש: <b style="color:#2ec4b6">${closedNow.length}</b></span>${arch?`<span style="font-size:11px;color:#9ca3c4">📦 בארכיון: <b style="color:#9ca3c4">${arch}</b></span>`:''}<button class="btn btns" onclick="manualRunCycle()" style="margin-right:auto;font-size:10px">📦 סגור חודש</button></div>`;
   ['long','short'].forEach(ty=>{
     const tbId=ty==='long'?'ltb':'stb',ftId=ty==='long'?'lft':'sft';
     const items=D.deals.filter(d=>d.ty===ty);
@@ -870,10 +883,12 @@ function rDeals(){
       const ib=d.inf&&d.inf.includes('הוט')?`<span class="badge bb">HOT</span>`:d.inf==='365'?`<span class="badge bgr">365</span>`:`<span class="badge bgr">${d.inf||'–'}</span>`;
       const cc=d.ch>=1?'ng':d.ch>=0.75?'ny':'nr';
       const chk=SEL[sk]&&SEL[sk].has(d.id)?'checked':'';
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${d.date||'–'}</td><td style="color:#9ca3c4">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
+      const isCarry=(d.date||'').substring(0,7)<curM&&d.st!=='נסגר';
+      const dateTd=`<td style="font-size:10px;white-space:nowrap">${d.date||'–'}${isCarry?'<br><span class="badge by" style="font-size:8px;padding:0 4px">↩ עובר</span>':''}</td>`;
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td>${dateTd}<td style="color:#9ca3c4">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
     }).join('')||`<tr><td colspan="18" style="text-align:center;padding:14px;color:#9ca3c4">אין עסקאות</td></tr>`;
     const tv=items.reduce((s,d)=>s+(d.v||0),0),td=items.reduce((s,d)=>s+(d.di||0),0),to=items.reduce((s,d)=>s+(d.otc||0),0);
-    document.getElementById(ftId).innerHTML=`<span class="fi">עסקאות: <b>${items.length}</b></span><span class="fi">שווי: <b>${fmt(tv)}</b></span><span class="fi">הפצות: <b>${fmt(td)}</b></span><span class="fi">OTC: <b>${fmt(to)}</b></span>`;
+    document.getElementById(ftId).innerHTML=`<span class="fi">עסקאות: <b>${items.length}</b></span><span class="fi">שווי: <b>${fmt(tv)}</b></span><span class="fi">הפצות: <b>${fmt(td)}</b></span><span class="fi">OTC: <b>${fmt(to)}</b></span>${carry.length?`<span class="fi" style="color:#f4a261">↩ עוברות: <b>${carry.length}</b></span>`:''}`;
     updateSelBar(sk);
   });
 }
@@ -881,6 +896,29 @@ function rDealSum(){
   const l=D.deals.filter(d=>d.ty==='long'),s=D.deals.filter(d=>d.ty==='short'),sm=(arr,k)=>arr.reduce((a,d)=>a+(d[k]||0),0);
   document.getElementById('dsk').innerHTML=`<div class="kc"><div class="lb">שווי ארוך</div><div class="vl">₪${Math.round(sm(l,'v')/1000)}K</div></div><div class="kc y"><div class="lb">שווי קצר</div><div class="vl">₪${Math.round(sm(s,'v')/1000)}K</div></div><div class="kc g"><div class="lb">סה"כ</div><div class="vl">₪${Math.round((sm(l,'v')+sm(s,'v'))/1000)}K</div></div><div class="kc g"><div class="lb">הפצות ארוך</div><div class="vl">₪${Math.round(sm(l,'di')/1000)}K</div></div><div class="kc y"><div class="lb">הפצות קצר</div><div class="vl">₪${Math.round(sm(s,'di')/1000)}K</div></div><div class="kc p"><div class="lb">OTC כולל</div><div class="vl">₪${Math.round((sm(l,'otc')+sm(s,'otc'))/1000)}K</div></div>`;
   document.getElementById('dst').innerHTML=`<div class="thdr">סיכום עסקאות</div><div class="tscroll"><table><thead><tr style="background:#22263a"><th>קטגוריה</th><th>כמות</th><th>שווי</th><th>הפצות</th><th>OTC</th></tr></thead><tbody><tr><td style="font-weight:600">טווח ארוך</td><td>${l.length}</td><td>${fmt(sm(l,'v'))}</td><td>${fmt(sm(l,'di'))}</td><td>${fmt(sm(l,'otc'))}</td></tr><tr><td style="font-weight:600">טווח קצר</td><td>${s.length}</td><td>${fmt(sm(s,'v'))}</td><td>${fmt(sm(s,'di'))}</td><td>${fmt(sm(s,'otc'))}</td></tr><tr style="background:#22263a;font-weight:700"><td>סה"כ</td><td>${D.deals.length}</td><td>${fmt(sm(l,'v')+sm(s,'v'))}</td><td>${fmt(sm(l,'di')+sm(s,'di'))}</td><td>${fmt(sm(l,'otc')+sm(s,'otc'))}</td></tr></tbody></table></div>`;
+}
+
+function rDealsArchive(){
+  const arch=D.archivedDeals||[];
+  const cont=document.getElementById('archive-deals-content');if(!cont)return;
+  if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:#9ca3c4">📦 אין עסקאות בארכיון</div>';return;}
+  const byMonth={};
+  arch.forEach(d=>{const m=d._archivedAt||(d.date||'').substring(0,7);if(!byMonth[m])byMonth[m]=[];byMonth[m].push(d);});
+  const months=Object.keys(byMonth).sort().reverse();
+  const totV=arch.reduce((s,d)=>s+(d.v||0),0),totD=arch.reduce((s,d)=>s+(d.di||0),0),totO=arch.reduce((s,d)=>s+(d.otc||0),0);
+  const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">עסקאות בארכיון</div><div class="vl" style="color:#9ca3c4">${arch.length}</div></div><div class="kc g"><div class="lb">שווי מצטבר</div><div class="vl">${fmt(totV)}</div></div><div class="kc"><div class="lb">הפצות</div><div class="vl" style="color:#4cc9f0">${fmt(totD)}</div></div><div class="kc y"><div class="lb">OTC</div><div class="vl">${fmt(totO)}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
+  const blocks=months.map(m=>{
+    const deals=byMonth[m];
+    const [y,mo]=m.split('-');
+    const name=(MONTH_HE[parseInt(mo)-1]||mo)+' '+y;
+    const tv=deals.reduce((s,d)=>s+(d.v||0),0),td=deals.reduce((s,d)=>s+(d.di||0),0),to=deals.reduce((s,d)=>s+(d.otc||0),0);
+    const rows=deals.map(d=>{
+      const ib=d.inf&&d.inf.includes('הוט')?`<span class="badge bb">HOT</span>`:d.inf==='365'?`<span class="badge bgr">365</span>`:`<span class="badge bgr">${d.inf||'–'}</span>`;
+      return`<tr><td style="font-size:10px;color:#9ca3c4">${d.date||'–'}</td><td style="color:#9ca3c4">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td style="font-size:10px">${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ng">${fmt(d.di)}</td><td class="ng">${fmt(d.otc)}</td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td></tr>`;
+    }).join('');
+    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:#1e2235">📦 ${name} <span style="color:#9ca3c4;font-weight:400;font-size:11px">– ${deals.length} עסקאות | שווי: ${fmt(tv)} | הפצות: ${fmt(td)} | OTC: ${fmt(to)}</span></div><div class="tscroll"><table><thead><tr><th>תאריך</th><th>#</th><th>חברה</th><th>תשתית</th><th>שירות</th><th>שווי</th><th>הפצות</th><th>OTC</th><th>סטטוס</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }).join('');
+  cont.innerHTML=summary+blocks;
 }
 
 // ===== TENDERS =====
@@ -1147,6 +1185,33 @@ function rClients(){
       ${c.genNotes?`<div style="font-size:10px;color:#9ca3c4;margin-top:4px;padding-top:4px;border-top:1px solid #2e3350">${c.genNotes}</div>`:''}
     </div>`;
   }).join('');
+}
+
+// ===== MONTHLY CYCLE =====
+const MONTH_HE=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+function curMonthStr(){const c=nd().substring(0,7);const[y,m]=c.split('-');return MONTH_HE[parseInt(m)-1]+' '+y;}
+
+function runMonthlyCycle(){
+  const cur=nd().substring(0,7);
+  if((D.lastCycleMonth||'')>=cur)return 0;
+  // Archive closed deals whose date is before the current month
+  const toArchive=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<cur);
+  if(!D.archivedDeals)D.archivedDeals=[];
+  if(toArchive.length){
+    toArchive.forEach(d=>{d._archivedAt=cur;});
+    D.archivedDeals=[...D.archivedDeals,...toArchive];
+    const archIds=new Set(toArchive.map(d=>d.id));
+    D.deals=D.deals.filter(d=>!archIds.has(d.id));
+  }
+  D.lastCycleMonth=cur;
+  saveAll();
+  return toArchive.length;
+}
+
+function manualRunCycle(){
+  const n=runMonthlyCycle();
+  rAll();
+  alert(n?`📦 מעבר חודש: ${n} עסקאות סגורות הועברו לארכיון`:'✓ לא היו עסקאות לארכוב החודש');
 }
 
 // ===== DEAL → CLIENT AUTO SYNC =====
