@@ -355,18 +355,25 @@ input:focus,select:focus,textarea:focus{border-color:#e63946}
       <button class="btn" onclick="exportExcel('tenders')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
     </div>
   </div>
-  <div class="tw"><div class="tscroll"><table><thead><tr>
-    <th class="cb-th"><input type="checkbox" id="chk-all-tenders" onchange="toggleAll('tenders',this.checked)"></th>
-    <th>⚡</th><th>הוגשה?</th><th>כמות</th><th>פרסום</th><th>שם מכרז</th><th>מס׳ פרויקט</th>
-    <th>קישור</th><th>הצעה</th><th>ימים לשאלות</th><th>סבב</th><th>הגשה</th>
-    <th>מטפל</th><th>מסמכים</th><th>צימוד</th><th>סכום ₪</th><th>הערות</th><th>פעולות</th>
-  </tr></thead><tbody id="ttb"></tbody></table></div>
-  <div class="tft" id="tft"></div>
-  <div class="cb-row" id="selbar-tenders" style="display:none">
-    <span id="selcnt-tenders" style="font-size:11px;color:#e8eaf6"></span>
-    <button onclick="deleteSelected('tenders')" style="background:#e63946;color:#fff">🗑 מחק נבחרים</button>
-    <button onclick="clearSel('tenders')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
-  </div></div>
+  <div class="tabs" id="tenders-tabs">
+    <div class="tab active" onclick="swTab(this,'tenders-tabs','tent','archivtent');rTenders()">מכרזים פעילים</div>
+    <div class="tab" onclick="swTab(this,'tenders-tabs','tent','archivtent');rTendersArchive()">📦 ארכיון</div>
+  </div>
+  <div id="tent">
+    <div class="tw"><div class="tscroll"><table><thead><tr>
+      <th class="cb-th"><input type="checkbox" id="chk-all-tenders" onchange="toggleAll('tenders',this.checked)"></th>
+      <th>⚡</th><th>הוגשה?</th><th>כמות</th><th>פרסום</th><th>שם מכרז</th><th>מס׳ פרויקט</th>
+      <th>קישור</th><th>הצעה</th><th>ימים לשאלות</th><th>סבב</th><th>הגשה</th>
+      <th>מטפל</th><th>מסמכים</th><th>צימוד</th><th>סכום ₪</th><th>הערות</th><th>פעולות</th>
+    </tr></thead><tbody id="ttb"></tbody></table></div>
+    <div class="tft" id="tft"></div>
+    <div class="cb-row" id="selbar-tenders" style="display:none">
+      <span id="selcnt-tenders" style="font-size:11px;color:#e8eaf6"></span>
+      <button onclick="deleteSelected('tenders')" style="background:#e63946;color:#fff">🗑 מחק נבחרים</button>
+      <button onclick="clearSel('tenders')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+    </div></div>
+  </div>
+  <div id="archivtent" style="display:none"><div id="archive-tenders-content" style="padding:4px 0"></div></div>
 </div>
 
 <!-- DISTS -->
@@ -380,9 +387,10 @@ input:focus,select:focus,textarea:focus{border-color:#e63946}
     </div>
   </div>
   <div class="tabs" id="dists-tabs">
-    <div class="tab active" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt');rDists()">מרכזים / ארוך</div>
-    <div class="tab" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt');rDists()">הפצות – קצר</div>
-    <div class="tab" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt');rDistSum()">סיכום</div>
+    <div class="tab active" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDists()">מרכזים / ארוך</div>
+    <div class="tab" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDists()">הפצות – קצר</div>
+    <div class="tab" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDistSum()">סיכום</div>
+    <div class="tab" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDistsArchive()">📦 ארכיון</div>
   </div>
   <div id="ldt">
     <div class="tw"><div class="thdr">📦 מרכזים / ארוך טווח</div>
@@ -413,6 +421,7 @@ input:focus,select:focus,textarea:focus{border-color:#e63946}
     </div></div>
   </div>
   <div id="sumdt" style="display:none"><div class="krow" id="dstk"></div></div>
+  <div id="archivdist" style="display:none"><div id="archive-dists-content" style="padding:4px 0"></div></div>
 </div>
 
 <!-- SALARY -->
@@ -469,18 +478,25 @@ input:focus,select:focus,textarea:focus{border-color:#e63946}
       <button class="btn" onclick="exportExcel('meetings')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
     </div>
   </div>
-  <div class="krow" id="mkrow"></div>
-  <div class="tw"><div class="thdr">📅 פגישות – יעד 15/חודש</div>
-  <div class="tscroll"><table><thead><tr>
-    <th class="cb-th"><input type="checkbox" id="chk-all-meetings" onchange="toggleAll('meetings',this.checked)"></th>
-    <th>#</th><th>תאריך</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th><th>פעולות</th>
-  </tr></thead><tbody id="mtb"></tbody></table></div>
-  <div class="tft" id="mft"></div>
-  <div class="cb-row" id="selbar-meetings" style="display:none">
-    <span id="selcnt-meetings" style="font-size:11px;color:#e8eaf6"></span>
-    <button onclick="deleteSelected('meetings')" style="background:#e63946;color:#fff">🗑 מחק</button>
-    <button onclick="clearSel('meetings')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
-  </div></div>
+  <div class="tabs" id="meetings-tabs">
+    <div class="tab active" onclick="swTab(this,'meetings-tabs','mtent','archivmtg');rMeetings()">פגישות חודש נוכחי</div>
+    <div class="tab" onclick="swTab(this,'meetings-tabs','mtent','archivmtg');rMeetingsArchive()">📦 ארכיון</div>
+  </div>
+  <div id="mtent">
+    <div class="krow" id="mkrow"></div>
+    <div class="tw"><div class="thdr">📅 פגישות – יעד 15/חודש</div>
+    <div class="tscroll"><table><thead><tr>
+      <th class="cb-th"><input type="checkbox" id="chk-all-meetings" onchange="toggleAll('meetings',this.checked)"></th>
+      <th>#</th><th>תאריך</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th><th>פעולות</th>
+    </tr></thead><tbody id="mtb"></tbody></table></div>
+    <div class="tft" id="mft"></div>
+    <div class="cb-row" id="selbar-meetings" style="display:none">
+      <span id="selcnt-meetings" style="font-size:11px;color:#e8eaf6"></span>
+      <button onclick="deleteSelected('meetings')" style="background:#e63946;color:#fff">🗑 מחק</button>
+      <button onclick="clearSel('meetings')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+    </div></div>
+  </div>
+  <div id="archivmtg" style="display:none"><div id="archive-meetings-content" style="padding:4px 0"></div></div>
 </div>
 
 <!-- CLIENTS -->
@@ -699,7 +715,7 @@ input:focus,select:focus,textarea:focus{border-color:#e63946}
 const LS_KEY = 'cem_hot_v3';
 const USERS = [{u:'ITAMAR2026',p:'NOSHrit$2026',n:'איתמר ונדן'}];
 const MEETING_GOAL = 15;
-let D = {deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],lastCycleMonth:''};
+let D = {deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedMeetings:[],lastCycleMonth:''};
 let EI = null, ET = null;
 const SEL = {};
 
@@ -753,7 +769,7 @@ function loadAll(){
       const p=JSON.parse(s);
       D.deals=p.deals||[];D.tenders=p.tenders||[];D.dists=p.dists||[];
       D.salary=p.salary||[];D.meetings=p.meetings||[];D.clients=p.clients||[];
-      D.archivedDeals=p.archivedDeals||[];D.lastCycleMonth=p.lastCycleMonth||'';
+      D.archivedDeals=p.archivedDeals||[];D.archivedTenders=p.archivedTenders||[];D.archivedDists=p.archivedDists||[];D.archivedMeetings=p.archivedMeetings||[];D.lastCycleMonth=p.lastCycleMonth||'';
       if(!D.deals.length)seedData();
     }else{seedData();}
   }catch(e){console.error(e);seedData();}
@@ -922,6 +938,74 @@ function rDealsArchive(){
 }
 
 // ===== TENDERS =====
+function rTendersArchive(){
+  const arch=D.archivedTenders||[];
+  const cont=document.getElementById('archive-tenders-content');if(!cont)return;
+  if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:#9ca3c4">📦 אין מכרזים בארכיון</div>';return;}
+  const byMonth={};
+  arch.forEach(t=>{const m=t._archivedAt||(t.deadline||'').substring(0,7);if(!byMonth[m])byMonth[m]=[];byMonth[m].push(t);});
+  const months=Object.keys(byMonth).sort().reverse();
+  const totA=arch.reduce((s,t)=>s+(t.amount||0),0),totSub=arch.filter(t=>t.submitted==='כן').length;
+  const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">מכרזים בארכיון</div><div class="vl" style="color:#9ca3c4">${arch.length}</div></div><div class="kc g"><div class="lb">הוגשו</div><div class="vl">${totSub}</div></div><div class="kc r"><div class="lb">לא הוגשו</div><div class="vl">${arch.length-totSub}</div></div><div class="kc y"><div class="lb">שווי מצטבר</div><div class="vl">${fmt(totA)}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
+  const blocks=months.map(m=>{
+    const items=byMonth[m];
+    const [y,mo]=m.split('-');
+    const name=(MONTH_HE[parseInt(mo)-1]||mo)+' '+y;
+    const ta=items.reduce((s,t)=>s+(t.amount||0),0),ts=items.filter(t=>t.submitted==='כן').length;
+    const rows=items.map(t=>{
+      const sb=t.submitted==='כן'?'<span class="badge bg">הוגשה ✓</span>':t.submitted==='בתהליך'?'<span class="badge by">בתהליך</span>':'<span class="badge br">לא</span>';
+      return`<tr><td style="font-size:10px;color:#9ca3c4">${t.pub||'–'}</td><td style="font-weight:600">${t.name||''}</td><td style="font-size:10px">${t.proj||'–'}</td><td>${sb}</td><td style="font-size:10px;color:#e63946;font-weight:600">${t.deadline||'–'}</td><td style="font-size:10px">${t.handler||'–'}</td><td class="nb">${fmt(t.amount)}</td><td>${t.qty||1}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${t.notes||'–'}</td></tr>`;
+    }).join('');
+    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:#1e2235">📦 ${name} <span style="color:#9ca3c4;font-weight:400;font-size:11px">– ${items.length} מכרזים | הוגשו: ${ts} | שווי: ${fmt(ta)}</span></div><div class="tscroll"><table><thead><tr><th>פרסום</th><th>שם מכרז</th><th>מס׳ פרויקט</th><th>הוגשה?</th><th>הגשה</th><th>מטפל</th><th>סכום ₪</th><th>כמות</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }).join('');
+  cont.innerHTML=summary+blocks;
+}
+
+function rDistsArchive(){
+  const arch=D.archivedDists||[];
+  const cont=document.getElementById('archive-dists-content');if(!cont)return;
+  if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:#9ca3c4">📦 אין הפצות בארכיון</div>';return;}
+  const byMonth={};
+  arch.forEach(d=>{const m=d._archivedAt||(d.dt||'').substring(0,7);if(!byMonth[m])byMonth[m]=[];byMonth[m].push(d);});
+  const months=Object.keys(byMonth).sort().reverse();
+  const totI=arch.reduce((s,d)=>s+(d.inc||0),0),totE=arch.reduce((s,d)=>s+(d.eq||0),0);
+  const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">הפצות בארכיון</div><div class="vl" style="color:#9ca3c4">${arch.length}</div></div><div class="kc g"><div class="lb">הכנסה חודשית מצטברת</div><div class="vl">${fmt(totI)}</div></div><div class="kc y"><div class="lb">ציוד מצטבר</div><div class="vl">${fmt(totE)}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
+  const blocks=months.map(m=>{
+    const items=byMonth[m];
+    const [y,mo]=m.split('-');
+    const name=(MONTH_HE[parseInt(mo)-1]||mo)+' '+y;
+    const ti=items.reduce((s,d)=>s+(d.inc||0),0),te=items.reduce((s,d)=>s+(d.eq||0),0);
+    const rows=items.map(d=>{
+      return`<tr><td style="font-size:10px">${d.hd||'–'}</td><td style="font-size:10px;color:#4cc9f0">${d.no||'–'}</td><td style="font-weight:600">${d.co||''}</td><td style="font-size:10px">${d.so||'–'}</td><td class="ng">${fmt(d.inc)}</td><td class="nb">${fmt(d.eq)}</td><td>${sB(d.st)}</td><td style="font-size:10px">${d.dt||'–'}</td><td style="font-size:10px">${d.ty==='long'?'ארוך':'קצר'}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.notes||'–'}</td></tr>`;
+    }).join('');
+    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:#1e2235">📦 ${name} <span style="color:#9ca3c4;font-weight:400;font-size:11px">– ${items.length} הפצות | הכנסה: ${fmt(ti)} | ציוד: ${fmt(te)}</span></div><div class="tscroll"><table><thead><tr><th>מטפל</th><th>מס׳ פרויקט</th><th>חברה</th><th>פתרון</th><th>הכנסה</th><th>ציוד</th><th>סטטוס</th><th>תאריך</th><th>סוג</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }).join('');
+  cont.innerHTML=summary+blocks;
+}
+
+function rMeetingsArchive(){
+  const arch=D.archivedMeetings||[];
+  const cont=document.getElementById('archive-meetings-content');if(!cont)return;
+  if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:#9ca3c4">📦 אין פגישות בארכיון</div>';return;}
+  const byMonth={};
+  arch.forEach(m=>{const mo=m._archivedAt||(m.dt||'').substring(0,7);if(!byMonth[mo])byMonth[mo]=[];byMonth[mo].push(m);});
+  const months=Object.keys(byMonth).sort().reverse();
+  const totH=arch.filter(m=>m.hl==='כן').length;
+  const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">פגישות בארכיון</div><div class="vl" style="color:#9ca3c4">${arch.length}</div></div><div class="kc g"><div class="lb">התקיימו</div><div class="vl">${totH}</div></div><div class="kc r"><div class="lb">לא התקיימו</div><div class="vl">${arch.length-totH}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
+  const blocks=months.map(mo=>{
+    const items=byMonth[mo];
+    const [y,m]=mo.split('-');
+    const name=(MONTH_HE[parseInt(m)-1]||m)+' '+y;
+    const held=items.filter(x=>x.hl==='כן').length;
+    const rows=items.map((m,i)=>{
+      const sb=m.hl==='כן'?'<span class="badge bg">כן ✓</span>':m.hl==='מבוטל'?'<span class="badge br">מבוטל</span>':'<span class="badge by">לא</span>';
+      return`<tr><td>${i+1}</td><td style="font-size:10px">${m.dt||'–'}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb}</td><td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis">${m.no||'–'}</td></tr>`;
+    }).join('');
+    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:#1e2235">📦 ${name} <span style="color:#9ca3c4;font-weight:400;font-size:11px">– ${items.length} פגישות | התקיימו: ${held} | יעד: 15</span></div><div class="tscroll"><table><thead><tr><th>#</th><th>תאריך</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }).join('');
+  cont.innerHTML=summary+blocks;
+}
+
 function rTenders(){
   const t=nd();
   document.getElementById('ttb').innerHTML=D.tenders.map(tn=>{
@@ -1193,25 +1277,38 @@ function curMonthStr(){const c=nd().substring(0,7);const[y,m]=c.split('-');retur
 
 function runMonthlyCycle(){
   const cur=nd().substring(0,7);
-  if((D.lastCycleMonth||'')>=cur)return 0;
-  // Archive closed deals whose date is before the current month
-  const toArchive=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<cur);
+  if((D.lastCycleMonth||'')>=cur)return {deals:0,tenders:0,dists:0,meetings:0};
+  const counts={deals:0,tenders:0,dists:0,meetings:0};
+  // Deals: archive closed deals from previous months
   if(!D.archivedDeals)D.archivedDeals=[];
-  if(toArchive.length){
-    toArchive.forEach(d=>{d._archivedAt=cur;});
-    D.archivedDeals=[...D.archivedDeals,...toArchive];
-    const archIds=new Set(toArchive.map(d=>d.id));
-    D.deals=D.deals.filter(d=>!archIds.has(d.id));
-  }
+  const archDeals=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<cur);
+  if(archDeals.length){archDeals.forEach(d=>{d._archivedAt=cur;});D.archivedDeals=[...D.archivedDeals,...archDeals];const ids=new Set(archDeals.map(d=>d.id));D.deals=D.deals.filter(d=>!ids.has(d.id));counts.deals=archDeals.length;}
+  // Tenders: archive tenders whose deadline passed (previous month or earlier)
+  if(!D.archivedTenders)D.archivedTenders=[];
+  const archTen=D.tenders.filter(t=>(t.deadline||'').substring(0,7)<cur&&(t.deadline||'').length>=7);
+  if(archTen.length){archTen.forEach(t=>{t._archivedAt=cur;});D.archivedTenders=[...D.archivedTenders,...archTen];const ids=new Set(archTen.map(t=>t.id));D.tenders=D.tenders.filter(t=>!ids.has(t.id));counts.tenders=archTen.length;}
+  // Dists: archive completed distributions from previous months
+  if(!D.archivedDists)D.archivedDists=[];
+  const archDists=D.dists.filter(d=>d.st==='הושלם'&&(d.dt||'').substring(0,7)<cur&&(d.dt||'').length>=7);
+  if(archDists.length){archDists.forEach(d=>{d._archivedAt=cur;});D.archivedDists=[...D.archivedDists,...archDists];const ids=new Set(archDists.map(d=>d.id));D.dists=D.dists.filter(d=>!ids.has(d.id));counts.dists=archDists.length;}
+  // Meetings: archive all meetings from previous months
+  if(!D.archivedMeetings)D.archivedMeetings=[];
+  const archMtg=D.meetings.filter(m=>(m.dt||'').substring(0,7)<cur&&(m.dt||'').length>=7);
+  if(archMtg.length){archMtg.forEach(m=>{m._archivedAt=cur;});D.archivedMeetings=[...D.archivedMeetings,...archMtg];const ids=new Set(archMtg.map(m=>m.id));D.meetings=D.meetings.filter(m=>!ids.has(m.id));counts.meetings=archMtg.length;}
   D.lastCycleMonth=cur;
   saveAll();
-  return toArchive.length;
+  return counts;
 }
 
 function manualRunCycle(){
-  const n=runMonthlyCycle();
+  const c=runMonthlyCycle();
   rAll();
-  alert(n?`📦 מעבר חודש: ${n} עסקאות סגורות הועברו לארכיון`:'✓ לא היו עסקאות לארכוב החודש');
+  const total=c.deals+c.tenders+c.dists+c.meetings;
+  if(total){
+    alert(`📦 מעבר חודש:\n• עסקאות: ${c.deals}\n• מכרזים: ${c.tenders}\n• הפצות: ${c.dists}\n• פגישות: ${c.meetings}\nסה"כ ${total} פריטים הועברו לארכיון`);
+  }else{
+    alert('✓ לא היו פריטים לארכוב החודש');
+  }
 }
 
 // ===== DEAL → CLIENT AUTO SYNC =====
