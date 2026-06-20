@@ -7,12 +7,302 @@
 <title>CRM | HOT Business v3</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+:root{
+  --bg:#06080f;--s1:#0c1022;--s2:#101525;--s3:#141a2e;
+  --border:#1c2640;--border2:#24304d;
+  --red:#e63946;--red2:#ff5561;--reddim:rgba(230,57,70,.15);
+  --teal:#06d6a0;--tealdim:rgba(6,214,160,.15);
+  --gold:#d4a847;--golddim:rgba(212,168,71,.15);
+  --blue:#4cc9f0;--bluedim:rgba(76,201,240,.15);
+  --purple:#8b5cf6;--purpledim:rgba(139,92,246,.15);
+  --text:#dde1f5;--text2:#8892b0;--text3:#4a526e;
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Heebo',sans-serif;background:#080b13;color:#dde1f5;font-size:13px;height:100vh;overflow:hidden}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-size:13px;height:100vh;overflow:hidden}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#252d4a;border-radius:4px}
-::-webkit-scrollbar-thumb:hover{background:#3a4468}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--red),var(--purple));border-radius:4px;opacity:.6}
+
+/* ─── KEYFRAMES ─── */
+@keyframes fadeIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes ripple{to{transform:scale(3.5);opacity:0}}
+@keyframes shimmer{0%{right:-80%}100%{right:130%}}
+@keyframes btnBounce{0%{transform:translateY(0) scale(1)}40%{transform:translateY(-5px) scale(1.06)}70%{transform:translateY(-1px) scale(1.02)}100%{transform:translateY(-3px) scale(1.04)}}
+@keyframes btnShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-3px) rotate(-2deg)}40%{transform:translateX(3px) rotate(2deg)}60%{transform:translateX(-2px)}80%{transform:translateX(2px)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.92)}}
+@keyframes glowBorder{0%,100%{box-shadow:0 0 0 0 var(--reddim)}50%{box-shadow:0 0 18px 2px var(--reddim)}}
+@keyframes gradShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ─── LOGIN ─── */
+#login{display:flex;align-items:center;justify-content:center;min-height:100vh;
+  background:radial-gradient(ellipse 80% 60% at 50% 30%,rgba(230,57,70,.07) 0%,transparent 70%),
+             radial-gradient(ellipse 60% 40% at 80% 80%,rgba(139,92,246,.05) 0%,transparent 60%),
+             var(--bg)}
+.lcard{
+  background:linear-gradient(145deg,rgba(16,21,37,.95),rgba(10,13,24,.98));
+  border:1px solid var(--border2);border-radius:20px;padding:40px 44px;width:380px;text-align:center;
+  box-shadow:0 32px 80px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.05),0 0 60px rgba(230,57,70,.06);
+  backdrop-filter:blur(12px);animation:cardIn .5s ease
+}
+.llogo{font-size:28px;font-weight:800;margin-bottom:6px;letter-spacing:-.5px;
+  background:linear-gradient(135deg,var(--red),#ff8c94);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.llogo span{background:linear-gradient(135deg,var(--text),var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:300}
+.lsub{font-size:12px;color:var(--text3);margin-bottom:32px;letter-spacing:.2px}
+.lg{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;text-align:right}
+.lg label{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
+.lg input{background:rgba(255,255,255,.04);border:1px solid var(--border2);color:var(--text);border-radius:10px;padding:11px 14px;font-family:'Heebo',sans-serif;font-size:13px;outline:none;width:100%;transition:all .25s}
+.lg input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(230,57,70,.14),inset 0 1px 0 rgba(255,255,255,.06)}
+.lbtn{width:100%;padding:12px;background:linear-gradient(135deg,var(--red) 0%,#b30d1a 100%);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Heebo',sans-serif;margin-top:8px;transition:all .2s;box-shadow:0 6px 22px rgba(230,57,70,.4),inset 0 1px 0 rgba(255,255,255,.12);letter-spacing:.2px;position:relative;overflow:hidden}
+.lbtn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.12),transparent);opacity:0;transition:opacity .2s}
+.lbtn:hover::before{opacity:1}.lbtn:hover{box-shadow:0 10px 30px rgba(230,57,70,.55)}.lbtn:active{transform:scale(.97)}
+.lerr{font-size:11px;color:var(--red);margin-top:10px;min-height:16px}
+
+/* ─── APP SHELL ─── */
+#app{display:none;flex-direction:column;height:100vh;overflow:hidden}
+#topbar{
+  background:linear-gradient(90deg,rgba(14,19,34,.98),rgba(16,21,37,.98));
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 18px;height:54px;flex-shrink:0;gap:8px;
+  box-shadow:0 2px 20px rgba(0,0,0,.5);
+  position:relative
+}
+#topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--red),var(--purple),transparent);opacity:.4}
+.logo{font-size:17px;font-weight:800;letter-spacing:-.4px;
+  background:linear-gradient(135deg,var(--red),#ff8c94);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo span{background:linear-gradient(135deg,var(--text),var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:300}
+.dstrip{font-size:11px;color:var(--text3);display:flex;gap:14px}
+.dstrip b{color:var(--teal);font-weight:700}
+.tbr{display:flex;align-items:center;gap:7px}
+.uchip{font-size:11px;color:var(--text2);background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:20px;padding:4px 12px;backdrop-filter:blur(8px)}
+.uchip b{color:var(--text)}
+.abtn{background:linear-gradient(135deg,var(--red),#c1121f);color:#fff;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;border:none;cursor:pointer;box-shadow:0 3px 12px rgba(230,57,70,.4);transition:all .22s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden}
+.abtn:hover{transform:scale(1.12);box-shadow:0 8px 24px rgba(230,57,70,.65)}.abtn:active{transform:scale(.93)}
+.lout{background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;color:var(--text3);font-family:'Heebo',sans-serif;transition:all .2s;backdrop-filter:blur(4px)}
+.lout:hover{background:rgba(255,255,255,.08);color:var(--text);border-color:var(--border2)}
+.save-ind{font-size:11px;color:var(--teal);display:none;background:var(--tealdim);border:1px solid rgba(6,214,160,.3);border-radius:20px;padding:4px 12px}
+.save-ind.show{display:flex;align-items:center;gap:5px;animation:fadeIn .3s}
+
+/* ─── LAYOUT ─── */
+#layout{display:flex;flex:1;overflow:hidden}
+#sidebar{
+  width:176px;min-width:176px;overflow-y:auto;padding:10px 0;flex-shrink:0;
+  background:linear-gradient(180deg,rgba(10,13,20,.98) 0%,rgba(7,9,16,.98) 100%);
+  border-left:1px solid var(--border);
+  box-shadow:inset -1px 0 0 rgba(255,255,255,.03)
+}
+.nsec{padding:12px 16px 4px;font-size:8px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 16px;cursor:pointer;font-size:11.5px;color:var(--text3);border-right:2px solid transparent;transition:all .18s;margin:1px 6px;border-radius:0 8px 8px 0}
+.ni:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.ni.active{
+  background:linear-gradient(90deg,rgba(230,57,70,.15),rgba(230,57,70,.04),transparent);
+  color:var(--red2);border-right-color:var(--red);font-weight:700;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04)
+}
+#main{flex:1;overflow-y:auto;padding:20px;background:var(--bg);height:100%}
+.sec{display:none}.sec.active{display:block;animation:slideIn .22s ease}
+.shdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px}
+.stit{font-size:20px;font-weight:800;letter-spacing:-.5px;
+  background:linear-gradient(135deg,var(--text),var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+/* ─── KPI CARDS ─── */
+.krow{display:grid;grid-template-columns:repeat(auto-fill,minmax(152px,1fr));gap:12px;margin-bottom:20px}
+.kc{
+  background:linear-gradient(145deg,var(--s2),var(--s1));
+  border:1px solid var(--border);border-radius:14px;padding:16px 18px;
+  border-right:3px solid var(--blue);
+  box-shadow:0 6px 24px rgba(0,0,0,.35);
+  position:relative;overflow:hidden;
+  transition:transform .2s,box-shadow .2s;
+  animation:cardIn .3s ease
+}
+.kc:hover{transform:translateY(-3px);box-shadow:0 12px 36px rgba(0,0,0,.5)}
+.kc::before{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;filter:blur(20px);opacity:.18}
+.kc.g{border-right-color:var(--teal)}.kc.r{border-right-color:var(--red)}.kc.y{border-right-color:#f4a261}.kc.p{border-right-color:var(--purple)}
+.kc.g::before{background:var(--teal)}.kc.r::before{background:var(--red)}.kc.y::before{background:#f4a261}.kc.p::before{background:var(--purple)}.kc::before{background:var(--blue)}
+.kc .lb{font-size:10px;color:var(--text3);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.kc .vl{font-size:24px;font-weight:900;line-height:1;letter-spacing:-.5px}
+.kc.g .vl{color:var(--teal)}.kc.r .vl{color:var(--red)}.kc.y .vl{color:#f4a261}.kc.p .vl{color:var(--purple)}.kc .vl{color:var(--blue)}
+.kc .sb{font-size:10px;color:var(--text3);margin-top:5px}
+
+/* ─── GRID PANELS ─── */
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.dpanel{background:linear-gradient(145deg,var(--s2),var(--s1));border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 6px 24px rgba(0,0,0,.3)}
+.dpanel h4{font-size:10px;font-weight:800;color:var(--text3);margin-bottom:14px;text-transform:uppercase;letter-spacing:.8px}
+
+/* ─── ALERT CARDS ─── */
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.ac{border-radius:14px;padding:16px 18px;border-right:4px solid;box-shadow:0 4px 16px rgba(0,0,0,.3);transition:transform .18s,box-shadow .18s;position:relative;overflow:hidden}
+.ac:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.45)}
+.ac::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.03),transparent)}
+.ac.crit{background:linear-gradient(145deg,rgba(230,57,70,.12),rgba(230,57,70,.04));border-right-color:var(--red)}
+.ac.warn{background:linear-gradient(145deg,rgba(244,162,97,.12),rgba(244,162,97,.04));border-right-color:#f4a261}
+.ac.info{background:linear-gradient(145deg,rgba(76,201,240,.12),rgba(76,201,240,.04));border-right-color:var(--blue)}
+.ac .at{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:5px}
+.ac.crit .at{color:#ff5561}.ac.warn .at{color:#f4a261}.ac.info .at{color:var(--blue)}
+.ac .ah{font-size:13px;font-weight:700;margin-bottom:4px}
+.ac .as{font-size:11px;color:var(--text2)}
+
+/* ─── TABS ─── */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:18px;gap:2px}
+.tab{padding:9px 18px;cursor:pointer;font-size:12px;color:var(--text3);border-bottom:2px solid transparent;border-radius:8px 8px 0 0;transition:all .18s;font-weight:600;position:relative}
+.tab:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.tab.active{color:var(--red2);border-bottom-color:var(--red);font-weight:800;background:rgba(230,57,70,.07)}
+.tab.active::after{content:'';position:absolute;bottom:-1px;left:20%;right:20%;height:1px;background:var(--red);filter:blur(2px)}
+
+/* ─── TABLE WRAPPER ─── */
+.tw{background:linear-gradient(170deg,var(--s2),var(--s1));border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;box-shadow:0 6px 28px rgba(0,0,0,.3)}
+.thdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border);font-size:12px;font-weight:800;gap:8px;flex-wrap:wrap;background:rgba(255,255,255,.025);letter-spacing:-.2px}
+.tscroll{overflow:auto;max-height:60vh;cursor:grab;user-select:none;-webkit-overflow-scrolling:touch}
+.tscroll:active{cursor:grabbing}
+table{width:max-content;min-width:100%;border-collapse:collapse;font-size:11px}
+th{position:sticky;top:0;z-index:2;padding:9px 12px;text-align:right;font-weight:800;color:var(--text3);font-size:9px;border-bottom:1px solid var(--border);white-space:nowrap;background:linear-gradient(180deg,#0a0d18,#090c16);text-transform:uppercase;letter-spacing:.6px;box-shadow:0 1px 0 var(--border)}
+td{padding:8px 12px;border-bottom:1px solid rgba(28,38,64,.4);color:var(--text);vertical-align:middle;white-space:nowrap;transition:background .12s}
+tr:nth-child(even) td{background:rgba(255,255,255,.012)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(230,57,70,.04)!important}
+.tft{background:linear-gradient(0deg,rgba(7,9,16,.9),rgba(10,13,22,.8));padding:9px 16px;display:flex;gap:20px;flex-wrap:wrap;border-top:1px solid var(--border)}
+.cb-row{display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(230,57,70,.08);border-top:1px solid rgba(230,57,70,.2);position:sticky;bottom:0;z-index:5;backdrop-filter:blur(8px)}
+.cb-row button{padding:5px 13px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;font-family:'Heebo',sans-serif}
+input[type=checkbox]{width:14px;height:14px;accent-color:var(--red);cursor:pointer}
+th.cb-th{width:32px;padding:4px 8px}
+td.cb-td{width:32px;padding:4px 8px}
+.fi{font-size:11px;color:var(--text2)}.fi b{color:var(--text)}
+
+/* ─── PRIORITY ROWS ─── */
+.pr td:first-child{border-right:3px solid #ff4d5e}
+.po td:first-child{border-right:3px solid #ff9500}
+.py td:first-child{border-right:3px solid #ffd166}
+.pg td:first-child{border-right:3px solid var(--teal)}
+
+/* ─── BADGES ─── */
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:9px;font-weight:800;white-space:nowrap;letter-spacing:.3px}
+.bg{background:linear-gradient(135deg,rgba(6,214,160,.18),rgba(6,214,160,.08));color:var(--teal);border:1px solid rgba(6,214,160,.3)}
+.br{background:linear-gradient(135deg,rgba(230,57,70,.18),rgba(230,57,70,.08));color:var(--red2);border:1px solid rgba(230,57,70,.3)}
+.by{background:linear-gradient(135deg,rgba(255,209,102,.18),rgba(255,209,102,.08));color:#ffd166;border:1px solid rgba(255,209,102,.3)}
+.bb{background:linear-gradient(135deg,rgba(76,201,240,.18),rgba(76,201,240,.08));color:var(--blue);border:1px solid rgba(76,201,240,.3)}
+.bgr{background:rgba(74,82,110,.12);color:var(--text2);border:1px solid rgba(74,82,110,.25)}
+
+/* ─── INPUTS ─── */
+input[type=text],input[type=date],input[type=number],select,textarea{
+  background:rgba(255,255,255,.04);border:1px solid var(--border2);color:var(--text);
+  border-radius:8px;padding:8px 11px;font-family:'Heebo',sans-serif;font-size:12px;outline:none;width:100%;
+  transition:all .22s;backdrop-filter:blur(4px)
+}
+input:focus,select:focus,textarea:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(230,57,70,.12),inset 0 1px 0 rgba(255,255,255,.06)}
+.srch{min-width:130px;max-width:200px}
+select option{background:#0a0d18}
+
+/* ─── BUTTONS ─── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:8px;border:1px solid var(--border2);cursor:pointer;font-size:11px;font-weight:700;background:rgba(255,255,255,.05);color:var(--text2);font-family:'Heebo',sans-serif;transition:all .22s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden;backdrop-filter:blur(4px)}
+.btn:hover{color:var(--text);border-color:var(--border2);background:rgba(255,255,255,.09);transform:translateY(-3px) scale(1.05);box-shadow:0 10px 28px rgba(0,0,0,.5)}
+.btn:active{transform:translateY(1px) scale(.95)!important;box-shadow:none!important;transition-duration:.07s}
+
+.btnp{background:linear-gradient(135deg,var(--red) 0%,#ad0f1b 100%);color:#fff;border-color:var(--red);box-shadow:0 4px 16px rgba(230,57,70,.4),inset 0 1px 0 rgba(255,255,255,.15)}
+.btnp::before{content:'';position:absolute;top:0;right:-80%;width:50%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);transform:skewX(-15deg);pointer-events:none}
+.btnp:hover{box-shadow:0 12px 32px rgba(230,57,70,.65),inset 0 1px 0 rgba(255,255,255,.2);border-color:var(--red2);animation:btnBounce .3s ease forwards}
+.btnp:hover::before{animation:shimmer .5s ease forwards}
+.btnp:active{animation:none!important}
+
+.btns{padding:3px 9px;font-size:10px}
+.btns:hover{transform:translateY(-2px) scale(1.1)!important}
+
+.btnd{color:var(--red)}
+.btnd:hover{background:rgba(230,57,70,.12)!important;border-color:rgba(230,57,70,.4)!important;animation:btnShake .4s ease;transform:none!important;box-shadow:0 4px 16px rgba(230,57,70,.3)!important}
+
+.btnbk{background:linear-gradient(135deg,#0078d4,#005a9e);color:#fff;border-color:#0078d4;box-shadow:0 4px 14px rgba(0,120,212,.3)}
+.btnbk:hover{box-shadow:0 12px 32px rgba(0,120,212,.55)!important}
+
+.btnwp{background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border-color:#25D366;box-shadow:0 4px 14px rgba(37,211,102,.3)}
+.btnwp:hover{box-shadow:0 12px 32px rgba(37,211,102,.5)!important}
+
+/* ─── MODAL ─── */
+.mw{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:100;align-items:center;justify-content:center;padding:16px}
+.mw.open{display:flex}
+.modal{
+  background:linear-gradient(145deg,rgba(16,21,42,.98),rgba(10,14,28,.98));
+  border:1px solid var(--border2);border-radius:18px;width:100%;max-width:650px;max-height:90vh;overflow-y:auto;padding:24px;
+  box-shadow:0 40px 100px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.06),0 0 80px rgba(230,57,70,.05);
+  animation:cardIn .25s ease
+}
+.mhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.mhdr h3{font-size:16px;font-weight:800;letter-spacing:-.4px;background:linear-gradient(135deg,var(--text),var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.mcls{background:none;border:none;cursor:pointer;font-size:22px;color:var(--text3);line-height:1;transition:all .15s;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.mcls:hover{color:var(--red);background:rgba(230,57,70,.1)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg .g{display:flex;flex-direction:column;gap:4px}
+.fg .g label,.fg .gf label{font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.7px}
+.fg .gf{grid-column:1/-1;display:flex;flex-direction:column;gap:4px}
+.msec{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;backdrop-filter:blur(4px)}
+.msec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.msec-hdr span{font-size:11px;font-weight:800}
+
+/* ─── PROGRESS BAR ─── */
+.pw{display:flex;align-items:center;gap:8px}
+.pb{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;min-width:40px}
+.pf{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--red),var(--purple))}
+
+/* ─── CIRCLE ─── */
+.mcirc{width:90px;height:90px;position:relative;margin:0 auto 12px}
+.mcirc svg{transform:rotate(-90deg)}
+.mcirc .mn{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:16px;font-weight:800}
+.mcirc .mn span{font-size:10px;font-weight:500;color:var(--text3)}
+
+/* ─── STATUS COLORS ─── */
+.ng{color:var(--teal);font-weight:700}.nr{color:var(--red2);font-weight:700}
+.ny{color:#ffd166;font-weight:700}.nb{color:var(--blue);font-weight:700}
+
+/* ─── CLIENT CARDS ─── */
+.client-card{
+  background:linear-gradient(145deg,var(--s2),var(--s1));
+  border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;
+  transition:all .22s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 6px 20px rgba(0,0,0,.3)
+}
+.client-card:hover{border-color:var(--blue);box-shadow:0 16px 40px rgba(76,201,240,.14);transform:translateY(-4px) scale(1.01)}
+.item-row{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:11px;margin-bottom:8px;transition:all .18s}
+.item-row:hover{border-color:var(--border2);background:rgba(255,255,255,.05)}
+
+/* ─── EXPIRY ─── */
+.exp-warn{background:rgba(230,57,70,.07);border:1px solid rgba(230,57,70,.2);border-radius:8px;padding:6px 11px;font-size:10px;color:var(--red);margin-top:7px}
+.exp-ok{background:rgba(6,214,160,.07);border:1px solid rgba(6,214,160,.2);border-radius:8px;padding:6px 11px;font-size:10px;color:var(--teal);margin-top:7px}
+
+/* ─── LOADING ─── */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--text3);gap:12px}
+.spinner{width:22px;height:22px;border:2px solid var(--border2);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite;box-shadow:0 0 8px rgba(230,57,70,.3)}
+
+/* ─── WORK PLAN / POTENTIAL ─── */
+.pot-empty{font-size:11px;color:var(--text3);padding:6px 0}
+
+/* ─── LIVE DOT ─── */
+.live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--teal);animation:pulse 2s ease infinite;box-shadow:0 0 6px var(--teal);margin-left:4px;vertical-align:middle}
+
+/* ─── PRINT ─── */
+@media print{
+  #sidebar,#topbar,.btn,.abtn,.lout,th.cb-th,td.cb-td,.tft,.cb-row{display:none!important}
+  body,#main,#app,#layout{overflow:visible!important;height:auto!important}
+  .sec{display:block!important}.tw{break-inside:avoid}
+}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:768px){
+  #sidebar{width:46px;min-width:46px}
+  .ni{justify-content:center;padding:8px 0;font-size:16px;margin:1px 0;border-radius:0}
+  .ni span,.nsec{display:none}
+  .stit{font-size:15px}
+  .krow{grid-template-columns:repeat(2,1fr)}
+  .dgrid{grid-template-columns:1fr}
+  #topbar .dstrip{display:none}
+  .tscroll{max-height:50vh}
+}
+@media(max-width:480px){
+  #sidebar{display:none}
+  .krow{grid-template-columns:1fr 1fr}
+}
+</style>
 
 /* LOGIN */
 #login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:radial-gradient(ellipse at 50% 40%,#11152299 0%,#080b13 70%)}
@@ -249,15 +539,16 @@ select option{background:#0f1422}
 <div id="topbar">
   <div class="logo">CRM <span>| HOT Business</span></div>
   <div class="dstrip">
-    <span>תאריך: <b id="td">–</b></span>
+    <span>📅 <b id="td">–</b></span>
     <span>ימי עבודה: <b id="wd">–</b></span>
     <span>עברו: <b id="wdp">–</b></span>
+    <span class="live-dot" title="מחובר"></span>
   </div>
   <div class="tbr">
     <div class="uchip">👤 <b id="uname">–</b></div>
-    <span class="save-ind" id="saveind">💾 נשמר</span>
+    <span class="save-ind" id="saveind">✦ נשמר</span>
     <button class="abtn" onclick="nav('alerts')">⚠ <span id="acnt">0</span></button>
-    <button class="btn btnbk" onclick="backupData()" title="גיבוי">💾</button>
+    <button class="btn btnbk" onclick="backupData()" title="גיבוי">💾 גיבוי</button>
     <button class="btn" onclick="restoreData()" title="שחזור">📂</button>
     <button class="lout" onclick="doLogout()">יציאה</button>
   </div>
@@ -297,10 +588,10 @@ select option{background:#0f1422}
     <div class="dpanel">
       <h4>🎯 יעד פגישות חודשי</h4>
       <div class="mcirc">
-        <svg width="90" height="90"><circle cx="45" cy="45" r="36" fill="none" stroke="#2e3350" stroke-width="7"/><circle id="mcirc" cx="45" cy="45" r="36" fill="none" stroke="#2ec4b6" stroke-width="7" stroke-dasharray="226" stroke-dashoffset="226" stroke-linecap="round"/></svg>
+        <svg width="90" height="90"><circle cx="45" cy="45" r="36" fill="none" stroke="var(--border)" stroke-width="7"/><circle id="mcirc" cx="45" cy="45" r="36" fill="none" stroke="var(--teal)" stroke-width="7" stroke-dasharray="226" stroke-dashoffset="226" stroke-linecap="round"/></svg>
         <div class="mn"><span id="mnum">0/15</span><span>פגישות</span></div>
       </div>
-      <div style="text-align:center;font-size:11px;color:#9ca3c4">יעד: 15/חודש &nbsp;|&nbsp; <span id="mpct" class="ng">0%</span></div>
+      <div style="text-align:center;font-size:11px;color:var(--text2)">יעד: 15/חודש &nbsp;|&nbsp; <span id="mpct" class="ng">0%</span></div>
     </div>
   </div>
   <div class="dgrid">
@@ -348,9 +639,9 @@ select option{background:#0f1422}
     </tr></thead><tbody id="ltb"></tbody></table></div>
     <div class="tft" id="lft"></div>
     <div class="cb-row" id="selbar-deals-long" style="display:none">
-      <span id="selcnt-deals-long" style="font-size:11px;color:#e8eaf6"></span>
+      <span id="selcnt-deals-long" style="font-size:11px;color:var(--text)"></span>
       <button onclick="deleteSelected('deals-long')" style="background:#e63946;color:#fff">🗑 מחק נבחרים</button>
-      <button onclick="clearSel('deals-long')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+      <button onclick="clearSel('deals-long')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
     </div></div>
   </div>
   <div id="st" style="display:none">
@@ -363,9 +654,9 @@ select option{background:#0f1422}
     </tr></thead><tbody id="stb"></tbody></table></div>
     <div class="tft" id="sft"></div>
     <div class="cb-row" id="selbar-deals-short" style="display:none">
-      <span id="selcnt-deals-short" style="font-size:11px;color:#e8eaf6"></span>
+      <span id="selcnt-deals-short" style="font-size:11px;color:var(--text)"></span>
       <button onclick="deleteSelected('deals-short')" style="background:#e63946;color:#fff">🗑 מחק נבחרים</button>
-      <button onclick="clearSel('deals-short')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+      <button onclick="clearSel('deals-short')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
     </div></div>
   </div>
   <div id="sumt" style="display:none"><div class="krow" id="dsk"></div><div class="tw" id="dst"></div></div>
@@ -395,9 +686,9 @@ select option{background:#0f1422}
     </tr></thead><tbody id="ttb"></tbody></table></div>
     <div class="tft" id="tft"></div>
     <div class="cb-row" id="selbar-tenders" style="display:none">
-      <span id="selcnt-tenders" style="font-size:11px;color:#e8eaf6"></span>
+      <span id="selcnt-tenders" style="font-size:11px;color:var(--text)"></span>
       <button onclick="deleteSelected('tenders')" style="background:#e63946;color:#fff">🗑 מחק נבחרים</button>
-      <button onclick="clearSel('tenders')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+      <button onclick="clearSel('tenders')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
     </div></div>
   </div>
   <div id="archivtent" style="display:none"><div id="archive-tenders-content" style="padding:4px 0"></div></div>
@@ -428,9 +719,9 @@ select option{background:#0f1422}
     </tr></thead><tbody id="ldtb"></tbody></table></div>
     <div class="tft" id="ldft"></div>
     <div class="cb-row" id="selbar-dists-long" style="display:none">
-      <span id="selcnt-dists-long" style="font-size:11px;color:#e8eaf6"></span>
+      <span id="selcnt-dists-long" style="font-size:11px;color:var(--text)"></span>
       <button onclick="deleteSelected('dists-long')" style="background:#e63946;color:#fff">🗑 מחק</button>
-      <button onclick="clearSel('dists-long')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+      <button onclick="clearSel('dists-long')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
     </div></div>
   </div>
   <div id="sdt" style="display:none">
@@ -442,9 +733,9 @@ select option{background:#0f1422}
     </tr></thead><tbody id="sdtb"></tbody></table></div>
     <div class="tft" id="sdft"></div>
     <div class="cb-row" id="selbar-dists-short" style="display:none">
-      <span id="selcnt-dists-short" style="font-size:11px;color:#e8eaf6"></span>
+      <span id="selcnt-dists-short" style="font-size:11px;color:var(--text)"></span>
       <button onclick="deleteSelected('dists-short')" style="background:#e63946;color:#fff">🗑 מחק</button>
-      <button onclick="clearSel('dists-short')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+      <button onclick="clearSel('dists-short')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
     </div></div>
   </div>
   <div id="sumdt" style="display:none"><div class="krow" id="dstk"></div></div>
@@ -473,9 +764,9 @@ select option{background:#0f1422}
     </tr></thead><tbody id="svctb"></tbody></table></div>
     <div class="tft" id="svcft"></div>
     <div class="cb-row" id="selbar-salary-service" style="display:none">
-      <span id="selcnt-salary-service" style="font-size:11px;color:#e8eaf6"></span>
+      <span id="selcnt-salary-service" style="font-size:11px;color:var(--text)"></span>
       <button onclick="deleteSelected('salary-service')" style="background:#e63946;color:#fff">🗑 מחק</button>
-      <button onclick="clearSel('salary-service')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+      <button onclick="clearSel('salary-service')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
     </div></div>
   </div>
   <div id="seq" style="display:none">
@@ -487,9 +778,9 @@ select option{background:#0f1422}
     </tr></thead><tbody id="eqtb"></tbody></table></div>
     <div class="tft" id="eqft"></div>
     <div class="cb-row" id="selbar-salary-equip" style="display:none">
-      <span id="selcnt-salary-equip" style="font-size:11px;color:#e8eaf6"></span>
+      <span id="selcnt-salary-equip" style="font-size:11px;color:var(--text)"></span>
       <button onclick="deleteSelected('salary-equip')" style="background:#e63946;color:#fff">🗑 מחק</button>
-      <button onclick="clearSel('salary-equip')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+      <button onclick="clearSel('salary-equip')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
     </div></div>
   </div>
   <div id="ssum" style="display:none"><div class="krow" id="ssk"></div></div>
@@ -518,9 +809,9 @@ select option{background:#0f1422}
     </tr></thead><tbody id="mtb"></tbody></table></div>
     <div class="tft" id="mft"></div>
     <div class="cb-row" id="selbar-meetings" style="display:none">
-      <span id="selcnt-meetings" style="font-size:11px;color:#e8eaf6"></span>
+      <span id="selcnt-meetings" style="font-size:11px;color:var(--text)"></span>
       <button onclick="deleteSelected('meetings')" style="background:#e63946;color:#fff">🗑 מחק</button>
-      <button onclick="clearSel('meetings')" style="background:#22263a;color:#9ca3c4;margin-right:auto">✕ נקה</button>
+      <button onclick="clearSel('meetings')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
     </div></div>
   </div>
   <div id="archivmtg" style="display:none"><div id="archive-meetings-content" style="padding:4px 0"></div></div>
@@ -544,15 +835,15 @@ select option{background:#0f1422}
 <div class="sec" id="sec-export">
   <div class="shdr"><div class="stit">📥 ייצוא וגיבוי</div></div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:20px">
-    <div class="tw" style="cursor:pointer" onclick="exportExcel('deals')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💼</div><div style="font-weight:700;margin-bottom:4px">עסקאות</div><div style="font-size:11px;color:#9ca3c4" id="exp-deals-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="exportExcel('tenders')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📋</div><div style="font-weight:700;margin-bottom:4px">מכרזים</div><div style="font-size:11px;color:#9ca3c4" id="exp-tenders-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="exportExcel('dists')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🚀</div><div style="font-weight:700;margin-bottom:4px">הפצות</div><div style="font-size:11px;color:#9ca3c4" id="exp-dists-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="exportExcel('salary')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💰</div><div style="font-weight:700;margin-bottom:4px">פרויקטי שכר</div><div style="font-size:11px;color:#9ca3c4" id="exp-salary-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="exportExcel('meetings')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🤝</div><div style="font-weight:700;margin-bottom:4px">פגישות</div><div style="font-size:11px;color:#9ca3c4" id="exp-meetings-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="exportExcel('clients')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🏢</div><div style="font-weight:700;margin-bottom:4px">כרטיסי לקוח</div><div style="font-size:11px;color:#9ca3c4" id="exp-clients-count">0 לקוחות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="exportAll()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📊</div><div style="font-weight:700;margin-bottom:4px">כל הנתונים</div><div style="font-size:11px;color:#9ca3c4">כל הנושאים</div><div style="margin-top:10px;background:#e63946;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא הכל</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="backupData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💾</div><div style="font-weight:700;margin-bottom:4px">גיבוי מלא</div><div style="font-size:11px;color:#9ca3c4">קובץ JSON לשחזור</div><div style="margin-top:10px;background:#0078d4;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">💾 הורד גיבוי</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="restoreData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📂</div><div style="font-weight:700;margin-bottom:4px">שחזור נתונים</div><div style="font-size:11px;color:#9ca3c4">מקובץ JSON</div><div style="margin-top:10px;background:#7b5ea7;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📂 שחזר מגיבוי</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="exportExcel('deals')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💼</div><div style="font-weight:700;margin-bottom:4px">עסקאות</div><div style="font-size:11px;color:var(--text2)" id="exp-deals-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="exportExcel('tenders')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📋</div><div style="font-weight:700;margin-bottom:4px">מכרזים</div><div style="font-size:11px;color:var(--text2)" id="exp-tenders-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="exportExcel('dists')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🚀</div><div style="font-weight:700;margin-bottom:4px">הפצות</div><div style="font-size:11px;color:var(--text2)" id="exp-dists-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="exportExcel('salary')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💰</div><div style="font-weight:700;margin-bottom:4px">פרויקטי שכר</div><div style="font-size:11px;color:var(--text2)" id="exp-salary-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="exportExcel('meetings')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🤝</div><div style="font-weight:700;margin-bottom:4px">פגישות</div><div style="font-size:11px;color:var(--text2)" id="exp-meetings-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="exportExcel('clients')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🏢</div><div style="font-weight:700;margin-bottom:4px">כרטיסי לקוח</div><div style="font-size:11px;color:var(--text2)" id="exp-clients-count">0 לקוחות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="exportAll()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📊</div><div style="font-weight:700;margin-bottom:4px">כל הנתונים</div><div style="font-size:11px;color:var(--text2)">כל הנושאים</div><div style="margin-top:10px;background:#e63946;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא הכל</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="backupData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💾</div><div style="font-weight:700;margin-bottom:4px">גיבוי מלא</div><div style="font-size:11px;color:var(--text2)">קובץ JSON לשחזור</div><div style="margin-top:10px;background:#0078d4;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">💾 הורד גיבוי</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="restoreData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📂</div><div style="font-weight:700;margin-bottom:4px">שחזור נתונים</div><div style="font-size:11px;color:var(--text2)">מקובץ JSON</div><div style="margin-top:10px;background:#7b5ea7;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📂 שחזר מגיבוי</div></div></div>
   </div>
 </div>
 
@@ -900,23 +1191,23 @@ function rDash(){
   D.tenders.forEach(t=>{const p=pri(t,'ten');if(p==='r'||p==='o')pi.push({p,t:t.name,s:`מועד: ${t.deadline||'–'}`});});
   D.dists.filter(d=>d.st!=='הושלם').forEach(d=>{const p=pri(d,'dist');if(p==='r')pi.push({p,t:d.co,s:d.st});});
   pi.sort((a,b)=>a.p==='r'?-1:1);
-  document.getElementById('prilist').innerHTML=pi.length?pi.slice(0,8).map(i=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #2e3350">${pB(i.p)}<div><div style="font-size:11px;font-weight:600">${i.t}</div><div style="font-size:10px;color:#9ca3c4">${i.s}</div></div></div>`).join(''):'<div style="font-size:11px;color:#9ca3c4">✅ אין פריטים קריטיים</div>';
+  document.getElementById('prilist').innerHTML=pi.length?pi.slice(0,8).map(i=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border)">${pB(i.p)}<div><div style="font-size:11px;font-weight:600">${i.t}</div><div style="font-size:10px;color:var(--text2)">${i.s}</div></div></div>`).join(''):'<div style="font-size:11px;color:var(--text2)">✅ אין פריטים קריטיים</div>';
   const off=226-(held/MEETING_GOAL)*226;
   document.getElementById('mcirc').setAttribute('stroke-dashoffset',Math.max(0,off));
   document.getElementById('mnum').innerHTML=`${held}<br><span>מתוך ${MEETING_GOAL}</span>`;
   document.getElementById('mpct').textContent=pct+'%';
   const ld=D.deals.filter(d=>d.ty==='long'),sd=D.deals.filter(d=>d.ty==='short'),tdist=D.deals.reduce((s,d)=>s+(d.di||0),0);
   document.getElementById('dspanel').innerHTML=`
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">ארוך טווח</span><b>${ld.length} עסקאות</b></div>
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">קצר טווח</span><b>${sd.length} עסקאות</b></div>
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">הפצות בפועל</span><b class="ng">${fmt(tdist)}</b></div>
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">לקוחות</span><b>${D.clients.length}</b></div>`;
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">ארוך טווח</span><b>${ld.length} עסקאות</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">קצר טווח</span><b>${sd.length} עסקאות</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">הפצות בפועל</span><b class="ng">${fmt(tdist)}</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">לקוחות</span><b>${D.clients.length}</b></div>`;
   const sc=D.salary.filter(s=>s.st==='סגור').reduce((s,i)=>s+(i.cl2||0),0),so=D.salary.filter(s=>s.st!=='סגור').reduce((s,i)=>s+(i.tr||0),0);
   document.getElementById('qspanel').innerHTML=`
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">שכר נסגר</span><b class="ng">${fmt(sc)}</b></div>
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">שכר ממתין</span><b class="ny">${fmt(so)}</b></div>
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">מכרזים פעילים</span><b class="nb">${D.tenders.filter(t=>t.submitted!=='כן').length}</b></div>
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#9ca3c4">הוגשו</span><b class="ng">${D.tenders.filter(t=>t.submitted==='כן').length}</b></div>`;
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">שכר נסגר</span><b class="ng">${fmt(sc)}</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">שכר ממתין</span><b class="ny">${fmt(so)}</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">מכרזים פעילים</span><b class="nb">${D.tenders.filter(t=>t.submitted!=='כן').length}</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">הוגשו</span><b class="ng">${D.tenders.filter(t=>t.submitted==='כן').length}</b></div>`;
 }
 
 // ===== DEALS =====
@@ -928,7 +1219,7 @@ function rDeals(){
   const closedNow=D.deals.filter(d=>(d.date||'').substring(0,7)===curM&&d.st==='נסגר');
   const arch=(D.archivedDeals||[]).length;
   const mb=document.getElementById('month-banner');
-  if(mb)mb.innerHTML=`<div style="background:#1e2235;border:1px solid #2e3350;border-radius:8px;padding:9px 14px;margin-bottom:12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;color:#4cc9f0">📅 ${curMonthStr()}</span><span style="font-size:11px;color:#9ca3c4">עסקאות חדשות: <b style="color:#e8eaf6">${curDeals.length}</b></span><span style="font-size:11px;color:#9ca3c4">↩ עוברות מחודש קודם: <b style="color:#f4a261">${carry.length}</b></span><span style="font-size:11px;color:#9ca3c4">נסגרו החודש: <b style="color:#2ec4b6">${closedNow.length}</b></span>${arch?`<span style="font-size:11px;color:#9ca3c4">📦 בארכיון: <b style="color:#9ca3c4">${arch}</b></span>`:''}<button class="btn btns" onclick="manualRunCycle()" style="margin-right:auto;font-size:10px">📦 סגור חודש</button></div>`;
+  if(mb)mb.innerHTML=`<div style="background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin-bottom:12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;color:#4cc9f0">📅 ${curMonthStr()}</span><span style="font-size:11px;color:var(--text2)">עסקאות חדשות: <b style="color:var(--text)">${curDeals.length}</b></span><span style="font-size:11px;color:var(--text2)">↩ עוברות מחודש קודם: <b style="color:#f4a261">${carry.length}</b></span><span style="font-size:11px;color:var(--text2)">נסגרו החודש: <b style="color:var(--teal)">${closedNow.length}</b></span>${arch?`<span style="font-size:11px;color:var(--text2)">📦 בארכיון: <b style="color:var(--text2)">${arch}</b></span>`:''}<button class="btn btns" onclick="manualRunCycle()" style="margin-right:auto;font-size:10px">📦 סגור חודש</button></div>`;
   ['long','short'].forEach(ty=>{
     const tbId=ty==='long'?'ltb':'stb',ftId=ty==='long'?'lft':'sft';
     const items=D.deals.filter(d=>d.ty===ty);
@@ -940,8 +1231,8 @@ function rDeals(){
       const chk=SEL[sk]&&SEL[sk].has(d.id)?'checked':'';
       const isCarry=(d.date||'').substring(0,7)<curM&&d.st!=='נסגר';
       const dateTd=`<td style="font-size:10px;white-space:nowrap">${d.date||'–'}${isCarry?'<br><span class="badge by" style="font-size:8px;padding:0 4px">↩ עובר</span>':''}</td>`;
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td>${dateTd}<td style="color:#9ca3c4">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
-    }).join('')||`<tr><td colspan="18" style="text-align:center;padding:14px;color:#9ca3c4">אין עסקאות</td></tr>`;
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td>${dateTd}<td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
+    }).join('')||`<tr><td colspan="18" style="text-align:center;padding:14px;color:var(--text2)">אין עסקאות</td></tr>`;
     const tv=items.reduce((s,d)=>s+(d.v||0),0),td=items.reduce((s,d)=>s+(d.di||0),0),to=items.reduce((s,d)=>s+(d.otc||0),0);
     document.getElementById(ftId).innerHTML=`<span class="fi">עסקאות: <b>${items.length}</b></span><span class="fi">שווי: <b>${fmt(tv)}</b></span><span class="fi">הפצות: <b>${fmt(td)}</b></span><span class="fi">OTC: <b>${fmt(to)}</b></span>${carry.length?`<span class="fi" style="color:#f4a261">↩ עוברות: <b>${carry.length}</b></span>`:''}`;
     updateSelBar(sk);
@@ -950,18 +1241,18 @@ function rDeals(){
 function rDealSum(){
   const l=D.deals.filter(d=>d.ty==='long'),s=D.deals.filter(d=>d.ty==='short'),sm=(arr,k)=>arr.reduce((a,d)=>a+(d[k]||0),0);
   document.getElementById('dsk').innerHTML=`<div class="kc"><div class="lb">שווי ארוך</div><div class="vl">₪${Math.round(sm(l,'v')/1000)}K</div></div><div class="kc y"><div class="lb">שווי קצר</div><div class="vl">₪${Math.round(sm(s,'v')/1000)}K</div></div><div class="kc g"><div class="lb">סה"כ</div><div class="vl">₪${Math.round((sm(l,'v')+sm(s,'v'))/1000)}K</div></div><div class="kc g"><div class="lb">הפצות ארוך</div><div class="vl">₪${Math.round(sm(l,'di')/1000)}K</div></div><div class="kc y"><div class="lb">הפצות קצר</div><div class="vl">₪${Math.round(sm(s,'di')/1000)}K</div></div><div class="kc p"><div class="lb">OTC כולל</div><div class="vl">₪${Math.round((sm(l,'otc')+sm(s,'otc'))/1000)}K</div></div>`;
-  document.getElementById('dst').innerHTML=`<div class="thdr">סיכום עסקאות</div><div class="tscroll"><table><thead><tr style="background:#22263a"><th>קטגוריה</th><th>כמות</th><th>שווי</th><th>הפצות</th><th>OTC</th></tr></thead><tbody><tr><td style="font-weight:600">טווח ארוך</td><td>${l.length}</td><td>${fmt(sm(l,'v'))}</td><td>${fmt(sm(l,'di'))}</td><td>${fmt(sm(l,'otc'))}</td></tr><tr><td style="font-weight:600">טווח קצר</td><td>${s.length}</td><td>${fmt(sm(s,'v'))}</td><td>${fmt(sm(s,'di'))}</td><td>${fmt(sm(s,'otc'))}</td></tr><tr style="background:#22263a;font-weight:700"><td>סה"כ</td><td>${D.deals.length}</td><td>${fmt(sm(l,'v')+sm(s,'v'))}</td><td>${fmt(sm(l,'di')+sm(s,'di'))}</td><td>${fmt(sm(l,'otc')+sm(s,'otc'))}</td></tr></tbody></table></div>`;
+  document.getElementById('dst').innerHTML=`<div class="thdr">סיכום עסקאות</div><div class="tscroll"><table><thead><tr style="background:var(--s1)"><th>קטגוריה</th><th>כמות</th><th>שווי</th><th>הפצות</th><th>OTC</th></tr></thead><tbody><tr><td style="font-weight:600">טווח ארוך</td><td>${l.length}</td><td>${fmt(sm(l,'v'))}</td><td>${fmt(sm(l,'di'))}</td><td>${fmt(sm(l,'otc'))}</td></tr><tr><td style="font-weight:600">טווח קצר</td><td>${s.length}</td><td>${fmt(sm(s,'v'))}</td><td>${fmt(sm(s,'di'))}</td><td>${fmt(sm(s,'otc'))}</td></tr><tr style="background:var(--s3);font-weight:700"><td>סה"כ</td><td>${D.deals.length}</td><td>${fmt(sm(l,'v')+sm(s,'v'))}</td><td>${fmt(sm(l,'di')+sm(s,'di'))}</td><td>${fmt(sm(l,'otc')+sm(s,'otc'))}</td></tr></tbody></table></div>`;
 }
 
 function rDealsArchive(){
   const arch=D.archivedDeals||[];
   const cont=document.getElementById('archive-deals-content');if(!cont)return;
-  if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:#9ca3c4">📦 אין עסקאות בארכיון</div>';return;}
+  if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--text2)">📦 אין עסקאות בארכיון</div>';return;}
   const byMonth={};
   arch.forEach(d=>{const m=d._archivedAt||(d.date||'').substring(0,7);if(!byMonth[m])byMonth[m]=[];byMonth[m].push(d);});
   const months=Object.keys(byMonth).sort().reverse();
   const totV=arch.reduce((s,d)=>s+(d.v||0),0),totD=arch.reduce((s,d)=>s+(d.di||0),0),totO=arch.reduce((s,d)=>s+(d.otc||0),0);
-  const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">עסקאות בארכיון</div><div class="vl" style="color:#9ca3c4">${arch.length}</div></div><div class="kc g"><div class="lb">שווי מצטבר</div><div class="vl">${fmt(totV)}</div></div><div class="kc"><div class="lb">הפצות</div><div class="vl" style="color:#4cc9f0">${fmt(totD)}</div></div><div class="kc y"><div class="lb">OTC</div><div class="vl">${fmt(totO)}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
+  const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">עסקאות בארכיון</div><div class="vl" style="color:var(--text2)">${arch.length}</div></div><div class="kc g"><div class="lb">שווי מצטבר</div><div class="vl">${fmt(totV)}</div></div><div class="kc"><div class="lb">הפצות</div><div class="vl" style="color:#4cc9f0">${fmt(totD)}</div></div><div class="kc y"><div class="lb">OTC</div><div class="vl">${fmt(totO)}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
   const blocks=months.map(m=>{
     const deals=byMonth[m];
     const [y,mo]=m.split('-');
@@ -969,9 +1260,9 @@ function rDealsArchive(){
     const tv=deals.reduce((s,d)=>s+(d.v||0),0),td=deals.reduce((s,d)=>s+(d.di||0),0),to=deals.reduce((s,d)=>s+(d.otc||0),0);
     const rows=deals.map(d=>{
       const ib=d.inf&&d.inf.includes('הוט')?`<span class="badge bb">HOT</span>`:d.inf==='365'?`<span class="badge bgr">365</span>`:`<span class="badge bgr">${d.inf||'–'}</span>`;
-      return`<tr><td style="font-size:10px;color:#9ca3c4">${d.date||'–'}</td><td style="color:#9ca3c4">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td style="font-size:10px">${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ng">${fmt(d.di)}</td><td class="ng">${fmt(d.otc)}</td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td></tr>`;
+      return`<tr><td style="font-size:10px;color:var(--text2)">${d.date||'–'}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td style="font-size:10px">${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ng">${fmt(d.di)}</td><td class="ng">${fmt(d.otc)}</td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td></tr>`;
     }).join('');
-    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:#1e2235">📦 ${name} <span style="color:#9ca3c4;font-weight:400;font-size:11px">– ${deals.length} עסקאות | שווי: ${fmt(tv)} | הפצות: ${fmt(td)} | OTC: ${fmt(to)}</span></div><div class="tscroll"><table><thead><tr><th>תאריך</th><th>#</th><th>חברה</th><th>תשתית</th><th>שירות</th><th>שווי</th><th>הפצות</th><th>OTC</th><th>סטטוס</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${deals.length} עסקאות | שווי: ${fmt(tv)} | הפצות: ${fmt(td)} | OTC: ${fmt(to)}</span></div><div class="tscroll"><table><thead><tr><th>תאריך</th><th>#</th><th>חברה</th><th>תשתית</th><th>שירות</th><th>שווי</th><th>הפצות</th><th>OTC</th><th>סטטוס</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join('');
   cont.innerHTML=summary+blocks;
 }
@@ -980,12 +1271,12 @@ function rDealsArchive(){
 function rTendersArchive(){
   const arch=D.archivedTenders||[];
   const cont=document.getElementById('archive-tenders-content');if(!cont)return;
-  if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:#9ca3c4">📦 אין מכרזים בארכיון</div>';return;}
+  if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--text2)">📦 אין מכרזים בארכיון</div>';return;}
   const byMonth={};
   arch.forEach(t=>{const m=t._archivedAt||(t.deadline||'').substring(0,7);if(!byMonth[m])byMonth[m]=[];byMonth[m].push(t);});
   const months=Object.keys(byMonth).sort().reverse();
   const totA=arch.reduce((s,t)=>s+(t.amount||0),0),totSub=arch.filter(t=>t.submitted==='כן').length;
-  const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">מכרזים בארכיון</div><div class="vl" style="color:#9ca3c4">${arch.length}</div></div><div class="kc g"><div class="lb">הוגשו</div><div class="vl">${totSub}</div></div><div class="kc r"><div class="lb">לא הוגשו</div><div class="vl">${arch.length-totSub}</div></div><div class="kc y"><div class="lb">שווי מצטבר</div><div class="vl">${fmt(totA)}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
+  const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">מכרזים בארכיון</div><div class="vl" style="color:var(--text2)">${arch.length}</div></div><div class="kc g"><div class="lb">הוגשו</div><div class="vl">${totSub}</div></div><div class="kc r"><div class="lb">לא הוגשו</div><div class="vl">${arch.length-totSub}</div></div><div class="kc y"><div class="lb">שווי מצטבר</div><div class="vl">${fmt(totA)}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
   const blocks=months.map(m=>{
     const items=byMonth[m];
     const [y,mo]=m.split('-');
@@ -993,9 +1284,9 @@ function rTendersArchive(){
     const ta=items.reduce((s,t)=>s+(t.amount||0),0),ts=items.filter(t=>t.submitted==='כן').length;
     const rows=items.map(t=>{
       const sb=t.submitted==='כן'?'<span class="badge bg">הוגשה ✓</span>':t.submitted==='בתהליך'?'<span class="badge by">בתהליך</span>':'<span class="badge br">לא</span>';
-      return`<tr><td style="font-size:10px;color:#9ca3c4">${t.pub||'–'}</td><td style="font-weight:600">${t.name||''}</td><td style="font-size:10px">${t.proj||'–'}</td><td>${sb}</td><td style="font-size:10px;color:#e63946;font-weight:600">${t.deadline||'–'}</td><td style="font-size:10px">${t.handler||'–'}</td><td class="nb">${fmt(t.amount)}</td><td>${t.qty||1}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${t.notes||'–'}</td></tr>`;
+      return`<tr><td style="font-size:10px;color:var(--text2)">${t.pub||'–'}</td><td style="font-weight:600">${t.name||''}</td><td style="font-size:10px">${t.proj||'–'}</td><td>${sb}</td><td style="font-size:10px;color:#e63946;font-weight:600">${t.deadline||'–'}</td><td style="font-size:10px">${t.handler||'–'}</td><td class="nb">${fmt(t.amount)}</td><td>${t.qty||1}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${t.notes||'–'}</td></tr>`;
     }).join('');
-    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:#1e2235">📦 ${name} <span style="color:#9ca3c4;font-weight:400;font-size:11px">– ${items.length} מכרזים | הוגשו: ${ts} | שווי: ${fmt(ta)}</span></div><div class="tscroll"><table><thead><tr><th>פרסום</th><th>שם מכרז</th><th>מס׳ פרויקט</th><th>הוגשה?</th><th>הגשה</th><th>מטפל</th><th>סכום ₪</th><th>כמות</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${items.length} מכרזים | הוגשו: ${ts} | שווי: ${fmt(ta)}</span></div><div class="tscroll"><table><thead><tr><th>פרסום</th><th>שם מכרז</th><th>מס׳ פרויקט</th><th>הוגשה?</th><th>הגשה</th><th>מטפל</th><th>סכום ₪</th><th>כמות</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join('');
   cont.innerHTML=summary+blocks;
 }
@@ -1003,12 +1294,12 @@ function rTendersArchive(){
 function rDistsArchive(){
   const arch=D.archivedDists||[];
   const cont=document.getElementById('archive-dists-content');if(!cont)return;
-  if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:#9ca3c4">📦 אין הפצות בארכיון</div>';return;}
+  if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--text2)">📦 אין הפצות בארכיון</div>';return;}
   const byMonth={};
   arch.forEach(d=>{const m=d._archivedAt||(d.dt||'').substring(0,7);if(!byMonth[m])byMonth[m]=[];byMonth[m].push(d);});
   const months=Object.keys(byMonth).sort().reverse();
   const totI=arch.reduce((s,d)=>s+(d.inc||0),0),totE=arch.reduce((s,d)=>s+(d.eq||0),0);
-  const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">הפצות בארכיון</div><div class="vl" style="color:#9ca3c4">${arch.length}</div></div><div class="kc g"><div class="lb">הכנסה חודשית מצטברת</div><div class="vl">${fmt(totI)}</div></div><div class="kc y"><div class="lb">ציוד מצטבר</div><div class="vl">${fmt(totE)}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
+  const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">הפצות בארכיון</div><div class="vl" style="color:var(--text2)">${arch.length}</div></div><div class="kc g"><div class="lb">הכנסה חודשית מצטברת</div><div class="vl">${fmt(totI)}</div></div><div class="kc y"><div class="lb">ציוד מצטבר</div><div class="vl">${fmt(totE)}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
   const blocks=months.map(m=>{
     const items=byMonth[m];
     const [y,mo]=m.split('-');
@@ -1017,7 +1308,7 @@ function rDistsArchive(){
     const rows=items.map(d=>{
       return`<tr><td style="font-size:10px">${d.hd||'–'}</td><td style="font-size:10px;color:#4cc9f0">${d.no||'–'}</td><td style="font-weight:600">${d.co||''}</td><td style="font-size:10px">${d.so||'–'}</td><td class="ng">${fmt(d.inc)}</td><td class="nb">${fmt(d.eq)}</td><td>${sB(d.st)}</td><td style="font-size:10px">${d.dt||'–'}</td><td style="font-size:10px">${d.ty==='long'?'ארוך':'קצר'}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.notes||'–'}</td></tr>`;
     }).join('');
-    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:#1e2235">📦 ${name} <span style="color:#9ca3c4;font-weight:400;font-size:11px">– ${items.length} הפצות | הכנסה: ${fmt(ti)} | ציוד: ${fmt(te)}</span></div><div class="tscroll"><table><thead><tr><th>מטפל</th><th>מס׳ פרויקט</th><th>חברה</th><th>פתרון</th><th>הכנסה</th><th>ציוד</th><th>סטטוס</th><th>תאריך</th><th>סוג</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${items.length} הפצות | הכנסה: ${fmt(ti)} | ציוד: ${fmt(te)}</span></div><div class="tscroll"><table><thead><tr><th>מטפל</th><th>מס׳ פרויקט</th><th>חברה</th><th>פתרון</th><th>הכנסה</th><th>ציוד</th><th>סטטוס</th><th>תאריך</th><th>סוג</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join('');
   cont.innerHTML=summary+blocks;
 }
@@ -1025,12 +1316,12 @@ function rDistsArchive(){
 function rMeetingsArchive(){
   const arch=D.archivedMeetings||[];
   const cont=document.getElementById('archive-meetings-content');if(!cont)return;
-  if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:#9ca3c4">📦 אין פגישות בארכיון</div>';return;}
+  if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--text2)">📦 אין פגישות בארכיון</div>';return;}
   const byMonth={};
   arch.forEach(m=>{const mo=m._archivedAt||(m.dt||'').substring(0,7);if(!byMonth[mo])byMonth[mo]=[];byMonth[mo].push(m);});
   const months=Object.keys(byMonth).sort().reverse();
   const totH=arch.filter(m=>m.hl==='כן').length;
-  const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">פגישות בארכיון</div><div class="vl" style="color:#9ca3c4">${arch.length}</div></div><div class="kc g"><div class="lb">התקיימו</div><div class="vl">${totH}</div></div><div class="kc r"><div class="lb">לא התקיימו</div><div class="vl">${arch.length-totH}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
+  const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">פגישות בארכיון</div><div class="vl" style="color:var(--text2)">${arch.length}</div></div><div class="kc g"><div class="lb">התקיימו</div><div class="vl">${totH}</div></div><div class="kc r"><div class="lb">לא התקיימו</div><div class="vl">${arch.length-totH}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
   const blocks=months.map(mo=>{
     const items=byMonth[mo];
     const [y,m]=mo.split('-');
@@ -1040,7 +1331,7 @@ function rMeetingsArchive(){
       const sb=m.hl==='כן'?'<span class="badge bg">כן ✓</span>':m.hl==='מבוטל'?'<span class="badge br">מבוטל</span>':'<span class="badge by">לא</span>';
       return`<tr><td>${i+1}</td><td style="font-size:10px">${m.dt||'–'}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb}</td><td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis">${m.no||'–'}</td></tr>`;
     }).join('');
-    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:#1e2235">📦 ${name} <span style="color:#9ca3c4;font-weight:400;font-size:11px">– ${items.length} פגישות | התקיימו: ${held} | יעד: 15</span></div><div class="tscroll"><table><thead><tr><th>#</th><th>תאריך</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${items.length} פגישות | התקיימו: ${held} | יעד: 15</span></div><div class="tscroll"><table><thead><tr><th>#</th><th>תאריך</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join('');
   cont.innerHTML=summary+blocks;
 }
@@ -1054,7 +1345,7 @@ function rTenders(){
     let qd='–';if(tn.questions){const d=db(t,tn.questions);qd=d>=0?`<b style="color:${d<=2?'#e63946':'#f4a261'}">${d}י</b>`:'<span style="color:#3a4468">עבר</span>';}
     const chk=SEL['tenders']&&SEL['tenders'].has(tn.id)?'checked':'';
     return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-tenders" ${chk} onchange="toggleSel('tenders','${tn.id}')"></td><td>${pB(p)}</td><td>${sb2}</td><td>${tn.qty||1}</td><td style="font-size:10px">${tn.pub||'–'}</td><td style="font-weight:600;min-width:120px">${tn.name||''}</td><td style="font-size:10px">${tn.proj||'–'}</td><td>${tn.link?`<a href="${tn.link}" target="_blank" style="color:#4cc9f0;font-size:10px">🔗</a>`:'–'}</td><td style="font-size:10px">${tn.quote||'–'}</td><td>${qd}</td><td>${tn.rounds||'–'}</td><td style="font-weight:600;color:#e63946;font-size:10px">${tn.deadline||'–'}</td><td style="font-size:10px">${tn.handler||'–'}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.docs||'–'}</td><td>${lb}</td><td class="nb">${fmt(tn.amount)}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.notes||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('tender','${tn.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tenders','${tn.id}')">🗑</button></td></tr>`;
-  }).join('')||'<tr><td colspan="18" style="text-align:center;padding:14px;color:#9ca3c4">אין מכרזים</td></tr>';
+  }).join('')||'<tr><td colspan="18" style="text-align:center;padding:14px;color:var(--text2)">אין מכרזים</td></tr>';
   const ta=D.tenders.reduce((s,t)=>s+(t.amount||0),0);
   document.getElementById('tft').innerHTML=`<span class="fi">מכרזים: <b>${D.tenders.length}</b></span><span class="fi">הוגשו: <b>${D.tenders.filter(t=>t.submitted==='כן').length}</b></span><span class="fi">ממתינים: <b>${D.tenders.filter(t=>t.submitted!=='כן').length}</b></span><span class="fi">שווי: <b>${fmt(ta)}</b></span>`;
   updateSelBar('tenders');
@@ -1068,10 +1359,10 @@ function rDists(){
     const sk=ty==='long'?'dists-long':'dists-short';
     document.getElementById(tbId).innerHTML=items.map(d=>{
       const p=pri(d,'dist');
-      let days='–';if(d.dt){const diff=db(d.dt,t);const col=d.st!=='הושלם'&&diff>7?'#e63946':diff>3?'#f4a261':'#2ec4b6';days=`<b style="color:${col}">${diff}י</b>`;}
+      let days='–';if(d.dt){const diff=db(d.dt,t);const col=d.st!=='הושלם'&&diff>7?'#e63946':diff>3?'#f4a261':'var(--teal)';days=`<b style="color:${col}">${diff}י</b>`;}
       const chk=SEL[sk]&&SEL[sk].has(d.id)?'checked':'';
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${d.hd||'–'}</td><td style="font-size:10px;color:#4cc9f0;font-weight:600">${d.no||'–'}</td><td style="font-weight:600">${d.co||''}</td><td style="font-size:10px">${d.cl||'–'}</td><td style="font-size:10px">${d.it||'–'}</td><td>${d.so||'–'}</td><td style="font-size:10px">${d.ad||'–'}</td><td class="ng">${fmt(d.inc)}</td><td class="nb">${fmt(d.eq)}</td><td style="font-size:10px;color:${d.mi?'#f4a261':'#9ca3c4'}">${d.mi||'אין'}</td><td>${sB(d.st)}</td><td style="font-size:10px">${d.dt||'–'}</td><td>${days}</td><td style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">${d.notes||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('dist','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('dists','${d.id}')">🗑</button></td></tr>`;
-    }).join('')||`<tr><td colspan="17" style="text-align:center;padding:14px;color:#9ca3c4">אין הפצות</td></tr>`;
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${d.hd||'–'}</td><td style="font-size:10px;color:var(--blue);font-weight:600">${d.no||'–'}</td><td style="font-weight:600">${d.co||''}</td><td style="font-size:10px">${d.cl||'–'}</td><td style="font-size:10px">${d.it||'–'}</td><td>${d.so||'–'}</td><td style="font-size:10px">${d.ad||'–'}</td><td class="ng">${fmt(d.inc)}</td><td class="nb">${fmt(d.eq)}</td><td style="font-size:10px;color:${d.mi?'#f4a261':'var(--text3)'}">${d.mi||'אין'}</td><td>${sB(d.st)}</td><td style="font-size:10px">${d.dt||'–'}</td><td>${days}</td><td style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">${d.notes||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('dist','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('dists','${d.id}')">🗑</button></td></tr>`;
+    }).join('')||`<tr><td colspan="17" style="text-align:center;padding:14px;color:var(--text2)">אין הפצות</td></tr>`;
     const ti=items.reduce((s,d)=>s+(d.inc||0),0),te=items.reduce((s,d)=>s+(d.eq||0),0);
     document.getElementById(ftId).innerHTML=`<span class="fi">סה"כ: <b>${items.length}</b></span><span class="fi">הושלמו: <b>${items.filter(d=>d.st==='הושלם').length}</b></span><span class="fi">הכנסה: <b>${fmt(ti)}</b></span><span class="fi">ציוד: <b>${fmt(te)}</b></span>`;
     updateSelBar(sk);
@@ -1089,13 +1380,13 @@ function rSalary(){
     const items=D.salary.filter(s=>s.ty===ty);
     const sk=ty==='service'?'salary-service':'salary-equip';
     document.getElementById(tbId).innerHTML=items.map(s=>{
-      const pct=s.tr?Math.round(((s.cl2||0)/s.tr)*100):0,pc=pct>=100?'#2ec4b6':pct>=50?'#f4a261':'#e63946',p=pri(s,'sal');
+      const pct=s.tr?Math.round(((s.cl2||0)/s.tr)*100):0,pc=pct>=100?'var(--teal)':pct>=50?'#f4a261':'#e63946',p=pri(s,'sal');
       const chk=SEL[sk]&&SEL[sk].has(s.id)?'checked':'';
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td>${sB(s.st)}</td><td>${s.qt||1}</td><td style="font-size:10px">${s.pj||''}</td><td style="font-weight:600">${s.cl||''}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'#2ec4b6'}">${fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${s.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
-    }).join('')||`<tr><td colspan="12" style="text-align:center;padding:14px;color:#9ca3c4">אין פרויקטים</td></tr>`;
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td>${sB(s.st)}</td><td>${s.qt||1}</td><td style="font-size:10px">${s.pj||''}</td><td style="font-weight:600">${s.cl||''}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${s.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
+    }).join('')||`<tr><td colspan="12" style="text-align:center;padding:14px;color:var(--text2)">אין פרויקטים</td></tr>`;
     const tt=items.reduce((s,i)=>s+(i.tr||0),0),tc=items.reduce((s,i)=>s+(i.cl2||0),0),tp=items.reduce((s,i)=>s+(i.pv||0),0);
     const p2=tt?Math.round((tc/tt)*100):0;
-    document.getElementById(ftId).innerHTML=`<span class="fi">פרויקטים: <b>${items.length}</b></span><span class="fi">יעד: <b>${fmt(tt)}</b></span><span class="fi">נסגר: <b>${fmt(tc)}</b></span><span class="fi">יתרה: <b style="color:#e63946">${fmt(tp)}</b></span><span class="fi">עמידה: <b style="color:${p2>=100?'#2ec4b6':p2>=50?'#f4a261':'#e63946'}">${p2}%</b></span>`;
+    document.getElementById(ftId).innerHTML=`<span class="fi">פרויקטים: <b>${items.length}</b></span><span class="fi">יעד: <b>${fmt(tt)}</b></span><span class="fi">נסגר: <b>${fmt(tc)}</b></span><span class="fi">יתרה: <b style="color:#e63946">${fmt(tp)}</b></span><span class="fi">עמידה: <b style="color:${p2>=100?'var(--teal)':p2>=50?'#f4a261':'#e63946'}">${p2}%</b></span>`;
     updateSelBar(sk);
   });
 }
@@ -1113,25 +1404,25 @@ function rMeetings(){
     const sb2=m.hl==='כן'?'<span class="badge bg">כן ✓</span>':m.hl==='מבוטל'?'<span class="badge br">מבוטל</span>':'<span class="badge by">לא</span>';
     const chk=SEL['meetings']&&SEL['meetings'].has(m.id)?'checked':'';
     return`<tr><td class="cb-td"><input type="checkbox" class="cb-item-meetings" ${chk} onchange="toggleSel('meetings','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px">${m.dt||'–'}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb2}</td><td style="font-size:10px">${m.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('meeting','${m.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('meetings','${m.id}')">🗑</button></td></tr>`;
-  }).join('')||`<tr><td colspan="8" style="text-align:center;padding:14px;color:#9ca3c4">אין פגישות</td></tr>`;
-  document.getElementById('mft').innerHTML=`<span class="fi">סה"כ: <b>${D.meetings.length}</b></span><span class="fi">התקיימו: <b>${held}</b></span><span class="fi">לא: <b>${D.meetings.filter(m=>m.hl!=='כן').length}</b></span><span class="fi">יעד: <b style="color:${pct>=100?'#2ec4b6':pct>=66?'#f4a261':'#e63946'}">${pct}%</b></span>`;
+  }).join('')||`<tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text2)">אין פגישות</td></tr>`;
+  document.getElementById('mft').innerHTML=`<span class="fi">סה"כ: <b>${D.meetings.length}</b></span><span class="fi">התקיימו: <b>${held}</b></span><span class="fi">לא: <b>${D.meetings.filter(m=>m.hl!=='כן').length}</b></span><span class="fi">יעד: <b style="color:${pct>=100?'var(--teal)':pct>=66?'#f4a261':'#e63946'}">${pct}%</b></span>`;
   updateSelBar('meetings');
 }
 
 // ===== CLIENTS =====
 const ITEM_CFG = {
-  lines:{label:'📡 קו תקשורת',color:'#2ec4b6',fields:[{k:'lineType',l:'סוג',t:'sel',opts:['HOT','Bezeq','Partner','Cellcom','012','צד ג׳','STARLINK','RF']},{k:'speed',l:'מהירות',t:'text',ph:'100/50 מגה'},{k:'ip',l:'IP ציבורי',t:'text'},{k:'expiry',l:'תפוגה',t:'date'},{k:'monthly',l:'עלות ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]},
+  lines:{label:'📡 קו תקשורת',color:'var(--teal)',fields:[{k:'lineType',l:'סוג',t:'sel',opts:['HOT','Bezeq','Partner','Cellcom','012','צד ג׳','STARLINK','RF']},{k:'speed',l:'מהירות',t:'text',ph:'100/50 מגה'},{k:'ip',l:'IP ציבורי',t:'text'},{k:'expiry',l:'תפוגה',t:'date'},{k:'monthly',l:'עלות ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]},
   forti:{label:'🛡️ FortiGate',color:'#f4a261',fields:[{k:'model',l:'דגם',t:'text',ph:'FG-60F'},{k:'sn',l:'S/N',t:'text'},{k:'license',l:'רישוי',t:'text',ph:'UTM/ATP'},{k:'expiry',l:'תפוגת רישוי',t:'date'},{k:'notes',l:'הערות',t:'text'}]},
   cisco:{label:'🔵 Cisco',color:'#4cc9f0',fields:[{k:'model',l:'דגם',t:'text',ph:'ISR 4431'},{k:'sn',l:'S/N',t:'text'},{k:'sw',l:'תוכנה',t:'text'},{k:'expiry',l:'תפוגת תמיכה',t:'date'},{k:'notes',l:'הערות',t:'text'}]},
   hp:{label:'🟣 HP / Aruba',color:'#7b5ea7',fields:[{k:'model',l:'דגם',t:'text',ph:'Aruba 2930F'},{k:'sn',l:'S/N',t:'text'},{k:'expiry',l:'תפוגת אחריות',t:'date'},{k:'notes',l:'הערות',t:'text'}]},
-  juniper:{label:'🟢 Juniper',color:'#2ec4b6',fields:[{k:'model',l:'דגם',t:'text'},{k:'sn',l:'S/N',t:'text'},{k:'expiry',l:'תפוגת תמיכה',t:'date'},{k:'notes',l:'הערות',t:'text'}]},
+  juniper:{label:'🟢 Juniper',color:'var(--teal)',fields:[{k:'model',l:'דגם',t:'text'},{k:'sn',l:'S/N',t:'text'},{k:'expiry',l:'תפוגת תמיכה',t:'date'},{k:'notes',l:'הערות',t:'text'}]},
   cybiz:{label:'🔐 CYBIZ / אבטחה',color:'#e63946',fields:[{k:'solution',l:'פתרון',t:'text',ph:'CISO/DUO/SOC'},{k:'expiry',l:'תפוגה',t:'date'},{k:'monthly',l:'עלות חודשית ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]},
   starlink:{label:'🛰️ Starlink',color:'#ffd166',fields:[{k:'unit',l:'מס׳ יחידה',t:'text'},{k:'expiry',l:'חידוש',t:'date'},{k:'monthly',l:'עלות חודשית ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]},
   pbx:{label:'☎️ מרכזייה',color:'#4cc9f0',fields:[{k:'brand',l:'יצרן',t:'text',ph:'Yealink'},{k:'model',l:'דגם',t:'text'},{k:'expiry',l:'תפוגת אחריות',t:'date'},{k:'extensions',l:'שלוחות',t:'number'},{k:'notes',l:'הערות',t:'text'}]},
   ms365:{label:'📧 Microsoft 365',color:'#0078d4',fields:[{k:'plan',l:'תוכנית',t:'sel',opts:['Business Basic','Business Standard','Business Premium','E3','E5']},{k:'licenses',l:'רישיונות',t:'number'},{k:'expiry',l:'תפוגה',t:'date'},{k:'monthly',l:'עלות ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]},
-  helpdesk:{label:'🎧 Helpdesk',color:'#2ec4b6',fields:[{k:'plan',l:'תוכנית',t:'text'},{k:'users',l:'משתמשים',t:'number'},{k:'expiry',l:'תפוגה',t:'date'},{k:'monthly',l:'עלות ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]},
+  helpdesk:{label:'🎧 Helpdesk',color:'var(--teal)',fields:[{k:'plan',l:'תוכנית',t:'text'},{k:'users',l:'משתמשים',t:'number'},{k:'expiry',l:'תפוגה',t:'date'},{k:'monthly',l:'עלות ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]},
   servers:{label:'🖥️ שרתים',color:'#7b5ea7',fields:[{k:'brand',l:'יצרן',t:'sel',opts:['Dell','HP','IBM','Lenovo','אחר']},{k:'model',l:'דגם',t:'text'},{k:'sn',l:'S/N',t:'text'},{k:'expiry',l:'תפוגת אחריות',t:'date'},{k:'notes',l:'הערות',t:'text'}]},
-  extra:{label:'📝 פתרון נוסף',color:'#9ca3c4',fields:[{k:'name',l:'שם פתרון',t:'text'},{k:'vendor',l:'ספק',t:'text'},{k:'expiry',l:'תפוגה',t:'date'},{k:'monthly',l:'עלות ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]}
+  extra:{label:'📝 פתרון נוסף',color:'var(--text3)',fields:[{k:'name',l:'שם פתרון',t:'text'},{k:'vendor',l:'ספק',t:'text'},{k:'expiry',l:'תפוגה',t:'date'},{k:'monthly',l:'עלות ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]}
 };
 
 function buildClientSections(){
@@ -1140,7 +1431,7 @@ function buildClientSections(){
   Object.entries(ITEM_CFG).forEach(([type,cfg])=>{
     const sec=document.createElement('div');
     sec.className='msec';sec.id='csec-'+type;
-    sec.innerHTML=`<div class="msec-hdr"><span style="color:${cfg.color}">${cfg.label}</span><button class="btn btns" onclick="addItem('${type}')" style="background:${cfg.color};color:${cfg.color==='#ffd166'||cfg.color==='#4cc9f0'||cfg.color==='#2ec4b6'?'#000':'#fff'};border-color:${cfg.color}">+ הוסף</button></div><div id="${type}-container"></div>`;
+    sec.innerHTML=`<div class="msec-hdr"><span style="color:${cfg.color}">${cfg.label}</span><button class="btn btns" onclick="addItem('${type}')" style="background:${cfg.color};color:${cfg.color==='#ffd166'||cfg.color==='#4cc9f0'||cfg.color==='var(--teal)'?'#000':'#fff'};border-color:${cfg.color}">+ הוסף</button></div><div id="${type}-container"></div>`;
     cont.appendChild(sec);
   });
 }
@@ -1154,7 +1445,7 @@ function addItem(type,data={}){
     let inp='';
     if(f.t==='sel'){inp=`<select data-key="${f.k}">${(f.opts||[]).map(o=>`<option ${v===o?'selected':''}>${o}</option>`).join('')}</select>`;}
     else{inp=`<input type="${f.t||'text'}" data-key="${f.k}" value="${String(v).replace(/"/g,'&quot;')}" placeholder="${f.ph||''}">`;}
-    return`<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">${f.l}</label>${inp}</div>`;
+    return`<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">${f.l}</label>${inp}</div>`;
   }).join('');
   const div=document.createElement('div');
   div.className='item-row';
@@ -1193,7 +1484,7 @@ function addPotentialProduct(data={}){
   const priOpts=['גבוהה','בינונית','נמוכה'].map(p=>`<option ${(data.priority===p||((!data.priority)&&p==='בינונית'))?'selected':''}>${p}</option>`).join('');
   const div=document.createElement('div');
   div.className='item-row';div.style.cssText='border-right:3px solid #7b5ea7;';
-  div.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:10px;font-weight:700;color:#7b5ea7">#${idx+1}</span><button type="button" onclick="this.closest('.item-row').remove()" style="background:none;border:none;color:#e63946;cursor:pointer;font-size:16px;line-height:1">✕</button></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px"><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">סוג מוצר</label><select data-key="productType">${typeOpts}</select></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">שם / פרטים</label><input type="text" data-key="product" value="${(data.product||'').replace(/"/g,'&quot;')}" placeholder="תיאור המוצר"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">שווי משוער ₪</label><input type="number" data-key="estimatedValue" value="${data.estimatedValue||''}"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">עדיפות</label><select data-key="priority">${priOpts}</select></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">יעד סגירה</label><input type="date" data-key="targetDate" value="${data.targetDate||''}"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">סטטוס</label><select data-key="status">${stOpts}</select></div><div style="grid-column:1/-1;display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:#9ca3c4">הערות / פעולה הבאה</label><input type="text" data-key="notes" value="${(data.notes||'').replace(/"/g,'&quot;')}" placeholder="מה הפעולה הבאה?"></div></div>`;
+  div.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:10px;font-weight:700;color:#7b5ea7">#${idx+1}</span><button type="button" onclick="this.closest('.item-row').remove()" style="background:none;border:none;color:#e63946;cursor:pointer;font-size:16px;line-height:1">✕</button></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px"><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">סוג מוצר</label><select data-key="productType">${typeOpts}</select></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">שם / פרטים</label><input type="text" data-key="product" value="${(data.product||'').replace(/"/g,'&quot;')}" placeholder="תיאור המוצר"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">שווי משוער ₪</label><input type="number" data-key="estimatedValue" value="${data.estimatedValue||''}"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">עדיפות</label><select data-key="priority">${priOpts}</select></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">יעד סגירה</label><input type="date" data-key="targetDate" value="${data.targetDate||''}"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">סטטוס</label><select data-key="status">${stOpts}</select></div><div style="grid-column:1/-1;display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">הערות / פעולה הבאה</label><input type="text" data-key="notes" value="${(data.notes||'').replace(/"/g,'&quot;')}" placeholder="מה הפעולה הבאה?"></div></div>`;
   cont.appendChild(div);
 }
 
@@ -1281,9 +1572,9 @@ function filterClients(){
 
 function rClients(){
   const grid=document.getElementById('clients-grid');if(!grid)return;
-  if(!D.clients.length){grid.innerHTML='<div style="color:#9ca3c4;text-align:center;padding:40px;grid-column:1/-1">אין כרטיסי לקוח – לחץ + כדי להוסיף</div>';return;}
+  if(!D.clients.length){grid.innerHTML='<div style="color:var(--text2);text-align:center;padding:40px;grid-column:1/-1">אין כרטיסי לקוח – לחץ + כדי להוסיף</div>';return;}
   grid.innerHTML=D.clients.map(c=>{
-    const sc={r:'#e63946',y:'#f4a261',g:'#2ec4b6',b:'#4cc9f0'};
+    const sc={r:'#e63946',y:'#f4a261',g:'var(--teal)',b:'#4cc9f0'};
     const stCol=c.status==='לקוח פעיל'?sc.g:c.status==='לקוח פוטנציאלי'?sc.b:c.status==='ליד חדש'?sc.y:sc.r;
     const tags=[...(c.lines||[]).map(l=>`<span class="badge bb">📡 ${l.lineType||'קו'}</span>`),
       ...(c.forti||[]).map(f=>`<span class="badge by">🛡️ FORTI ${f.model||''}</span>`),
@@ -1296,7 +1587,7 @@ function rClients(){
     const warnHtml=warns.length?`<div class="exp-warn">⚠ ${warns.slice(0,2).join(' | ')}</div>`:'';
     return`<div class="client-card" onclick="openClientModal('${c.id}')">
       <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:8px">
-        <div><div style="font-size:13px;font-weight:700">${c.name||''}</div><div style="font-size:10px;color:#9ca3c4">${c.contact||''} ${c.phone?'· '+c.phone:''}</div></div>
+        <div><div style="font-size:13px;font-weight:700">${c.name||''}</div><div style="font-size:10px;color:var(--text2)">${c.contact||''} ${c.phone?'· '+c.phone:''}</div></div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
           <span class="badge" style="background:${stCol}22;color:${stCol};border:1px solid ${stCol}44;font-size:9px">${c.status||''}</span>
           <button class="btn btns btnd" onclick="event.stopPropagation();dbDelete('clients','${c.id}')" style="font-size:9px">🗑</button>
@@ -1305,7 +1596,7 @@ function rClients(){
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">${tags||'<span style="font-size:10px;color:#3a4468">אין שירותים</span>'}</div>
       ${(c.potential||[]).filter(p=>p.status!=='נסגר').length?`<div style="font-size:10px;color:#7b5ea7;margin-bottom:4px;padding:3px 6px;background:rgba(123,94,167,.1);border-radius:4px;border:1px solid rgba(123,94,167,.3)">🎯 ${(c.potential||[]).filter(p=>p.status!=='נסגר').length} מוצרים פוטנציאליים | ${fmt((c.potential||[]).filter(p=>p.status!=='נסגר').reduce((s,p)=>s+(+p.estimatedValue||0),0))}</div>`:''}
       ${warnHtml}
-      ${c.genNotes?`<div style="font-size:10px;color:#9ca3c4;margin-top:4px;padding-top:4px;border-top:1px solid #2e3350">${c.genNotes}</div>`:''}
+      ${c.genNotes?`<div style="font-size:10px;color:var(--text2);margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">${c.genNotes}</div>`:''}
     </div>`;
   }).join('');
 }
@@ -1434,10 +1725,10 @@ function rWorkPlan(){
     const priB=p.priority==='גבוהה'?'<span class="badge br">🔴 גבוהה</span>':p.priority==='בינונית'?'<span class="badge by">🟠 בינונית</span>':'<span class="badge bg">🟢 נמוכה</span>';
     const stB=p.status==='נסגר'?'<span class="badge bg">נסגר ✓</span>':p.status==='בתהליך'?'<span class="badge bb">בתהליך</span>':p.status==='הצעה נשלחה'?'<span class="badge by">הצעה נשלחה</span>':p.status==='ממתין לאישור'?'<span class="badge by">ממתין לאישור</span>':'<span class="badge bgr">ליד חדש</span>';
     let dH='–';
-    if(p.targetDate&&p.status!=='נסגר'){const d=db(nd(),p.targetDate);dH=d<0?`<b style="color:#e63946">עבר ${Math.abs(d)}י</b>`:`<b style="color:${d<=7?'#f4a261':'#2ec4b6'}">${d}י</b>`;}
+    if(p.targetDate&&p.status!=='נסגר'){const d=db(nd(),p.targetDate);dH=d<0?`<b style="color:#e63946">עבר ${Math.abs(d)}י</b>`:`<b style="color:${d<=7?'#f4a261':'var(--teal)'}">${d}י</b>`;}
     const rc=p.priority==='גבוהה'?'pr':p.priority==='בינונית'?'po':'pg';
     return`<tr class="${rc}"><td style="font-weight:600;color:#4cc9f0;cursor:pointer;white-space:nowrap" onclick="openClientModal('${p.clientId}')">${p.clientName}</td><td style="white-space:nowrap">${p.productType||'–'}</td><td style="font-weight:600">${p.product||'–'}</td><td class="nb">${p.estimatedValue?fmt(+p.estimatedValue):'–'}</td><td>${priB}</td><td style="font-size:10px;white-space:nowrap">${p.targetDate||'–'}</td><td>${dH}</td><td>${stB}</td><td style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis">${p.notes||'–'}</td><td><button class="btn btns" onclick="openClientModal('${p.clientId}')">✏️ ערוך</button></td></tr>`;
-  }).join('')||'<tr><td colspan="10" style="text-align:center;padding:24px;color:#9ca3c4">אין מוצרים פוטנציאליים – פתח כרטיס לקוח והוסף מוצרים</td></tr>';
+  }).join('')||'<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text2)">אין מוצרים פוטנציאליים – פתח כרטיס לקוח והוסף מוצרים</td></tr>';
   const ftEl=document.getElementById('wpft');
   if(ftEl)ftEl.innerHTML=`<span class="fi">מוצרים: <b>${all.length}</b></span><span class="fi">שווי פוטנציאלי: <b class="ny">${fmt(totalVal)}</b></span><span class="fi">עדיפות גבוהה: <b style="color:#e63946">${high}</b></span><span class="fi">בתהליך: <b class="nb">${inProg}</b></span><span class="fi">נסגרו: <b class="ng">${closed}</b></span>`;
 }
