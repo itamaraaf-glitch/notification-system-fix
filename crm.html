@@ -892,6 +892,7 @@ const SEL = {};
 const now = () => new Date();
 const nd = () => now().toISOString().split('T')[0];
 const fmt = n => (!n || n == 0) ? '–' : '₪' + Number(n).toLocaleString('he-IL');
+const fmtDate = s => {if(!s)return'–';const[y,m,d]=s.split('-');return(d||'?')+'/'+(m||'?')+'/'+(y||'?');}
 const db = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
 function wdM(y,m){let c=0;const d=new Date(y,m,1);while(d.getMonth()===m){if(d.getDay()!==5&&d.getDay()!==6)c++;d.setDate(d.getDate()+1);}return c;}
 function wdP(y,m,dy){let c=0;for(let i=1;i<=dy;i++){const d=new Date(y,m,i);if(d.getDay()!==5&&d.getDay()!==6)c++;}return c;}
@@ -920,7 +921,7 @@ function doLogin(){
   document.getElementById('app').style.display='flex';
   document.getElementById('uname').textContent=f.n;
   const n=now();
-  document.getElementById('td').textContent=n.toLocaleDateString('he-IL');
+  document.getElementById('td').textContent=n.toLocaleDateString('en-GB');
   document.getElementById('wd').textContent=wdM(n.getFullYear(),n.getMonth());
   document.getElementById('wdp').textContent=wdP(n.getFullYear(),n.getMonth(),n.getDate());
   loadAll();
@@ -1121,7 +1122,7 @@ function rDeals(){
       const ib=d.inf&&d.inf.includes('הוט')?`<span class="badge bb">HOT</span>`:d.inf==='365'?`<span class="badge bgr">365</span>`:`<span class="badge bgr">${d.inf||'–'}</span>`;
       const cc=d.ch>=1?'ng':d.ch>=0.75?'ny':'nr';
       const chk=SEL[sk]&&SEL[sk].has(d.id)?'checked':'';
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${d.date||'–'}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(d.date)}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
     };
     const div=(cls,icon,lbl,n)=>`<tr class="mdiv ${cls}"><td colspan="18">${icon} ${lbl} <span style="font-weight:400;opacity:.8">(${n})</span></td></tr>`;
     let html='';
@@ -1171,7 +1172,7 @@ function rDealsArchive(){
     const tv=deals.reduce((s,d)=>s+(d.v||0),0),td=deals.reduce((s,d)=>s+(d.di||0),0),to=deals.reduce((s,d)=>s+(d.otc||0),0);
     const rows=deals.map(d=>{
       const ib=d.inf&&d.inf.includes('הוט')?`<span class="badge bb">HOT</span>`:d.inf==='365'?`<span class="badge bgr">365</span>`:`<span class="badge bgr">${d.inf||'–'}</span>`;
-      return`<tr><td style="font-size:10px;color:var(--text2)">${d.date||'–'}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td style="font-size:10px">${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ng">${fmt(d.di)}</td><td class="ng">${fmt(d.otc)}</td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td></tr>`;
+      return`<tr><td style="font-size:10px;color:var(--text2)">${fmtDate(d.date)}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td style="font-size:10px">${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ng">${fmt(d.di)}</td><td class="ng">${fmt(d.otc)}</td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td></tr>`;
     }).join('');
     return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${deals.length} עסקאות | שווי: ${fmt(tv)} | הפצות: ${fmt(td)} | OTC: ${fmt(to)}</span></div><div class="tscroll"><table><thead><tr><th>תאריך</th><th>#</th><th>חברה</th><th>תשתית</th><th>שירות</th><th>שווי</th><th>הפצות</th><th>OTC</th><th>סטטוס</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join('');
@@ -1195,7 +1196,7 @@ function rTendersArchive(){
     const ta=items.reduce((s,t)=>s+(t.amount||0),0),ts=items.filter(t=>t.submitted==='כן').length;
     const rows=items.map(t=>{
       const sb=t.submitted==='כן'?'<span class="badge bg">הוגשה ✓</span>':t.submitted==='בתהליך'?'<span class="badge by">בתהליך</span>':'<span class="badge br">לא</span>';
-      return`<tr><td style="font-size:10px;color:var(--text2)">${t.pub||'–'}</td><td style="font-weight:600">${t.name||''}</td><td style="font-size:10px">${t.proj||'–'}</td><td>${sb}</td><td style="font-size:10px;color:#e63946;font-weight:600">${t.deadline||'–'}</td><td style="font-size:10px">${t.handler||'–'}</td><td class="nb">${fmt(t.amount)}</td><td>${t.qty||1}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${t.notes||'–'}</td></tr>`;
+      return`<tr><td style="font-size:10px;color:var(--text2)">${fmtDate(t.pub)}</td><td style="font-weight:600">${t.name||''}</td><td style="font-size:10px">${t.proj||'–'}</td><td>${sb}</td><td style="font-size:10px;color:#e63946;font-weight:600">${fmtDate(t.deadline)}</td><td style="font-size:10px">${t.handler||'–'}</td><td class="nb">${fmt(t.amount)}</td><td>${t.qty||1}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${t.notes||'–'}</td></tr>`;
     }).join('');
     return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${items.length} מכרזים | הוגשו: ${ts} | שווי: ${fmt(ta)}</span></div><div class="tscroll"><table><thead><tr><th>פרסום</th><th>שם מכרז</th><th>מס׳ פרויקט</th><th>הוגשה?</th><th>הגשה</th><th>מטפל</th><th>סכום ₪</th><th>כמות</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join('');
@@ -1217,7 +1218,7 @@ function rDistsArchive(){
     const name=(MONTH_HE[parseInt(mo)-1]||mo)+' '+y;
     const ti=items.reduce((s,d)=>s+(d.inc||0),0),te=items.reduce((s,d)=>s+(d.eq||0),0);
     const rows=items.map(d=>{
-      return`<tr><td style="font-size:10px">${d.hd||'–'}</td><td style="font-size:10px;color:#4cc9f0">${d.no||'–'}</td><td style="font-weight:600">${d.co||''}</td><td style="font-size:10px">${d.so||'–'}</td><td class="ng">${fmt(d.inc)}</td><td class="nb">${fmt(d.eq)}</td><td>${sB(d.st)}</td><td style="font-size:10px">${d.dt||'–'}</td><td style="font-size:10px">${d.ty==='long'?'ארוך':'קצר'}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.notes||'–'}</td></tr>`;
+      return`<tr><td style="font-size:10px">${d.hd||'–'}</td><td style="font-size:10px;color:#4cc9f0">${d.no||'–'}</td><td style="font-weight:600">${d.co||''}</td><td style="font-size:10px">${d.so||'–'}</td><td class="ng">${fmt(d.inc)}</td><td class="nb">${fmt(d.eq)}</td><td>${sB(d.st)}</td><td style="font-size:10px">${fmtDate(d.dt)}</td><td style="font-size:10px">${d.ty==='long'?'ארוך':'קצר'}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.notes||'–'}</td></tr>`;
     }).join('');
     return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${items.length} הפצות | הכנסה: ${fmt(ti)} | ציוד: ${fmt(te)}</span></div><div class="tscroll"><table><thead><tr><th>מטפל</th><th>מס׳ פרויקט</th><th>חברה</th><th>פתרון</th><th>הכנסה</th><th>ציוד</th><th>סטטוס</th><th>תאריך</th><th>סוג</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join('');
@@ -1240,7 +1241,7 @@ function rMeetingsArchive(){
     const held=items.filter(x=>x.hl==='כן').length;
     const rows=items.map((m,i)=>{
       const sb=m.hl==='כן'?'<span class="badge bg">כן ✓</span>':m.hl==='מבוטל'?'<span class="badge br">מבוטל</span>':'<span class="badge by">לא</span>';
-      return`<tr><td>${i+1}</td><td style="font-size:10px">${m.dt||'–'}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb}</td><td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis">${m.no||'–'}</td></tr>`;
+      return`<tr><td>${i+1}</td><td style="font-size:10px">${fmtDate(m.dt)}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb}</td><td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis">${m.no||'–'}</td></tr>`;
     }).join('');
     return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${items.length} פגישות | התקיימו: ${held} | יעד: 15</span></div><div class="tscroll"><table><thead><tr><th>#</th><th>תאריך</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join('');
@@ -1255,7 +1256,7 @@ function rTenders(){
     const lb=tn.linked==='כן'?'<span class="badge bg">כן</span>':'<span class="badge br">לא</span>';
     let qd='–';if(tn.questions){const d=db(t,tn.questions);qd=d>=0?`<b style="color:${d<=2?'#e63946':'#f4a261'}">${d}י</b>`:'<span style="color:#3a4468">עבר</span>';}
     const chk=SEL['tenders']&&SEL['tenders'].has(tn.id)?'checked':'';
-    return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-tenders" ${chk} onchange="toggleSel('tenders','${tn.id}')"></td><td>${pB(p)}</td><td>${sb2}</td><td>${tn.qty||1}</td><td style="font-size:10px">${tn.pub||'–'}</td><td style="font-weight:600;min-width:120px">${tn.name||''}</td><td style="font-size:10px">${tn.proj||'–'}</td><td>${tn.link?`<a href="${tn.link}" target="_blank" style="color:#4cc9f0;font-size:10px">🔗</a>`:'–'}</td><td style="font-size:10px">${tn.quote||'–'}</td><td>${qd}</td><td>${tn.rounds||'–'}</td><td style="font-weight:600;color:#e63946;font-size:10px">${tn.deadline||'–'}</td><td style="font-size:10px">${tn.handler||'–'}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.docs||'–'}</td><td>${lb}</td><td class="nb">${fmt(tn.amount)}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.notes||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('tender','${tn.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tenders','${tn.id}')">🗑</button></td></tr>`;
+    return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-tenders" ${chk} onchange="toggleSel('tenders','${tn.id}')"></td><td>${pB(p)}</td><td>${sb2}</td><td>${tn.qty||1}</td><td style="font-size:10px">${fmtDate(tn.pub)}</td><td style="font-weight:600;min-width:120px">${tn.name||''}</td><td style="font-size:10px">${tn.proj||'–'}</td><td>${tn.link?`<a href="${tn.link}" target="_blank" style="color:#4cc9f0;font-size:10px">🔗</a>`:'–'}</td><td style="font-size:10px">${fmtDate(tn.quote)}</td><td>${qd}</td><td>${tn.rounds||'–'}</td><td style="font-weight:600;color:#e63946;font-size:10px">${fmtDate(tn.deadline)}</td><td style="font-size:10px">${tn.handler||'–'}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.docs||'–'}</td><td>${lb}</td><td class="nb">${fmt(tn.amount)}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.notes||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('tender','${tn.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tenders','${tn.id}')">🗑</button></td></tr>`;
   }).join('')||'<tr><td colspan="18" style="text-align:center;padding:14px;color:var(--text2)">אין מכרזים</td></tr>';
   const ta=D.tenders.reduce((s,t)=>s+(t.amount||0),0);
   document.getElementById('tft').innerHTML=`<span class="fi">מכרזים: <b>${D.tenders.length}</b></span><span class="fi">הוגשו: <b>${D.tenders.filter(t=>t.submitted==='כן').length}</b></span><span class="fi">ממתינים: <b>${D.tenders.filter(t=>t.submitted!=='כן').length}</b></span><span class="fi">שווי: <b>${fmt(ta)}</b></span>`;
@@ -1272,7 +1273,7 @@ function rDists(){
       const p=pri(d,'dist');
       let days='–';if(d.dt){const diff=db(d.dt,t);const col=d.st!=='הושלם'&&diff>7?'#e63946':diff>3?'#f4a261':'var(--teal)';days=`<b style="color:${col}">${diff}י</b>`;}
       const chk=SEL[sk]&&SEL[sk].has(d.id)?'checked':'';
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${d.hd||'–'}</td><td style="font-size:10px;color:var(--blue);font-weight:600">${d.no||'–'}</td><td style="font-weight:600">${d.co||''}</td><td style="font-size:10px">${d.cl||'–'}</td><td style="font-size:10px">${d.it||'–'}</td><td>${d.so||'–'}</td><td style="font-size:10px">${d.ad||'–'}</td><td class="ng">${fmt(d.inc)}</td><td class="nb">${fmt(d.eq)}</td><td style="font-size:10px;color:${d.mi?'#f4a261':'var(--text3)'}">${d.mi||'אין'}</td><td>${sB(d.st)}</td><td style="font-size:10px">${d.dt||'–'}</td><td>${days}</td><td style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">${d.notes||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('dist','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('dists','${d.id}')">🗑</button></td></tr>`;
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${d.hd||'–'}</td><td style="font-size:10px;color:var(--blue);font-weight:600">${d.no||'–'}</td><td style="font-weight:600">${d.co||''}</td><td style="font-size:10px">${d.cl||'–'}</td><td style="font-size:10px">${d.it||'–'}</td><td>${d.so||'–'}</td><td style="font-size:10px">${d.ad||'–'}</td><td class="ng">${fmt(d.inc)}</td><td class="nb">${fmt(d.eq)}</td><td style="font-size:10px;color:${d.mi?'#f4a261':'var(--text3)'}">${d.mi||'אין'}</td><td>${sB(d.st)}</td><td style="font-size:10px">${fmtDate(d.dt)}</td><td>${days}</td><td style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">${d.notes||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('dist','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('dists','${d.id}')">🗑</button></td></tr>`;
     }).join('')||`<tr><td colspan="17" style="text-align:center;padding:14px;color:var(--text2)">אין הפצות</td></tr>`;
     const ti=items.reduce((s,d)=>s+(d.inc||0),0),te=items.reduce((s,d)=>s+(d.eq||0),0);
     document.getElementById(ftId).innerHTML=`<span class="fi">סה"כ: <b>${items.length}</b></span><span class="fi">הושלמו: <b>${items.filter(d=>d.st==='הושלם').length}</b></span><span class="fi">הכנסה: <b>${fmt(ti)}</b></span><span class="fi">ציוד: <b>${fmt(te)}</b></span>`;
@@ -1367,7 +1368,7 @@ function rMeetings(){
   document.getElementById('mtb').innerHTML=D.meetings.map((m,i)=>{
     const sb2=m.hl==='כן'?'<span class="badge bg">כן ✓</span>':m.hl==='מבוטל'?'<span class="badge br">מבוטל</span>':'<span class="badge by">לא</span>';
     const chk=SEL['meetings']&&SEL['meetings'].has(m.id)?'checked':'';
-    return`<tr><td class="cb-td"><input type="checkbox" class="cb-item-meetings" ${chk} onchange="toggleSel('meetings','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px">${m.dt||'–'}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb2}</td><td style="font-size:10px">${m.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('meeting','${m.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('meetings','${m.id}')">🗑</button></td></tr>`;
+    return`<tr><td class="cb-td"><input type="checkbox" class="cb-item-meetings" ${chk} onchange="toggleSel('meetings','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px">${fmtDate(m.dt)}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb2}</td><td style="font-size:10px">${m.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('meeting','${m.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('meetings','${m.id}')">🗑</button></td></tr>`;
   }).join('')||`<tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text2)">אין פגישות</td></tr>`;
   document.getElementById('mft').innerHTML=`<span class="fi">סה"כ: <b>${D.meetings.length}</b></span><span class="fi">התקיימו: <b>${held}</b></span><span class="fi">לא: <b>${D.meetings.filter(m=>m.hl!=='כן').length}</b></span><span class="fi">יעד: <b style="color:${pct>=100?'var(--teal)':pct>=66?'#f4a261':'#e63946'}">${pct}%</b></span>`;
   updateSelBar('meetings');
@@ -2018,7 +2019,7 @@ function updateExportCounts(){
 
 // ===== WHATSAPP =====
 function sendWhatsApp(){
-  const a=getAlerts();const n=now().toLocaleDateString('he-IL');
+  const a=getAlerts();const n=now().toLocaleDateString('en-GB');
   let msg=`📊 *CRM HOT Business – ${n}*\n⚠️ *${a.length} התראות פעילות*\n\n`;
   a.slice(0,8).forEach(al=>{const ic=al.type==='crit'?'🔴':al.type==='warn'?'🟠':'ℹ️';msg+=`${ic} *${al.h}*\n${al.s}\n\n`;});
   if(a.length>8)msg+=`...ועוד ${a.length-8} התראות\n\n`;
