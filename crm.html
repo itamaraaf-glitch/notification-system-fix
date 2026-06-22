@@ -92,6 +92,14 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-
 .toast-ok{background:rgba(6,214,160,.14);border:1px solid rgba(6,214,160,.4);color:var(--teal)}
 .toast-info{background:rgba(76,201,240,.14);border:1px solid rgba(76,201,240,.4);color:var(--blue)}
 .toast-warn{background:rgba(230,57,70,.14);border:1px solid rgba(230,57,70,.4);color:var(--red2)}
+/* ─── GOAL BARS ─── */
+.goal-box{border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.gbar-wrap{background:rgba(255,255,255,.07);border-radius:8px;height:9px;overflow:hidden;margin:8px 0}
+.gbar-fill{height:100%;border-radius:8px;transition:width .7s ease}
+.mbchart{display:flex;align-items:flex-end;gap:5px;height:64px;margin-top:2px}
+.mbcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.mbbar{width:100%;border-radius:4px 4px 0 0;min-height:2px;transition:height .5s ease}
+.mblbl{font-size:8px;color:var(--text3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
 
 /* ─── LAYOUT ─── */
 #layout{display:flex;flex:1;overflow:hidden}
@@ -494,7 +502,7 @@ select option{background:#0a0d18}
       <button onclick="clearSel('deals-short')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
     </div></div>
   </div>
-  <div id="sumt" style="display:none"><div class="krow" id="dsk"></div><div class="tw" id="dst"></div></div>
+  <div id="sumt" style="display:none"><div id="deal-goal-box"></div><div class="krow" id="dsk"></div><div class="tw" id="dst"></div></div>
   <div id="archivt" style="display:none"><div id="archive-deals-content" style="padding:4px 0"></div></div>
 </div>
 
@@ -575,7 +583,7 @@ select option{background:#0a0d18}
       <button onclick="clearSel('dists-short')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
     </div></div>
   </div>
-  <div id="sumdt" style="display:none"><div class="krow" id="dstk"></div></div>
+  <div id="sumdt" style="display:none"><div id="dist-goal-box"></div><div class="krow" id="dstk"></div></div>
   <div id="archivdist" style="display:none"><div id="archive-dists-content" style="padding:4px 0"></div></div>
 </div>
 
@@ -622,7 +630,7 @@ select option{background:#0a0d18}
       <button onclick="clearSel('salary-equip')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
     </div></div>
   </div>
-  <div id="ssum" style="display:none"><div class="krow" id="ssk"></div></div>
+  <div id="ssum" style="display:none"><div id="sal-goal-box"></div><div class="krow" id="ssk"></div></div>
   <div id="archivsal" style="display:none"><div id="archive-salary-content" style="padding:4px 0"></div></div>
 </div>
 
@@ -874,6 +882,8 @@ select option{background:#0a0d18}
 const LS_KEY = 'cem_hot_v3';
 const USERS = [{u:'ITAMAR2026',p:'NOSHrit$2026',n:'איתמר ונדן'}];
 const MEETING_GOAL = 15;
+const GOAL_DEALS = 15000;
+const GOAL_DISTS = 14000;
 let D = {deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:''};
 let EI = null, ET = null;
 const SEL = {};
@@ -1125,7 +1135,19 @@ function rDeals(){
   });
 }
 function rDealSum(){
+  const curM=nd().substring(0,7);
   const l=D.deals.filter(d=>d.ty==='long'),s=D.deals.filter(d=>d.ty==='short'),sm=(arr,k)=>arr.reduce((a,d)=>a+(d[k]||0),0);
+  const closedThis=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)===curM);
+  const curDealVal=closedThis.reduce((s,d)=>s+(d.v||0),0);
+  const arch=D.archivedDeals||[];
+  const months6=getLast6Months();
+  const dealMData=months6.map(ym=>{
+    const a=arch.filter(d=>(d._archivedAt||d.date||'').substring(0,7)===ym);
+    const c=ym===curM?closedThis:[];
+    return{ym,val:[...a,...c].reduce((s,d)=>s+(d.v||0),0)};
+  });
+  const gb=document.getElementById('deal-goal-box');
+  if(gb)gb.innerHTML=goalBarHtml('🎯 יעד עסקאות חודשי',curDealVal,GOAL_DEALS,dealMData,'teal');
   document.getElementById('dsk').innerHTML=`<div class="kc"><div class="lb">שווי ארוך</div><div class="vl">₪${Math.round(sm(l,'v')/1000)}K</div></div><div class="kc y"><div class="lb">שווי קצר</div><div class="vl">₪${Math.round(sm(s,'v')/1000)}K</div></div><div class="kc g"><div class="lb">סה"כ</div><div class="vl">₪${Math.round((sm(l,'v')+sm(s,'v'))/1000)}K</div></div><div class="kc g"><div class="lb">הפצות ארוך</div><div class="vl">₪${Math.round(sm(l,'di')/1000)}K</div></div><div class="kc y"><div class="lb">הפצות קצר</div><div class="vl">₪${Math.round(sm(s,'di')/1000)}K</div></div><div class="kc p"><div class="lb">OTC כולל</div><div class="vl">₪${Math.round((sm(l,'otc')+sm(s,'otc'))/1000)}K</div></div>`;
   document.getElementById('dst').innerHTML=`<div class="thdr">סיכום עסקאות</div><div class="tscroll"><table><thead><tr style="background:var(--s1)"><th>קטגוריה</th><th>כמות</th><th>שווי</th><th>הפצות</th><th>OTC</th></tr></thead><tbody><tr><td style="font-weight:600">טווח ארוך</td><td>${l.length}</td><td>${fmt(sm(l,'v'))}</td><td>${fmt(sm(l,'di'))}</td><td>${fmt(sm(l,'otc'))}</td></tr><tr><td style="font-weight:600">טווח קצר</td><td>${s.length}</td><td>${fmt(sm(s,'v'))}</td><td>${fmt(sm(s,'di'))}</td><td>${fmt(sm(s,'otc'))}</td></tr><tr style="background:var(--s3);font-weight:700"><td>סה"כ</td><td>${D.deals.length}</td><td>${fmt(sm(l,'v')+sm(s,'v'))}</td><td>${fmt(sm(l,'di')+sm(s,'di'))}</td><td>${fmt(sm(l,'otc')+sm(s,'otc'))}</td></tr></tbody></table></div>`;
 }
@@ -1255,7 +1277,19 @@ function rDists(){
   });
 }
 function rDistSum(){
+  const curM=nd().substring(0,7);
   const l=D.dists.filter(d=>d.ty==='long'),s=D.dists.filter(d=>d.ty==='short'),sm=(arr,k)=>arr.reduce((a,d)=>a+(d[k]||0),0);
+  const activatedThis=D.dists.filter(d=>d.st==='הושלם'&&(d.dt||'').substring(0,7)===curM);
+  const curDistVal=activatedThis.reduce((s,d)=>s+(d.inc||0),0);
+  const archD=D.archivedDists||[];
+  const months6=getLast6Months();
+  const distMData=months6.map(ym=>{
+    const a=archD.filter(d=>(d.dt||'').substring(0,7)===ym);
+    const c=ym===curM?activatedThis:[];
+    return{ym,val:[...a,...c].reduce((s,d)=>s+(d.inc||0),0)};
+  });
+  const gb=document.getElementById('dist-goal-box');
+  if(gb)gb.innerHTML=goalBarHtml('🚀 יעד הפעלות חודשי',curDistVal,GOAL_DISTS,distMData,'blue');
   document.getElementById('dstk').innerHTML=`<div class="kc"><div class="lb">מרכזים</div><div class="vl">${l.length}</div><div class="sb">${fmt(sm(l,'inc'))} חודשי</div></div><div class="kc y"><div class="lb">הפצות קצר</div><div class="vl">${s.length}</div><div class="sb">${fmt(sm(s,'inc'))} חודשי</div></div><div class="kc g"><div class="lb">הכנסה כוללת</div><div class="vl">₪${Math.round((sm(l,'inc')+sm(s,'inc'))/1000)}K</div></div><div class="kc p"><div class="lb">ציוד סה"כ</div><div class="vl">₪${Math.round((sm(l,'eq')+sm(s,'eq'))/1000)}K</div></div>`;
 }
 
@@ -1278,6 +1312,15 @@ function rSalary(){
 }
 function rSalSum(){
   const sv=D.salary.filter(s=>s.ty==='service'),eq=D.salary.filter(s=>s.ty==='equipment'),sm=(arr,k)=>arr.reduce((s,i)=>s+(i[k]||0),0);
+  const curSalVal=D.salary.filter(s=>s.st==='סגור').reduce((s,i)=>s+(i.cl2||0),0);
+  const archS=D.archivedSalary||[];
+  const months6=getLast6Months();
+  const salMData=months6.map(ym=>{
+    const a=archS.filter(i=>(i._archivedAt||'').substring(0,7)===ym);
+    return{ym,val:a.reduce((s,i)=>s+(i.cl2||0),0)};
+  });
+  const gb=document.getElementById('sal-goal-box');
+  if(gb)gb.innerHTML=goalBarHtml('💰 יעד שכר חודשי',curSalVal,GOAL_DEALS,salMData,'gold');
   document.getElementById('ssk').innerHTML=`<div class="kc"><div class="lb">שירות – יעד</div><div class="vl">₪${Math.round(sm(sv,'tr')/1000)}K</div><div class="sb">${sv.length} פרויקטים</div></div><div class="kc g"><div class="lb">שירות – נסגר</div><div class="vl">₪${Math.round(sm(sv,'cl2')/1000)}K</div></div><div class="kc r"><div class="lb">שירות – יתרה</div><div class="vl">₪${Math.round(sm(sv,'pv')/1000)}K</div></div><div class="kc"><div class="lb">ציוד – יעד</div><div class="vl">₪${Math.round(sm(eq,'tr')/1000)}K</div><div class="sb">${eq.length} פרויקטים</div></div><div class="kc g"><div class="lb">ציוד – נסגר</div><div class="vl">₪${Math.round(sm(eq,'cl2')/1000)}K</div></div><div class="kc y"><div class="lb">סה"כ כולל</div><div class="vl">₪${Math.round((sm(sv,'tr')+sm(eq,'tr'))/1000)}K</div></div>`;
 }
 
@@ -1513,6 +1556,45 @@ function rClients(){
 // ===== MONTHLY CYCLE =====
 const MONTH_HE=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 function curMonthStr(){const c=nd().substring(0,7);const[y,m]=c.split('-');return MONTH_HE[parseInt(m)-1]+' '+y;}
+const MONTH_SHORT=['ינו','פבר','מרץ','אפר','מאי','יונ','יול','אוג','ספט','אוק','נוב','דצמ'];
+function getLast6Months(){const res=[];const d=new Date();for(let i=5;i>=0;i--){const dt=new Date(d.getFullYear(),d.getMonth()-i,1);res.push(dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0'));}return res;}
+function mLabel(ym){const[,m]=ym.split('-');return MONTH_SHORT[parseInt(m)-1]||m;}
+function goalBarHtml(label,curVal,goal,monthData,clr){
+  const pct=goal?Math.min(Math.round((curVal/goal)*100),150):0;
+  const maxV=Math.max(...monthData.map(x=>x.val),goal,1);
+  const curM=nd().substring(0,7);
+  const tlH=Math.max(2,Math.round((goal/maxV)*60));
+  const accent=clr==='gold'?'var(--gold)':clr==='blue'?'var(--blue)':'var(--teal)';
+  const grad=clr==='gold'?'linear-gradient(90deg,var(--gold),#f4a261)':clr==='blue'?'linear-gradient(90deg,var(--blue),var(--purple))':'linear-gradient(90deg,var(--teal),var(--blue))';
+  const bars=monthData.map(({ym,val})=>{
+    const h=Math.max(Math.round((val/maxV)*60),val>0?3:0);
+    const isC=ym===curM;
+    const bg=val>=goal?'var(--teal)':isC?accent:'rgba(255,255,255,.12)';
+    return`<div class="mbcol"><div class="mbbar" style="height:${h}px;background:${bg}" title="${fmt(val)}"></div><div class="mblbl">${mLabel(ym)}</div></div>`;
+  }).join('');
+  const status=pct>=100?'🏆 עברת את היעד!':pct>=70?'📈 בדרך הנכונה':'⚠️ נדרשת התקדמות';
+  const barColor=pct>=100?'var(--teal)':pct>=70?'#f4a261':'#e63946';
+  return`<div class="goal-box" style="background:${accent}0d;border:1px solid ${accent}33">
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+      <span style="font-size:12px;font-weight:800;color:${accent}">${label}</span>
+      <span style="font-size:10px;color:var(--text3)">${curMonthStr()}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px">
+      <span style="color:var(--text2)">ביצוע החודש: <b style="color:${accent}">${fmt(curVal)}</b></span>
+      <span style="color:var(--text2)">יעד: <b>${fmt(goal)}</b></span>
+    </div>
+    <div class="gbar-wrap"><div class="gbar-fill" style="width:${Math.min(pct,100)}%;background:${grad}"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px">
+      <span style="color:var(--text2)">${status}</span>
+      <b style="color:${barColor}">${pct}%</b>
+    </div>
+    <div style="font-size:9px;font-weight:700;color:var(--text3);margin-top:12px;margin-bottom:2px;letter-spacing:.3px;text-align:right">גרף 6 חודשים — קו יעד: ${fmt(goal)}</div>
+    <div style="position:relative">
+      <div style="position:absolute;top:${60-tlH}px;left:0;right:0;border-top:1.5px dashed rgba(255,255,255,.25);z-index:1;pointer-events:none"></div>
+      <div class="mbchart">${bars}</div>
+    </div>
+  </div>`;
+}
 
 function runMonthlyCycle(force){
   const cur=nd().substring(0,7);
