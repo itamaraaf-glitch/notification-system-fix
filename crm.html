@@ -175,6 +175,15 @@ th.cb-th{width:32px;padding:4px 8px}
 td.cb-td{width:32px;padding:4px 8px}
 .fi{font-size:11px;color:var(--text2)}.fi b{color:var(--text)}
 
+/* ─── MONTH DIVIDERS ─── */
+tr.mdiv>td{padding:6px 14px;font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;border-top:1px solid;border-bottom:1px solid}
+tr.mdiv-carry>td{background:rgba(244,162,97,.08);color:#f4a261;border-color:rgba(244,162,97,.2)}
+tr.mdiv-new>td{background:rgba(6,214,160,.07);color:var(--teal);border-color:rgba(6,214,160,.18)}
+tr.mdiv-closed>td{background:rgba(76,201,240,.07);color:var(--blue);border-color:rgba(76,201,240,.18)}
+tr.mdiv-pending>td{background:rgba(139,92,246,.06);color:var(--purple);border-color:rgba(139,92,246,.15)}
+tr.mdiv>td:first-child{border-right:3px solid currentColor}
+.month-pulse{animation:glowBorder 2s ease infinite}
+
 /* ─── PRIORITY ROWS ─── */
 .pr td:first-child{border-right:3px solid #ff4d5e}
 .po td:first-child{border-right:3px solid #ff9500}
@@ -1041,28 +1050,67 @@ function rDash(){
 // ===== DEALS =====
 function rDeals(){
   const curM=nd().substring(0,7);
-  // Month banner
-  const curDeals=D.deals.filter(d=>(d.date||'').substring(0,7)===curM);
-  const carry=D.deals.filter(d=>(d.date||'').substring(0,7)<curM&&d.st!=='נסגר');
-  const closedNow=D.deals.filter(d=>(d.date||'').substring(0,7)===curM&&d.st==='נסגר');
+  const allCarry=D.deals.filter(d=>(d.date||'').substring(0,7)<curM&&d.st!=='נסגר');
+  const allNewThis=D.deals.filter(d=>(d.date||'').substring(0,7)===curM&&d.st!=='נסגר');
+  const allClosedThis=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)===curM);
+  const allPendingArch=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<curM);
   const arch=(D.archivedDeals||[]).length;
+  const totalActive=allCarry.length+allNewThis.length;
   const mb=document.getElementById('month-banner');
-  if(mb)mb.innerHTML=`<div style="background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin-bottom:12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap"><span style="font-size:13px;font-weight:800;color:#4cc9f0">📅 ${curMonthStr()}</span><span style="font-size:11px;color:var(--text2)">עסקאות חדשות: <b style="color:var(--text)">${curDeals.length}</b></span><span style="font-size:11px;color:var(--text2)">↩ עוברות מחודש קודם: <b style="color:#f4a261">${carry.length}</b></span><span style="font-size:11px;color:var(--text2)">נסגרו החודש: <b style="color:var(--teal)">${closedNow.length}</b></span>${arch?`<span style="font-size:11px;color:var(--text2)">📦 בארכיון: <b style="color:var(--text2)">${arch}</b></span>`:''}<button class="btn btns" onclick="manualRunCycle()" style="margin-right:auto;font-size:10px">📦 סגור חודש</button></div>`;
+  if(mb)mb.innerHTML=`
+    <div style="background:linear-gradient(135deg,rgba(16,21,37,.95),rgba(10,14,28,.98));border:1px solid rgba(76,201,240,.2);border-radius:12px;padding:14px 18px;margin-bottom:16px;box-shadow:0 4px 20px rgba(76,201,240,.08)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+        <span style="font-size:16px;font-weight:900;color:var(--blue);letter-spacing:-.3px">📅 ${curMonthStr()}</span>
+        <span style="font-size:10px;color:var(--text3);background:rgba(76,201,240,.1);border:1px solid rgba(76,201,240,.2);border-radius:20px;padding:2px 10px">חודש פעיל</span>
+        <button class="btn btns" onclick="manualRunCycle()" style="margin-right:auto;background:rgba(76,201,240,.12);border-color:rgba(76,201,240,.3);color:var(--blue)">📦 סגור חודש</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">
+        <div style="background:rgba(6,214,160,.07);border:1px solid rgba(6,214,160,.15);border-radius:8px;padding:7px 11px">
+          <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">חדשות החודש</div>
+          <div style="font-size:20px;font-weight:900;color:var(--teal)">${allNewThis.length}</div>
+        </div>
+        <div style="background:rgba(244,162,97,.07);border:1px solid rgba(244,162,97,.18);border-radius:8px;padding:7px 11px">
+          <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">עוברות ↩</div>
+          <div style="font-size:20px;font-weight:900;color:#f4a261">${allCarry.length}</div>
+        </div>
+        <div style="background:rgba(76,201,240,.07);border:1px solid rgba(76,201,240,.15);border-radius:8px;padding:7px 11px">
+          <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">נסגרו החודש ✅</div>
+          <div style="font-size:20px;font-weight:900;color:var(--blue)">${allClosedThis.length}</div>
+        </div>
+        ${allPendingArch.length?`<div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.15);border-radius:8px;padding:7px 11px">
+          <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">ממתינות לארכיון 📦</div>
+          <div style="font-size:20px;font-weight:900;color:var(--purple)">${allPendingArch.length}</div>
+        </div>`:''}
+        ${arch?`<div style="background:rgba(74,82,110,.06);border:1px solid var(--border);border-radius:8px;padding:7px 11px">
+          <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">בארכיון 📦</div>
+          <div style="font-size:20px;font-weight:900;color:var(--text3)">${arch}</div>
+        </div>`:''}
+      </div>
+    </div>`;
   ['long','short'].forEach(ty=>{
     const tbId=ty==='long'?'ltb':'stb',ftId=ty==='long'?'lft':'sft';
     const items=D.deals.filter(d=>d.ty===ty);
     const sk=ty==='long'?'deals-long':'deals-short';
-    document.getElementById(tbId).innerHTML=items.map(d=>{
+    const carries=items.filter(d=>(d.date||'').substring(0,7)<curM&&d.st!=='נסגר');
+    const newThis=items.filter(d=>(d.date||'').substring(0,7)===curM&&d.st!=='נסגר');
+    const closedThis=items.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)===curM);
+    const pendingArch=items.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<curM);
+    const mkRow=d=>{
       const p=pri(d,'deal');
       const ib=d.inf&&d.inf.includes('הוט')?`<span class="badge bb">HOT</span>`:d.inf==='365'?`<span class="badge bgr">365</span>`:`<span class="badge bgr">${d.inf||'–'}</span>`;
       const cc=d.ch>=1?'ng':d.ch>=0.75?'ny':'nr';
       const chk=SEL[sk]&&SEL[sk].has(d.id)?'checked':'';
-      const isCarry=(d.date||'').substring(0,7)<curM&&d.st!=='נסגר';
-      const dateTd=`<td style="font-size:10px;white-space:nowrap">${d.date||'–'}${isCarry?'<br><span class="badge by" style="font-size:8px;padding:0 4px">↩ עובר</span>':''}</td>`;
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td>${dateTd}<td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
-    }).join('')||`<tr><td colspan="18" style="text-align:center;padding:14px;color:var(--text2)">אין עסקאות</td></tr>`;
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${d.date||'–'}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
+    };
+    const div=(cls,icon,lbl,n)=>`<tr class="mdiv ${cls}"><td colspan="18">${icon} ${lbl} <span style="font-weight:400;opacity:.8">(${n})</span></td></tr>`;
+    let html='';
+    if(carries.length) html+=div('mdiv-carry','↩','עוברות מחודש קודם',carries.length)+carries.map(mkRow).join('');
+    if(newThis.length) html+=div('mdiv-new','📅',curMonthStr()+' – חדשות',newThis.length)+newThis.map(mkRow).join('');
+    if(closedThis.length) html+=div('mdiv-closed','✅','נסגרו החודש – יועברו לארכיון בתחילת החודש הבא',closedThis.length)+closedThis.map(mkRow).join('');
+    if(pendingArch.length) html+=div('mdiv-pending','📦','נסגרו בחודש קודם – ממתינות לארכיון',pendingArch.length)+pendingArch.map(mkRow).join('');
+    document.getElementById(tbId).innerHTML=html||`<tr><td colspan="18" style="text-align:center;padding:20px;color:var(--text2)">אין עסקאות פעילות החודש</td></tr>`;
     const tv=items.reduce((s,d)=>s+(d.v||0),0),td=items.reduce((s,d)=>s+(d.di||0),0),to=items.reduce((s,d)=>s+(d.otc||0),0);
-    document.getElementById(ftId).innerHTML=`<span class="fi">עסקאות: <b>${items.length}</b></span><span class="fi">שווי: <b>${fmt(tv)}</b></span><span class="fi">הפצות: <b>${fmt(td)}</b></span><span class="fi">OTC: <b>${fmt(to)}</b></span>${carry.length?`<span class="fi" style="color:#f4a261">↩ עוברות: <b>${carry.length}</b></span>`:''}`;
+    document.getElementById(ftId).innerHTML=`<span class="fi">סה"כ: <b>${items.length}</b></span><span class="fi">שווי: <b>${fmt(tv)}</b></span><span class="fi">הפצות: <b>${fmt(td)}</b></span><span class="fi">OTC: <b>${fmt(to)}</b></span>${carries.length?`<span class="fi" style="color:#f4a261">↩ עוברות: <b>${carries.length}</b></span>`:''}${closedThis.length?`<span class="fi" style="color:var(--blue)">✅ נסגרו: <b>${closedThis.length}</b></span>`:''}`;
     updateSelBar(sk);
   });
 }
@@ -1458,41 +1506,28 @@ function curMonthStr(){const c=nd().substring(0,7);const[y,m]=c.split('-');retur
 
 function runMonthlyCycle(force){
   const cur=nd().substring(0,7);
-  if(!force&&(D.lastCycleMonth||'')>=cur)return {deals:0,tenders:0,dists:0,salary:0,meetings:0};
-  const counts={deals:0,tenders:0,dists:0,salary:0,meetings:0};
-  // Deals: archive closed deals from previous months
+  if(!force&&(D.lastCycleMonth||'')>=cur)return 0;
+  // DEALS ONLY: archive closed deals from previous months
   if(!D.archivedDeals)D.archivedDeals=[];
   const archDeals=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<cur);
-  if(archDeals.length){archDeals.forEach(d=>{d._archivedAt=cur;});D.archivedDeals=[...D.archivedDeals,...archDeals];const ids=new Set(archDeals.map(d=>d.id));D.deals=D.deals.filter(d=>!ids.has(d.id));counts.deals=archDeals.length;}
-  // Tenders: archive tenders whose deadline passed (previous month or earlier)
-  if(!D.archivedTenders)D.archivedTenders=[];
-  const archTen=D.tenders.filter(t=>(t.deadline||'').substring(0,7)<cur&&(t.deadline||'').length>=7);
-  if(archTen.length){archTen.forEach(t=>{t._archivedAt=cur;});D.archivedTenders=[...D.archivedTenders,...archTen];const ids=new Set(archTen.map(t=>t.id));D.tenders=D.tenders.filter(t=>!ids.has(t.id));counts.tenders=archTen.length;}
-  // Dists: archive completed distributions from previous months
-  if(!D.archivedDists)D.archivedDists=[];
-  const archDists=D.dists.filter(d=>d.st==='הושלם'&&(d.dt||'').substring(0,7)<cur&&(d.dt||'').length>=7);
-  if(archDists.length){archDists.forEach(d=>{d._archivedAt=cur;});D.archivedDists=[...D.archivedDists,...archDists];const ids=new Set(archDists.map(d=>d.id));D.dists=D.dists.filter(d=>!ids.has(d.id));counts.dists=archDists.length;}
-  // Salary: archive closed/completed salary projects
-  if(!D.archivedSalary)D.archivedSalary=[];
-  const archSal=D.salary.filter(s=>s.st==='נסגר');
-  if(archSal.length){archSal.forEach(s=>{s._archivedAt=cur;});D.archivedSalary=[...D.archivedSalary,...archSal];const ids=new Set(archSal.map(s=>s.id));D.salary=D.salary.filter(s=>!ids.has(s.id));counts.salary=archSal.length;}
-  // Meetings: archive all meetings from previous months
-  if(!D.archivedMeetings)D.archivedMeetings=[];
-  const archMtg=D.meetings.filter(m=>(m.dt||'').substring(0,7)<cur&&(m.dt||'').length>=7);
-  if(archMtg.length){archMtg.forEach(m=>{m._archivedAt=cur;});D.archivedMeetings=[...D.archivedMeetings,...archMtg];const ids=new Set(archMtg.map(m=>m.id));D.meetings=D.meetings.filter(m=>!ids.has(m.id));counts.meetings=archMtg.length;}
+  if(archDeals.length){
+    archDeals.forEach(d=>{d._archivedAt=cur;});
+    D.archivedDeals=[...D.archivedDeals,...archDeals];
+    const ids=new Set(archDeals.map(d=>d.id));
+    D.deals=D.deals.filter(d=>!ids.has(d.id));
+  }
   D.lastCycleMonth=cur;
   saveAll();
-  return counts;
+  return archDeals.length;
 }
 
 function manualRunCycle(){
-  const c=runMonthlyCycle(true);
+  const n=runMonthlyCycle(true);
   rAll();
-  const total=c.deals+c.tenders+c.dists+c.salary+c.meetings;
-  if(total){
-    alert(`📦 מעבר חודש בוצע:\n• עסקאות נסגרו: ${c.deals}\n• מכרזים פגי תוקף: ${c.tenders}\n• הפצות שהושלמו: ${c.dists}\n• פרויקטי שכר נסגרו: ${c.salary}\n• פגישות חודש קודם: ${c.meetings}\n\nסה"כ ${total} פריטים הועברו לארכיון ✓`);
+  if(n){
+    alert(`📦 סגירת חודש בוצעה!\n\n${n} עסקאות שנסגרו הועברו לארכיון.\nעסקאות פתוחות עוברות לחודש הבא.\n\nניתן לצפות בהן בלשונית "📦 ארכיון" בסעיף עסקאות.`);
   }else{
-    alert('✓ אין פריטים לארכוב כעת\n\n(עסקאות: נסגרו בחודש קודם | מכרזים: הגשה עברה | הפצות: הושלמו | שכר: נסגרו | פגישות: חודש קודם)');
+    alert('✓ אין עסקאות נסגרות מחודש קודם להעביר לארכיון.\n\nרק עסקאות שסומנו "נסגר" בחודש שעבר יועברו אוטומטית.');
   }
 }
 
