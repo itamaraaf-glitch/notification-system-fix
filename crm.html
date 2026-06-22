@@ -540,9 +540,10 @@ select option{background:#0a0d18}
     </div>
   </div>
   <div class="tabs" id="salary-tabs">
-    <div class="tab active" onclick="swTab(this,'salary-tabs','ssvc','seq','ssum');rSalary()">שירות</div>
-    <div class="tab" onclick="swTab(this,'salary-tabs','ssvc','seq','ssum');rSalary()">ציוד (OTC)</div>
-    <div class="tab" onclick="swTab(this,'salary-tabs','ssvc','seq','ssum');rSalSum()">סיכום</div>
+    <div class="tab active" onclick="swTab(this,'salary-tabs','ssvc','seq','ssum','archivsal');rSalary()">שירות</div>
+    <div class="tab" onclick="swTab(this,'salary-tabs','ssvc','seq','ssum','archivsal');rSalary()">ציוד (OTC)</div>
+    <div class="tab" onclick="swTab(this,'salary-tabs','ssvc','seq','ssum','archivsal');rSalSum()">סיכום</div>
+    <div class="tab" onclick="swTab(this,'salary-tabs','ssvc','seq','ssum','archivsal');rSalaryArchive()">📦 ארכיון</div>
   </div>
   <div id="ssvc">
     <div class="tw"><div class="thdr">🔧 שירות</div>
@@ -573,6 +574,7 @@ select option{background:#0a0d18}
     </div></div>
   </div>
   <div id="ssum" style="display:none"><div class="krow" id="ssk"></div></div>
+  <div id="archivsal" style="display:none"><div id="archive-salary-content" style="padding:4px 0"></div></div>
 </div>
 
 <!-- MEETINGS -->
@@ -823,7 +825,7 @@ select option{background:#0a0d18}
 const LS_KEY = 'cem_hot_v3';
 const USERS = [{u:'ITAMAR2026',p:'NOSHrit$2026',n:'איתמר ונדן'}];
 const MEETING_GOAL = 15;
-let D = {deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedMeetings:[],lastCycleMonth:''};
+let D = {deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:''};
 let EI = null, ET = null;
 const SEL = {};
 
@@ -877,7 +879,7 @@ function loadAll(){
       const p=JSON.parse(s);
       D.deals=p.deals||[];D.tenders=p.tenders||[];D.dists=p.dists||[];
       D.salary=p.salary||[];D.meetings=p.meetings||[];D.clients=p.clients||[];
-      D.archivedDeals=p.archivedDeals||[];D.archivedTenders=p.archivedTenders||[];D.archivedDists=p.archivedDists||[];D.archivedMeetings=p.archivedMeetings||[];D.lastCycleMonth=p.lastCycleMonth||'';
+      D.archivedDeals=p.archivedDeals||[];D.archivedTenders=p.archivedTenders||[];D.archivedDists=p.archivedDists||[];D.archivedSalary=p.archivedSalary||[];D.archivedMeetings=p.archivedMeetings||[];D.lastCycleMonth=p.lastCycleMonth||'';
       if(!D.deals.length)seedData();
     }else{seedData();}
   }catch(e){console.error(e);seedData();}
@@ -1185,6 +1187,29 @@ function rSalSum(){
   document.getElementById('ssk').innerHTML=`<div class="kc"><div class="lb">שירות – יעד</div><div class="vl">₪${Math.round(sm(sv,'tr')/1000)}K</div><div class="sb">${sv.length} פרויקטים</div></div><div class="kc g"><div class="lb">שירות – נסגר</div><div class="vl">₪${Math.round(sm(sv,'cl2')/1000)}K</div></div><div class="kc r"><div class="lb">שירות – יתרה</div><div class="vl">₪${Math.round(sm(sv,'pv')/1000)}K</div></div><div class="kc"><div class="lb">ציוד – יעד</div><div class="vl">₪${Math.round(sm(eq,'tr')/1000)}K</div><div class="sb">${eq.length} פרויקטים</div></div><div class="kc g"><div class="lb">ציוד – נסגר</div><div class="vl">₪${Math.round(sm(eq,'cl2')/1000)}K</div></div><div class="kc y"><div class="lb">סה"כ כולל</div><div class="vl">₪${Math.round((sm(sv,'tr')+sm(eq,'tr'))/1000)}K</div></div>`;
 }
 
+function rSalaryArchive(){
+  const arch=D.archivedSalary||[];
+  const cont=document.getElementById('archive-salary-content');if(!cont)return;
+  if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--text2)">📦 אין פרויקטי שכר בארכיון</div>';return;}
+  const byMonth={};
+  arch.forEach(s=>{const m=s._archivedAt||'ללא תאריך';if(!byMonth[m])byMonth[m]=[];byMonth[m].push(s);});
+  const months=Object.keys(byMonth).sort().reverse();
+  const totTr=arch.reduce((s,i)=>s+(i.tr||0),0),totCl=arch.reduce((s,i)=>s+(i.cl2||0),0);
+  const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">פרויקטים בארכיון</div><div class="vl" style="color:var(--text2)">${arch.length}</div></div><div class="kc g"><div class="lb">יעד מצטבר</div><div class="vl">${fmt(totTr)}</div></div><div class="kc"><div class="lb">נסגר מצטבר</div><div class="vl" style="color:var(--teal)">${fmt(totCl)}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
+  const blocks=months.map(m=>{
+    const items=byMonth[m];
+    const [y,mo]=m.includes('-')?m.split('-'):[m,''];
+    const name=mo?(MONTH_HE[parseInt(mo)-1]||mo)+' '+y:m;
+    const tv=items.reduce((s,i)=>s+(i.tr||0),0),tc=items.reduce((s,i)=>s+(i.cl2||0),0);
+    const rows=items.map(s=>{
+      const pct=s.tr?Math.round(((s.cl2||0)/s.tr)*100):0;
+      return`<tr><td>${sB(s.st)}</td><td style="font-size:10px">${s.pj||'–'}</td><td style="font-weight:600">${s.cl||''}</td><td>${s.ty==='service'?'שירות':'ציוד'}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="font-size:10px">${pct}%</td><td style="font-size:10px">${s.no||'–'}</td></tr>`;
+    }).join('');
+    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${items.length} פרויקטים | יעד: ${fmt(tv)} | נסגר: ${fmt(tc)}</span></div><div class="tscroll"><table><thead><tr><th>סטטוס</th><th>מס׳ פרויקט</th><th>לקוח</th><th>סוג</th><th>יעד</th><th>נסגר</th><th>%</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  }).join('');
+  cont.innerHTML=summary+blocks;
+}
+
 // ===== MEETINGS =====
 function rMeetings(){
   const n=now(),wd=wdM(n.getFullYear(),n.getMonth()),wdp=wdP(n.getFullYear(),n.getMonth(),n.getDate());
@@ -1395,10 +1420,10 @@ function rClients(){
 const MONTH_HE=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 function curMonthStr(){const c=nd().substring(0,7);const[y,m]=c.split('-');return MONTH_HE[parseInt(m)-1]+' '+y;}
 
-function runMonthlyCycle(){
+function runMonthlyCycle(force){
   const cur=nd().substring(0,7);
-  if((D.lastCycleMonth||'')>=cur)return {deals:0,tenders:0,dists:0,meetings:0};
-  const counts={deals:0,tenders:0,dists:0,meetings:0};
+  if(!force&&(D.lastCycleMonth||'')>=cur)return {deals:0,tenders:0,dists:0,salary:0,meetings:0};
+  const counts={deals:0,tenders:0,dists:0,salary:0,meetings:0};
   // Deals: archive closed deals from previous months
   if(!D.archivedDeals)D.archivedDeals=[];
   const archDeals=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<cur);
@@ -1411,6 +1436,10 @@ function runMonthlyCycle(){
   if(!D.archivedDists)D.archivedDists=[];
   const archDists=D.dists.filter(d=>d.st==='הושלם'&&(d.dt||'').substring(0,7)<cur&&(d.dt||'').length>=7);
   if(archDists.length){archDists.forEach(d=>{d._archivedAt=cur;});D.archivedDists=[...D.archivedDists,...archDists];const ids=new Set(archDists.map(d=>d.id));D.dists=D.dists.filter(d=>!ids.has(d.id));counts.dists=archDists.length;}
+  // Salary: archive closed/completed salary projects
+  if(!D.archivedSalary)D.archivedSalary=[];
+  const archSal=D.salary.filter(s=>s.st==='נסגר');
+  if(archSal.length){archSal.forEach(s=>{s._archivedAt=cur;});D.archivedSalary=[...D.archivedSalary,...archSal];const ids=new Set(archSal.map(s=>s.id));D.salary=D.salary.filter(s=>!ids.has(s.id));counts.salary=archSal.length;}
   // Meetings: archive all meetings from previous months
   if(!D.archivedMeetings)D.archivedMeetings=[];
   const archMtg=D.meetings.filter(m=>(m.dt||'').substring(0,7)<cur&&(m.dt||'').length>=7);
@@ -1421,13 +1450,13 @@ function runMonthlyCycle(){
 }
 
 function manualRunCycle(){
-  const c=runMonthlyCycle();
+  const c=runMonthlyCycle(true);
   rAll();
-  const total=c.deals+c.tenders+c.dists+c.meetings;
+  const total=c.deals+c.tenders+c.dists+c.salary+c.meetings;
   if(total){
-    alert(`📦 מעבר חודש:\n• עסקאות: ${c.deals}\n• מכרזים: ${c.tenders}\n• הפצות: ${c.dists}\n• פגישות: ${c.meetings}\nסה"כ ${total} פריטים הועברו לארכיון`);
+    alert(`📦 מעבר חודש בוצע:\n• עסקאות נסגרו: ${c.deals}\n• מכרזים פגי תוקף: ${c.tenders}\n• הפצות שהושלמו: ${c.dists}\n• פרויקטי שכר נסגרו: ${c.salary}\n• פגישות חודש קודם: ${c.meetings}\n\nסה"כ ${total} פריטים הועברו לארכיון ✓`);
   }else{
-    alert('✓ לא היו פריטים לארכוב החודש');
+    alert('✓ אין פריטים לארכוב כעת\n\n(עסקאות: נסגרו בחודש קודם | מכרזים: הגשה עברה | הפצות: הושלמו | שכר: נסגרו | פגישות: חודש קודם)');
   }
 }
 
