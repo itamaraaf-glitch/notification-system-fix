@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מערכת התראות חכמה</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a1d2e;
+      border-bottom: 1px solid #2d3748;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 { font-size: 1.4rem; font-weight: 700; color: #fff; }
+    header span { font-size: 0.85rem; color: #718096; }
+
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      padding: 20px 32px;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: #1a1d2e;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 16px 24px;
+      flex: 1;
+      min-width: 140px;
+      text-align: center;
+    }
+
+    .stat-card .value { font-size: 2rem; font-weight: 700; color: #63b3ed; }
+    .stat-card .label { font-size: 0.8rem; color: #718096; margin-top: 4px; }
+
+    .stat-card.warning .value { color: #f6ad55; }
+    .stat-card.danger  .value { color: #fc8181; }
+    .stat-card.success .value { color: #68d391; }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      padding: 0 32px 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: #2d3748;
+      color: #e2e8f0;
+      border: 1px solid #4a5568;
+      border-radius: 6px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #4a5568; }
+    button.primary { background: #3182ce; border-color: #2b6cb0; }
+    button.primary:hover { background: #2b6cb0; }
+    button.danger { background: #c53030; border-color: #9b2c2c; }
+    button.danger:hover { background: #9b2c2c; }
+
+    select {
+      background: #2d3748;
+      color: #e2e8f0;
+      border: 1px solid #4a5568;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .notifications-list {
+      padding: 0 32px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .notification-card {
+      background: #1a1d2e;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      transition: border-color 0.2s, opacity 0.3s;
+      position: relative;
+    }
+
+    .notification-card:hover { border-color: #4a5568; }
+    .notification-card.unread { border-right: 4px solid #3182ce; }
+
+    .severity-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    .severity-dot.INFO     { background: #63b3ed; }
+    .severity-dot.WARNING  { background: #f6ad55; }
+    .severity-dot.ERROR    { background: #fc8181; }
+    .severity-dot.CRITICAL { background: #fc8181; box-shadow: 0 0 6px #fc8181; }
+
+    .notification-body { flex: 1; }
+    .notification-body h3 { font-size: 0.95rem; font-weight: 600; color: #e2e8f0; }
+    .notification-body p  { font-size: 0.85rem; color: #a0aec0; margin-top: 4px; }
+    .notification-meta    { font-size: 0.75rem; color: #4a5568; margin-top: 6px; }
+
+    .notification-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .badge {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .badge.INFO     { background: #2b4c7e; color: #63b3ed; }
+    .badge.WARNING  { background: #744210; color: #f6ad55; }
+    .badge.ERROR    { background: #742a2a; color: #fc8181; }
+    .badge.CRITICAL { background: #742a2a; color: #fc8181; }
+
+    .empty {
+      text-align: center;
+      color: #4a5568;
+      padding: 60px;
+      font-size: 1.1rem;
+    }
+
+    .ws-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #fc8181;
+      display: inline-block;
+      margin-left: 6px;
+    }
+    .ws-indicator.connected { background: #68d391; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #1a1d2e;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      padding: 28px;
+      width: 480px;
+      max-width: 95vw;
+    }
+    .modal h2 { margin-bottom: 18px; font-size: 1.1rem; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 0.8rem; color: #718096; margin-bottom: 5px; }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      background: #0f1117;
+      border: 1px solid #2d3748;
+      border-radius: 6px;
+      color: #e2e8f0;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+    }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🔔 מערכת התראות חכמה</h1>
+  <span>
+    <span id="wsIndicator" class="ws-indicator"></span>
+    <span id="wsStatus">מתחבר...</span>
+  </span>
+</header>
+
+<div class="stats-bar">
+  <div class="stat-card"><div class="value" id="statTotal">–</div><div class="label">סה"כ</div></div>
+  <div class="stat-card warning"><div class="value" id="statUnread">–</div><div class="label">לא נקראו</div></div>
+  <div class="stat-card danger"><div class="value" id="statOrphaned">–</div><div class="label">תקועות</div></div>
+  <div class="stat-card success"><div class="value" id="statArchived">–</div><div class="label">בארכיון</div></div>
+</div>
+
+<div class="toolbar">
+  <button class="primary" onclick="openModal()">+ הוסף התראה</button>
+  <button onclick="runCleanup()">ניקוי אוטומטי</button>
+  <select id="filterSeverity" onchange="loadNotifications()">
+    <option value="">כל הרמות</option>
+    <option value="INFO">INFO</option>
+    <option value="WARNING">WARNING</option>
+    <option value="ERROR">ERROR</option>
+    <option value="CRITICAL">CRITICAL</option>
+  </select>
+  <label style="font-size:0.85rem;">
+    <input type="checkbox" id="filterUnread" onchange="loadNotifications()" />
+    לא נקראו בלבד
+  </label>
+</div>
+
+<div class="notifications-list" id="notificationsList"></div>
+
+<!-- Add notification modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>התראה חדשה</h2>
+    <div class="form-group">
+      <label>כותרת</label>
+      <input type="text" id="newTitle" placeholder="כותרת ההתראה" />
+    </div>
+    <div class="form-group">
+      <label>הודעה</label>
+      <textarea id="newMessage" placeholder="תוכן ההודעה"></textarea>
+    </div>
+    <div class="form-group">
+      <label>רמת חומרה</label>
+      <select id="newSeverity">
+        <option value="INFO">INFO</option>
+        <option value="WARNING">WARNING</option>
+        <option value="ERROR">ERROR</option>
+        <option value="CRITICAL">CRITICAL</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>סוג ישות (אופציונלי)</label>
+      <input type="text" id="newEntityType" placeholder="לדוגמה: deals, customers" />
+    </div>
+    <div class="form-group">
+      <label>מזהה ישות (אופציונלי)</label>
+      <input type="text" id="newEntityId" placeholder="לדוגמה: deal_123" />
+    </div>
+    <div class="modal-actions">
+      <button onclick="closeModal()">ביטול</button>
+      <button class="primary" onclick="submitNotification()">הוסף</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = "http://localhost:8000";
+  let ws;
+
+  function connectWS() {
+    ws = new WebSocket("ws://localhost:8000/ws");
+    ws.onopen = () => {
+      document.getElementById("wsIndicator").className = "ws-indicator connected";
+      document.getElementById("wsStatus").textContent = "מחובר";
+    };
+    ws.onclose = () => {
+      document.getElementById("wsIndicator").className = "ws-indicator";
+      document.getElementById("wsStatus").textContent = "מנותק";
+      setTimeout(connectWS, 3000);
+    };
+    ws.onmessage = () => { loadNotifications(); loadStats(); };
+  }
+
+  async function loadStats() {
+    const r = await fetch(`${API}/notifications/stats`);
+    const d = await r.json();
+    document.getElementById("statTotal").textContent = d.total;
+    document.getElementById("statUnread").textContent = d.unread;
+    document.getElementById("statOrphaned").textContent = d.orphaned;
+    document.getElementById("statArchived").textContent = d.archived;
+  }
+
+  async function loadNotifications() {
+    const severity = document.getElementById("filterSeverity").value;
+    const unreadOnly = document.getElementById("filterUnread").checked;
+    let url = `${API}/notifications?`;
+    if (severity) url += `severity=${severity}&`;
+    if (unreadOnly) url += `unread_only=true&`;
+
+    const r = await fetch(url);
+    const list = await r.json();
+    renderList(list);
+  }
+
+  function renderList(list) {
+    const el = document.getElementById("notificationsList");
+    if (!list.length) {
+      el.innerHTML = '<div class="empty">אין התראות להצגה</div>';
+      return;
+    }
+    el.innerHTML = list.map(n => `
+      <div class="notification-card ${n.is_read ? "" : "unread"}" id="card-${n.id}">
+        <div class="severity-dot ${n.severity}"></div>
+        <div class="notification-body">
+          <h3>${escHtml(n.title)} <span class="badge ${n.severity}">${n.severity}</span></h3>
+          <p>${escHtml(n.message)}</p>
+          <div class="notification-meta">
+            ${n.entity_type ? `${n.entity_type} · ${n.entity_id} · ` : ""}
+            ${new Date(n.created_at).toLocaleString("he-IL")}
+          </div>
+        </div>
+        <div class="notification-actions">
+          ${!n.is_read ? `<button onclick="markRead(${n.id})">קריאה</button>` : ""}
+          <button class="danger" onclick="deleteNotification(${n.id})">מחק</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  async function markRead(id) {
+    await fetch(`${API}/notifications/${id}/read`, { method: "PATCH" });
+    loadNotifications(); loadStats();
+  }
+
+  async function deleteNotification(id) {
+    await fetch(`${API}/notifications/${id}`, { method: "DELETE" });
+    loadNotifications(); loadStats();
+  }
+
+  async function runCleanup() {
+    const r = await fetch(`${API}/notifications/cleanup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ valid_entity_ids: null }),
+    });
+    const d = await r.json();
+    alert(`נוקו: ${d.cleaned_orphaned} תקועות | עברו לארכיון: ${d.archived}`);
+    loadNotifications(); loadStats();
+  }
+
+  function openModal() { document.getElementById("modalOverlay").classList.add("open"); }
+  function closeModal() { document.getElementById("modalOverlay").classList.remove("open"); }
+
+  async function submitNotification() {
+    const payload = {
+      title: document.getElementById("newTitle").value.trim(),
+      message: document.getElementById("newMessage").value.trim(),
+      severity: document.getElementById("newSeverity").value,
+      entity_type: document.getElementById("newEntityType").value.trim() || null,
+      entity_id: document.getElementById("newEntityId").value.trim() || null,
+    };
+    if (!payload.title || !payload.message) return alert("נא למלא כותרת והודעה");
+    await fetch(`${API}/notifications`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    closeModal();
+    loadNotifications(); loadStats();
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  connectWS();
+  loadStats();
+  loadNotifications();
+  setInterval(() => { loadStats(); loadNotifications(); }, 30000);
+</script>
+</body>
+</html>
