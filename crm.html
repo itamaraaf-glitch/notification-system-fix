@@ -331,6 +331,7 @@ select option{background:#0a0d18}
   <div class="tbr">
     <div class="uchip">👤 <b id="uname">–</b></div>
     <span class="save-ind" id="saveind">✦ נשמר</span>
+    <button class="btn" onclick="saveAll()" style="background:var(--tealdim);color:var(--teal);border:1px solid rgba(6,214,160,.4);font-size:11px;padding:4px 12px;border-radius:20px">💾 שמור</button>
     <button class="abtn" onclick="nav('alerts')">⚠ <span id="acnt">0</span></button>
     <button class="btn btnbk" onclick="backupData()" title="גיבוי">💾 גיבוי</button>
     <button class="btn" onclick="restoreData()" title="שחזור">📂</button>
@@ -404,6 +405,7 @@ select option{background:#0a0d18}
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ltb','stb')">
       <button class="btn btnp" onclick="openM('deal',null)">+ עסקה חדשה</button>
       <button class="btn" onclick="exportExcel('deals')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn btnd" onclick="deleteAll('deals')" title="מחק את כל העסקאות">🗑 מחק הכל</button>
     </div>
   </div>
   <div id="month-banner"></div>
@@ -455,6 +457,7 @@ select option{background:#0a0d18}
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ttb')">
       <button class="btn btnp" onclick="openM('tender',null)">+ מכרז חדש</button>
       <button class="btn" onclick="exportExcel('tenders')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn btnd" onclick="deleteAll('tenders')" title="מחק את כל המכרזים">🗑 מחק הכל</button>
     </div>
   </div>
   <div class="tabs" id="tenders-tabs">
@@ -486,6 +489,7 @@ select option{background:#0a0d18}
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ldtb','sdtb')">
       <button class="btn btnp" onclick="openM('dist',null)">+ הפצה חדשה</button>
       <button class="btn" onclick="exportExcel('dists')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn btnd" onclick="deleteAll('dists')" title="מחק את כל ההפצות">🗑 מחק הכל</button>
     </div>
   </div>
   <div class="tabs" id="dists-tabs">
@@ -532,6 +536,7 @@ select option{background:#0a0d18}
     <div style="display:flex;gap:6px">
       <button class="btn btnp" onclick="openM('salary',null)">+ פרויקט לשכר</button>
       <button class="btn" onclick="exportExcel('salary')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn btnd" onclick="deleteAll('salary')" title="מחק את כל פרויקטי השכר">🗑 מחק הכל</button>
     </div>
   </div>
   <div class="tabs" id="salary-tabs">
@@ -578,6 +583,7 @@ select option{background:#0a0d18}
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'mtb')">
       <button class="btn btnp" onclick="openM('meeting',null)">+ פגישה חדשה</button>
       <button class="btn" onclick="exportExcel('meetings')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn btnd" onclick="deleteAll('meetings')" title="מחק את כל הפגישות">🗑 מחק הכל</button>
     </div>
   </div>
   <div class="tabs" id="meetings-tabs">
@@ -1618,6 +1624,14 @@ function deleteSelected(key){
   const tbl=tblMap[key];
   if(tbl){D[tbl]=D[tbl].filter(x=>!SEL[key].has(x.id));saveAll();}
   SEL[key]=new Set();rAll();
+}
+function deleteAll(section){
+  const map={deals:'deals',tenders:'tenders',dists:'dists',salary:'salary',meetings:'meetings'};
+  const tbl=map[section];if(!tbl)return;
+  const n=D[tbl].length;
+  if(!n){alert('אין פריטים למחיקה');return;}
+  if(!confirm('למחוק את כל '+n+' הפריטים בסעיף זה?\nפעולה זו אינה ניתנת לביטול.'))return;
+  D[tbl]=[];saveAll();rAll();
 }
 
 // ===== DRAG SCROLL =====
