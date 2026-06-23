@@ -745,6 +745,7 @@ select option{background:#0a0d18}
   <div class="fg">
     <div class="g"><label>תאריך</label><input type="date" id="dd"></div>
     <div class="g"><label>שם חברה</label><input type="text" id="dco"></div>
+    <div class="g"><label>ח.פ</label><input type="text" id="dcp" placeholder="מספר ח.פ"></div>
     <div class="g"><label>תשתית</label><select id="din"><option>הוט</option><option>צד ג׳</option><option>365</option><option>ציוד</option><option>הוט + צד ג׳</option><option>STARLINK</option><option>RF</option><option>CYBIZ</option><option>בינת</option><option>C-DATA</option><option>נימובס</option></select></div>
     <div class="g"><label>שירות</label><input type="text" id="dsr"></div>
     <div class="g"><label>שווי ₪</label><input type="number" id="dv" placeholder="0"></div>
@@ -1996,7 +1997,7 @@ function openM(type,id){
   if(type==='deal'){
     document.getElementById('dtit').textContent=isNew?'עסקה חדשה':'עריכת עסקה';
     const d=isNew?{}:D.deals.find(x=>x.id==id)||{};
-    document.getElementById('dd').value=d.date||nd();document.getElementById('dco').value=d.co||'';document.getElementById('din').value=d.inf||'הוט';document.getElementById('dsr').value=d.srv||'';document.getElementById('dv').value=d.v||0;document.getElementById('dmv').value=d.mv||0;document.getElementById('ddi').value=d.di||0;document.getElementById('ddn').value=d.dn||0;document.getElementById('dot').value=d.ot||0;document.getElementById('dotc').value=d.otc||0;document.getElementById('dct').value=d.ct||'';document.getElementById('dch').value=d.ch||0.99;document.getElementById('dst2').value=d.st||'ממתין לתשובה';document.getElementById('dty').value=d.ty||'long';document.getElementById('dno').value=d.no||'';
+    document.getElementById('dd').value=d.date||nd();document.getElementById('dco').value=d.co||'';document.getElementById('dcp').value=d.cp||'';document.getElementById('din').value=d.inf||'הוט';document.getElementById('dsr').value=d.srv||'';document.getElementById('dv').value=d.v||0;document.getElementById('dmv').value=d.mv||0;document.getElementById('ddi').value=d.di||0;document.getElementById('ddn').value=d.dn||0;document.getElementById('dot').value=d.ot||0;document.getElementById('dotc').value=d.otc||0;document.getElementById('dct').value=d.ct||'';document.getElementById('dch').value=d.ch||0.99;document.getElementById('dst2').value=d.st||'ממתין לתשובה';document.getElementById('dty').value=d.ty||'long';document.getElementById('dno').value=d.no||'';
   }else if(type==='tender'){
     document.getElementById('ttit').textContent=isNew?'מכרז חדש':'עריכת מכרז';
     const t=isNew?{}:D.tenders.find(x=>x.id==id)||{};
@@ -2020,7 +2021,7 @@ function closeM(id){document.getElementById(id).classList.remove('open');EI=null
 
 // ===== SAVE FUNCTIONS =====
 function saveDeal(){
-  const row={date:document.getElementById('dd').value,co:document.getElementById('dco').value,inf:document.getElementById('din').value,srv:document.getElementById('dsr').value,v:+document.getElementById('dv').value,mv:+document.getElementById('dmv').value,di:+document.getElementById('ddi').value,dn:+document.getElementById('ddn').value,ot:+document.getElementById('dot').value,otc:+document.getElementById('dotc').value,ct:document.getElementById('dct').value,ch:+document.getElementById('dch').value,st:document.getElementById('dst2').value,ty:document.getElementById('dty').value,no:document.getElementById('dno').value};
+  const row={date:document.getElementById('dd').value,co:document.getElementById('dco').value,cp:document.getElementById('dcp').value,inf:document.getElementById('din').value,srv:document.getElementById('dsr').value,v:+document.getElementById('dv').value,mv:+document.getElementById('dmv').value,di:+document.getElementById('ddi').value,dn:+document.getElementById('ddn').value,ot:+document.getElementById('dot').value,otc:+document.getElementById('dotc').value,ct:document.getElementById('dct').value,ch:+document.getElementById('dch').value,st:document.getElementById('dst2').value,ty:document.getElementById('dty').value,no:document.getElementById('dno').value};
   if(!row.co){alert('יש להזין שם חברה');return;}
   let savedDeal;
   if(EI){dbUpdate('deals',EI,row);savedDeal=D.deals.find(x=>x.id==EI);}
