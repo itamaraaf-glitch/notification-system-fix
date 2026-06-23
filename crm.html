@@ -462,6 +462,7 @@ select option{background:#0a0d18}
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ltb','stb')">
       <button class="btn btnp" onclick="openM('deal',null)">+ עסקה חדשה</button>
       <button class="btn" onclick="exportExcel('deals')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn btnwp" onclick="sendWhatsAppDeals()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('deals')" title="מחק את כל העסקאות">🗑 מחק הכל</button>
     </div>
   </div>
@@ -514,6 +515,7 @@ select option{background:#0a0d18}
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ttb')">
       <button class="btn btnp" onclick="openM('tender',null)">+ מכרז חדש</button>
       <button class="btn" onclick="exportExcel('tenders')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn btnwp" onclick="sendWhatsAppTenders()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('tenders')" title="מחק את כל המכרזים">🗑 מחק הכל</button>
     </div>
   </div>
@@ -546,6 +548,7 @@ select option{background:#0a0d18}
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ldtb','sdtb')">
       <button class="btn btnp" onclick="openM('dist',null)">+ הפצה חדשה</button>
       <button class="btn" onclick="exportExcel('dists')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn btnwp" onclick="sendWhatsAppDists()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('dists')" title="מחק את כל ההפצות">🗑 מחק הכל</button>
     </div>
   </div>
@@ -593,6 +596,7 @@ select option{background:#0a0d18}
     <div style="display:flex;gap:6px">
       <button class="btn btnp" onclick="openM('salary',null)">+ פרויקט לשכר</button>
       <button class="btn" onclick="exportExcel('salary')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn btnwp" onclick="sendWhatsAppSalary()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('salary')" title="מחק את כל פרויקטי השכר">🗑 מחק הכל</button>
     </div>
   </div>
@@ -642,6 +646,7 @@ select option{background:#0a0d18}
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'mtb')">
       <button class="btn btnp" onclick="openM('meeting',null)">+ פגישה חדשה</button>
       <button class="btn" onclick="exportExcel('meetings')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn btnwp" onclick="sendWhatsAppMeetings()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('meetings')" title="מחק את כל הפגישות">🗑 מחק הכל</button>
     </div>
   </div>
@@ -2018,9 +2023,12 @@ function updateExportCounts(){
 }
 
 // ===== WHATSAPP =====
+const waOpen=msg=>window.open('https://wa.me/?text='+encodeURIComponent(msg));
+const waDate=()=>now().toLocaleDateString('en-GB');
+
 function sendWhatsApp(){
-  const a=getAlerts();const n=now().toLocaleDateString('en-GB');
-  let msg=`📊 *CRM HOT Business – ${n}*\n⚠️ *${a.length} התראות פעילות*\n\n`;
+  const a=getAlerts();
+  let msg=`📊 *CRM HOT Business – ${waDate()}*\n⚠️ *${a.length} התראות פעילות*\n\n`;
   a.slice(0,8).forEach(al=>{const ic=al.type==='crit'?'🔴':al.type==='warn'?'🟠':'ℹ️';msg+=`${ic} *${al.h}*\n${al.s}\n\n`;});
   if(a.length>8)msg+=`...ועוד ${a.length-8} התראות\n\n`;
   const held=D.meetings.filter(m=>m.hl==='כן').length;
@@ -2028,7 +2036,134 @@ function sendWhatsApp(){
   msg+=`💼 עסקאות: ${D.deals.length} | נסגרו: ${D.deals.filter(d=>d.st==='נסגר').length}\n`;
   const tdist=D.deals.reduce((s,d)=>s+(d.di||0),0);
   msg+=`💰 הפצות: ₪${Math.round(tdist/1000)}K`;
-  window.open('https://wa.me/?text='+encodeURIComponent(msg));
+  waOpen(msg);
+}
+
+function sendWhatsAppDeals(){
+  const n=waDate();
+  const closed=D.deals.filter(d=>d.st==='נסגר');
+  const open=D.deals.filter(d=>d.st!=='נסגר');
+  const totV=D.deals.reduce((s,d)=>s+(d.v||0),0);
+  const totCls=closed.reduce((s,d)=>s+(d.v||0),0);
+  const totDi=D.deals.reduce((s,d)=>s+(d.di||0),0);
+  let msg=`💼 *עסקאות – CRM HOT Business*\n📅 ${n}\n\n`;
+  msg+=`📊 *סיכום כללי*\n`;
+  msg+=`סה"כ עסקאות: ${D.deals.length}\n`;
+  msg+=`✅ נסגרו: ${closed.length} | שווי: ${fmt(totCls)}\n`;
+  msg+=`🔄 פתוחות: ${open.length} | שווי: ${fmt(totV-totCls)}\n`;
+  msg+=`📡 הפצות: ${fmt(totDi)}\n\n`;
+  const recent=closed.slice(-5).reverse();
+  if(recent.length){
+    msg+=`✅ *נסגרו לאחרונה*\n`;
+    recent.forEach(d=>msg+=`• ${d.co||'–'} | ${fmt(d.v)} | ${fmtDate(d.date)}\n`);
+    msg+='\n';
+  }
+  const urgent=open.filter(d=>{const p=pri(d,'deal');return p==='r'||p==='o';}).slice(0,5);
+  if(urgent.length){
+    msg+=`⚠️ *דורשות טיפול*\n`;
+    urgent.forEach(d=>msg+=`• ${d.co||'–'} | ${d.srv||''} | ${fmt(d.v)}\n`);
+  }
+  waOpen(msg);
+}
+
+function sendWhatsAppTenders(){
+  const n=waDate();
+  const t=nd();
+  const sub=D.tenders.filter(t=>t.submitted==='כן');
+  const notSub=D.tenders.filter(t=>t.submitted!=='כן');
+  const totAmt=D.tenders.reduce((s,t)=>s+(t.amount||0),0);
+  let msg=`📋 *מכרזים – CRM HOT Business*\n📅 ${n}\n\n`;
+  msg+=`📊 *סיכום*\n`;
+  msg+=`סה"כ מכרזים: ${D.tenders.length}\n`;
+  msg+=`✅ הוגשו: ${sub.length} | ⏳ ממתינים: ${notSub.length}\n`;
+  msg+=`💰 שווי כולל: ${fmt(totAmt)}\n\n`;
+  const upcoming=D.tenders
+    .filter(t=>t.deadline&&t.submitted!=='כן')
+    .sort((a,b)=>a.deadline.localeCompare(b.deadline))
+    .slice(0,6);
+  if(upcoming.length){
+    msg+=`📅 *מועדי הגשה קרובים*\n`;
+    upcoming.forEach(t=>{
+      const d=db(nd(),t.deadline);
+      const urg=d<=3?'🔴':d<=7?'🟠':'🟡';
+      msg+=`${urg} ${t.name||'–'} | ${fmtDate(t.deadline)} | ${d>=0?d+'י לסיום':'עבר'}\n`;
+    });
+  }
+  waOpen(msg);
+}
+
+function sendWhatsAppDists(){
+  const n=waDate();
+  const done=D.dists.filter(d=>d.st==='הושלם');
+  const inProg=D.dists.filter(d=>d.st!=='הושלם');
+  const totInc=D.dists.reduce((s,d)=>s+(d.inc||0),0);
+  const doneInc=done.reduce((s,d)=>s+(d.inc||0),0);
+  const goal=D.goals&&D.goals.dists||GOAL_DISTS;
+  const pct=goal?Math.round((doneInc/goal)*100):0;
+  let msg=`🚀 *הפצות – CRM HOT Business*\n📅 ${n}\n\n`;
+  msg+=`📊 *סיכום*\n`;
+  msg+=`סה"כ הפצות: ${D.dists.length}\n`;
+  msg+=`✅ הושלמו: ${done.length} | 🔄 בתהליך: ${inProg.length}\n`;
+  msg+=`💰 הכנסה חודשית כוללת: ${fmt(totInc)}\n`;
+  msg+=`🎯 יעד רבעוני: ${fmt(goal)} | ביצוע: ${pct}%\n\n`;
+  const stuck=inProg.filter(d=>{const p=pri(d,'dist');return p==='r';}).slice(0,5);
+  if(stuck.length){
+    msg+=`⚠️ *תקועות – דורשות טיפול*\n`;
+    stuck.forEach(d=>msg+=`• ${d.co||'–'} | ${d.so||'–'} | ${fmtDate(d.dt)}\n`);
+    msg+='\n';
+  }
+  const recent=done.slice(-5).reverse();
+  if(recent.length){
+    msg+=`✅ *הושלמו לאחרונה*\n`;
+    recent.forEach(d=>msg+=`• ${d.co||'–'} | ${fmt(d.inc)}/חודש | ${fmtDate(d.dt)}\n`);
+  }
+  waOpen(msg);
+}
+
+function sendWhatsAppSalary(){
+  const n=waDate();
+  const sv=D.salary.filter(s=>s.ty==='service'),eq=D.salary.filter(s=>s.ty==='equipment');
+  const sm=(arr,k)=>arr.reduce((s,i)=>s+(i[k]||0),0);
+  const totTr=sm(D.salary,'tr'),totCl=sm(D.salary,'cl2'),totPv=sm(D.salary,'pv');
+  const pct=totTr?Math.round((totCl/totTr)*100):0;
+  const goal=D.goals&&D.goals.sal||GOAL_DEALS;
+  let msg=`💰 *פרויקטי שכר – CRM HOT Business*\n📅 ${n}\n\n`;
+  msg+=`📊 *סיכום*\n`;
+  msg+=`סה"כ פרויקטים: ${D.salary.length} (שירות: ${sv.length} | ציוד: ${eq.length})\n`;
+  msg+=`🎯 יעד: ${fmt(totTr)} | ✅ נסגר: ${fmt(totCl)} | ⏳ יתרה: ${fmt(totPv)}\n`;
+  msg+=`📈 עמידה: ${pct}%\n`;
+  msg+=`🏆 יעד רבעוני: ${fmt(goal)}\n\n`;
+  const open=D.salary.filter(s=>s.st!=='סגור').slice(0,6);
+  if(open.length){
+    msg+=`⏳ *פתוחים*\n`;
+    open.forEach(s=>msg+=`• ${s.cl||'–'} | יעד: ${fmt(s.tr)} | נסגר: ${fmt(s.cl2)}\n`);
+  }
+  waOpen(msg);
+}
+
+function sendWhatsAppMeetings(){
+  const n=waDate();
+  const held=D.meetings.filter(m=>m.hl==='כן').length;
+  const notHeld=D.meetings.filter(m=>m.hl!=='כן'&&m.hl!=='מבוטל').length;
+  const cancelled=D.meetings.filter(m=>m.hl==='מבוטל').length;
+  const pct=Math.round((held/MEETING_GOAL)*100);
+  let msg=`🤝 *פגישות – CRM HOT Business*\n📅 ${n}\n\n`;
+  msg+=`📊 *סיכום חודשי*\n`;
+  msg+=`🎯 יעד: ${MEETING_GOAL} פגישות\n`;
+  msg+=`✅ התקיימו: ${held} | ⏳ ממתינות: ${notHeld} | ❌ בוטלו: ${cancelled}\n`;
+  msg+=`📈 עמידה: ${pct}%\n\n`;
+  const upcoming=D.meetings.filter(m=>m.hl!=='כן'&&m.hl!=='מבוטל'&&m.dt>=nd()).slice(0,5);
+  if(upcoming.length){
+    msg+=`📅 *פגישות קרובות*\n`;
+    upcoming.sort((a,b)=>(a.dt||'').localeCompare(b.dt||'')).forEach(m=>msg+=`• ${m.cl||'–'} | ${fmtDate(m.dt)}\n`);
+    msg+='\n';
+  }
+  const recentHeld=D.meetings.filter(m=>m.hl==='כן').slice(-4).reverse();
+  if(recentHeld.length){
+    msg+=`✅ *אחרונות שהתקיימו*\n`;
+    recentHeld.forEach(m=>msg+=`• ${m.cl||'–'} | ${fmtDate(m.dt)}\n`);
+  }
+  waOpen(msg);
 }
 
 // ===== BACKUP / RESTORE =====
