@@ -1630,14 +1630,16 @@ function sendEmailToClient(id){
   openEmailCompose(c);
 }
 function openEmailCompose(c){
-  const mRev=clientMonthlyRevenue(c);
-  const mTotal=mRev.reduce((s,x)=>s+x.val,0);
-  const mLine=mRev.length?'\nשירותים פעילים עם עלות חודשית:\n'+mRev.map(x=>'  '+x.cfg.label+': '+fmt(x.val)).join('\n'):'';
-  const hasTypes=Object.entries(ITEM_CFG).filter(([t])=>(c[t]||[]).length>0&&t!=='extra');
-  const svcLine=hasTypes.length?'שירותים אצלנו: '+hasTypes.map(([,cfg])=>cfg.label).join(', '):'' ;
-  const body=`שלום ${c.contact||c.name},\n\nאני פונה אליך בנוגע לשירותים שלכם אצלנו ב-HOT.\n\n${svcLine}${mLine}${mTotal?'\nסה"כ הכנסה חודשית: '+fmt(mTotal):''}\n\nבברכה,\nאיתמר ונדן\nHOT Business\nITAMAR.VENDEN@HOT.NET.IL`;
+  const allTypes=Object.entries(ITEM_CFG).filter(([t])=>t!=='extra');
+  const hasTypes=allTypes.filter(([t])=>(c[t]||[]).length>0);
+  const missingTypes=allTypes.filter(([t])=>(c[t]||[]).length===0);
+  const potActive=(c.potential||[]).filter(p=>p.status!=='נסגר');
+  const existLine=hasTypes.length?'שירותים קיימים:\n'+hasTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
+  const missingLine=missingTypes.length?'\n\nהזדמנויות להרחבה – פתרונות שטרם נרכשו:\n'+missingTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
+  const potLine=potActive.length?'\n\nבתהליך עבודה לקוחות:\n'+potActive.map(p=>'  • '+p.productType+(p.estimatedValue?' – '+fmt(+p.estimatedValue):'')).join('\n'):'';
+  const body=`שלום ${c.contact||c.name},\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\n${existLine}${missingLine}${potLine}\n\nנשמח לתאם שיחה ולהציג את הפתרונות המתאימים לכם.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nITAMAR.VENDEN@HOT.NET.IL`;
   document.getElementById('em-to').value=c.email;
-  document.getElementById('em-subject').value=`HOT Business – ${c.name}`;
+  document.getElementById('em-subject').value=`HOT Business – הצעה ל${c.name}`;
   document.getElementById('em-body').value=body;
   document.getElementById('memail').classList.add('open');
 }
@@ -1646,9 +1648,9 @@ function emailFromClientForm(){
   if(!email){toast('⚠️ נא להזין כתובת אימייל ללקוח','warn');return;}
   const name=document.getElementById('cl-name').value.trim()||'הלקוח';
   const contact=document.getElementById('cl-contact').value.trim();
-  const body=`שלום ${contact||name},\n\nאני פונה אליך בנוגע לשירותים שלכם אצלנו ב-HOT.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nITAMAR.VENDEN@HOT.NET.IL`;
+  const body=`שלום ${contact||name},\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\nנשמח לתאם שיחה ולהציג את הפתרונות המתאימים לכם.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nITAMAR.VENDEN@HOT.NET.IL`;
   document.getElementById('em-to').value=email;
-  document.getElementById('em-subject').value=`HOT Business – ${name}`;
+  document.getElementById('em-subject').value=`HOT Business – הצעה ל${name}`;
   document.getElementById('em-body').value=body;
   document.getElementById('memail').classList.add('open');
 }
@@ -1657,7 +1659,9 @@ function sendEmailNow(){
   const subject=document.getElementById('em-subject').value.trim();
   const body=document.getElementById('em-body').value;
   if(!to){toast('⚠️ נא להזין כתובת מייל','warn');return;}
-  window.open('mailto:'+to+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body));
+  const a=document.createElement('a');
+  a.href='mailto:'+to+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
   closeM('memail');
   toast('📧 לקוח מייל נפתח','ok');
 }
