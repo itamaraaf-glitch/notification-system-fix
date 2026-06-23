@@ -860,9 +860,9 @@ select option{background:#0a0d18}
     <div class="gf"><label>נושא</label><input type="text" id="em-subject"></div>
     <div class="gf"><label>גוף המייל</label><textarea id="em-body" rows="9" style="font-family:'Heebo',sans-serif;font-size:12px;direction:rtl"></textarea></div>
   </div>
-  <div style="display:flex;gap:8px;justify-content:flex-end">
+  <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
     <button class="btn" onclick="closeM('memail')">ביטול</button>
-    <button class="btn btnp" onclick="sendEmailNow()" style="background:linear-gradient(135deg,#0078d4,#004a9f);border-color:#0078d4;box-shadow:0 4px 16px rgba(0,120,212,.4)">📧 שלח מייל</button>
+    <a id="gmail-send-btn" href="#" target="_blank" onclick="updateGmailLink();closeM('memail');toast('📧 Gmail נפתח','ok')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:linear-gradient(135deg,#0078d4,#004a9f);border:1px solid #0078d4;border-radius:8px;color:#fff;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;text-decoration:none;box-shadow:0 4px 16px rgba(0,120,212,.4);cursor:pointer">📧 שלח ב-Gmail</a>
   </div>
 </div></div>
 
@@ -1642,6 +1642,7 @@ function openEmailCompose(c){
   document.getElementById('em-subject').value=`HOT Business – הצעה ל${c.name}`;
   document.getElementById('em-body').value=body;
   document.getElementById('memail').classList.add('open');
+  setTimeout(()=>{const btn=document.getElementById('gmail-send-btn');if(btn)btn.href=buildGmailUrl();},50);
 }
 function emailFromClientForm(){
   const email=document.getElementById('cl-email').value.trim();
@@ -1653,16 +1654,17 @@ function emailFromClientForm(){
   document.getElementById('em-subject').value=`HOT Business – הצעה ל${name}`;
   document.getElementById('em-body').value=body;
   document.getElementById('memail').classList.add('open');
+  setTimeout(()=>{const btn=document.getElementById('gmail-send-btn');if(btn)btn.href=buildGmailUrl();},50);
 }
-function sendEmailNow(){
+function buildGmailUrl(){
   const to=document.getElementById('em-to').value.trim();
   const subject=document.getElementById('em-subject').value.trim();
   const body=document.getElementById('em-body').value;
-  if(!to){toast('⚠️ נא להזין כתובת מייל','warn');return;}
-  const url='https://mail.google.com/mail/?authuser=itamaraaf%40gmail.com&view=cm&to='+encodeURIComponent(to)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-  window.open(url,'_blank');
-  closeM('memail');
-  toast('📧 Gmail נפתח בטאב חדש','ok');
+  return'https://mail.google.com/mail/?authuser=itamaraaf%40gmail.com&view=cm&to='+encodeURIComponent(to)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+}
+function updateGmailLink(){
+  const btn=document.getElementById('gmail-send-btn');
+  if(btn)btn.href=buildGmailUrl();
 }
 
 // ===== MONTHLY CYCLE =====
