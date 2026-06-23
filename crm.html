@@ -1618,10 +1618,23 @@ function buildClientGmailUrl(c){
   const hasTypes=allTypes.filter(([t])=>(c[t]||[]).length>0);
   const missingTypes=allTypes.filter(([t])=>(c[t]||[]).length===0);
   const potActive=(c.potential||[]).filter(p=>p.status!=='נסגר');
+  const expiryLines=[];
+  hasTypes.forEach(([t,cfg])=>{
+    (c[t]||[]).forEach(item=>{
+      if(item.expiry){
+        const d=db(nd(),item.expiry);
+        const expLabel=(cfg.fields.find(f=>f.k==='expiry')||{}).l||'תפוגה';
+        const dateStr=fmtDate(item.expiry);
+        const urg=d<0?'פג לפני '+Math.abs(d)+' ימים!':d===0?'פג היום!':d<=30?d+' ימים לתפוגה':dateStr;
+        expiryLines.push('  • '+cfg.label.split(' ').slice(1).join(' ')+': '+expLabel+' '+dateStr+' – '+urg);
+      }
+    });
+  });
   const existLine=hasTypes.length?'שירותים קיימים:\n'+hasTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
+  const expirySection=expiryLines.length?'\n\n⚠️ תאריכי תפוגה לחידוש:\n'+expiryLines.join('\n'):'';
   const missingLine=missingTypes.length?'\n\nהזדמנויות להרחבה:\n'+missingTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
   const potLine=potActive.length?'\n\nבתהליך עבודה:\n'+potActive.map(p=>'  • '+p.productType+(p.estimatedValue?' – '+fmt(+p.estimatedValue):'')).join('\n'):'';
-  return 'שלום '+(c.contact||c.name)+',\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\n'+existLine+missingLine+potLine+'\n\nנשמח לתאם שיחה.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nitamaraaf@gmail.com';
+  return 'שלום '+(c.contact||c.name)+',\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\n'+existLine+expirySection+missingLine+potLine+'\n\nנשמח לתאם שיחה.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nitamaraaf@gmail.com';
 }
 function sendEmailToClient(id){
   const c=D.clients.find(x=>x.id==id);if(!c)return;
