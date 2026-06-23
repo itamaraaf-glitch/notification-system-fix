@@ -1638,7 +1638,8 @@ function buildClientGmailUrl(c){
   const missingLine=missingTypes.length?'\n\nהזדמנויות להרחבה:\n'+missingTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
   const potLine=potActive.length?'\n\nבתהליך עבודה:\n'+potActive.map(p=>'  • '+p.productType+(p.estimatedValue?' – '+fmt(+p.estimatedValue):'')).join('\n'):'';
   const body='שלום '+(c.contact||c.name)+',\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\n'+existLine+missingLine+potLine+'\n\nנשמח לתאם שיחה.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nitamaraaf@gmail.com';
-  return'https://mail.google.com/mail/?authuser=itamaraaf%40gmail.com&amp;view=cm&amp;to='+encodeURIComponent(c.email)+'&amp;su='+encodeURIComponent('HOT Business – הצעה ל'+c.name)+'&amp;body='+encodeURIComponent(body);
+  const subject='HOT Business – הצעה ל'+c.name;
+  return'mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
 }
 function sendEmailToClient(id){
   const c=D.clients.find(x=>x.id==id);if(!c)return;
