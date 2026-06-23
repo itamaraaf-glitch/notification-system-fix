@@ -423,7 +423,7 @@ select option{background:#0a0d18}
 
 <!-- DASHBOARD -->
 <div class="sec active" id="sec-dashboard">
-  <div class="shdr"><div class="stit">📊 לוח בקרה</div><span style="font-size:11px;color:#3a4468">מחושב אוטומטית</span></div>
+  <div class="shdr"><div class="stit">📊 לוח בקרה</div><button class="btn btns" onclick="loadAll();toast('✅ לוח הבקרה עודכן','ok')" style="font-size:11px;padding:6px 14px;border-color:var(--teal);color:var(--teal)">🔄 רענן</button></div>
   <div class="krow" id="krow"></div>
   <div class="dgrid">
     <div class="dpanel"><h4>📌 עדיפות פעולה</h4><div id="prilist" style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto"></div></div>
