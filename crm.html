@@ -2028,7 +2028,7 @@ function saveDeal(){
   let savedDeal;
   if(EI){dbUpdate('deals',EI,row);savedDeal=D.deals.find(x=>x.id==EI);}
   else{row.num=D.deals.length+1;savedDeal=dbInsert('deals',row);}
-  if(savedDeal&&savedDeal.st==='נסגר'){syncDealToClient(savedDeal);syncDealToSalary(savedDeal);}
+  if(savedDeal&&savedDeal.st==='נסגר'){syncDealToClient(savedDeal);syncDealToSalary(savedDeal);syncDealToDist(savedDeal);}
   closeM('mdeal');loadAll();
 }
 function syncDealToSalary(deal){
@@ -2049,6 +2049,28 @@ function syncDealToSalary(deal){
   };
   dbInsert('salary',row);
   toast('💰 העסקה נוספה אוטומטית לפרויקטי שכר','ok');
+}
+function syncDealToDist(deal){
+  const alreadySynced=D.dists.some(d=>d._dealId==deal.id);
+  if(alreadySynced)return;
+  const row={
+    co:deal.co||'',
+    no:deal.num||'',
+    cl:deal.ct||'',
+    hd:'',
+    it:'',
+    so:deal.srv||'',
+    ad:'',
+    inc:deal.mv||0,
+    eq:deal.ot||0,
+    dt:deal.date||nd(),
+    st:'ממתין להפצה',
+    ty:deal.ty||'long',
+    mi:deal.no||'',
+    _dealId:deal.id
+  };
+  dbInsert('dists',row);
+  toast('🚀 העסקה נוספה אוטומטית להפצות','ok');
 }
 function saveTender(){
   const row={name:document.getElementById('tn').value,proj:document.getElementById('tp').value,pub:document.getElementById('tpb').value,link:document.getElementById('tlk').value,quote:document.getElementById('tq').value,questions:document.getElementById('tqs').value,deadline:document.getElementById('tdl').value,rounds:+document.getElementById('tr').value,handler:document.getElementById('th').value,amount:+document.getElementById('tam').value,qty:+document.getElementById('tqt').value,submitted:document.getElementById('tsb').value,linked:document.getElementById('tln').value,docs:document.getElementById('tdc').value,notes:document.getElementById('tno').value};
