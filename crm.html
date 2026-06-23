@@ -1659,7 +1659,7 @@ function sendEmailNow(){
   const subject=document.getElementById('em-subject').value.trim();
   const body=document.getElementById('em-body').value;
   if(!to){toast('⚠️ נא להזין כתובת מייל','warn');return;}
-  const url='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent(to)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  const url='https://mail.google.com/mail/?authuser=itamaraaf%40gmail.com&view=cm&to='+encodeURIComponent(to)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
   window.open(url,'_blank');
   closeM('memail');
   toast('📧 Gmail נפתח בטאב חדש','ok');
