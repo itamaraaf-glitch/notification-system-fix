@@ -1409,6 +1409,7 @@ const ITEM_CFG = {
   servers:{label:'🖥️ שרתים',color:'#7b5ea7',fields:[{k:'brand',l:'יצרן',t:'sel',opts:['Dell','HP','IBM','Lenovo','אחר']},{k:'model',l:'דגם',t:'text'},{k:'sn',l:'S/N',t:'text'},{k:'expiry',l:'תפוגת אחריות',t:'date'},{k:'notes',l:'הערות',t:'text'}]},
   extra:{label:'📝 פתרון נוסף',color:'var(--text3)',fields:[{k:'name',l:'שם פתרון',t:'text'},{k:'vendor',l:'ספק',t:'text'},{k:'expiry',l:'תפוגה',t:'date'},{k:'monthly',l:'עלות ₪',t:'number'},{k:'notes',l:'הערות',t:'text'}]}
 };
+const TYPE_ABBR={lines:'קו',forti:'FG',cisco:'CS',hp:'HP',juniper:'JN',cybiz:'CY',starlink:'SL',pbx:'PBX',ms365:'M365',helpdesk:'HD',servers:'SRV',extra:'+'};
 
 function buildClientSections(){
   const cont=document.getElementById('client-sections');
@@ -1580,8 +1581,8 @@ function rClients(){
     }).join(''):`<span style="font-size:10px;color:var(--text3);font-style:italic">אין שירותים רשומים</span>`;
     const missingHtml=missingTypes.map(([t,cfg])=>{
       const inPot=(c.potential||[]).some(p=>p.productType===cfg.label||p.productType===t);
-      const em=cfg.label.split(' ')[0];
-      return`<span title="${cfg.label}${inPot?' – בתהליך עבודה':''}" style="font-size:9px;padding:2px 5px;border-radius:20px;background:rgba(255,255,255,.04);color:${inPot?'#7b5ea7':'var(--text3)'};border:1px dashed ${inPot?'rgba(123,94,167,.5)':'rgba(255,255,255,.1)'};white-space:nowrap">${inPot?'🎯':''}${em}</span>`;
+      const abbr=TYPE_ABBR[t]||cfg.label.replace(/^\S+\s*/,'').substring(0,3)||'?';
+      return`<span title="${cfg.label}${inPot?' – בתהליך עבודה':''}" style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.04);color:${inPot?'#7b5ea7':'var(--text3)'};border:1px dashed ${inPot?'rgba(123,94,167,.5)':'rgba(255,255,255,.1)'};white-space:nowrap;font-weight:700;letter-spacing:.3px">${inPot?'🎯 ':''}${abbr}</span>`;
     }).join('');
     const mRev=clientMonthlyRevenue(c);
     const mTotal=mRev.reduce((s,x)=>s+x.val,0);
