@@ -1636,7 +1636,7 @@ function buildClientGmailUrl(c){
   const potLine=potActive.length?'\n\nבתהליך עבודה:\n'+potActive.map(p=>'  • '+p.productType+(p.estimatedValue?' – '+fmt(+p.estimatedValue):'')).join('\n'):'';
   const missingLine=missingTypes.length?'\n\nברצוני להציע לכם פתרונות נוספים שיכולים לחזק ולשדרג את הפתרון הקיים:\n'+missingTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
   const notesLine=c.genNotes?'\n\n'+c.genNotes:'';
-  return 'שלום '+(c.contact||c.name)+',\n\nאני פונה אליך בקשר לשירותים שלכם אצלנו ב-HOT.\n\n'+existLine+expirySection+potLine+notesLine+missingLine+'\n\nנשמח לתאם שיחה נוחה לכם.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nitamaraaf@gmail.com';
+  return 'שלום '+(c.contact||c.name)+',\n\nאני פונה אליך בקשר לשירותים שלכם אצלנו ב-HOT.\n\n'+existLine+expirySection+potLine+notesLine+missingLine+'\n\nנשמח לתאם שיחה נוחה לכם.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nItamar.venden@hot.net.il';
 }
 function sendEmailToClient(id){
   const c=D.clients.find(x=>x.id==id);if(!c)return;
@@ -1662,7 +1662,7 @@ function emailFromClientForm(){
   const name=document.getElementById('cl-name').value.trim()||'הלקוח';
   const contact=document.getElementById('cl-contact').value.trim();
   const subject='HOT Business – הצעה ל'+name;
-  const body='שלום '+(contact||name)+',\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\nנשמח לתאם שיחה ולהציג את הפתרונות המתאימים לכם.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nitamaraaf@gmail.com';
+  const body='שלום '+(contact||name)+',\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\nנשמח לתאם שיחה ולהציג את הפתרונות המתאימים לכם.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nItamar.venden@hot.net.il';
   window.location.href='mailto:'+email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
 }
 function buildGmailUrl(){
