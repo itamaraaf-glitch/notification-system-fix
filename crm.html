@@ -860,9 +860,13 @@ select option{background:#0a0d18}
     <div class="gf"><label>נושא</label><input type="text" id="em-subject"></div>
     <div class="gf"><label>גוף המייל</label><textarea id="em-body" rows="9" style="font-family:'Heebo',sans-serif;font-size:12px;direction:rtl"></textarea></div>
   </div>
-  <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
+  <div style="font-size:11px;color:var(--text2);text-align:center;margin-bottom:8px;padding:6px;background:rgba(255,255,255,.04);border-radius:8px">
+    1. לחץ <b style="color:var(--teal)">העתק גוף</b> &nbsp;→&nbsp; 2. לחץ <b style="color:#4cc9f0">פתח Gmail</b> &nbsp;→&nbsp; 3. <b>כתוב מייל חדש</b> → הדבק (לחיצה ארוכה → הדבק)
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
     <button class="btn" onclick="closeM('memail')">ביטול</button>
-    <button class="btn btnp" onclick="openInGmail()" style="background:linear-gradient(135deg,#0078d4,#004a9f);border-color:#0078d4;box-shadow:0 4px 16px rgba(0,120,212,.4)">📧 שלח ב-Gmail</button>
+    <button class="btn btns" onclick="copyEmailBody()" style="border-color:var(--teal);color:var(--teal)">📋 העתק גוף</button>
+    <button class="btn btnp" onclick="closeM('memail');window.open('https://mail.google.com/mail/u/0/#compose','_blank')" style="background:linear-gradient(135deg,#0078d4,#004a9f);border-color:#0078d4">📧 פתח Gmail</button>
   </div>
 </div></div>
 
@@ -1587,10 +1591,7 @@ function rClients(){
     const mRev=clientMonthlyRevenue(c);
     const mTotal=mRev.reduce((s,x)=>s+x.val,0);
     const mBreakHtml=mRev.map(x=>`<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(212,168,71,.1);color:var(--gold);border:1px solid rgba(212,168,71,.25);white-space:nowrap">${x.cfg.label.split(' ')[0]} ${fmt(x.val)}</span>`).join('');
-    const gmailUrl=buildClientGmailUrl(c);
-    const emailBtn=gmailUrl
-      ?`<a href="${gmailUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()" class="btn btns" style="font-size:9px;text-decoration:none;display:inline-flex;align-items:center" title="שלח מייל ללקוח">📧</a>`
-      :`<button class="btn btns" onclick="event.stopPropagation();sendEmailToClient('${c.id}')" style="font-size:9px;opacity:.35" title="הוסף מייל ללקוח תחילה">📧</button>`;
+    const emailBtn=`<button class="btn btns" onclick="event.stopPropagation();sendEmailToClient('${c.id}')" style="font-size:9px;opacity:${c.email?1:.35}" title="${c.email?'שלח מייל ללקוח':'הוסף מייל ללקוח'}">📧</button>`;
     return`<div class="client-card" onclick="openClientModal('${c.id}')">
       <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:8px">
         <div>
@@ -1637,14 +1638,22 @@ function buildClientGmailUrl(c){
   const existLine=hasTypes.length?'שירותים קיימים:\n'+hasTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
   const missingLine=missingTypes.length?'\n\nהזדמנויות להרחבה:\n'+missingTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
   const potLine=potActive.length?'\n\nבתהליך עבודה:\n'+potActive.map(p=>'  • '+p.productType+(p.estimatedValue?' – '+fmt(+p.estimatedValue):'')).join('\n'):'';
-  const body='שלום '+(c.contact||c.name)+',\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\n'+existLine+missingLine+potLine+'\n\nנשמח לתאם שיחה.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nitamaraaf@gmail.com';
-  const subject='HOT Business – הצעה ל'+c.name;
-  return'mailto:'+encodeURIComponent(c.email)+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  return 'שלום '+(c.contact||c.name)+',\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\n'+existLine+missingLine+potLine+'\n\nנשמח לתאם שיחה.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nitamaraaf@gmail.com';
 }
 function sendEmailToClient(id){
   const c=D.clients.find(x=>x.id==id);if(!c)return;
-  openClientModal(id);
-  setTimeout(()=>{const f=document.getElementById('cl-email');if(f){f.focus();f.style.borderColor='var(--blue)';}},300);
+  if(!c.email){
+    toast('📧 הוסף כתובת מייל ללקוח ושמור','warn');
+    openClientModal(id);
+    setTimeout(()=>{const f=document.getElementById('cl-email');if(f){f.focus();f.style.borderColor='var(--blue)';}},300);
+    return;
+  }
+  const body=buildClientGmailUrl(c);
+  const subject='HOT Business – הצעה ל'+c.name;
+  document.getElementById('em-to').value=c.email;
+  document.getElementById('em-subject').value=subject;
+  document.getElementById('em-body').value=body;
+  document.getElementById('memail').classList.add('open');
 }
 function openEmailCompose(c){
   const allTypes=Object.entries(ITEM_CFG).filter(([t])=>t!=='extra');
@@ -1676,6 +1685,20 @@ function buildGmailUrl(){
   const subject=document.getElementById('em-subject').value.trim();
   const body=document.getElementById('em-body').value;
   return'https://mail.google.com/mail/?authuser=itamaraaf%40gmail.com&view=cm&to='+encodeURIComponent(to)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+}
+function copyEmailBody(){
+  const to=document.getElementById('em-to').value;
+  const subject=document.getElementById('em-subject').value;
+  const body=document.getElementById('em-body').value;
+  const full='אל: '+to+'\nנושא: '+subject+'\n\n'+body;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(full).then(()=>toast('📋 הועתק ללוח – כעת פתח Gmail והדבק','ok')).catch(()=>fallbackCopy(full));
+  }else{fallbackCopy(full);}
+}
+function fallbackCopy(txt){
+  const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+  toast('📋 הועתק ללוח – כעת פתח Gmail והדבק','ok');
 }
 function openInGmail(){
   const url=buildGmailUrl();
