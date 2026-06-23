@@ -2028,7 +2028,16 @@ function saveDeal(){
   let savedDeal;
   if(EI){dbUpdate('deals',EI,row);savedDeal=D.deals.find(x=>x.id==EI);}
   else{row.num=D.deals.length+1;savedDeal=dbInsert('deals',row);}
-  if(savedDeal&&savedDeal.st==='נסגר'){syncDealToClient(savedDeal);syncDealToSalary(savedDeal);syncDealToDist(savedDeal);}
+  if(savedDeal&&savedDeal.st==='נסגר'){
+    syncDealToClient(savedDeal);
+    syncDealToSalary(savedDeal);
+    if(!D.dists.some(d=>d._dealId===savedDeal.id)){
+      const distRow={id:genId(),co:savedDeal.co||'',no:String(savedDeal.num||''),cl:savedDeal.ct||'',hd:'',it:'',so:savedDeal.srv||'',ad:'',inc:+(savedDeal.mv||0),eq:+(savedDeal.ot||0),dt:savedDeal.date||nd(),st:'ממתין להפצה',ty:savedDeal.ty==='short'?'short':'long',mi:savedDeal.no||'',_dealId:savedDeal.id};
+      D.dists.push(distRow);
+      saveAll();
+      toast('🚀 העסקה נוספה להפצות','ok');
+    }
+  }
   closeM('mdeal');loadAll();
 }
 function syncDealToSalary(deal){
