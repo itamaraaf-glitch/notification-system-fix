@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🔔 מערכת התראות חכמה</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",Arial,sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh}
+header{background:#1a1d2e;border-bottom:1px solid #2d3748;padding:16px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+header h1{font-size:1.3rem;font-weight:700}
+.version{font-size:.75rem;color:#4a5568;background:#0f1117;padding:3px 8px;border-radius:999px;border:1px solid #2d3748}
+.stats{display:flex;gap:12px;padding:20px 28px;flex-wrap:wrap}
+.stat{background:#1a1d2e;border:1px solid #2d3748;border-radius:10px;padding:14px 20px;flex:1;min-width:120px;text-align:center;cursor:default}
+.stat .val{font-size:1.9rem;font-weight:700}
+.stat .lbl{font-size:.75rem;color:#718096;margin-top:3px}
+.stat.blue .val{color:#63b3ed}
+.stat.orange .val{color:#f6ad55}
+.stat.red .val{color:#fc8181}
+.stat.green .val{color:#68d391}
+.toolbar{display:flex;gap:8px;padding:0 28px 16px;flex-wrap:wrap;align-items:center}
+btn,button{display:inline-flex;align-items:center;gap:5px;background:#2d3748;color:#e2e8f0;border:1px solid #4a5568;border-radius:6px;padding:8px 14px;cursor:pointer;font-size:.83rem;transition:background .15s;font-family:inherit}
+button:hover{background:#4a5568}
+button.primary{background:#2b6cb0;border-color:#2c5282}
+button.primary:hover{background:#2c5282}
+button.danger{background:#9b2c2c;border-color:#742a2a}
+button.danger:hover{background:#742a2a}
+button.warn{background:#744210;border-color:#5a3209}
+button.warn:hover{background:#5a3209}
+select,input[type=text],textarea{background:#1a1d2e;color:#e2e8f0;border:1px solid #2d3748;border-radius:6px;padding:7px 11px;font-size:.83rem;font-family:inherit}
+select:focus,input:focus,textarea:focus{outline:none;border-color:#3182ce}
+.list{padding:0 28px 40px;display:flex;flex-direction:column;gap:8px}
+.card{background:#1a1d2e;border:1px solid #2d3748;border-radius:10px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.card:hover{border-color:#4a5568}
+.card.unread{border-right:4px solid #3182ce}
+.card.orphaned{opacity:.5;border-style:dashed}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.dot.INFO{background:#63b3ed}
+.dot.WARNING{background:#f6ad55}
+.dot.ERROR{background:#fc8181}
+.dot.CRITICAL{background:#fc8181;box-shadow:0 0 7px #fc8181}
+.body{flex:1;min-width:0}
+.body h3{font-size:.92rem;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.body p{font-size:.82rem;color:#a0aec0;margin-top:4px;word-break:break-word}
+.meta{font-size:.72rem;color:#4a5568;margin-top:6px}
+.badge{font-size:.68rem;padding:2px 7px;border-radius:999px;font-weight:700;flex-shrink:0}
+.badge.INFO{background:#1a365d;color:#63b3ed}
+.badge.WARNING{background:#744210;color:#f6ad55}
+.badge.ERROR,.badge.CRITICAL{background:#742a2a;color:#fc8181}
+.actions{display:flex;gap:5px;flex-shrink:0}
+.empty{text-align:center;color:#4a5568;padding:60px 20px;font-size:1rem}
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:50;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:#1a1d2e;border:1px solid #2d3748;border-radius:12px;padding:26px;width:460px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:1rem;margin-bottom:16px}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:.75rem;color:#718096;margin-bottom:4px}
+.fg input,.fg textarea,.fg select{width:100%}
+.fg textarea{min-height:70px;resize:vertical}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2d3748;border:1px solid #4a5568;border-radius:8px;padding:10px 20px;font-size:.85rem;z-index:99;animation:fadeIn .2s ease;white-space:nowrap}
+/* Search */
+#search{width:200px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔔 מערכת התראות חכמה</h1>
+  <span class="version">v2.0 · HOT Business CRM</span>
+</header>
+
+<div class="stats">
+  <div class="stat blue"><div class="val" id="sTotal">0</div><div class="lbl">סה"כ</div></div>
+  <div class="stat orange"><div class="val" id="sUnread">0</div><div class="lbl">לא נקראו</div></div>
+  <div class="stat red"><div class="val" id="sOrphaned">0</div><div class="lbl">תקועות</div></div>
+  <div class="stat green"><div class="val" id="sArchived">0</div><div class="lbl">בארכיון</div></div>
+</div>
+
+<div class="toolbar">
+  <button class="primary" onclick="openAdd()">＋ התראה חדשה</button>
+  <button class="warn" onclick="runCleanup()">🧹 ניקוי תקועות</button>
+  <button onclick="archiveRead()">📦 ארכב נקראות</button>
+  <button class="danger" onclick="clearAll()">🗑 מחק הכל</button>
+  <select id="fSev" onchange="render()">
+    <option value="">כל הרמות</option>
+    <option value="INFO">INFO</option>
+    <option value="WARNING">WARNING</option>
+    <option value="ERROR">ERROR</option>
+    <option value="CRITICAL">CRITICAL</option>
+  </select>
+  <select id="fState" onchange="render()">
+    <option value="active">פעילות</option>
+    <option value="unread">לא נקראו</option>
+    <option value="orphaned">תקועות</option>
+    <option value="archived">ארכיון</option>
+    <option value="all">הכל</option>
+  </select>
+  <input type="text" id="search" placeholder="🔍 חיפוש..." oninput="render()" />
+</div>
+
+<div class="list" id="list"></div>
+
+<!-- Add modal -->
+<div class="overlay" id="addModal">
+  <div class="modal">
+    <h2>➕ הוסף התראה</h2>
+    <div class="fg"><label>כותרת *</label><input id="mTitle" type="text" placeholder="כותרת ההתראה" /></div>
+    <div class="fg"><label>הודעה *</label><textarea id="mMsg" placeholder="תוכן ההודעה"></textarea></div>
+    <div class="fg"><label>רמת חומרה</label>
+      <select id="mSev">
+        <option value="INFO">INFO – מידע</option>
+        <option value="WARNING" selected>WARNING – אזהרה</option>
+        <option value="ERROR">ERROR – שגיאה</option>
+        <option value="CRITICAL">CRITICAL – קריטי</option>
+      </select>
+    </div>
+    <div class="fg"><label>סוג ישות (אופציונלי)</label><input id="mType" type="text" placeholder="deals / customers / tasks" /></div>
+    <div class="fg"><label>מזהה ישות (אופציונלי)</label><input id="mId" type="text" placeholder="deal_123" /></div>
+    <div class="modal-footer">
+      <button onclick="closeModal('addModal')">ביטול</button>
+      <button class="primary" onclick="addNotification()">הוסף</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Storage ──────────────────────────────────────────────────────────────────
+const STORE = 'crm_notifications_v2';
+let notifications = JSON.parse(localStorage.getItem(STORE) || '[]');
+let toastTimer;
+
+function save() { localStorage.setItem(STORE, JSON.stringify(notifications)); }
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+// ── Core functions ────────────────────────────────────────────────────────────
+function addNotification() {
+  const title = document.getElementById('mTitle').value.trim();
+  const msg   = document.getElementById('mMsg').value.trim();
+  if (!title || !msg) { toast('⚠️ נא למלא כותרת והודעה'); return; }
+  notifications.unshift({
+    id: uid(),
+    title,
+    message: msg,
+    severity: document.getElementById('mSev').value,
+    entity_type: document.getElementById('mType').value.trim() || null,
+    entity_id:   document.getElementById('mId').value.trim()   || null,
+    is_read: false,
+    is_orphaned: false,
+    is_archived: false,
+    created_at: new Date().toISOString(),
+  });
+  save(); render(); updateStats(); closeModal('addModal');
+  toast('✅ התראה נוספה בהצלחה');
+  ['mTitle','mMsg','mType','mId'].forEach(id => document.getElementById(id).value = '');
+}
+
+function markRead(id) {
+  const n = notifications.find(x => x.id === id);
+  if (n) { n.is_read = true; save(); render(); updateStats(); }
+}
+
+function markAllRead() {
+  notifications.filter(n => !n.is_orphaned && !n.is_archived).forEach(n => n.is_read = true);
+  save(); render(); updateStats(); toast('✅ כל ההתראות סומנו כנקראו');
+}
+
+function deleteOne(id) {
+  notifications = notifications.filter(x => x.id !== id);
+  save(); render(); updateStats();
+}
+
+function runCleanup() {
+  // Mark orphaned: unread notifications older than 7 days OR those with entity_id but entity deleted
+  const cutoff = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+  let count = 0;
+  notifications.forEach(n => {
+    if (!n.is_orphaned && !n.is_archived && !n.is_read && n.created_at < cutoff) {
+      n.is_orphaned = true; count++;
+    }
+  });
+  save(); render(); updateStats();
+  toast(`🧹 ${count} התראות סומנו כתקועות`);
+}
+
+function archiveRead() {
+  const cutoff = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
+  let count = 0;
+  notifications.forEach(n => {
+    if (n.is_read && !n.is_archived && n.created_at < cutoff) {
+      n.is_archived = true; count++;
+    }
+  });
+  // Also archive all orphaned
+  notifications.filter(n => n.is_orphaned && !n.is_archived).forEach(n => { n.is_archived = true; count++; });
+  save(); render(); updateStats();
+  toast(`📦 ${count} התראות עברו לארכיון`);
+}
+
+function clearAll() {
+  if (!confirm('למחוק את כל ההתראות לצמיתות?')) return;
+  notifications = [];
+  save(); render(); updateStats(); toast('🗑 כל ההתראות נמחקו');
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  const sev   = document.getElementById('fSev').value;
+  const state = document.getElementById('fState').value;
+  const q     = document.getElementById('search').value.trim().toLowerCase();
+
+  let list = notifications.filter(n => {
+    if (sev && n.severity !== sev) return false;
+    if (q && !n.title.toLowerCase().includes(q) && !n.message.toLowerCase().includes(q)) return false;
+    if (state === 'active')   return !n.is_orphaned && !n.is_archived;
+    if (state === 'unread')   return !n.is_read && !n.is_orphaned && !n.is_archived;
+    if (state === 'orphaned') return n.is_orphaned;
+    if (state === 'archived') return n.is_archived;
+    return true;
+  });
+
+  const el = document.getElementById('list');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty">אין התראות להצגה</div>';
+    return;
+  }
+
+  el.innerHTML = list.map(n => `
+    <div class="card ${n.is_read ? '' : 'unread'} ${n.is_orphaned ? 'orphaned' : ''}">
+      <div class="dot ${n.severity}"></div>
+      <div class="body">
+        <h3>
+          ${esc(n.title)}
+          <span class="badge ${n.severity}">${n.severity}</span>
+          ${n.is_orphaned ? '<span class="badge WARNING">תקועה</span>' : ''}
+          ${n.is_archived ? '<span class="badge INFO">ארכיון</span>' : ''}
+        </h3>
+        <p>${esc(n.message)}</p>
+        <div class="meta">
+          ${n.entity_type ? `<b>${esc(n.entity_type)}</b> · ${esc(n.entity_id)} · ` : ''}
+          ${fmt(n.created_at)}
+        </div>
+      </div>
+      <div class="actions">
+        ${!n.is_read ? `<button onclick="markRead('${n.id}')">קרא</button>` : ''}
+        <button class="danger" onclick="deleteOne('${n.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateStats() {
+  const active = notifications.filter(n => !n.is_orphaned && !n.is_archived);
+  document.getElementById('sTotal').textContent    = active.length;
+  document.getElementById('sUnread').textContent   = active.filter(n => !n.is_read).length;
+  document.getElementById('sOrphaned').textContent = notifications.filter(n => n.is_orphaned).length;
+  document.getElementById('sArchived').textContent = notifications.filter(n => n.is_archived).length;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmt(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('he-IL') + ' · ' + d.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+}
+
+function toast(msg) {
+  clearTimeout(toastTimer);
+  let t = document.getElementById('_toast');
+  if (!t) { t = document.createElement('div'); t.id='_toast'; t.className='toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.style.display='block';
+  toastTimer = setTimeout(() => t.style.display='none', 3000);
+}
+
+function openAdd()  { document.getElementById('addModal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Click outside to close
+document.querySelectorAll('.overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ── Seed demo data ────────────────────────────────────────────────────────────
+if (!notifications.length) {
+  const demo = [
+    { severity:'CRITICAL', title:'עסקה דחופה עם לקוח חשוב', message:'העסקה עם חברת ABC פג תוקפה מחר — נדרשת פעולה מיידית', entity_type:'deals', entity_id:'deal_001', days:0 },
+    { severity:'ERROR',    title:'תשלום נכשל', message:'כרטיס האשראי של לקוח #42 נדחה בניסיון החיוב החודשי', entity_type:'customers', entity_id:'cust_042', days:1 },
+    { severity:'WARNING',  title:'פגישה מחר ב-10:00', message:'פגישת מעקב עם לקוח חדש — נדרש להכין הצעת מחיר', entity_type:'tasks', entity_id:'task_007', days:2 },
+    { severity:'INFO',     title:'לקוח חדש נרשם', message:'ליאת כהן הצטרפה למערכת CRM דרך טופס האתר', entity_type:'customers', entity_id:'cust_099', days:3 },
+    { severity:'WARNING',  title:'התראה תקועה (נמחקה)', message:'לקוח זה נמחק מהמערכת לפני 10 ימים', entity_type:'customers', entity_id:'cust_DELETED', days:10, orphan:true },
+  ];
+  demo.forEach(d => {
+    const date = new Date(Date.now() - d.days * 864e5);
+    notifications.push({
+      id: uid(), title: d.title, message: d.message, severity: d.severity,
+      entity_type: d.entity_type, entity_id: d.entity_id,
+      is_read: false, is_orphaned: !!d.orphan, is_archived: false,
+      created_at: date.toISOString(),
+    });
+  });
+  save();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+render();
+updateStats();
+</script>
+</body>
+</html>
