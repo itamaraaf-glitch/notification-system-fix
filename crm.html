@@ -1620,6 +1620,7 @@ function buildClientGmailUrl(c){
   const potActive=(c.potential||[]).filter(p=>p.status!=='נסגר');
   const expiryLines=[];
   hasTypes.forEach(([t,cfg])=>{
+    if(t==='lines')return;
     (c[t]||[]).forEach(item=>{
       if(item.expiry){
         const d=db(nd(),item.expiry);
