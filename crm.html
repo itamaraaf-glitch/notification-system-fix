@@ -862,7 +862,7 @@ select option{background:#0a0d18}
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
     <button class="btn" onclick="closeM('memail')">ביטול</button>
-    <a id="gmail-send-btn" href="#" target="_blank" onclick="updateGmailLink();closeM('memail');toast('📧 Gmail נפתח','ok')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:linear-gradient(135deg,#0078d4,#004a9f);border:1px solid #0078d4;border-radius:8px;color:#fff;font-family:'Heebo',sans-serif;font-size:13px;font-weight:700;text-decoration:none;box-shadow:0 4px 16px rgba(0,120,212,.4);cursor:pointer">📧 שלח ב-Gmail</a>
+    <button class="btn btnp" onclick="openInGmail()" style="background:linear-gradient(135deg,#0078d4,#004a9f);border-color:#0078d4;box-shadow:0 4px 16px rgba(0,120,212,.4)">📧 שלח ב-Gmail</button>
   </div>
 </div></div>
 
@@ -1596,7 +1596,7 @@ function rClients(){
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
           <span class="badge" style="background:${stCol}22;color:${stCol};border:1px solid ${stCol}44;font-size:9px">${c.status||''}</span>
           <div style="display:flex;gap:4px">
-            ${c.email?`<button class="btn btns" onclick="event.stopPropagation();sendEmailToClient('${c.id}')" style="font-size:9px" title="שלח מייל ללקוח">📧</button>`:''}
+            <button class="btn btns" onclick="event.stopPropagation();sendEmailToClient('${c.id}')" style="font-size:9px;opacity:${c.email?1:.4}" title="${c.email?'שלח מייל ללקוח':'הוסף מייל ללקוח תחילה'}">📧</button>
             <button class="btn btns btnd" onclick="event.stopPropagation();dbDelete('clients','${c.id}')" style="font-size:9px">🗑</button>
           </div>
         </div>
@@ -1626,7 +1626,12 @@ function rClients(){
 // ===== EMAIL ======
 function sendEmailToClient(id){
   const c=D.clients.find(x=>x.id==id);if(!c)return;
-  if(!c.email){toast('⚠️ אין כתובת מייל לקוח זה','warn');return;}
+  if(!c.email){
+    toast('📧 הוסף כתובת מייל ללקוח ושמור','warn');
+    openClientModal(id);
+    setTimeout(()=>{const f=document.getElementById('cl-email');if(f){f.focus();f.style.borderColor='var(--blue)';}},300);
+    return;
+  }
   openEmailCompose(c);
 }
 function openEmailCompose(c){
@@ -1642,7 +1647,6 @@ function openEmailCompose(c){
   document.getElementById('em-subject').value=`HOT Business – הצעה ל${c.name}`;
   document.getElementById('em-body').value=body;
   document.getElementById('memail').classList.add('open');
-  setTimeout(()=>{const btn=document.getElementById('gmail-send-btn');if(btn)btn.href=buildGmailUrl();},50);
 }
 function emailFromClientForm(){
   const email=document.getElementById('cl-email').value.trim();
@@ -1654,7 +1658,6 @@ function emailFromClientForm(){
   document.getElementById('em-subject').value=`HOT Business – הצעה ל${name}`;
   document.getElementById('em-body').value=body;
   document.getElementById('memail').classList.add('open');
-  setTimeout(()=>{const btn=document.getElementById('gmail-send-btn');if(btn)btn.href=buildGmailUrl();},50);
 }
 function buildGmailUrl(){
   const to=document.getElementById('em-to').value.trim();
@@ -1662,9 +1665,17 @@ function buildGmailUrl(){
   const body=document.getElementById('em-body').value;
   return'https://mail.google.com/mail/?authuser=itamaraaf%40gmail.com&view=cm&to='+encodeURIComponent(to)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
 }
-function updateGmailLink(){
-  const btn=document.getElementById('gmail-send-btn');
-  if(btn)btn.href=buildGmailUrl();
+function openInGmail(){
+  const url=buildGmailUrl();
+  const w=window.open(url,'_blank','noopener');
+  if(!w){
+    // fallback if popup blocked — navigate via link
+    const a=document.createElement('a');
+    a.href=url;a.target='_blank';a.rel='noopener';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+  }
+  closeM('memail');
+  toast('📧 Gmail נפתח','ok');
 }
 
 // ===== MONTHLY CYCLE =====
