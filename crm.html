@@ -2035,8 +2035,11 @@ function saveDeal(){
       const distRow={id:genId(),co:savedDeal.co||'',no:String(savedDeal.num||''),cl:savedDeal.ct||'',hd:'',it:'',so:savedDeal.srv||'',ad:'',inc:+(savedDeal.mv||0),eq:+(savedDeal.ot||0),dt:savedDeal.date||nd(),st:'ממתין להפצה',ty:savedDeal.ty==='short'?'short':'long',mi:savedDeal.no||'',_dealId:savedDeal.id};
       D.dists.push(distRow);
       saveAll();
-      toast('🚀 העסקה נוספה להפצות','ok');
+      alert('✅ העסקה "'+savedDeal.co+'" נוספה להפצות!\nסטטוס: '+savedDeal.st);
     }
+  }else if(savedDeal){
+    alert('⚠️ הסטטוס הוא: "'+savedDeal.st+'" – לא "נסגר"\nהחלף לנסגר כדי להעביר להפצות');
+  }
   }
   closeM('mdeal');loadAll();
 }
