@@ -856,7 +856,7 @@ select option{background:#0a0d18}
   <div class="mhdr"><h3>📧 שליחת מייל ללקוח</h3><button class="mcls" onclick="closeM('memail')">✕</button></div>
   <div class="fg" style="margin-bottom:10px">
     <div class="g"><label>אל (הלקוח)</label><input type="email" id="em-to" style="color:var(--blue)"></div>
-    <div class="g"><label>מ (אתה)</label><input type="email" id="em-from" value="Itamar.venden@hot.net.il" readonly style="color:var(--text2)"></div>
+    <div class="g"><label>מ (אתה)</label><input type="email" id="em-from" value="itamaraaf@gmail.com" readonly style="color:var(--text2)"></div>
     <div class="gf"><label>נושא</label><input type="text" id="em-subject"></div>
     <div class="gf"><label>גוף המייל</label><textarea id="em-body" rows="9" style="font-family:'Heebo',sans-serif;font-size:12px;direction:rtl"></textarea></div>
   </div>
@@ -1637,7 +1637,7 @@ function openEmailCompose(c){
   const existLine=hasTypes.length?'שירותים קיימים:\n'+hasTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
   const missingLine=missingTypes.length?'\n\nהזדמנויות להרחבה – פתרונות שטרם נרכשו:\n'+missingTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
   const potLine=potActive.length?'\n\nבתהליך עבודה לקוחות:\n'+potActive.map(p=>'  • '+p.productType+(p.estimatedValue?' – '+fmt(+p.estimatedValue):'')).join('\n'):'';
-  const body=`שלום ${c.contact||c.name},\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\n${existLine}${missingLine}${potLine}\n\nנשמח לתאם שיחה ולהציג את הפתרונות המתאימים לכם.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nITAMAR.VENDEN@HOT.NET.IL`;
+  const body=`שלום ${c.contact||c.name},\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\n${existLine}${missingLine}${potLine}\n\nנשמח לתאם שיחה ולהציג את הפתרונות המתאימים לכם.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nitamaraaf@gmail.com`;
   document.getElementById('em-to').value=c.email;
   document.getElementById('em-subject').value=`HOT Business – הצעה ל${c.name}`;
   document.getElementById('em-body').value=body;
@@ -1648,7 +1648,7 @@ function emailFromClientForm(){
   if(!email){toast('⚠️ נא להזין כתובת אימייל ללקוח','warn');return;}
   const name=document.getElementById('cl-name').value.trim()||'הלקוח';
   const contact=document.getElementById('cl-contact').value.trim();
-  const body=`שלום ${contact||name},\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\nנשמח לתאם שיחה ולהציג את הפתרונות המתאימים לכם.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nITAMAR.VENDEN@HOT.NET.IL`;
+  const body=`שלום ${contact||name},\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\nנשמח לתאם שיחה ולהציג את הפתרונות המתאימים לכם.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nitamaraaf@gmail.com`;
   document.getElementById('em-to').value=email;
   document.getElementById('em-subject').value=`HOT Business – הצעה ל${name}`;
   document.getElementById('em-body').value=body;
