@@ -1632,9 +1632,9 @@ function buildClientGmailUrl(c){
   });
   const existLine=hasTypes.length?'שירותים קיימים:\n'+hasTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
   const expirySection=expiryLines.length?'\n\n⚠️ תאריכי תפוגה לחידוש:\n'+expiryLines.join('\n'):'';
-  const missingLine=missingTypes.length?'\n\nהזדמנויות להרחבה:\n'+missingTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
   const potLine=potActive.length?'\n\nבתהליך עבודה:\n'+potActive.map(p=>'  • '+p.productType+(p.estimatedValue?' – '+fmt(+p.estimatedValue):'')).join('\n'):'';
-  return 'שלום '+(c.contact||c.name)+',\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\n'+existLine+expirySection+missingLine+potLine+'\n\nנשמח לתאם שיחה.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nitamaraaf@gmail.com';
+  const missingLine=missingTypes.length?'\n\nברצוני להציע לכם פתרונות נוספים שיכולים לחזק ולשדרג את הפתרון הקיים:\n'+missingTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
+  return 'שלום '+(c.contact||c.name)+',\n\nאני פונה אליך בקשר לשירותים שלכם אצלנו ב-HOT.\n\n'+existLine+expirySection+potLine+missingLine+'\n\nנשמח לתאם שיחה נוחה לכם.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nitamaraaf@gmail.com';
 }
 function sendEmailToClient(id){
   const c=D.clients.find(x=>x.id==id);if(!c)return;
