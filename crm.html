@@ -860,6 +860,7 @@ select option{background:#0a0d18}
     <div class="msec-hdr"><span style="color:#4cc9f0">📋 פרטי לקוח</span></div>
     <div class="fg">
       <div class="g"><label>שם חברה *</label><input type="text" id="cl-name"></div>
+      <div class="g"><label>ח.פ</label><input type="text" id="cl-cp" placeholder="מספר ח.פ"></div>
       <div class="g"><label>איש קשר</label><input type="text" id="cl-contact"></div>
       <div class="g"><label>טלפון</label><input type="text" id="cl-phone"></div>
       <div class="g"><label>אימייל</label><input type="text" id="cl-email"></div>
@@ -1521,6 +1522,7 @@ function openClientModal(id){
   document.getElementById('cl-contact').value=c.contact||'';
   document.getElementById('cl-phone').value=c.phone||'';
   document.getElementById('cl-email').value=c.email||'';
+  document.getElementById('cl-cp').value=c.cp||'';
   document.getElementById('cl-address').value=c.address||'';
   document.getElementById('cl-status').value=c.status||'לקוח פעיל';
   document.getElementById('cl-gen-notes').value=c.genNotes||'';
@@ -1532,7 +1534,7 @@ function openClientModal(id){
 function saveClient(){
   const name=document.getElementById('cl-name').value.trim();
   if(!name){alert('יש להזין שם חברה');return;}
-  const row={name,contact:document.getElementById('cl-contact').value,phone:document.getElementById('cl-phone').value,email:document.getElementById('cl-email').value,address:document.getElementById('cl-address').value,status:document.getElementById('cl-status').value,genNotes:document.getElementById('cl-gen-notes').value};
+  const row={name,cp:document.getElementById('cl-cp').value,contact:document.getElementById('cl-contact').value,phone:document.getElementById('cl-phone').value,email:document.getElementById('cl-email').value,address:document.getElementById('cl-address').value,status:document.getElementById('cl-status').value,genNotes:document.getElementById('cl-gen-notes').value};
   Object.keys(ITEM_CFG).forEach(type=>{row[type]=getItemData(type);});
   row.potential=getPotentialData();
   if(EI){dbUpdate('clients',EI,row);}else{dbInsert('clients',row);}
@@ -2026,8 +2028,27 @@ function saveDeal(){
   let savedDeal;
   if(EI){dbUpdate('deals',EI,row);savedDeal=D.deals.find(x=>x.id==EI);}
   else{row.num=D.deals.length+1;savedDeal=dbInsert('deals',row);}
-  if(savedDeal&&savedDeal.st==='נסגר')syncDealToClient(savedDeal);
+  if(savedDeal&&savedDeal.st==='נסגר'){syncDealToClient(savedDeal);syncDealToSalary(savedDeal);}
   closeM('mdeal');loadAll();
+}
+function syncDealToSalary(deal){
+  const alreadySynced=D.salary.some(s=>s._dealId==deal.id);
+  if(alreadySynced)return;
+  const isOTC=deal.ty==='short'||deal.ot>0;
+  const row={
+    pj:deal.num||'',
+    cl:deal.co||'',
+    qt:1,
+    tr:isOTC?(deal.ot||deal.v||0):(deal.v||0),
+    cl2:isOTC?(deal.otc||0):(deal.mv||0),
+    pv:0,
+    st:'פתוח',
+    ty:isOTC?'equipment':'service',
+    no:(deal.srv||'')+(deal.no?' | '+deal.no:''),
+    _dealId:deal.id
+  };
+  dbInsert('salary',row);
+  toast('💰 העסקה נוספה אוטומטית לפרויקטי שכר','ok');
 }
 function saveTender(){
   const row={name:document.getElementById('tn').value,proj:document.getElementById('tp').value,pub:document.getElementById('tpb').value,link:document.getElementById('tlk').value,quote:document.getElementById('tq').value,questions:document.getElementById('tqs').value,deadline:document.getElementById('tdl').value,rounds:+document.getElementById('tr').value,handler:document.getElementById('th').value,amount:+document.getElementById('tam').value,qty:+document.getElementById('tqt').value,submitted:document.getElementById('tsb').value,linked:document.getElementById('tln').value,docs:document.getElementById('tdc').value,notes:document.getElementById('tno').value};
