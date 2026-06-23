@@ -852,22 +852,6 @@ select option{background:#0a0d18}
 </div></div>
 
 <!-- CLIENT MODAL -->
-<div class="mw" id="memail"><div class="modal" style="max-width:540px;max-height:90vh;overflow-y:auto">
-  <div class="mhdr"><h3>📧 שליחת מייל ללקוח</h3><button class="mcls" onclick="closeM('memail')">✕</button></div>
-  <div style="display:flex;gap:8px;justify-content:stretch;margin-bottom:10px">
-    <button class="btn btns" onclick="copyEmailBody()" style="flex:1;border-color:var(--teal);color:var(--teal);font-size:13px;padding:10px">📋 העתק גוף המייל</button>
-    <button class="btn btnp" onclick="closeM('memail');window.open('https://mail.google.com/mail/u/0/#compose','_blank')" style="flex:1;background:linear-gradient(135deg,#0078d4,#004a9f);border-color:#0078d4;font-size:13px;padding:10px">📧 פתח Gmail</button>
-  </div>
-  <div style="font-size:10px;color:var(--text2);text-align:center;margin-bottom:8px;padding:5px;background:rgba(255,255,255,.04);border-radius:6px">
-    לחץ <b style="color:var(--teal)">העתק</b> ← פתח Gmail ← כתוב מייל ← לחיצה ארוכה ← הדבק
-  </div>
-  <div class="fg" style="margin-bottom:8px">
-    <div class="g"><label>אל (הלקוח)</label><input type="email" id="em-to" style="color:var(--blue)"></div>
-    <div class="g"><label>נושא</label><input type="text" id="em-subject"></div>
-    <div class="gf"><label>גוף המייל</label><textarea id="em-body" rows="6" style="font-family:'Heebo',sans-serif;font-size:11px;direction:rtl"></textarea></div>
-  </div>
-  <button class="btn" onclick="closeM('memail')" style="width:100%">סגור</button>
-</div></div>
 
 <div class="mw" id="mclient"><div class="modal" style="max-width:820px">
   <div class="mhdr"><h3 id="ctit">כרטיס לקוח חדש</h3><button class="mcls" onclick="closeM('mclient')">✕</button></div>
@@ -1649,10 +1633,7 @@ function sendEmailToClient(id){
   }
   const body=buildClientGmailUrl(c);
   const subject='HOT Business – הצעה ל'+c.name;
-  document.getElementById('em-to').value=c.email;
-  document.getElementById('em-subject').value=subject;
-  document.getElementById('em-body').value=body;
-  document.getElementById('memail').classList.add('open');
+  window.location.href='mailto:'+c.email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
 }
 function openEmailCompose(c){
   const allTypes=Object.entries(ITEM_CFG).filter(([t])=>t!=='extra');
