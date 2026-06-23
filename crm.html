@@ -1625,14 +1625,25 @@ function rClients(){
 
 // ===== EMAIL ======
 function sendEmailToClient(id){
-  const c=D.clients.find(x=>x.id==id);if(!c)return;
+  const c=D.clients.find(x=>x.id==id);
+  if(!c)return;
   if(!c.email){
     toast('📧 הוסף כתובת מייל ללקוח ושמור','warn');
     openClientModal(id);
     setTimeout(()=>{const f=document.getElementById('cl-email');if(f){f.focus();f.style.borderColor='var(--blue)';}},300);
     return;
   }
-  openEmailCompose(c);
+  const allTypes=Object.entries(ITEM_CFG).filter(([t])=>t!=='extra');
+  const hasTypes=allTypes.filter(([t])=>(c[t]||[]).length>0);
+  const missingTypes=allTypes.filter(([t])=>(c[t]||[]).length===0);
+  const potActive=(c.potential||[]).filter(p=>p.status!=='נסגר');
+  const existLine=hasTypes.length?'שירותים קיימים:\n'+hasTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
+  const missingLine=missingTypes.length?'\n\nהזדמנויות להרחבה:\n'+missingTypes.map(([,cfg])=>'  • '+cfg.label).join('\n'):'';
+  const potLine=potActive.length?'\n\nבתהליך עבודה:\n'+potActive.map(p=>'  • '+p.productType+(p.estimatedValue?' – '+fmt(+p.estimatedValue):'')).join('\n'):'';
+  const body='שלום '+(c.contact||c.name)+',\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\n'+existLine+missingLine+potLine+'\n\nנשמח לתאם שיחה.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nitamaraaf@gmail.com';
+  const url='https://mail.google.com/mail/?authuser=itamaraaf%40gmail.com&view=cm&to='+encodeURIComponent(c.email)+'&su='+encodeURIComponent('HOT Business – הצעה ל'+c.name)+'&body='+encodeURIComponent(body);
+  window.open(url,'_blank');
+  toast('📧 Gmail נפתח','ok');
 }
 function openEmailCompose(c){
   const allTypes=Object.entries(ITEM_CFG).filter(([t])=>t!=='extra');
