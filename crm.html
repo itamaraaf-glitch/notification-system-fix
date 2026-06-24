@@ -161,13 +161,13 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-
   box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
 }
 #main{
-  flex:1;overflow-y:auto;padding:20px;height:100%;touch-action:pan-y;
+  flex:1;overflow:hidden;height:100%;touch-action:pan-y;
   background:
     radial-gradient(ellipse 80% 40% at 80% 0%,rgba(200,169,110,.025) 0%,transparent 55%),
     radial-gradient(ellipse 60% 40% at 10% 100%,rgba(100,40,200,.02) 0%,transparent 50%),
     var(--bg);
 }
-.sec{display:none}.sec.active{display:block}
+.sec{display:none}.sec.active{display:block;height:100%;overflow-y:auto;overflow-x:hidden;padding:20px;box-sizing:border-box;-webkit-overflow-scrolling:touch}
 .shdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;
   padding-bottom:14px;border-bottom:1px solid rgba(200,169,110,.08);
 }
@@ -421,6 +421,7 @@ select option{background:#0a0d18}
 @media print{
   #sidebar,#topbar,.btn,.abtn,.lout,th.cb-th,td.cb-td,.tft,.cb-row{display:none!important}
   body,#main,#app,#layout{overflow:visible!important;height:auto!important}
+  .sec.active{height:auto!important;overflow:visible!important;padding:0!important}
   .sec{display:block!important}.tw{break-inside:avoid}
 }
 
@@ -443,7 +444,7 @@ select option{background:#0a0d18}
 /* ── CINEMATIC NAV TRANSITIONS ──────────────── */
 /* display handled by nav() — no CSS animation here, D3 drives it */
 .sec{display:none}
-.sec.active{display:block}
+.sec.active{display:block;height:100%;overflow-y:auto;overflow-x:hidden;padding:20px;box-sizing:border-box;-webkit-overflow-scrolling:touch}
 
 /* Cinema wipe overlay */
 #cin-wipe{
