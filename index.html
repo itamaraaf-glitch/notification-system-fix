@@ -493,6 +493,23 @@ select option{background:#0a0d18}
 .dh-arrow.left{animation-delay:.3s}
 @keyframes arrowPulse{0%,100%{opacity:.4;transform:translateX(0)}50%{opacity:1;transform:translateX(4px)}}
 
+
+/* ─── CUSTOM CONFIRM BAR ─── */
+#cbar{
+  position:fixed;bottom:-120px;left:0;right:0;z-index:9999;
+  background:linear-gradient(135deg,var(--s2),var(--s3));
+  border-top:1px solid var(--gold);
+  padding:16px 20px;display:flex;align-items:center;gap:12px;
+  box-shadow:0 -8px 40px rgba(0,0,0,.7);
+  transition:bottom .3s cubic-bezier(.16,1,.3,1);
+  direction:rtl;
+}
+#cbar.show{bottom:0}
+#cbar-msg{flex:1;font-size:13px;color:var(--text);line-height:1.4}
+#cbar-yes{background:var(--red);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-family:inherit;font-size:13px;cursor:pointer;font-weight:700}
+#cbar-yes:active{opacity:.8}
+#cbar-no{background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:8px;padding:9px 18px;font-family:inherit;font-size:13px;cursor:pointer}
+#cbar-no:active{opacity:.7}
 </style>
 </head>
 <body>
@@ -1053,6 +1070,24 @@ function showToast(msg,type='ok'){
   document.body.appendChild(t);
   setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400);},3500);
 }
+const toast = showToast;
+
+// ── CUSTOM CONFIRM (window.confirm is blocked on iOS standalone / PWA) ──────
+let _cCb = null;
+function confirmAct(msg, fn, yesLabel){
+  _cCb = fn;
+  document.getElementById('cbar-msg').textContent = msg;
+  document.getElementById('cbar-yes').textContent = yesLabel || 'כן, מחק';
+  document.getElementById('cbar').classList.add('show');
+}
+function _cYes(){
+  document.getElementById('cbar').classList.remove('show');
+  if(_cCb){ const f=_cCb; _cCb=null; f(); }
+}
+function _cNo(){
+  document.getElementById('cbar').classList.remove('show');
+  _cCb=null;
+}
 
 // ===== AUTH =====
 function doLogin(){
@@ -1116,7 +1151,7 @@ document.addEventListener('mousedown',function(e){
 function genId(){return Date.now().toString(36)+Math.random().toString(36).substr(2);}
 function dbInsert(table,row){row.id=genId();D[table].push(row);saveAll();return row;}
 function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0)D[table][i]={...D[table][i],...row};saveAll();}
-function dbDelete(table,id){if(!confirm('למחוק פריט זה?'))return;D[table]=D[table].filter(x=>x.id!=id);saveAll();rAll();}
+function dbDelete(table,id){confirmAct('למחוק פריט זה?',()=>{D[table]=D[table].filter(x=>x.id!=id);saveAll();rAll();});}
 
 // ===== PRIORITY =====
 function pri(item,type){
@@ -2082,10 +2117,11 @@ function updatePotentialPriority(clientId,idx,newPri){
 function removePotential(clientId,idx){
   const client=D.clients.find(c=>c.id==clientId);
   if(!client)return;
-  if(!confirm('למחוק מוצר פוטנציאלי זה?'))return;
-  client.potential.splice(idx,1);
-  dbUpdate('clients',clientId,client);
-  rWorkPlan();
+  confirmAct('למחוק מוצר פוטנציאלי זה?',()=>{
+    client.potential.splice(idx,1);
+    dbUpdate('clients',clientId,client);
+    rWorkPlan();
+  });
 }
 
 function rWorkPlan(){
@@ -2283,19 +2319,19 @@ function clearSel(key){
 }
 function deleteSelected(key){
   if(!SEL[key]||SEL[key].size===0)return;
-  if(!confirm('למחוק '+SEL[key].size+' פריטים?'))return;
-  const tblMap={'deals-long':'deals','deals-short':'deals','tenders':'tenders','dists-long':'dists','dists-short':'dists','salary-service':'salary','salary-equip':'salary','meetings':'meetings'};
-  const tbl=tblMap[key];
-  if(tbl){D[tbl]=D[tbl].filter(x=>!SEL[key].has(x.id));saveAll();}
-  SEL[key]=new Set();rAll();
+  confirmAct('למחוק '+SEL[key].size+' פריטים?',()=>{
+    const tblMap={'deals-long':'deals','deals-short':'deals','tenders':'tenders','dists-long':'dists','dists-short':'dists','salary-service':'salary','salary-equip':'salary','meetings':'meetings'};
+    const tbl=tblMap[key];
+    if(tbl){D[tbl]=D[tbl].filter(x=>!SEL[key].has(x.id));saveAll();}
+    SEL[key]=new Set();rAll();
+  });
 }
 function deleteAll(section){
   const map={deals:'deals',tenders:'tenders',dists:'dists',salary:'salary',meetings:'meetings'};
   const tbl=map[section];if(!tbl)return;
   const n=D[tbl].length;
-  if(!n){alert('אין פריטים למחיקה');return;}
-  if(!confirm('למחוק את כל '+n+' הפריטים בסעיף זה?\nפעולה זו אינה ניתנת לביטול.'))return;
-  D[tbl]=[];saveAll();rAll();
+  if(!n){toast('אין פריטים למחיקה','warn');return;}
+  confirmAct('למחוק את כל '+n+' הפריטים?',()=>{D[tbl]=[];saveAll();rAll();});
 }
 
 // ===== DRAG SCROLL =====
@@ -2504,10 +2540,10 @@ function restoreData(){
     reader.onload=ev=>{
       try{
         const p=JSON.parse(ev.target.result);
-        if(confirm('זה ישחזר ויחליף את כל הנתונים הקיימים. להמשיך?')){
+        confirmAct('זה ישחזר ויחליף את כל הנתונים הקיימים. להמשיך?',()=>{
           D={deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],...p};
-          saveAll();rAll();alert('✅ הנתונים שוחזרו בהצלחה!');
-        }
+          saveAll();rAll();toast('✅ הנתונים שוחזרו בהצלחה!','ok');
+        },'כן, שחזר');
       }catch(err){alert('שגיאה בפרסינג הקובץ: '+err.message);}
     };
     reader.readAsText(file);
@@ -2590,6 +2626,13 @@ function seedData(){
 }
 </script>
 
+
+<!-- Custom confirm dialog (replaces window.confirm which is blocked on iOS standalone) -->
+<div id="cbar">
+  <div id="cbar-msg"></div>
+  <button id="cbar-yes" onclick="_cYes()">כן, מחק</button>
+  <button id="cbar-no" onclick="_cNo()">ביטול</button>
+</div>
 <!-- Cinema overlay + drag hint -->
 <div id="cin-wipe"></div>
 <div id="drag-hint"><span class="dh-arrow">←</span> <span>גרור לניווט</span> <span class="dh-arrow left">→</span></div>
