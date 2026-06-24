@@ -1105,6 +1105,7 @@ function doLogin(){
   loadAll();
 }
 function doLogout(){
+  saveAll();
   document.getElementById('app').style.display='none';
   document.getElementById('login').style.display='flex';
   document.getElementById('lu').value='';
@@ -1125,15 +1126,24 @@ function loadAll(){
       D.salary=p.salary||[];D.meetings=p.meetings||[];D.clients=p.clients||[];
       D.archivedDeals=p.archivedDeals||[];D.archivedTenders=p.archivedTenders||[];D.archivedDists=p.archivedDists||[];D.archivedSalary=p.archivedSalary||[];D.archivedMeetings=p.archivedMeetings||[];D.lastCycleMonth=p.lastCycleMonth||'';
       D.goals=p.goals||{deals:15000,dists:14000,sal:15000};
-      if(!D.deals.length)seedData();
+      // Only seed if this is truly a first-time load (all tables empty AND no initialized flag)
+      const allEmpty=!D.deals.length&&!D.tenders.length&&!D.dists.length&&!D.salary.length&&!D.meetings.length&&!D.clients.length;
+      if(allEmpty&&!p._init)seedData();
     }else{seedData();}
   }catch(e){console.error(e);seedData();}
   syncAllDealsToClients();
   runMonthlyCycle();
+  // Mark as initialized so loadAll never calls seedData again after first load
+  if(!localStorage.getItem(LS_KEY+'_init')){
+    localStorage.setItem(LS_KEY+'_init','1');
+    saveAll();
+  }
   rAll();
 }
 setInterval(()=>{try{if(D.deals.length)localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}},30000);
 window.addEventListener('beforeunload',()=>{try{localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}});
+// iOS does not fire beforeunload reliably — use visibilitychange as backup save
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){try{localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}}});
 
 // ===== RIPPLE EFFECT =====
 document.addEventListener('mousedown',function(e){
@@ -1151,7 +1161,7 @@ document.addEventListener('mousedown',function(e){
 function genId(){return Date.now().toString(36)+Math.random().toString(36).substr(2);}
 function dbInsert(table,row){row.id=genId();D[table].push(row);saveAll();return row;}
 function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0)D[table][i]={...D[table][i],...row};saveAll();}
-function dbDelete(table,id){confirmAct('למחוק פריט זה?',()=>{D[table]=D[table].filter(x=>x.id!=id);saveAll();rAll();});}
+function dbDelete(table,id){confirmAct('למחוק פריט זה?',()=>{D[table]=D[table].filter(x=>x.id!=id);saveAll();rAll();toast('🗑 הפריט נמחק ונשמר','ok');});}
 
 // ===== PRIORITY =====
 function pri(item,type){
