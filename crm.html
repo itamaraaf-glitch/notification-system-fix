@@ -167,7 +167,7 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-
     radial-gradient(ellipse 60% 40% at 10% 100%,rgba(100,40,200,.02) 0%,transparent 50%),
     var(--bg);
 }
-.sec{display:none}.sec.active{display:block;animation:slideIn .28s var(--expo)}
+.sec{display:none}.sec.active{display:block}
 .shdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;
   padding-bottom:14px;border-bottom:1px solid rgba(200,169,110,.08);
 }
@@ -439,6 +439,59 @@ select option{background:#0a0d18}
   #sidebar{display:none}
   .krow{grid-template-columns:1fr 1fr}
 }
+
+/* ── CINEMATIC NAV TRANSITIONS ──────────────── */
+/* display handled by nav() — no CSS animation here, D3 drives it */
+.sec{display:none}
+.sec.active{display:block}
+
+/* Cinema wipe overlay */
+#cin-wipe{
+  position:fixed;top:54px;left:0;right:0;bottom:0;
+  z-index:40;pointer-events:none;
+  background:linear-gradient(90deg,
+    transparent 0%,
+    var(--bg) 18%,
+    var(--bg) 82%,
+    transparent 100%);
+  transform:translateX(-110%);
+}
+#cin-wipe.wipe-go{
+  animation:cinWipe 520ms cubic-bezier(.77,0,.175,1) forwards;
+}
+/* Gold light edge on the wipe panel */
+#cin-wipe::before{
+  content:'';position:absolute;top:0;bottom:0;right:0;width:2px;
+  background:linear-gradient(to bottom,transparent 5%,var(--gold) 50%,transparent 95%);
+  box-shadow:0 0 22px rgba(200,169,110,.55),0 0 50px rgba(200,169,110,.2);
+}
+#cin-wipe::after{
+  content:'';position:absolute;top:0;bottom:0;left:0;width:2px;
+  background:linear-gradient(to bottom,transparent 5%,rgba(200,169,110,.4) 50%,transparent 95%);
+  box-shadow:0 0 18px rgba(200,169,110,.3);
+}
+
+@keyframes cinWipe{
+  0%  {transform:translateX(-110%)}
+  46% {transform:translateX(0%)}
+  54% {transform:translateX(0%)}
+  100%{transform:translateX(110%)}
+}
+
+/* Drag hint indicator */
+#drag-hint{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  z-index:30;display:flex;align-items:center;gap:10px;
+  background:rgba(6,8,15,.85);backdrop-filter:blur(12px);
+  border:1px solid rgba(200,169,110,.25);border-radius:100px;
+  padding:7px 18px;font-size:11px;color:rgba(200,169,110,.7);
+  opacity:0;transition:opacity .4s;pointer-events:none;
+}
+#drag-hint.show{opacity:1}
+.dh-arrow{font-size:14px;animation:arrowPulse 1.5s ease-in-out infinite}
+.dh-arrow.left{animation-delay:.3s}
+@keyframes arrowPulse{0%,100%{opacity:.4;transform:translateX(0)}50%{opacity:1;transform:translateX(4px)}}
+
 </style>
 </head>
 <body>
@@ -2534,6 +2587,166 @@ function seedData(){
   D.clients=[];
   saveAll();
 }
+</script>
+
+<!-- Cinema overlay + drag hint -->
+<div id="cin-wipe"></div>
+<div id="drag-hint"><span class="dh-arrow">←</span> <span>גרור לניווט</span> <span class="dh-arrow left">→</span></div>
+
+<!-- D3.js for cinematic drag transitions -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script>
+// ── SECTION ORDER (for directional transitions) ────────────────
+const SEC_ORDER = ['dashboard','alerts','deals','tenders','dists','salary','meetings','clients','workplan','export'];
+let currentSec = 'dashboard';
+let navBusy = false;
+
+// ── OVERRIDE nav() WITH CINEMATIC VERSION ──────────────────────
+function nav(s){
+  if(s === currentSec || navBusy) return;
+  navBusy = true;
+
+  const fromIdx = SEC_ORDER.indexOf(currentSec);
+  const toIdx   = SEC_ORDER.indexOf(s);
+  const dir     = toIdx > fromIdx ? 1 : -1; // 1=forward, -1=back
+
+  const outSec = document.getElementById('sec-'+currentSec);
+  const inSec  = document.getElementById('sec-'+s);
+
+  // Trigger wipe overlay
+  const wipe = document.getElementById('cin-wipe');
+  wipe.classList.remove('wipe-go');
+  void wipe.offsetWidth; // force reflow
+  wipe.classList.add('wipe-go');
+
+  // At wipe midpoint: switch content (hidden under the panel)
+  setTimeout(()=>{
+    // Hide outgoing
+    outSec.classList.remove('active');
+
+    // Prepare incoming (off-screen, invisible)
+    inSec.style.opacity = '0';
+    inSec.style.transform = `translateX(${dir * -55}px)`;
+    inSec.classList.add('active');
+
+    // Update sidebar highlight
+    document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
+    const navEl = document.getElementById('nv-'+s);
+    if(navEl) navEl.classList.add('active');
+
+    // Render new section
+    const renders = {
+      dashboard:rDash, alerts:rAlerts, deals:rDeals, tenders:rTenders,
+      dists:rDists, salary:rSalary, meetings:rMeetings,
+      workplan:rWorkPlan, export:updateExportCounts, clients:rClients
+    };
+    if(renders[s]) renders[s]();
+    setTimeout(initDragScrolls, 80);
+    currentSec = s;
+
+    // Animate incoming section in
+    d3.select(inSec)
+      .transition().duration(420).ease(d3.easeExpOut)
+      .style('opacity','1')
+      .style('transform','translateX(0)')
+      .on('end',()=>{
+        inSec.style.opacity = '';
+        inSec.style.transform = '';
+        navBusy = false;
+      });
+
+  }, 255);
+}
+
+// ── D3 DRAG FOR SWIPE NAVIGATION ──────────────────────────────
+let dragStartX = 0, dragStartY = 0, isDragging = false, dragDelta = 0;
+const SWIPE_THRESHOLD = 85;
+let hintTimer;
+
+const swipeDrag = d3.drag()
+  .filter(event=>{
+    // Ignore drag on interactive elements and scrollable tables
+    return !event.target.closest('button,input,select,textarea,a,.tscroll,th,td,label,.modal,.mw');
+  })
+  .on('start', event=>{
+    dragStartX = event.sourceEvent.clientX || event.sourceEvent.touches?.[0]?.clientX || 0;
+    dragStartY = event.sourceEvent.clientY || event.sourceEvent.touches?.[0]?.clientY || 0;
+    isDragging = false;
+    dragDelta  = 0;
+  })
+  .on('drag', event=>{
+    const cx = event.sourceEvent.clientX || event.sourceEvent.touches?.[0]?.clientX || dragStartX;
+    const cy = event.sourceEvent.clientY || event.sourceEvent.touches?.[0]?.clientY || dragStartY;
+    const dx = cx - dragStartX;
+    const dy = cy - dragStartY;
+
+    // Only activate on clearly horizontal movement
+    if(!isDragging && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)*1.5){
+      isDragging = true;
+      // Show drag hint
+      clearTimeout(hintTimer);
+      document.getElementById('drag-hint').classList.add('show');
+      hintTimer = setTimeout(()=>document.getElementById('drag-hint').classList.remove('show'), 1800);
+    }
+
+    if(isDragging){
+      dragDelta = dx;
+      const sec = document.querySelector('.sec.active');
+      if(sec){
+        sec.style.transform = `translateX(${dx * 0.2}px)`;
+        sec.style.opacity   = String(Math.max(0.7, 1 - Math.abs(dx) * 0.0015));
+      }
+    }
+  })
+  .on('end', ()=>{
+    const sec = document.querySelector('.sec.active');
+    isDragging = false;
+
+    if(!sec){ dragDelta = 0; return; }
+
+    if(Math.abs(dragDelta) >= SWIPE_THRESHOLD && !navBusy){
+      // RTL: drag right (positive dx) = go backward, drag left = go forward
+      const dir = dragDelta > 0 ? -1 : 1;
+      const nextIdx = SEC_ORDER.indexOf(currentSec) + dir;
+
+      // Reset visual first, then navigate
+      sec.style.transform = '';
+      sec.style.opacity   = '';
+
+      if(nextIdx >= 0 && nextIdx < SEC_ORDER.length){
+        nav(SEC_ORDER[nextIdx]);
+      }
+    } else {
+      // Snap back with spring
+      d3.select(sec)
+        .transition().duration(320).ease(d3.easeBackOut.overshoot(1.4))
+        .style('transform','translateX(0)')
+        .style('opacity','1')
+        .on('end',()=>{ sec.style.transform=''; sec.style.opacity=''; });
+    }
+    dragDelta = 0;
+  });
+
+// Attach after login (main is hidden until login)
+function initCinematicNav(){
+  d3.select('#main').call(swipeDrag);
+}
+
+// Hook into existing login success
+const _origDoLogin = window.doLogin;
+if(typeof doLogin === 'function'){
+  const origLogin = doLogin;
+  window.doLogin = function(){
+    origLogin.apply(this, arguments);
+    setTimeout(initCinematicNav, 300);
+  };
+}
+// Also init if already logged in on load
+setTimeout(()=>{
+  if(document.getElementById('app').style.display !== 'none'){
+    initCinematicNav();
+  }
+}, 400);
 </script>
 </body>
 </html>
