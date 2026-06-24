@@ -2,6 +2,9 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>CRM | HOT Business v3</title>
@@ -1161,7 +1164,39 @@ document.addEventListener('mousedown',function(e){
 function genId(){return Date.now().toString(36)+Math.random().toString(36).substr(2);}
 function dbInsert(table,row){row.id=genId();D[table].push(row);saveAll();return row;}
 function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0)D[table][i]={...D[table][i],...row};saveAll();}
-function dbDelete(table,id){confirmAct('למחוק פריט זה?',()=>{D[table]=D[table].filter(x=>x.id!=id);saveAll();rAll();toast('🗑 הפריט נמחק ונשמר','ok');});}
+function dbDelete(table,id){
+  const item=D[table].find(x=>x.id==id);
+  if(!item)return;
+  // Delete immediately
+  D[table]=D[table].filter(x=>x.id!=id);
+  saveAll();
+  rAll();
+  // Undo toast for 4 seconds
+  let undone=false;
+  const t=document.createElement('div');
+  t.className='toast toast-warn';
+  t.style.cssText='cursor:pointer;display:flex;align-items:center;gap:10px';
+  const msg=document.createElement('span');
+  msg.textContent='הפריט נמחק';
+  const btn=document.createElement('button');
+  btn.textContent='↩ בטל';
+  btn.style.cssText='background:rgba(255,255,255,.25);border:none;color:inherit;padding:3px 10px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700';
+  btn.onclick=(e)=>{
+    e.stopPropagation();
+    if(undone)return;
+    undone=true;
+    D[table].push(item);
+    saveAll();
+    rAll();
+    t.style.opacity='0';
+    setTimeout(()=>t.remove(),400);
+    showToast('↩ שוחזר','ok');
+  };
+  t.appendChild(msg);
+  t.appendChild(btn);
+  document.body.appendChild(t);
+  const tid=setTimeout(()=>{if(!undone){t.style.opacity='0';setTimeout(()=>t.remove(),400);}},4000);
+}
 
 // ===== PRIORITY =====
 function pri(item,type){
@@ -2127,11 +2162,10 @@ function updatePotentialPriority(clientId,idx,newPri){
 function removePotential(clientId,idx){
   const client=D.clients.find(c=>c.id==clientId);
   if(!client)return;
-  confirmAct('למחוק מוצר פוטנציאלי זה?',()=>{
-    client.potential.splice(idx,1);
-    dbUpdate('clients',clientId,client);
-    rWorkPlan();
-  });
+  client.potential.splice(idx,1);
+  dbUpdate('clients',clientId,client);
+  rWorkPlan();
+  showToast('🗑 מוצר נמחק','ok');
 }
 
 function rWorkPlan(){
@@ -2329,19 +2363,21 @@ function clearSel(key){
 }
 function deleteSelected(key){
   if(!SEL[key]||SEL[key].size===0)return;
-  confirmAct('למחוק '+SEL[key].size+' פריטים?',()=>{
-    const tblMap={'deals-long':'deals','deals-short':'deals','tenders':'tenders','dists-long':'dists','dists-short':'dists','salary-service':'salary','salary-equip':'salary','meetings':'meetings'};
-    const tbl=tblMap[key];
-    if(tbl){D[tbl]=D[tbl].filter(x=>!SEL[key].has(x.id));saveAll();}
-    SEL[key]=new Set();rAll();
-  });
+  const tblMap={'deals-long':'deals','deals-short':'deals','tenders':'tenders','dists-long':'dists','dists-short':'dists','salary-service':'salary','salary-equip':'salary','meetings':'meetings'};
+  const tbl=tblMap[key];
+  if(tbl){D[tbl]=D[tbl].filter(x=>!SEL[key].has(x.id));saveAll();}
+  const n=SEL[key].size;
+  SEL[key]=new Set();rAll();
+  showToast('🗑 '+n+' פריטים נמחקו','ok');
 }
 function deleteAll(section){
   const map={deals:'deals',tenders:'tenders',dists:'dists',salary:'salary',meetings:'meetings'};
   const tbl=map[section];if(!tbl)return;
   const n=D[tbl].length;
-  if(!n){toast('אין פריטים למחיקה','warn');return;}
-  confirmAct('למחוק את כל '+n+' הפריטים?',()=>{D[tbl]=[];saveAll();rAll();});
+  if(!n){showToast('אין פריטים למחיקה','warn');return;}
+  const saved=[...D[tbl]];
+  D[tbl]=[];saveAll();rAll();
+  showToast('🗑 כל '+n+' הפריטים נמחקו','ok');
 }
 
 // ===== DRAG SCROLL =====
