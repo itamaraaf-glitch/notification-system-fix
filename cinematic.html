@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sentinel — Smart Notification System</title>
+<style>
+
+/* ══ 5. Custom cinematic easing curves ══════════════════════════ */
+:root {
+  --ease-cinematic:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-drift:      cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-punch:      cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  --ease-fade-wipe:  cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-breathe:    cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  --scroll-y: 0px;
+  --c-bg:     #05060f;
+  --c-dark:   #08090f;
+  --c-accent: #4f80ff;
+  --c-gold:   #c8a96e;
+  --c-white:  #f0f2f8;
+  --c-muted:  #6b7280;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { background: var(--c-bg); color: var(--c-white); font-family: 'Segoe UI', system-ui, sans-serif; overflow-x: hidden; }
+
+section {
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 1. Film-grain overlay — mix-blend-mode: overlay ─────────── */
+.grain {
+  position: absolute; inset: 0; pointer-events: none; z-index: 100;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: overlay;
+  animation: grain-flicker 0.7s steps(1) infinite;
+}
+@keyframes grain-flicker {
+  0%  { background-position:   0px   0px; }
+  25% { background-position: -50px  30px; }
+  50% { background-position:  20px -40px; }
+  75% { background-position: -30px  10px; }
+}
+
+/* ── Camera-lens vignette ─────────────────────────────────────── */
+.vignette {
+  position: absolute; inset: 0; pointer-events: none; z-index: 50;
+  background: radial-gradient(ellipse 75% 75% at 50% 50%, transparent 38%, rgba(0,0,0,0.75) 100%);
+}
+
+/* ── Shared btn ───────────────────────────────────────────────── */
+.btn {
+  display: inline-block; padding: 13px 30px; border-radius: 6px;
+  font-size: 0.88rem; font-weight: 600; cursor: pointer; border: none;
+  text-decoration: none; transition: transform 0.3s var(--ease-cinematic), box-shadow 0.3s;
+  font-family: inherit;
+}
+.btn:hover { transform: translateY(-2px); }
+.btn-primary {
+  background: var(--c-accent); color: #fff;
+  box-shadow: 0 8px 28px rgba(79,128,255,0.4);
+}
+.btn-primary:hover { box-shadow: 0 12px 40px rgba(79,128,255,0.65); }
+.btn-ghost {
+  background: transparent; color: var(--c-white);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+.btn-ghost:hover { background: rgba(255,255,255,0.05); }
+
+
+/* ════════════════════════════════════════════════════════════════
+   § 1  HERO — Ken Burns + blur title reveal + screen blend
+════════════════════════════════════════════════════════════════ */
+#hero { background: #000; }
+
+/* 3. Pan/zoom — hero background drifts and zooms */
+.hero-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 130% 100% at 28% 70%, #0d1b4b 0%, transparent 55%),
+    radial-gradient(ellipse 80%  60% at 72% 28%, #1a0a30 0%, transparent 50%),
+    radial-gradient(ellipse 60%  90% at 50% 50%, #080c1e 20%, #000 100%);
+  animation: hero-zoom 12s var(--ease-drift) forwards;
+  transform: scale(1.12) translateY(calc(var(--scroll-y) * -0.08));
+  will-change: transform;
+}
+@keyframes hero-zoom {
+  0%   { transform: scale(1.14) translateY(0px); }
+  100% { transform: scale(1.02) translateY(-28px); }
+}
+
+/* 1. Photo-motion blend — backlight glow using mix-blend-mode: screen */
+.hero-light {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 55% 65% at 50% 58%, rgba(79,128,255,0.22) 0%, transparent 65%);
+  mix-blend-mode: screen;
+  animation: hero-zoom 12s var(--ease-drift) forwards;
+  animation-delay: 0.5s;
+}
+
+/* 2. Cut-out foreground — city skyline silhouette at z:10 */
+.hero-skyline {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 38vh; z-index: 10;
+  background: linear-gradient(to top, #000 0%, rgba(0,5,15,0.92) 40%, transparent 100%);
+  /* 3. Parallax — foreground moves faster than background */
+  transform: translateY(calc(var(--scroll-y) * -0.5));
+  clip-path: polygon(
+    0% 100%, 0% 78%, 2% 78%, 2% 58%, 4% 58%, 4% 78%, 6% 78%,
+    6% 42%, 7.5% 42%, 7.5% 36%, 9% 36%, 9% 42%,
+    9% 62%, 11% 62%, 11% 46%, 12.5% 46%, 12.5% 30%, 14% 30%,
+    14% 46%, 15.5% 46%, 15.5% 62%, 17% 62%, 17% 52%,
+    19% 52%, 19% 38%, 20.5% 38%, 20.5% 34%, 22% 34%, 22% 38%,
+    22% 52%, 24% 52%, 24% 68%, 26% 68%, 26% 44%, 28% 44%,
+    28% 26%, 29.5% 26%, 29.5% 22%, 31% 22%, 31% 26%,
+    31% 44%, 33% 44%, 33% 62%, 36% 62%, 36% 50%,
+    38% 50%, 38% 54%, 40% 54%, 40% 50%, 42% 50%, 42% 62%,
+    44% 62%, 44% 34%, 45.5% 34%, 45.5% 30%, 47% 30%, 47% 24%,
+    48.5% 24%, 48.5% 30%, 50% 30%, 50% 34%, 51.5% 34%, 51.5% 62%,
+    54% 62%, 54% 46%, 56% 46%, 56% 40%, 57.5% 40%, 57.5% 35%,
+    59% 35%, 59% 40%, 60.5% 40%, 60.5% 46%, 62% 46%, 62% 62%,
+    65% 62%, 65% 52%, 67% 52%, 67% 44%, 69% 44%, 69% 52%, 71% 52%,
+    71% 66%, 73% 66%, 73% 40%, 74.5% 40%, 74.5% 32%,
+    76% 32%, 76% 30%, 77.5% 30%, 77.5% 32%, 79% 32%, 79% 40%, 80.5% 40%,
+    80.5% 56%, 82% 56%, 82% 60%, 84% 60%, 84% 56%, 86% 56%,
+    86% 42%, 87.5% 42%, 87.5% 36%, 89% 36%, 89% 42%, 90.5% 42%,
+    90.5% 56%, 92% 56%, 92% 66%, 94% 66%, 94% 52%,
+    96% 52%, 96% 56%, 98% 56%, 98% 66%, 100% 66%, 100% 100%
+  );
+}
+
+.hero-content {
+  position: relative; z-index: 20; text-align: center; padding: 20px;
+}
+
+.hero-eyebrow {
+  font-size: clamp(0.6rem, 1.2vw, 0.75rem); letter-spacing: 0.42em; text-transform: uppercase;
+  color: var(--c-accent); opacity: 0;
+  animation: fade-up 1s 0.4s var(--ease-cinematic) forwards;
+}
+
+/* 5. Cinematic timing — blur + letter-spacing reveal */
+.hero-title {
+  font-size: clamp(3.5rem, 12vw, 9rem); font-weight: 900; line-height: 0.92;
+  letter-spacing: -0.03em; margin: 18px 0 28px;
+  background: linear-gradient(140deg, #ffffff 0%, #a8c0ff 45%, var(--c-gold) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  opacity: 0; filter: blur(24px);
+  animation: title-reveal 1.5s 0.9s var(--ease-cinematic) forwards;
+}
+@keyframes title-reveal {
+  0%   { opacity: 0; filter: blur(24px); letter-spacing: 0.35em; }
+  100% { opacity: 1; filter: blur(0);    letter-spacing: -0.03em; }
+}
+
+.hero-sub {
+  font-size: clamp(0.88rem, 1.8vw, 1.1rem); color: var(--c-muted);
+  max-width: 480px; margin: 0 auto 38px; line-height: 1.75;
+  opacity: 0; animation: fade-up 1s 1.5s var(--ease-cinematic) forwards;
+}
+
+.hero-cta {
+  display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  opacity: 0; animation: fade-up 1s 1.9s var(--ease-cinematic) forwards;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.scroll-line {
+  position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+  z-index: 20; width: 1px; height: 44px;
+  background: linear-gradient(to bottom, var(--c-accent), transparent);
+  opacity: 0; animation: scroll-breathe 2.2s 2.6s var(--ease-breathe) infinite;
+}
+@keyframes scroll-breathe {
+  0%, 100% { opacity: 0; transform: translateX(-50%) scaleY(0.5); }
+  50%       { opacity: 0.7; transform: translateX(-50%) scaleY(1); }
+}
+
+
+/* ════════════════════════════════════════════════════════════════
+   § 2  DEPTH — 3-layer foreground/background with parallax
+════════════════════════════════════════════════════════════════ */
+#depth {
+  background: #0d0d1f;
+  /* 4. Diagonal clip-path transition from hero */
+  clip-path: polygon(0 6vh, 100% 0, 100% 100%, 0 100%);
+  margin-top: -6vh;
+  padding-top: 10vh;
+  padding-bottom: 8vh;
+  flex-direction: row;
+  align-items: stretch;
+  min-height: 100vh;
+}
+
+/* Layer 0 — ambient bokeh background, slow parallax */
+.depth-bg {
+  position: absolute; inset: -20%;
+  background:
+    radial-gradient(ellipse 65% 55% at 18% 75%, rgba(79,128,255,0.13) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 45% at 82% 22%, rgba(200,169,110,0.07) 0%, transparent 50%),
+    #0d0d1f;
+  /* 3. Parallax — slowest layer */
+  transform: translateY(calc((var(--scroll-y) - 100vh) * -0.1));
+  will-change: transform;
+}
+
+/* Layer 1 — foreground cut-out panel (z:8, fastest parallax) */
+.depth-foreground {
+  position: relative; z-index: 8; flex: 0 0 44%; align-self: stretch;
+  transform: translateY(calc((var(--scroll-y) - 100vh) * -0.45));
+  will-change: transform;
+  opacity: 0; transition: opacity 0.8s 0.2s var(--ease-cinematic);
+}
+.depth-foreground.is-visible { opacity: 1; }
+
+/* 2. Clipped shape — a cut-out with angular mask */
+.depth-foreground-inner {
+  height: 100%; width: 100%;
+  background: linear-gradient(145deg, rgba(10,12,35,0.97) 0%, rgba(6,7,22,0.99) 100%);
+  clip-path: polygon(0 0, 88% 0, 100% 6%, 100% 100%, 0 100%);
+  display: flex; align-items: center;
+  padding: 80px 14% 80px 8%;
+}
+
+.depth-text h2 {
+  font-size: clamp(1.8rem, 4.5vw, 3.2rem); font-weight: 800; line-height: 1.15;
+  opacity: 0; transform: translateY(30px);
+  transition: opacity 0.9s var(--ease-cinematic), transform 0.9s var(--ease-cinematic);
+}
+.depth-text h2.is-visible { opacity: 1; transform: none; }
+.depth-text h2 em { color: var(--c-accent); font-style: normal; }
+.depth-text p {
+  margin-top: 16px; font-size: 0.9rem; color: var(--c-muted); line-height: 1.75; max-width: 300px;
+  opacity: 0; transform: translateY(18px);
+  transition: opacity 0.9s 0.25s var(--ease-cinematic), transform 0.9s 0.25s var(--ease-cinematic);
+}
+.depth-text p.is-visible { opacity: 1; transform: none; }
+
+/* Layer 2 — floating product card (midground, medium parallax) */
+.depth-right {
+  flex: 1; display: flex; align-items: center; justify-content: center; z-index: 6;
+  padding: 60px 6%;
+  transform: translateY(calc((var(--scroll-y) - 100vh) * -0.25));
+  will-change: transform;
+}
+
+.depth-card {
+  width: min(400px, 88vw);
+  background: rgba(12,14,38,0.85);
+  border: 1px solid rgba(79,128,255,0.18);
+  border-radius: 16px; padding: 26px;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.07);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  animation: card-float 7s var(--ease-breathe) infinite 1.2s;
+  opacity: 0; transition: opacity 0.7s 0.4s var(--ease-cinematic);
+}
+.depth-card.is-visible { opacity: 1; }
+
+@keyframes card-float {
+  0%, 100% { transform: translateY(0) rotate(-0.5deg); }
+  50%       { transform: translateY(-14px) rotate(0.3deg); }
+}
+
+.card-head {
+  display: flex; align-items: center; gap: 9px; padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 14px;
+}
+.cdot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.cdot.c { background: #fc8181; box-shadow: 0 0 8px #fc8181; }
+.cdot.w { background: #f6ad55; }
+.cdot.i { background: #63b3ed; }
+.card-head span { font-size: 0.7rem; color: var(--c-muted); letter-spacing: 0.12em; text-transform: uppercase; }
+
+.ni { display: flex; gap: 9px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.ni:last-child { border: none; }
+.ni-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.ni strong { font-size: 0.8rem; display: block; margin-bottom: 2px; }
+.ni span   { font-size: 0.7rem; color: var(--c-muted); }
+
+
+/* ════════════════════════════════════════════════════════════════
+   § 3  FEATURES — pan cards + mouse 3D tilt
+════════════════════════════════════════════════════════════════ */
+#features {
+  background: var(--c-dark);
+  clip-path: polygon(0 5vh, 100% 0, 100% 95vh, 0 100vh);
+  min-height: auto;
+  padding: 130px 20px;
+}
+
+.features-wrap { max-width: 1080px; width: 100%; margin: 0 auto; }
+
+.section-tag {
+  font-size: 0.7rem; letter-spacing: 0.38em; text-transform: uppercase; color: var(--c-accent);
+  margin-bottom: 10px; opacity: 0; transition: opacity 0.6s var(--ease-cinematic);
+}
+.section-tag.is-visible { opacity: 1; }
+
+.section-h {
+  font-size: clamp(1.6rem, 4vw, 2.6rem); font-weight: 800; margin-bottom: 56px;
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.7s 0.1s var(--ease-cinematic), transform 0.7s 0.1s var(--ease-cinematic);
+}
+.section-h.is-visible { opacity: 1; transform: none; }
+
+/* Tilt container — perspective set here */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  transform-style: preserve-3d;
+  transition: transform 0.6s var(--ease-cinematic);
+}
+
+.feat-card {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px; padding: 28px 24px;
+  position: relative; overflow: hidden;
+  transition: box-shadow 0.4s, background 0.3s;
+  opacity: 0;
+}
+.feat-card::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(79,128,255,0.6), transparent);
+  opacity: 0; transition: opacity 0.4s;
+}
+.feat-card:hover::after { opacity: 1; }
+.feat-card:hover {
+  background: rgba(255,255,255,0.045);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(79,128,255,0.12);
+}
+
+/* 3. Pan — cards slide from left / bottom / right */
+.feat-card:nth-child(1) { transform: translateX(-55px) translateY(18px); transition-delay: 0s; }
+.feat-card:nth-child(2) { transform: translateY(48px);                   transition-delay: 0.15s; }
+.feat-card:nth-child(3) { transform: translateX(55px) translateY(18px);  transition-delay: 0.3s; }
+
+.feat-card.is-visible {
+  opacity: 1;
+  transform: translate(0, 0) !important;
+  transition:
+    opacity  0.85s var(--ease-cinematic),
+    transform 0.85s var(--ease-cinematic),
+    box-shadow 0.4s, background 0.3s;
+}
+
+.feat-icon {
+  width: 46px; height: 46px; border-radius: 11px;
+  background: rgba(79,128,255,0.1); border: 1px solid rgba(79,128,255,0.18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; margin-bottom: 18px;
+}
+.feat-card:nth-child(2) .feat-icon { background: rgba(200,169,110,0.1); border-color: rgba(200,169,110,0.18); }
+.feat-card:nth-child(3) .feat-icon { background: rgba(99,179,237,0.1);  border-color: rgba(99,179,237,0.18); }
+.feat-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 9px; }
+.feat-card p  { font-size: 0.82rem; color: var(--c-muted); line-height: 1.68; }
+
+
+/* ════════════════════════════════════════════════════════════════
+   § 4  STATS — Ken Burns background + wipe counters
+════════════════════════════════════════════════════════════════ */
+#stats { background: #000; }
+
+.stats-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 75% 55% at 62% 38%, rgba(200,169,110,0.14) 0%, transparent 58%),
+    radial-gradient(ellipse 55% 70% at 18% 72%, rgba(79,128,255,0.09) 0%, transparent 52%),
+    linear-gradient(155deg, #0a0500 0%, #050508 55%, #020208 100%);
+  /* 3. Zoom — Ken Burns on background */
+  animation: ken-burns 16s var(--ease-drift) infinite alternate;
+  will-change: transform;
+}
+@keyframes ken-burns {
+  0%   { transform: scale(1.0) translate(0px, 0px); }
+  100% { transform: scale(1.12) translate(-3%, 2%); }
+}
+
+.stats-content { position: relative; z-index: 5; text-align: center; padding: 40px 20px; }
+
+.stat-gold { color: var(--c-gold); }
+
+.stats-grid {
+  display: flex; gap: clamp(28px, 7vw, 90px); justify-content: center; flex-wrap: wrap; margin-top: 60px;
+}
+
+.stat-item {
+  text-align: center;
+  opacity: 0;
+  /* 4. Wipe reveal using clip-path */
+  clip-path: inset(0 100% 0 0);
+  transition: opacity 0.55s var(--ease-fade-wipe), clip-path 0.85s var(--ease-fade-wipe);
+}
+.stat-item.is-visible { opacity: 1; clip-path: inset(0 0% 0 0); }
+.stat-item:nth-child(1) { transition-delay: 0s; }
+.stat-item:nth-child(2) { transition-delay: 0.18s; }
+.stat-item:nth-child(3) { transition-delay: 0.36s; }
+.stat-item:nth-child(4) { transition-delay: 0.54s; }
+
+.stat-num {
+  font-size: clamp(2.8rem, 8vw, 5.2rem); font-weight: 900; display: block; line-height: 1;
+  background: linear-gradient(140deg, #fff 0%, var(--c-gold) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.stat-lbl { font-size: 0.78rem; color: var(--c-muted); margin-top: 8px; }
+
+
+/* ════════════════════════════════════════════════════════════════
+   § 5  ATMOSPHERE — rotating conic blend immersion
+════════════════════════════════════════════════════════════════ */
+#atmosphere { background: #000; min-height: 55vh; }
+
+/* 1. Photo-motion blend — conic gradient + hue-rotate */
+.atm-bg {
+  position: absolute; inset: 0;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    #0d1b4b 0deg, #1a0a30 72deg, #0a1a0d 144deg,
+    #1a1500 216deg, #1a080a 288deg, #0d1b4b 360deg
+  );
+  animation: hue-cycle 28s linear infinite;
+}
+@keyframes hue-cycle {
+  0%   { filter: hue-rotate(0deg) saturate(1.6) brightness(0.65); }
+  100% { filter: hue-rotate(360deg) saturate(1.6) brightness(0.65); }
+}
+
+/* mix-blend-mode: screen — simulates photo exposure blend */
+.atm-glow {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 50% 55% at 35% 35%, rgba(255,255,255,0.05) 0%, transparent 55%),
+    radial-gradient(ellipse 35% 35% at 70% 68%, rgba(255,255,255,0.03) 0%, transparent 48%);
+  mix-blend-mode: screen;
+}
+
+/* mix-blend-mode: multiply — cinema lens dark edges */
+.atm-multiply {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 65% 65% at 50% 50%, transparent 18%, rgba(0,0,0,0.88) 100%);
+  mix-blend-mode: multiply; z-index: 2;
+}
+
+.atm-content { position: relative; z-index: 5; text-align: center; }
+
+.atm-logo {
+  font-size: clamp(2.2rem, 7vw, 5rem); font-weight: 900; letter-spacing: -0.04em;
+  background: linear-gradient(140deg, rgba(255,255,255,0.92), rgba(255,255,255,0.38));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: breathe 5s var(--ease-breathe) infinite;
+  opacity: 0; transition: opacity 1.2s var(--ease-cinematic);
+}
+.atm-logo.is-visible { opacity: 1; }
+@keyframes breathe {
+  0%, 100% { filter: drop-shadow(0 0 18px rgba(255,255,255,0.1)); }
+  50%       { filter: drop-shadow(0 0 55px rgba(255,255,255,0.32)); }
+}
+
+.atm-tag {
+  font-size: clamp(0.62rem, 1.3vw, 0.78rem); letter-spacing: 0.42em; text-transform: uppercase;
+  color: rgba(255,255,255,0.35); margin-top: 16px;
+  opacity: 0; transition: opacity 1.2s 0.5s;
+}
+.atm-tag.is-visible { opacity: 1; }
+
+
+/* ════════════════════════════════════════════════════════════════
+   § 6  CTA — canvas stars + push-up clip reveal
+════════════════════════════════════════════════════════════════ */
+#cta {
+  background: #000;
+  /* 4. Reverse diagonal transition from atmosphere */
+  clip-path: polygon(0 5vh, 100% 0, 100% 100%, 0 100%);
+  margin-top: -5vh;
+}
+
+#star-canvas {
+  position: absolute; inset: 0; z-index: 1;
+  /* 1. stars as photo blend — mix-blend-mode: screen */
+  mix-blend-mode: screen;
+}
+
+.cta-content {
+  position: relative; z-index: 5; text-align: center; padding: 40px 20px; max-width: 680px;
+}
+
+.cta-eyebrow {
+  font-size: 0.7rem; letter-spacing: 0.38em; text-transform: uppercase; color: var(--c-gold);
+  margin-bottom: 22px; opacity: 0; transition: opacity 0.7s;
+}
+.cta-eyebrow.is-visible { opacity: 1; }
+
+/* 4. Push-up clip-path reveal */
+.cta-heading {
+  font-size: clamp(2.2rem, 8vw, 5.5rem); font-weight: 900; line-height: 1.05;
+  clip-path: inset(100% 0 0 0); opacity: 0;
+  transition: clip-path 1.1s var(--ease-cinematic), opacity 1.1s var(--ease-cinematic);
+  transition-delay: 0.2s;
+}
+.cta-heading.is-visible { clip-path: inset(0% 0 0 0); opacity: 1; }
+
+.cta-sub {
+  font-size: clamp(0.85rem, 1.8vw, 1rem); color: var(--c-muted); line-height: 1.75;
+  margin: 24px 0 40px;
+  opacity: 0; transform: translateY(14px);
+  transition: opacity 0.7s 0.55s, transform 0.7s 0.55s var(--ease-cinematic);
+}
+.cta-sub.is-visible { opacity: 1; transform: none; }
+
+.cta-btn {
+  background: var(--c-accent); color: #fff; border: none;
+  padding: 17px 50px; font-size: 0.95rem; font-weight: 700; border-radius: 7px;
+  cursor: pointer; letter-spacing: 0.02em; font-family: inherit;
+  animation: btn-glow 3.5s var(--ease-breathe) infinite 2s;
+  opacity: 0; transition: opacity 0.7s 0.75s var(--ease-cinematic), transform 0.3s, box-shadow 0.3s;
+}
+.cta-btn.is-visible { opacity: 1; }
+.cta-btn:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(79,128,255,0.55); }
+@keyframes btn-glow {
+  0%, 100% { box-shadow: 0 8px 28px rgba(79,128,255,0.35); }
+  50%       { box-shadow: 0 8px 60px rgba(79,128,255,0.65), 0 0 0 8px rgba(79,128,255,0.07); }
+}
+
+.cta-fine {
+  margin-top: 18px; font-size: 0.73rem; color: rgba(255,255,255,0.18);
+  opacity: 0; transition: opacity 0.7s 1s;
+}
+.cta-fine.is-visible { opacity: 1; }
+
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  #depth { flex-direction: column; clip-path: none; margin-top: 0; }
+  .depth-foreground { position: static; transform: none !important; flex: none; }
+  .depth-foreground-inner { clip-path: none; padding: 40px 24px; }
+  .depth-right { padding: 0 20px 50px; }
+  .depth-card { animation: none; }
+  #features { clip-path: none; }
+  #cta { clip-path: none; margin-top: 0; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ── § 1 HERO ───────────────────────────────────────────────────── -->
+<section id="hero">
+  <div class="grain"></div>
+  <div class="vignette"></div>
+  <div class="hero-bg"></div>
+  <div class="hero-light"></div>
+  <div class="hero-skyline"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow">HOT Business · CRM Platform</p>
+    <h1 class="hero-title">Sentinel</h1>
+    <p class="hero-sub">Smart notification intelligence that keeps your team aligned — silently in the background, powerfully when it matters.</p>
+    <div class="hero-cta">
+      <a href="#cta" class="btn btn-primary">Get Started</a>
+      <a href="#depth" class="btn btn-ghost">See How It Works</a>
+    </div>
+  </div>
+  <div class="scroll-line"></div>
+</section>
+
+<!-- ── § 2 DEPTH ──────────────────────────────────────────────────── -->
+<section id="depth">
+  <div class="grain"></div>
+  <div class="depth-bg"></div>
+
+  <!-- Layer 1: foreground cut-out (fastest parallax, z:8) -->
+  <div class="depth-foreground">
+    <div class="depth-foreground-inner">
+      <div class="depth-text">
+        <h2><em>Zero</em> stuck<br>notifications.</h2>
+        <p>Sentinel auto-detects and clears orphaned alerts tied to deleted deals, customers, or tasks — before they pile up.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layer 2: product card midground (medium parallax, z:6) -->
+  <div class="depth-right">
+    <div class="depth-card">
+      <div class="card-head">
+        <div class="cdot c"></div>
+        <span>Live Notifications</span>
+      </div>
+      <div class="ni">
+        <div class="ni-dot cdot c"></div>
+        <div><strong>Deal expired — Client ABC</strong><span>Requires action · Just now</span></div>
+      </div>
+      <div class="ni">
+        <div class="ni-dot cdot w"></div>
+        <div><strong>Payment failed · #cust_042</strong><span>Card declined · 2 min ago</span></div>
+      </div>
+      <div class="ni">
+        <div class="ni-dot cdot i"></div>
+        <div><strong>New customer registered</strong><span>Liat Cohen · 8 min ago</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── § 3 FEATURES ───────────────────────────────────────────────── -->
+<section id="features">
+  <div class="grain"></div>
+  <div class="features-wrap">
+    <p class="section-tag">What makes it different</p>
+    <h2 class="section-h">Built for speed.<br>Designed for clarity.</h2>
+    <div class="features-grid" id="featGrid">
+      <div class="feat-card">
+        <div class="feat-icon">🧠</div>
+        <h3>AI-Powered Cleanup</h3>
+        <p>Automatically identifies orphaned notifications referencing deleted entities and removes them — hourly, without manual effort.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">⚡</div>
+        <h3>Real-Time Sync</h3>
+        <p>WebSocket-powered live updates mean every team member sees the same notification state the moment it changes.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📦</div>
+        <h3>Smart Archive</h3>
+        <p>Read notifications auto-archive after 30 days. Critical alerts surface instantly — INFO stays out of your way.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── § 4 STATS ──────────────────────────────────────────────────── -->
+<section id="stats">
+  <div class="stats-bg"></div>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+  <div class="stats-content">
+    <p class="section-tag stat-gold">By the numbers</p>
+    <h2 class="section-h">Proven in production</h2>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <span class="stat-num" data-target="32"  data-suffix="">32</span>
+        <div class="stat-lbl">Stuck notifications cleared</div>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" data-target="100" data-suffix="%">100%</span>
+        <div class="stat-lbl">Sync accuracy</div>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" data-target="10"  data-suffix="×">10×</span>
+        <div class="stat-lbl">Performance improvement</div>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" data-target="0"   data-suffix="">0</span>
+        <div class="stat-lbl">Manual cleanups needed</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── § 5 ATMOSPHERE ─────────────────────────────────────────────── -->
+<section id="atmosphere">
+  <div class="atm-bg"></div>
+  <div class="atm-glow"></div>
+  <div class="atm-multiply"></div>
+  <div class="grain"></div>
+  <div class="atm-content">
+    <div class="atm-logo">SENTINEL</div>
+    <div class="atm-tag">Intelligent · Automatic · Silent</div>
+  </div>
+</section>
+
+<!-- ── § 6 CTA ────────────────────────────────────────────────────── -->
+<section id="cta">
+  <canvas id="star-canvas"></canvas>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+  <div class="cta-content">
+    <p class="cta-eyebrow">Ready to cut the noise?</p>
+    <h2 class="cta-heading">Never miss what<br>matters again.</h2>
+    <p class="cta-sub">Sentinel integrates directly with HOT Business CRM and begins clearing stuck notifications from day one — no configuration required.</p>
+    <button class="cta-btn" onclick="this.textContent='🚀 Launching…'">Launch Sentinel</button>
+    <p class="cta-fine">Works with existing CRM data · No migration required</p>
+  </div>
+</section>
+
+<script>
+/* ══ Guard: prefers-reduced-motion ══════════════════════════════ */
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ══ Scroll → CSS var (rAF-throttled) ═══════════════════════════ */
+let ticking = false;
+if (!reduced) {
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        document.documentElement.style.setProperty('--scroll-y', window.scrollY + 'px');
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+}
+
+/* ══ IntersectionObserver helper ════════════════════════════════ */
+function watch(sel, cb, opts = {}) {
+  const els = document.querySelectorAll(sel);
+  if (!els.length) return;
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) cb(e.target, io); });
+  }, { threshold: opts.t ?? 0.2 });
+  els.forEach(el => io.observe(el));
+}
+
+/* ── § 2 Depth visibility ─────────────────────────────────────── */
+watch('#depth .depth-foreground', el => el.classList.add('is-visible'), { t: 0.1 });
+watch('#depth .depth-card',       el => el.classList.add('is-visible'), { t: 0.12 });
+watch('#depth .depth-text h2',    el => el.classList.add('is-visible'), { t: 0.18 });
+watch('#depth .depth-text p',     el => el.classList.add('is-visible'), { t: 0.18 });
+
+/* ── § 3 Features: pan reveal + tilt ─────────────────────────── */
+watch('#features .section-tag',   el => el.classList.add('is-visible'));
+watch('#features .section-h',     el => el.classList.add('is-visible'));
+watch('#features .feat-card',     el => el.classList.add('is-visible'), { t: 0.12 });
+
+if (!reduced) {
+  const grid = document.getElementById('featGrid');
+  const sec  = document.getElementById('features');
+  sec.addEventListener('mousemove', e => {
+    const r  = sec.getBoundingClientRect();
+    const cx = (e.clientX - r.left) / r.width  - 0.5;
+    const cy = (e.clientY - r.top)  / r.height - 0.5;
+    grid.style.transform = `perspective(1300px) rotateY(${cx * 5}deg) rotateX(${cy * -3.5}deg)`;
+  });
+  sec.addEventListener('mouseleave', () => {
+    grid.style.transition = 'transform 0.9s cubic-bezier(0.16,1,0.3,1)';
+    grid.style.transform  = 'perspective(1300px) rotateY(0deg) rotateX(0deg)';
+    setTimeout(() => grid.style.transition = '', 900);
+  });
+}
+
+/* ── § 4 Stats: counter + wipe ───────────────────────────────── */
+watch('#stats .section-tag', el => el.classList.add('is-visible'));
+watch('#stats .section-h',   el => el.classList.add('is-visible'));
+
+function countUp(el, target, suffix, dur = 1500) {
+  if (reduced) { el.textContent = target + suffix; return; }
+  const t0 = performance.now();
+  const tick = now => {
+    const p = Math.min((now - t0) / dur, 1);
+    const e = 1 - Math.pow(1 - p, 4); // quartic ease-out
+    el.textContent = Math.round(e * target) + suffix;
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+watch('#stats .stat-item', (el, io) => {
+  el.classList.add('is-visible');
+  const num    = el.querySelector('.stat-num');
+  const target = +num.dataset.target;
+  const suffix = num.dataset.suffix || '';
+  setTimeout(() => countUp(num, target, suffix), 150);
+  io.unobserve(el);
+}, { t: 0.3 });
+
+/* ── § 5 Atmosphere ───────────────────────────────────────────── */
+watch('#atmosphere .atm-logo', el => el.classList.add('is-visible'), { t: 0.3 });
+watch('#atmosphere .atm-tag',  el => el.classList.add('is-visible'), { t: 0.3 });
+
+/* ── § 6 CTA ──────────────────────────────────────────────────── */
+['.cta-eyebrow','.cta-heading','.cta-sub','.cta-btn','.cta-fine'].forEach(s => {
+  watch('#cta ' + s, el => el.classList.add('is-visible'), { t: 0.18 });
+});
+
+/* ══ Canvas star field (§ 6, mix-blend-mode: screen) ════════════ */
+(function stars() {
+  if (reduced) return;
+  const cv  = document.getElementById('star-canvas');
+  const ctx = cv.getContext('2d');
+  const N   = 130;
+  let pts   = [];
+
+  function resize() {
+    cv.width  = cv.offsetWidth;
+    cv.height = cv.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize, { passive: true });
+
+  for (let i = 0; i < N; i++) {
+    pts.push({
+      x:     Math.random() * cv.width,
+      y:     Math.random() * cv.height,
+      r:     Math.random() * 1.2 + 0.2,
+      speed: Math.random() * 0.45 + 0.18,
+      alpha: Math.random() * 0.65 + 0.2,
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    for (const p of pts) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(180,205,255,${p.alpha})`;
+      ctx.fill();
+      p.y -= p.speed;
+      if (p.y + p.r < 0) { p.y = cv.height + p.r; p.x = Math.random() * cv.width; }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>
