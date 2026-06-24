@@ -1742,11 +1742,19 @@ function openEmailCompose(c){
 function emailFromClientForm(){
   const email=document.getElementById('cl-email').value.trim();
   if(!email){toast('⚠️ נא להזין כתובת אימייל ללקוח','warn');return;}
-  const name=document.getElementById('cl-name').value.trim()||'הלקוח';
-  const contact=document.getElementById('cl-contact').value.trim();
-  const subject='HOT Business – הצעה ל'+name;
-  const body='שלום '+(contact||name)+',\n\nאני פונה אליך בקשר להרחבת הפתרונות שלכם אצלנו ב-HOT.\n\nנשמח לתאם שיחה ולהציג את הפתרונות המתאימים לכם.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nItamar.venden@hot.net.il';
-  window.location.href='mailto:'+email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  let c=EI?D.clients.find(x=>x.id==EI):null;
+  if(c){
+    // לקוח קיים — שלח עם כל נתוני המוצרים, הערות, תפוגות
+    const body=buildClientGmailUrl({...c,email});
+    window.location.href='mailto:'+email+'?subject='+encodeURIComponent('HOT Business – הצעה ל'+c.name)+'&body='+encodeURIComponent(body);
+  }else{
+    // לקוח חדש שטרם נשמר — בנה מהשדות הפתוחים
+    const name=document.getElementById('cl-name').value.trim()||'הלקוח';
+    const contact=document.getElementById('cl-contact').value.trim();
+    const genNotes=document.getElementById('cl-gen-notes').value.trim();
+    const body=buildClientGmailUrl({email,name,contact,genNotes});
+    window.location.href='mailto:'+email+'?subject='+encodeURIComponent('HOT Business – הצעה ל'+name)+'&body='+encodeURIComponent(body);
+  }
 }
 function buildGmailUrl(){
   const to=document.getElementById('em-to').value.trim();
