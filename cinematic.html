@@ -78,10 +78,10 @@ nav.scrolled{
 
 .p-bg{
   background:
-    radial-gradient(ellipse 80% 90% at 20% 60%,#1e0838 0%,transparent 55%),
-    radial-gradient(ellipse 70% 70% at 78% 28%,#071a44 0%,transparent 55%),
-    radial-gradient(ellipse 50% 60% at 55% 85%,#0d0020 0%,transparent 45%),
-    var(--black);
+    radial-gradient(ellipse 80% 90% at 20% 60%,rgba(30,8,56,.82) 0%,transparent 55%),
+    radial-gradient(ellipse 70% 70% at 78% 28%,rgba(7,26,68,.82) 0%,transparent 55%),
+    radial-gradient(ellipse 50% 60% at 55% 85%,rgba(13,0,32,.88) 0%,transparent 45%),
+    url('https://images.unsplash.com/photo-1518770660439-4636190af475?w=1920&q=80&fit=crop') center/cover no-repeat;
   animation:kenburns 36s ease-in-out infinite alternate;
 }
 .p-mid{
@@ -278,9 +278,9 @@ section{position:relative;padding:130px 48px}
 .fl-bg{
   position:absolute;inset:0;
   background:
-    radial-gradient(ellipse at 35% 25%,#1e0838 0%,transparent 55%),
-    radial-gradient(ellipse at 70% 75%,#071a44 0%,transparent 50%),
-    #0d0d16;
+    radial-gradient(ellipse at 35% 25%,rgba(30,8,56,.52) 0%,transparent 55%),
+    radial-gradient(ellipse at 70% 75%,rgba(7,26,68,.52) 0%,transparent 50%),
+    url('https://images.unsplash.com/photo-1560250097-0b93528c311a?w=900&q=85&fit=crop&crop=top') center/cover no-repeat;
   animation:kenburns 28s ease-in-out infinite alternate;
 }
 .fl-mid{
@@ -349,7 +349,14 @@ section{position:relative;padding:130px 48px}
 .story-p{color:rgba(240,239,232,.58);line-height:1.85;margin-bottom:16px}
 
 /* ── FEATURES ────────────────────────────── */
-.features{background:var(--black)}
+.features{
+  background:var(--black);
+  background-image:
+    radial-gradient(ellipse 60% 50% at 50% 50%,rgba(200,169,110,.04) 0%,transparent 60%),
+    url('https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1920&q=60&fit=crop');
+  background-size:auto,cover;
+  background-blend-mode:normal,overlay;
+}
 .feat-hdr{text-align:center;margin-bottom:76px}
 .feat-hdr h2{font-family:'Playfair Display',serif;font-weight:900;font-size:clamp(2rem,5vw,3.6rem);margin-bottom:12px}
 .feat-hdr p{color:var(--muted);max-width:460px;margin:0 auto}
@@ -407,10 +414,10 @@ section{position:relative;padding:130px 48px}
 .sc-scene{
   position:absolute;inset:-5%;will-change:transform;
   background:
-    radial-gradient(ellipse 130% 90% at 50% 55%,#1a0838 0%,transparent 58%),
-    radial-gradient(ellipse 65% 100% at 0% 50%,#071a44 0%,transparent 42%),
-    radial-gradient(ellipse 65% 100% at 100% 50%,#280a38 0%,transparent 42%),
-    #080808;
+    radial-gradient(ellipse 130% 90% at 50% 55%,rgba(26,8,56,.78) 0%,transparent 58%),
+    radial-gradient(ellipse 65% 100% at 0% 50%,rgba(7,26,68,.78) 0%,transparent 42%),
+    radial-gradient(ellipse 65% 100% at 100% 50%,rgba(40,10,56,.78) 0%,transparent 42%),
+    url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&q=80&fit=crop') center/cover no-repeat;
   animation:sceneDrift 22s ease-in-out infinite alternate;
 }
 @keyframes sceneDrift{0%{transform:scale(1) translate(0,0)}100%{transform:scale(1.06) translate(1%,-1%)}}
