@@ -1101,9 +1101,10 @@ function wdP(y,m,dy){let c=0;for(let i=1;i<=dy;i++){const d=new Date(y,m,i);if(d
 // ===== SAVE INDICATOR =====
 function showSaved(){
   const el=document.getElementById('saveind');
+  el.textContent=`✦ נשמר (עסקאות:${D.deals.length} | פגישות:${D.meetings.length} | הפצות:${D.dists.length})`;
   el.classList.add('show');
   clearTimeout(el._t);
-  el._t=setTimeout(()=>el.classList.remove('show'),2200);
+  el._t=setTimeout(()=>{el.classList.remove('show');el.textContent='✦ נשמר';},2200);
 }
 function showToast(msg,type='ok'){
   const t=document.createElement('div');
@@ -1155,8 +1156,17 @@ function doLogout(){
 
 // ===== STORAGE =====
 function saveAll(){
-  try{localStorage.setItem(LS_KEY,JSON.stringify(D));showSaved();}
-  catch(e){console.error('שגיאת שמירה:',e);}
+  try{
+    const snap=JSON.stringify(D);
+    localStorage.setItem(LS_KEY,snap);
+    // Verify write succeeded
+    const verify=localStorage.getItem(LS_KEY);
+    if(!verify||verify!==snap)throw new Error('אימות כתיבה נכשל');
+    showSaved();
+  }catch(e){
+    console.error('שגיאת שמירה:',e);
+    showToast('⚠️ שגיאה בשמירה! '+e.message,'warn');
+  }
 }
 function loadAll(){
   try{
@@ -1169,7 +1179,7 @@ function loadAll(){
       D.goals=p.goals||{deals:15000,dists:14000,sal:15000};
       // Only seed if this is truly a first-time load (all tables empty AND no initialized flag)
       const allEmpty=!D.deals.length&&!D.tenders.length&&!D.dists.length&&!D.salary.length&&!D.meetings.length&&!D.clients.length;
-      if(allEmpty&&!p._init)seedData();
+      if(allEmpty&&!localStorage.getItem(LS_KEY+'_init'))seedData();
     }else{seedData();}
   }catch(e){console.error(e);seedData();}
   syncAllDealsToClients();
@@ -1181,7 +1191,7 @@ function loadAll(){
   }
   rAll();
 }
-setInterval(()=>{try{if(D.deals.length)localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}},30000);
+setInterval(()=>{try{localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}},30000);
 window.addEventListener('beforeunload',()=>{try{localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}});
 // iOS does not fire beforeunload reliably — use visibilitychange as backup save
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){try{localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}}});
@@ -2298,7 +2308,7 @@ function saveDeal(){
       toast('🚀 העסקה נוספה אוטומטית להפצות','ok');
     }
   }
-  closeM('mdeal');loadAll();
+  closeM('mdeal');rAll();
 }
 function syncDealToSalary(deal){
   const alreadySynced=D.salary.some(s=>s._dealId==deal.id);
@@ -2345,7 +2355,7 @@ function saveTender(){
   const row={name:document.getElementById('tn').value,proj:document.getElementById('tp').value,pub:document.getElementById('tpb').value,link:document.getElementById('tlk').value,quote:document.getElementById('tq').value,questions:document.getElementById('tqs').value,deadline:document.getElementById('tdl').value,rounds:+document.getElementById('tr').value,handler:document.getElementById('th').value,amount:+document.getElementById('tam').value,qty:+document.getElementById('tqt').value,submitted:document.getElementById('tsb').value,linked:document.getElementById('tln').value,docs:document.getElementById('tdc').value,notes:document.getElementById('tno').value};
   if(!row.name){alert('יש להזין שם מכרז');return;}
   if(EI){dbUpdate('tenders',EI,row);}else{dbInsert('tenders',row);}
-  closeM('mtender');loadAll();
+  closeM('mtender');rAll();
 }
 function saveDist(){
   const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,hd:document.getElementById('dih').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,mi:document.getElementById('dimi').value};
@@ -2353,19 +2363,19 @@ function saveDist(){
   let savedDist;
   if(EI){dbUpdate('dists',EI,row);savedDist=D.dists.find(x=>x.id==EI);}else{savedDist=dbInsert('dists',row);}
   if(savedDist&&savedDist.st==='הושלם')syncDistToClient(savedDist);
-  closeM('mdist');loadAll();
+  closeM('mdist');rAll();
 }
 function saveSal(){
   const row={pj:document.getElementById('spj').value,cl:document.getElementById('scl').value,qt:+document.getElementById('sqt').value,tr:+document.getElementById('str').value,cl2:+document.getElementById('scl2').value,pv:+document.getElementById('spv').value,st:document.getElementById('sst').value,ty:document.getElementById('sty').value,no:document.getElementById('sno').value};
   if(!row.cl){alert('יש להזין שם לקוח');return;}
   if(EI){dbUpdate('salary',EI,row);}else{dbInsert('salary',row);}
-  closeM('msalary');loadAll();
+  closeM('msalary');rAll();
 }
 function saveMeet(){
   const row={dt:document.getElementById('mdt').value,cl:document.getElementById('mcl').value,nu:document.getElementById('mnu').value,hl:document.getElementById('mhl').value,no:document.getElementById('mno').value};
   if(!row.cl){alert('יש להזין שם לקוח');return;}
   if(EI){dbUpdate('meetings',EI,row);}else{dbInsert('meetings',row);}
-  closeM('mmeeting');loadAll();
+  closeM('mmeeting');rAll();
 }
 
 // ===== SELECTION =====
