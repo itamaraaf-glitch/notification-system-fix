@@ -1184,6 +1184,7 @@ function loadAll(){
   }catch(e){console.error(e);seedData();}
   syncAllDealsToClients();
   syncAllDealsToDists();
+  syncAllDealsToSalary();
   runMonthlyCycle();
   // Mark as initialized so loadAll never calls seedData again after first load
   if(!localStorage.getItem(LS_KEY+'_init')){
@@ -2191,6 +2192,13 @@ function syncAllDealsToDists(){
   return count;
 }
 
+function syncAllDealsToSalary(){
+  let count=0;
+  D.deals.filter(d=>d.st==='נסגר').forEach(d=>{if(syncDealToSalary(d,true))count++;});
+  if(count)saveAll();
+  return count;
+}
+
 function manualSyncDeals(){
   const count=syncAllDealsToClients();
   rAll();
@@ -2313,9 +2321,10 @@ function saveDeal(){
   }
   closeM('mdeal');rAll();
 }
-function syncDealToSalary(deal){
+function syncDealToSalary(deal,silent){
+  if(deal.st!=='נסגר')return false;
   const alreadySynced=D.salary.some(s=>s._dealId==deal.id);
-  if(alreadySynced)return;
+  if(alreadySynced)return false;
   const isOTC=deal.ty==='short'||deal.ot>0;
   const row={
     pj:deal.num||'',
@@ -2330,7 +2339,8 @@ function syncDealToSalary(deal){
     _dealId:deal.id
   };
   dbInsert('salary',row);
-  toast('💰 העסקה נוספה אוטומטית לפרויקטי שכר','ok');
+  if(!silent)toast('💰 העסקה נוספה אוטומטית לפרויקטי שכר','ok');
+  return true;
 }
 function syncDealToDist(deal,silent){
   if(deal.st!=='נסגר')return false;
