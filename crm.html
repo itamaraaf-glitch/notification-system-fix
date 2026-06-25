@@ -1183,6 +1183,7 @@ function loadAll(){
     }else{seedData();}
   }catch(e){console.error(e);seedData();}
   syncAllDealsToClients();
+  syncAllDealsToDists();
   runMonthlyCycle();
   // Mark as initialized so loadAll never calls seedData again after first load
   if(!localStorage.getItem(LS_KEY+'_init')){
@@ -2183,6 +2184,13 @@ function syncAllDealsToClients(){
   return count;
 }
 
+function syncAllDealsToDists(){
+  let count=0;
+  D.deals.filter(d=>d.st==='נסגר').forEach(d=>{if(syncDealToDist(d,true))count++;});
+  if(count)saveAll();
+  return count;
+}
+
 function manualSyncDeals(){
   const count=syncAllDealsToClients();
   rAll();
@@ -2301,12 +2309,7 @@ function saveDeal(){
   if(savedDeal&&savedDeal.st==='נסגר'){
     syncDealToClient(savedDeal);
     syncDealToSalary(savedDeal);
-    if(!D.dists.some(d=>d._dealId===savedDeal.id)){
-      const distRow={id:genId(),co:savedDeal.co||'',no:String(savedDeal.num||''),cl:savedDeal.ct||'',hd:'',it:'',so:savedDeal.srv||'',ad:'',inc:+(savedDeal.mv||0),eq:+(savedDeal.ot||0),dt:savedDeal.date||nd(),st:'ממתין להפצה',ty:savedDeal.ty==='short'?'short':'long',mi:savedDeal.no||'',_dealId:savedDeal.id};
-      D.dists.push(distRow);
-      saveAll();
-      toast('🚀 העסקה נוספה אוטומטית להפצות','ok');
-    }
+    syncDealToDist(savedDeal);
   }
   closeM('mdeal');rAll();
 }
@@ -2329,12 +2332,13 @@ function syncDealToSalary(deal){
   dbInsert('salary',row);
   toast('💰 העסקה נוספה אוטומטית לפרויקטי שכר','ok');
 }
-function syncDealToDist(deal){
+function syncDealToDist(deal,silent){
+  if(deal.st!=='נסגר')return false;
   const alreadySynced=D.dists.some(d=>d._dealId==deal.id);
-  if(alreadySynced)return;
+  if(alreadySynced)return false;
   const row={
     co:deal.co||'',
-    no:deal.num||'',
+    no:String(deal.num||''),
     cl:deal.ct||'',
     hd:'',
     it:'',
@@ -2349,7 +2353,8 @@ function syncDealToDist(deal){
     _dealId:deal.id
   };
   dbInsert('dists',row);
-  toast('🚀 העסקה נוספה אוטומטית להפצות','ok');
+  if(!silent)toast('🚀 העסקה נוספה אוטומטית להפצות','ok');
+  return true;
 }
 function saveTender(){
   const row={name:document.getElementById('tn').value,proj:document.getElementById('tp').value,pub:document.getElementById('tpb').value,link:document.getElementById('tlk').value,quote:document.getElementById('tq').value,questions:document.getElementById('tqs').value,deadline:document.getElementById('tdl').value,rounds:+document.getElementById('tr').value,handler:document.getElementById('th').value,amount:+document.getElementById('tam').value,qty:+document.getElementById('tqt').value,submitted:document.getElementById('tsb').value,linked:document.getElementById('tln').value,docs:document.getElementById('tdc').value,notes:document.getElementById('tno').value};
