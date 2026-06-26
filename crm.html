@@ -2394,7 +2394,7 @@ function syncDealToSalary(deal,silent){
   if(deal.st!=='נסגר')return false;
   let created=false;
   const no=(deal.srv||'')+(deal.no?' | '+deal.no:'');
-  const hasService=(deal.v||0)>0||(deal.mv||0)>0;
+  const hasService=deal.ty==='long'||(deal.v||0)>0||(deal.mv||0)>0;
   const svcSynced=D.salary.some(s=>s._dealId==deal.id&&s.ty==='service');
   if(hasService&&!svcSynced){
     dbInsert('salary',{pj:deal.num||'',cl:deal.co||'',qt:1,tr:deal.v||0,cl2:deal.mv||0,pv:0,st:'פתוח',ty:'service',no,_dealId:deal.id});
