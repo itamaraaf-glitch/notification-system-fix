@@ -47,16 +47,12 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-
 
 /* ─── LOGIN ─── */
 #login{display:flex;align-items:center;justify-content:center;min-height:100vh;
-  background:
-    radial-gradient(ellipse 70% 80% at 20% 60%,rgba(30,8,56,.6) 0%,transparent 55%),
-    radial-gradient(ellipse 60% 60% at 80% 25%,rgba(7,26,68,.6) 0%,transparent 50%),
-    radial-gradient(ellipse 50% 50% at 55% 90%,rgba(200,169,110,.04) 0%,transparent 50%),
-    var(--bg)}
+  background:transparent;position:relative;z-index:1}
 .lcard{
   background:linear-gradient(145deg,rgba(14,18,34,.97),rgba(8,11,22,.98));
   border:1px solid rgba(200,169,110,.18);border-radius:20px;padding:40px 44px;width:380px;text-align:center;
   box-shadow:0 32px 80px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.04),0 0 80px rgba(200,169,110,.07);
-  backdrop-filter:blur(16px);animation:cardIn .5s ease;
+  backdrop-filter:blur(16px);
   position:relative;overflow:hidden;
 }
 .lcard::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
@@ -95,7 +91,7 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-
 .lerr{font-size:11px;color:var(--red);margin-top:10px;min-height:16px}
 
 /* ─── APP SHELL ─── */
-#app{display:none;flex-direction:column;height:100vh;overflow:hidden}
+#app{display:none;flex-direction:column;height:100vh;overflow:hidden;position:relative;z-index:1}
 #topbar{
   background:linear-gradient(90deg,rgba(10,13,22,.98),rgba(14,18,32,.98));
   border-bottom:1px solid rgba(200,169,110,.1);
@@ -165,10 +161,7 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-
 }
 #main{
   flex:1;overflow:hidden;height:100%;touch-action:pan-y;
-  background:
-    radial-gradient(ellipse 80% 40% at 80% 0%,rgba(200,169,110,.025) 0%,transparent 55%),
-    radial-gradient(ellipse 60% 40% at 10% 100%,rgba(100,40,200,.02) 0%,transparent 50%),
-    var(--bg);
+  background:transparent;position:relative;z-index:1;
 }
 .sec{display:none}.sec.active{display:block;height:100%;overflow-y:auto;overflow-x:hidden;padding:20px;box-sizing:border-box;-webkit-overflow-scrolling:touch}
 .shdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;
@@ -552,8 +545,141 @@ select option{background:#0a0d18}
 /* Touch tilt — applied by JS on touchmove inside cards */
 .tilt-active{transition:transform .05s linear !important}
 </style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 <body>
+
+<!-- THREE.JS BACKGROUND CANVAS -->
+<canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block"></canvas>
+
+<!-- GSAP -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+<!-- THREE.JS PARTICLE FLOW FIELD -->
+<script type="module">
+import * as THREE from 'three';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass}     from 'three/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {OutputPass}     from 'three/addons/postprocessing/OutputPass.js';
+
+const cvs = document.getElementById('bg-canvas');
+const W   = () => window.innerWidth;
+const H   = () => window.innerHeight;
+
+// Renderer
+const renderer = new THREE.WebGLRenderer({canvas:cvs, antialias:false, powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setSize(W(), H());
+
+const scene  = new THREE.Scene();
+scene.background = new THREE.Color(0x06080f);
+
+const camera = new THREE.PerspectiveCamera(60, W()/H(), 0.1, 500);
+camera.position.z = 45;
+
+// Bloom post-processing
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(W(), H()), 1.35, 0.55, 0.70);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+// Soft glow sprite texture
+const sp = document.createElement('canvas');
+sp.width = sp.height = 64;
+const c2 = sp.getContext('2d');
+const gr = c2.createRadialGradient(32,32,0,32,32,32);
+gr.addColorStop(0,   'rgba(255,255,255,1)');
+gr.addColorStop(0.3, 'rgba(255,255,255,0.6)');
+gr.addColorStop(1,   'rgba(255,255,255,0)');
+c2.fillStyle = gr;
+c2.fillRect(0,0,64,64);
+const spTex = new THREE.CanvasTexture(sp);
+
+// Particle count – fewer on mobile for 60 fps
+const mobile = W() < 768;
+const COUNT  = mobile ? 1800 : 4500;
+const SPREAD = 95;
+
+const geo = new THREE.BufferGeometry();
+const pos = new Float32Array(COUNT * 3);
+const col = new Float32Array(COUNT * 3);
+
+// CRM palette: gold / teal / blue / purple
+const PAL = [
+  [0.784, 0.663, 0.431],  // gold
+  [0.024, 0.839, 0.627],  // teal
+  [0.298, 0.788, 0.941],  // blue
+  [0.545, 0.361, 0.965],  // purple
+];
+
+for(let i = 0; i < COUNT; i++){
+  pos[i*3]   = (Math.random()-.5) * SPREAD;
+  pos[i*3+1] = (Math.random()-.5) * SPREAD;
+  pos[i*3+2] = (Math.random()-.5) * 35;
+  const [r,g,b] = PAL[Math.floor(Math.random() * PAL.length)];
+  const br = 0.2 + Math.random() * 0.85;
+  col[i*3] = r*br;  col[i*3+1] = g*br;  col[i*3+2] = b*br;
+}
+geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
+
+const mat = new THREE.PointsMaterial({
+  size: mobile ? 0.22 : 0.15,
+  vertexColors: true,
+  transparent: true,
+  opacity: 0.88,
+  map: spTex,
+  sizeAttenuation: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+});
+
+const pts = new THREE.Points(geo, mat);
+scene.add(pts);
+
+// Organic flow field — layered waves create turbulent, alive motion
+function flowAngle(x, y, t){
+  return (
+    Math.sin(x * 0.048 + t)                  * Math.cos(y * 0.032 + t * 0.71) +
+    Math.sin(x * 0.072 - y * 0.051 + t*1.27) * 0.52 +
+    Math.cos(x * 0.029 + y * 0.063 - t*0.88) * 0.31
+  ) * Math.PI;
+}
+
+let t = 0;
+const STEP = 0.038;
+const half = SPREAD / 2;
+
+function tick(){
+  requestAnimationFrame(tick);
+  t += 0.00038;
+  for(let i = 0; i < COUNT; i++){
+    const x = pos[i*3], y = pos[i*3+1];
+    const a = flowAngle(x, y, t);
+    pos[i*3]   += Math.cos(a) * STEP;
+    pos[i*3+1] += Math.sin(a) * STEP;
+    // wrap toroidal edges
+    if(pos[i*3]   >  half) pos[i*3]   = -half + 0.01;
+    if(pos[i*3]   < -half) pos[i*3]   =  half - 0.01;
+    if(pos[i*3+1] >  half) pos[i*3+1] = -half + 0.01;
+    if(pos[i*3+1] < -half) pos[i*3+1] =  half - 0.01;
+  }
+  geo.attributes.position.needsUpdate = true;
+  composer.render();
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = W()/H();
+  camera.updateProjectionMatrix();
+  renderer.setSize(W(), H());
+  composer.setSize(W(), H());
+  bloom.resolution.set(W(), H());
+});
+
+tick();
+</script>
 
 <!-- LOGIN -->
 <div id="login">
@@ -1158,22 +1284,71 @@ function doLogin(){
   const f=USERS.find(x=>x.u===u&&x.p===p);
   if(!f){document.getElementById('lerr').textContent='שם משתמש או סיסמה שגויים';return;}
   document.getElementById('lerr').textContent='';
-  document.getElementById('login').style.display='none';
-  document.getElementById('app').style.display='flex';
-  document.getElementById('uname').textContent=f.n;
-  const n=now();
-  document.getElementById('td').textContent=n.toLocaleDateString('en-GB');
-  document.getElementById('wd').textContent=wdM(n.getFullYear(),n.getMonth());
-  document.getElementById('wdp').textContent=wdP(n.getFullYear(),n.getMonth(),n.getDate());
-  loadAll();
+  const loginEl=document.getElementById('login');
+  const appEl=document.getElementById('app');
+  if(window.gsap){
+    gsap.to(loginEl,{opacity:0,scale:1.04,duration:0.5,ease:'power2.in',onComplete:()=>{
+      loginEl.style.display='none';
+      appEl.style.display='flex';
+      document.getElementById('uname').textContent=f.n;
+      const n=now();
+      document.getElementById('td').textContent=n.toLocaleDateString('en-GB');
+      document.getElementById('wd').textContent=wdM(n.getFullYear(),n.getMonth());
+      document.getElementById('wdp').textContent=wdP(n.getFullYear(),n.getMonth(),n.getDate());
+      loadAll();
+      gsap.from('#topbar',{y:-54,opacity:0,duration:0.55,ease:'power3.out'});
+      gsap.from('#sidebar',{opacity:0,x:40,duration:0.6,ease:'power3.out',delay:0.12});
+      gsap.from('.sec.active',{opacity:0,y:28,duration:0.7,ease:'power3.out',delay:0.25});
+    }});
+  }else{
+    loginEl.style.display='none';
+    appEl.style.display='flex';
+    document.getElementById('uname').textContent=f.n;
+    const n=now();
+    document.getElementById('td').textContent=n.toLocaleDateString('en-GB');
+    document.getElementById('wd').textContent=wdM(n.getFullYear(),n.getMonth());
+    document.getElementById('wdp').textContent=wdP(n.getFullYear(),n.getMonth(),n.getDate());
+    loadAll();
+  }
 }
 function doLogout(){
   saveAll();
-  document.getElementById('app').style.display='none';
-  document.getElementById('login').style.display='flex';
-  document.getElementById('lu').value='';
-  document.getElementById('lp').value='';
+  const appEl=document.getElementById('app');
+  const loginEl=document.getElementById('login');
+  if(window.gsap){
+    gsap.to(appEl,{opacity:0,duration:0.35,ease:'power2.in',onComplete:()=>{
+      appEl.style.display='none';
+      appEl.style.opacity='';
+      loginEl.style.display='flex';
+      loginEl.style.opacity='0';
+      document.getElementById('lu').value='';
+      document.getElementById('lp').value='';
+      gsap.to(loginEl,{opacity:1,duration:0.5,ease:'power2.out'});
+    }});
+  }else{
+    appEl.style.display='none';
+    loginEl.style.display='flex';
+    document.getElementById('lu').value='';
+    document.getElementById('lp').value='';
+  }
 }
+
+// GSAP login card entrance (runs once on first load)
+(function initLoginAnim(){
+  function run(){
+    if(!window.gsap){setTimeout(run,60);return;}
+    const card=document.querySelector('.lcard');
+    if(!card)return;
+    gsap.set(card,{opacity:0,y:55,scale:0.93});
+    gsap.to(card,{opacity:1,y:0,scale:1,duration:1.1,ease:'power4.out',delay:0.5});
+    gsap.from('.llogo',{opacity:0,y:22,duration:0.8,ease:'power3.out',delay:0.85});
+    gsap.from('.lsub', {opacity:0,y:16,duration:0.7,ease:'power3.out',delay:1.05});
+    gsap.from('.lg',   {opacity:0,y:14,stagger:0.12,duration:0.55,ease:'power3.out',delay:1.2});
+    gsap.from('.lbtn', {opacity:0,y:12,duration:0.55,ease:'power3.out',delay:1.6});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);
+  else run();
+})();
 
 // ===== STORAGE =====
 function saveAll(){
