@@ -2180,21 +2180,25 @@ function syncDistToClient(dist){
 
 function syncAllDealsToClients(){
   let count=0;
-  D.deals.filter(d=>d.st==='נסגר').forEach(d=>{if(syncDealToClient(d))count++;});
+  const allClosed=[...D.deals,...(D.archivedDeals||[])].filter(d=>d.st==='נסגר');
+  allClosed.forEach(d=>{if(syncDealToClient(d))count++;});
   if(count)saveAll();
   return count;
 }
 
 function syncAllDealsToDists(){
   let count=0;
-  D.deals.filter(d=>d.st==='נסגר').forEach(d=>{if(syncDealToDist(d,true))count++;});
+  const allClosed=[...D.deals,...(D.archivedDeals||[])].filter(d=>d.st==='נסגר');
+  allClosed.forEach(d=>{if(syncDealToDist(d,true))count++;});
   if(count)saveAll();
   return count;
 }
 
 function syncAllDealsToSalary(){
   let count=0;
-  D.deals.filter(d=>d.st==='נסגר').forEach(d=>{if(syncDealToSalary(d,true))count++;});
+  // Include archived deals – they were closed and should also appear in salary
+  const allClosed=[...D.deals,...(D.archivedDeals||[])].filter(d=>d.st==='נסגר');
+  allClosed.forEach(d=>{if(syncDealToSalary(d,true))count++;});
   if(count)saveAll();
   return count;
 }
