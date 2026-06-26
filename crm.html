@@ -50,11 +50,12 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-
   background:transparent;position:relative;z-index:1}
 .lcard{
   background:linear-gradient(145deg,rgba(14,18,34,.97),rgba(8,11,22,.98));
-  border:1px solid rgba(200,169,110,.18);border-radius:20px;padding:100px 44px 40px;width:380px;text-align:center;
+  border:1px solid rgba(200,169,110,.18);border-radius:20px;padding:32px 44px 40px;width:380px;text-align:center;
   box-shadow:0 32px 80px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.04),0 0 80px rgba(200,169,110,.07);
-  backdrop-filter:blur(16px);overflow:visible;position:relative;
-  position:relative;overflow:hidden;
+  backdrop-filter:blur(16px);position:relative;overflow:hidden;
 }
+.l3d-wrap{width:170px;height:170px;margin:0 auto 20px;display:block}
+#login-obj{display:block;width:100%;height:100%}
 .lcard::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(200,169,110,.5),transparent);
   pointer-events:none}
@@ -689,118 +690,83 @@ import {RenderPass}     from 'three/addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {OutputPass}     from 'three/addons/postprocessing/OutputPass.js';
 
-const SZ = 200;
+const SZ = 170;
 const cvs = document.getElementById('login-obj');
-if(!cvs){ /* safety */ }
-else {
-  cvs.width = cvs.height = SZ;
-
+if(cvs){
   const renderer = new THREE.WebGLRenderer({canvas:cvs, antialias:true, alpha:true, powerPreference:'high-performance'});
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.setSize(SZ, SZ);
   renderer.setClearColor(0x000000, 0);
 
   const scene  = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-  camera.position.z = 5.8;
+  const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 100);
+  camera.position.z = 5.4;
 
-  // Post-processing — strong bloom for small canvas
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(SZ, SZ), 2.4, 0.45, 0.48);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(SZ, SZ), 2.6, 0.5, 0.28);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
 
-  // ── Core bright sphere ──────────────────────────────────
-  const core = new THREE.Mesh(
-    new THREE.SphereGeometry(0.28, 20, 20),
-    new THREE.MeshBasicMaterial({color:0xffe080})
+  // ── Gold torus knot ──────────────────────────────────────
+  const knot = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(1.05, 0.30, 220, 26, 3, 2),
+    new THREE.MeshBasicMaterial({color: 0xc8a050})
   );
-  scene.add(core);
+  scene.add(knot);
 
-  // ── Inner glow halo ──────────────────────────────────────
-  const halo = new THREE.Mesh(
-    new THREE.SphereGeometry(0.62, 24, 24),
-    new THREE.MeshBasicMaterial({color:0xc8a96e, transparent:true, opacity:0.12})
+  // ── Bright centre spark ──────────────────────────────────
+  const spark = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 12, 12),
+    new THREE.MeshBasicMaterial({color: 0xfffae0})
   );
-  scene.add(halo);
+  scene.add(spark);
 
-  // ── Icosahedron wireframe shell ───────────────────────────
-  const icoEdges = new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1.35, 1));
-  const shell = new THREE.LineSegments(icoEdges,
-    new THREE.LineBasicMaterial({color:0xc8a96e, transparent:true, opacity:0.75})
+  // ── Particle halo ────────────────────────────────────────
+  const N = 260;
+  const pPos = new Float32Array(N * 3);
+  const pCol = new Float32Array(N * 3);
+  for(let i = 0; i < N; i++){
+    const phi   = Math.acos(2 * Math.random() - 1);
+    const theta = Math.random() * Math.PI * 2;
+    const r     = 1.7 + Math.random() * 1.1;
+    pPos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+    pPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+    pPos[i*3+2] = r * Math.cos(phi);
+    const s = Math.random();
+    pCol[i*3]   = 0.84 + s*0.16;
+    pCol[i*3+1] = 0.64 + s*0.28;
+    pCol[i*3+2] = 0.20 + s*0.25;
+  }
+  const pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  pGeo.setAttribute('color',    new THREE.BufferAttribute(pCol, 3));
+  const pts = new THREE.Points(pGeo,
+    new THREE.PointsMaterial({size:0.06, vertexColors:true, transparent:true, opacity:0.8, blending:THREE.AdditiveBlending, depthWrite:false})
   );
-  scene.add(shell);
-
-  // ── Orbital ring – gold, equatorial ──────────────────────
-  const ring1 = new THREE.Mesh(
-    new THREE.TorusGeometry(1.88, 0.014, 8, 100),
-    new THREE.MeshBasicMaterial({color:0xc8a96e})
-  );
-  ring1.rotation.x = 0.45;
-  scene.add(ring1);
-
-  // ── Orbital ring – teal, polar tilt ──────────────────────
-  const ring2 = new THREE.Mesh(
-    new THREE.TorusGeometry(2.08, 0.011, 8, 100),
-    new THREE.MeshBasicMaterial({color:0x06d6a0})
-  );
-  ring2.rotation.x = 1.1;
-  ring2.rotation.z = 0.9;
-  scene.add(ring2);
-
-  // ── Orbiting dots ─────────────────────────────────────────
-  const dot1 = new THREE.Mesh(new THREE.SphereGeometry(0.065,8,8), new THREE.MeshBasicMaterial({color:0xfff0aa}));
-  const dot2 = new THREE.Mesh(new THREE.SphereGeometry(0.052,8,8), new THREE.MeshBasicMaterial({color:0x00ffcc}));
-  scene.add(dot1, dot2);
+  scene.add(pts);
 
   // Mouse parallax
   let mx = 0, my = 0;
   document.addEventListener('mousemove', e=>{
-    mx = (e.clientX/window.innerWidth  - 0.5) * 2;
-    my = (e.clientY/window.innerHeight - 0.5) * 2;
+    mx = (e.clientX / window.innerWidth  - 0.5) * 2;
+    my = (e.clientY / window.innerHeight - 0.5) * 2;
   });
 
   let t = 0;
   function tick3D(){
     requestAnimationFrame(tick3D);
-    // pause when login is hidden (saves GPU in the app)
-    if(document.getElementById('login').style.display==='none') return;
-
-    t += 0.009;
-
-    // breathing core
-    const pulse = 1 + Math.sin(t*2.2)*0.09;
-    core.scale.setScalar(pulse);
-    halo.scale.setScalar(pulse*1.15);
-
-    // shell slow spin
-    shell.rotation.y = t * 0.38;
-    shell.rotation.x = t * 0.13;
-
-    // rings spin independently
-    ring1.rotation.y = t * 0.55;
-    ring2.rotation.y = -t * 0.38;
-
-    // orbiting dot 1 (follows ring1 tilt)
-    dot1.position.set(
-      Math.cos(t*0.85) * 1.88,
-      Math.sin(t*0.85) * 1.88 * Math.sin(0.45),
-      Math.sin(t*0.85) * 1.88 * Math.cos(0.45)
-    );
-
-    // orbiting dot 2 (follows ring2 tilt)
-    dot2.position.set(
-      Math.cos(-t*0.62) * 2.08,
-      Math.sin(-t*0.62) * 2.08 * Math.sin(1.1) + Math.cos(-t*0.62) * 2.08 * Math.cos(1.1)*Math.sin(0.9),
-      Math.sin(-t*0.62) * 2.08 * Math.cos(1.1)
-    );
-
-    // smooth camera parallax
-    camera.position.x += (mx*0.7 - camera.position.x)*0.04;
-    camera.position.y += (-my*0.7 - camera.position.y)*0.04;
-    camera.lookAt(0,0,0);
-
+    if(document.getElementById('login')?.style.display === 'none') return;
+    t += 0.007;
+    knot.rotation.y = t * 0.42;
+    knot.rotation.x = t * 0.16 + Math.sin(t * 0.28) * 0.22;
+    pts.rotation.y  = -t * 0.10;
+    pts.rotation.x  =  t * 0.07;
+    const p = 1 + Math.sin(t * 2.4) * 0.13;
+    spark.scale.setScalar(p);
+    camera.position.x += (mx * 0.55 - camera.position.x) * 0.04;
+    camera.position.y += (-my * 0.55 - camera.position.y) * 0.04;
+    camera.lookAt(0, 0, 0);
     composer.render();
   }
   tick3D();
@@ -810,7 +776,7 @@ else {
 <!-- LOGIN -->
 <div id="login">
   <div class="lcard">
-    <canvas id="login-obj" style="display:block;position:absolute;top:-88px;left:50%;transform:translateX(-50%);width:176px;height:176px;filter:drop-shadow(0 0 26px rgba(200,169,110,.55)) drop-shadow(0 0 8px rgba(6,214,160,.3))"></canvas>
+    <div class="l3d-wrap"><canvas id="login-obj"></canvas></div>
     <div class="llogo">CRM <span>| HOT Business</span></div>
     <div class="lsub">מערכת ניהול יומית – כניסה מאובטחת</div>
     <div class="lg"><label>שם משתמש</label><input type="text" id="lu" placeholder="שם משתמש" onkeydown="if(event.key==='Enter')doLogin()"></div>
@@ -1468,10 +1434,10 @@ function doLogout(){
     if(!card)return;
     gsap.set(card,{opacity:0,y:55,scale:0.93});
     gsap.to(card,{opacity:1,y:0,scale:1,duration:1.1,ease:'power4.out',delay:0.5});
-    gsap.from('.llogo',{opacity:0,y:22,duration:0.8,ease:'power3.out',delay:0.85});
-    gsap.from('.lsub', {opacity:0,y:16,duration:0.7,ease:'power3.out',delay:1.05});
-    gsap.from('.lg',   {opacity:0,y:14,stagger:0.12,duration:0.55,ease:'power3.out',delay:1.2});
-    gsap.from('.lbtn', {opacity:0,y:12,duration:0.55,ease:'power3.out',delay:1.6});
+    gsap.fromTo('.llogo',{opacity:0,y:22},{opacity:1,y:0,duration:0.8,ease:'power3.out',delay:0.85});
+    gsap.fromTo('.lsub', {opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:'power3.out',delay:1.05});
+    gsap.fromTo('.lg',   {opacity:0,y:14},{opacity:1,y:0,stagger:0.12,duration:0.55,ease:'power3.out',delay:1.2});
+    gsap.fromTo('.lbtn', {opacity:0,y:10},{opacity:1,y:0,duration:0.55,ease:'power3.out',delay:1.55});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);
   else run();
