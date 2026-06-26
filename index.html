@@ -654,6 +654,7 @@ select option{background:#0a0d18}
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ltb','stb')">
       <button class="btn btnp" onclick="openM('deal',null)">+ עסקה חדשה</button>
       <button class="btn" onclick="exportExcel('deals')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn" onclick="importFromExcel('deals')" style="background:#0078d4;color:#fff;border-color:#0078d4" title="ייבוא מ-Excel">📤 ייבוא</button>
       <button class="btn btnwp" onclick="sendWhatsAppDeals()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('deals')" title="מחק את כל העסקאות">🗑 מחק הכל</button>
     </div>
@@ -707,6 +708,7 @@ select option{background:#0a0d18}
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ttb')">
       <button class="btn btnp" onclick="openM('tender',null)">+ מכרז חדש</button>
       <button class="btn" onclick="exportExcel('tenders')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn" onclick="importFromExcel('tenders')" style="background:#0078d4;color:#fff;border-color:#0078d4" title="ייבוא מ-Excel">📤 ייבוא</button>
       <button class="btn btnwp" onclick="sendWhatsAppTenders()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('tenders')" title="מחק את כל המכרזים">🗑 מחק הכל</button>
     </div>
@@ -740,6 +742,7 @@ select option{background:#0a0d18}
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ldtb','sdtb')">
       <button class="btn btnp" onclick="openM('dist',null)">+ הפצה חדשה</button>
       <button class="btn" onclick="exportExcel('dists')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn" onclick="importFromExcel('dists')" style="background:#0078d4;color:#fff;border-color:#0078d4" title="ייבוא מ-Excel">📤 ייבוא</button>
       <button class="btn btnwp" onclick="sendWhatsAppDists()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('dists')" title="מחק את כל ההפצות">🗑 מחק הכל</button>
     </div>
@@ -788,6 +791,7 @@ select option{background:#0a0d18}
     <div style="display:flex;gap:6px">
       <button class="btn btnp" onclick="openM('salary',null)">+ פרויקט לשכר</button>
       <button class="btn" onclick="exportExcel('salary')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn" onclick="importFromExcel('salary')" style="background:#0078d4;color:#fff;border-color:#0078d4" title="ייבוא מ-Excel">📤 ייבוא</button>
       <button class="btn btnwp" onclick="sendWhatsAppSalary()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('salary')" title="מחק את כל פרויקטי השכר">🗑 מחק הכל</button>
     </div>
@@ -838,6 +842,7 @@ select option{background:#0a0d18}
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'mtb')">
       <button class="btn btnp" onclick="openM('meeting',null)">+ פגישה חדשה</button>
       <button class="btn" onclick="exportExcel('meetings')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn" onclick="importFromExcel('meetings')" style="background:#0078d4;color:#fff;border-color:#0078d4" title="ייבוא מ-Excel">📤 ייבוא</button>
       <button class="btn btnwp" onclick="sendWhatsAppMeetings()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('meetings')" title="מחק את כל הפגישות">🗑 מחק הכל</button>
     </div>
@@ -872,6 +877,7 @@ select option{background:#0a0d18}
       <button class="btn btnp" onclick="openClientModal(null)">+ לקוח חדש</button>
       <button class="btn" onclick="manualSyncDeals()" style="background:#7b5ea7;color:#fff;border-color:#7b5ea7" title="סנכרן עסקאות סגורות לכרטיסי לקוח">🔄 סנכרן עסקאות</button>
       <button class="btn" onclick="exportExcel('clients')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn" onclick="importFromExcel('clients')" style="background:#0078d4;color:#fff;border-color:#0078d4" title="ייבוא מ-Excel">📤 ייבוא</button>
     </div>
   </div>
   <div id="clients-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px"></div>
@@ -1079,6 +1085,15 @@ select option{background:#0a0d18}
   </div>
 </div></div>
 
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<div style="display:none">
+  <input type="file" id="imp-deals"    accept=".xlsx,.xls,.csv" onchange="handleImport(event,'deals')">
+  <input type="file" id="imp-tenders"  accept=".xlsx,.xls,.csv" onchange="handleImport(event,'tenders')">
+  <input type="file" id="imp-dists"    accept=".xlsx,.xls,.csv" onchange="handleImport(event,'dists')">
+  <input type="file" id="imp-salary"   accept=".xlsx,.xls,.csv" onchange="handleImport(event,'salary')">
+  <input type="file" id="imp-meetings" accept=".xlsx,.xls,.csv" onchange="handleImport(event,'meetings')">
+  <input type="file" id="imp-clients"  accept=".xlsx,.xls,.csv" onchange="handleImport(event,'clients')">
+</div>
 <script>
 // ===== CONSTANTS & STATE =====
 const LS_KEY = 'cem_hot_v3';
@@ -2536,6 +2551,78 @@ function dlCSV(name,csv){
   a.href=url;a.download=name+'_'+nd()+'.csv';document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},500);
 }
+// ===== EXCEL IMPORT =====
+const IMP_MAP={
+  deals:{'תאריך':'date','#':'num','שם חברה':'co','תשתית':'inf','שירות':'srv','שווי':'v','חודש נוכחי':'mv','הפצה':'di','חודש הבא':'dn','otc נסגר':'otc','otc':'ot','מול מי':'ct','סיכוי':'ch','סטטוס':'st','סוג':'ty','הערות':'no'},
+  tenders:{'שם מכרז':'name','מס פרויקט':'proj','פרסום':'pub','הצעה':'quote','שאלות':'questions','הגשה':'deadline','סבבים':'rounds','מטפל':'handler','סכום':'amount','כמות':'qty','הוגשה':'submitted','צימוד':'linked','מסמכים':'docs','הערות':'notes'},
+  dists:{'מטפל':'hd','מס פרויקט':'no','שם חברה':'co','לקוח':'cl','it':'it','פתרון':'so','כתובת':'ad','הכנסה חודשית':'inc','ציוד':'eq','חוסרים':'mi','סטטוס':'st','תאריך':'dt','סוג':'ty'},
+  salary:{'מס פרויקט':'pj','שם לקוח':'cl','כמות':'qt','יעד':'tr','סגירה':'cl2','יתרה':'pv','סטטוס':'st','סוג':'ty','הערות':'no'},
+  meetings:{'תאריך':'dt','שם לקוח':'cl','מס פגישה':'nu','התקיימה':'hl','הערות':'no'},
+  clients:{'שם חברה':'name','איש קשר':'contact','טלפון':'phone','אימייל':'email','כתובת':'address','סטטוס':'status','הערות':'genNotes'}
+};
+const IMP_NUM={deals:['v','mv','di','dn','ot','otc'],tenders:['amount','qty'],dists:['inc','eq'],salary:['qt','tr','cl2','pv'],meetings:['nu'],clients:[]};
+
+function importFromExcel(sec){
+  const el=document.getElementById('imp-'+sec);
+  el.value='';
+  el.click();
+}
+
+function handleImport(ev,sec){
+  const file=ev.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      if(!window.XLSX){toast('⚠️ ספריית Excel טרם נטענה – רענן ונסה שוב','warn');return;}
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      if(!data||data.length<2){toast('⚠️ הקובץ ריק או חסרות שורות נתונים','warn');return;}
+      const hdrs=data[0].map(h=>String(h||'').trim().toLowerCase());
+      const smap=IMP_MAP[sec]||{};
+      const numFlds=new Set(IMP_NUM[sec]||[]);
+      // map column index → field key
+      const colMap={};
+      hdrs.forEach((h,i)=>{
+        let key=smap[h];
+        if(!key){const mk=Object.keys(smap).find(k=>h===k||h.includes(k)||k.includes(h));if(mk)key=smap[mk];}
+        if(key)colMap[i]=key;
+      });
+      const rows=data.slice(1).filter(r=>r.some(c=>c!==''&&c!=null&&c!==undefined));
+      let added=0,skipped=0;
+      rows.forEach(row=>{
+        const obj={};
+        Object.entries(colMap).forEach(([i,key])=>{
+          let v=String(row[i]??'').trim();
+          if(key==='ty'){
+            v=sec==='salary'?(v==='שירות'||v==='service'?'service':'equipment'):(v==='ארוך'||v==='long'?'long':'short');
+          }else if(key==='ch'){
+            const n=parseFloat(v.replace(/[^\d.]/g,''));
+            obj[key]=v.includes('%')?n/100:(n>1?n/100:n||0);return;
+          }else if(numFlds.has(key)){
+            v=parseFloat(String(v).replace(/[,₪\s%]/g,''))||0;
+          }
+          obj[key]=v;
+        });
+        if(!Object.values(obj).some(v=>v!==''&&v!==0)){skipped++;return;}
+        if(sec==='clients'&&!obj.name){skipped++;return;}
+        if(sec==='clients'&&D.clients.some(c=>c.name&&c.name===obj.name)){skipped++;return;}
+        // section defaults
+        const defs={deals:{st:'ממתין לתשובה',ty:'long',date:nd()},tenders:{submitted:'לא',qty:1},dists:{st:'ממתין להפצה',ty:'long',dt:nd()},salary:{st:'פתוח',ty:'service',qt:1},meetings:{dt:nd(),hl:'לא'},clients:{status:'לקוח'}};
+        Object.entries(defs[sec]||{}).forEach(([k,dv])=>{if(!obj[k]&&obj[k]!==0)obj[k]=dv;});
+        if(sec==='deals'&&!obj.num)obj.num=D.deals.length+added+1;
+        const ins=dbInsert(sec,obj);
+        if(ins&&sec==='deals'&&ins.st==='נסגר'){syncDealToClient(ins,true);syncDealToSalary(ins,true);syncDealToDist(ins,true);}
+        added++;
+      });
+      if(added){saveAll();rAll();}
+      const msg=added?`✅ יובאו ${added} רשומות`+(skipped?` | דולגו ${skipped}`:''):`⚠️ לא נמצאו נתונים חדשים${skipped?' ('+skipped+' כפולים)':''}`;
+      toast(msg,added?'ok':'warn');
+    }catch(err){console.error('Import error:',err);toast('⚠️ שגיאה בייבוא: '+err.message,'warn');}
+  };
+  reader.readAsBinaryString(file);
+}
+
 function exportExcel(section){
   let hdrs,rows;
   switch(section){
