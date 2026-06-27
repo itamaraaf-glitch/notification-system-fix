@@ -494,6 +494,29 @@ select option{background:#0a0d18}
 .dh-arrow.left{animation-delay:.3s}
 @keyframes arrowPulse{0%,100%{opacity:.4;transform:translateX(0)}50%{opacity:1;transform:translateX(4px)}}
 
+/* ─── DESKTOP EDGE DRAG HANDLES ─── */
+.nav-edge{position:absolute;top:0;bottom:0;width:34px;z-index:18;cursor:grab;
+  display:none;align-items:center;justify-content:center;
+  background:linear-gradient(var(--edge-dir),rgba(200,169,110,.10),transparent);
+  opacity:0;transition:opacity .3s,width .2s;-webkit-user-select:none;user-select:none}
+.nav-edge:hover{opacity:1;width:42px}
+.nav-edge.dragging{cursor:grabbing;opacity:1;width:48px}
+.nav-edge.l{left:0;--edge-dir:to right}
+.nav-edge.r{right:0;--edge-dir:to left}
+.nav-edge .ne-chev{font-size:26px;font-weight:300;color:var(--gold);
+  text-shadow:0 0 16px rgba(200,169,110,.6);pointer-events:none;
+  transition:transform .25s}
+.nav-edge.l:hover .ne-chev{transform:translateX(-3px)}
+.nav-edge.r:hover .ne-chev{transform:translateX(3px)}
+.nav-edge .ne-lbl{position:absolute;bottom:18px;font-size:9px;font-weight:700;
+  letter-spacing:.4px;color:rgba(200,169,110,.85);white-space:nowrap;
+  writing-mode:vertical-rl;text-orientation:mixed;pointer-events:none;opacity:.0;transition:opacity .25s}
+.nav-edge:hover .ne-lbl{opacity:1}
+.nav-edge.r .ne-lbl{writing-mode:vertical-lr}
+.nav-edge.hidden{display:none!important}
+/* show only on mouse/fine-pointer devices */
+@media (hover:hover) and (pointer:fine){ .nav-edge{display:flex} }
+
 
 /* ─── CUSTOM CONFIRM BAR ─── */
 #cbar{
@@ -836,6 +859,10 @@ if(cvs){
 </div>
 
 <div id="main">
+
+<!-- DESKTOP EDGE DRAG HANDLES -->
+<div class="nav-edge l" id="edge-l"><span class="ne-chev">‹</span><span class="ne-lbl" id="edge-l-lbl"></span></div>
+<div class="nav-edge r" id="edge-r"><span class="ne-chev">›</span><span class="ne-lbl" id="edge-r-lbl"></span></div>
 
 <!-- DASHBOARD -->
 <div class="sec active" id="sec-dashboard">
@@ -3269,6 +3296,7 @@ function nav(s){
     if(renders[s]) renders[s]();
     setTimeout(initDragScrolls, 80);
     currentSec = s;
+    if(window.refreshEdges) window.refreshEdges();
 
     // Two rAFs: flush the "none" transition, then animate in
     requestAnimationFrame(()=>{
@@ -3395,6 +3423,88 @@ function nav(s){
       initCinematicNav();
     }
   }, 400);
+})();
+
+// ── DESKTOP EDGE DRAG HANDLES — slide screen to screen with the mouse ──
+(function(){
+  const SEC_LBL = {
+    dashboard:'לוח בקרה', alerts:'התראות', deals:'עסקאות', tenders:'מכרזים',
+    dists:'הפצות', salary:'פרויקטי שכר', meetings:'יעד פגישות',
+    clients:'כרטיסי לקוח', workplan:'תהליך עבודה', export:'ייצוא'
+  };
+  const TH = 70; // drag distance to commit
+  const edgeL = document.getElementById('edge-l');
+  const edgeR = document.getElementById('edge-r');
+  if(!edgeL || !edgeR) return;
+
+  // edge-l (visual left)  → next section  (dir +1)
+  // edge-r (visual right) → prev section  (dir -1)
+  function neighbour(dir){
+    const i = SEC_ORDER.indexOf(currentSec) + dir;
+    return (i >= 0 && i < SEC_ORDER.length) ? SEC_ORDER[i] : null;
+  }
+
+  function refreshEdges(){
+    const next = neighbour(+1), prev = neighbour(-1);
+    edgeL.classList.toggle('hidden', !next);
+    edgeR.classList.toggle('hidden', !prev);
+    document.getElementById('edge-l-lbl').textContent = next ? SEC_LBL[next] : '';
+    document.getElementById('edge-r-lbl').textContent = prev ? SEC_LBL[prev] : '';
+  }
+  window.refreshEdges = refreshEdges;
+
+  function bind(handle, dir){
+    let down = false, startX = 0, moved = 0;
+
+    function preview(dx){
+      const sec = document.querySelector('.sec.active');
+      if(!sec || navBusy) return;
+      sec.style.transition = 'none';
+      sec.style.transform  = `translateX(${dx * 0.28}px)`;
+      sec.style.opacity    = String(Math.max(0.75, 1 - Math.abs(dx) * 0.0014));
+    }
+    function reset(){
+      const sec = document.querySelector('.sec.active');
+      if(!sec) return;
+      sec.style.transition = 'transform 300ms cubic-bezier(.34,1.56,.64,1), opacity 300ms ease';
+      sec.style.transform  = 'translateX(0)';
+      sec.style.opacity    = '1';
+      setTimeout(()=>{ sec.style.transition=''; sec.style.transform=''; sec.style.opacity=''; }, 340);
+    }
+
+    handle.addEventListener('mousedown', e=>{
+      if(e.button !== 0 || navBusy) return;
+      down = true; startX = e.clientX; moved = 0;
+      handle.classList.add('dragging');
+      e.preventDefault(); // stop text selection
+    });
+    window.addEventListener('mousemove', e=>{
+      if(!down) return;
+      moved = e.clientX - startX;
+      preview(moved);
+    });
+    window.addEventListener('mouseup', ()=>{
+      if(!down) return;
+      down = false;
+      handle.classList.remove('dragging');
+      const target = neighbour(dir);
+      // commit on a click (tiny move) OR a drag past threshold
+      const isClick = Math.abs(moved) < 6;
+      const committed = Math.abs(moved) >= TH;
+      if(target && (isClick || committed)){
+        const sec = document.querySelector('.sec.active');
+        if(sec){ sec.style.transition=''; sec.style.transform=''; sec.style.opacity=''; }
+        nav(target);
+      } else {
+        reset();
+      }
+      moved = 0;
+    });
+  }
+
+  bind(edgeL, +1);
+  bind(edgeR, -1);
+  refreshEdges();
 })();
 
 // ── 3D TILT ON CARDS (touch + mouse) ──────────────────────────────────
