@@ -129,6 +129,23 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-
 }
 .dstrip{font-size:11px;color:var(--text3);display:flex;gap:14px}
 .dstrip b{color:var(--teal);font-weight:700}
+/* ─── GLOBAL SEARCH ─── */
+#gsearch{position:relative;flex:1;max-width:360px;margin:0 8px}
+#gsi{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--text);
+  border-radius:20px;padding:7px 16px;font-family:'Heebo',sans-serif;font-size:12px;outline:none;transition:all .2s}
+#gsi:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,169,110,.12)}
+#gsi::placeholder{color:var(--text3)}
+#gsres{position:absolute;top:42px;right:0;left:0;z-index:1000;background:#0a0d18;
+  border:1px solid rgba(200,169,110,.28);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.78);
+  max-height:62vh;overflow-y:auto;padding:5px;display:none}
+#gsres.show{display:block}
+.gsr{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:8px;cursor:pointer;transition:background .15s}
+.gsr:hover{background:rgba(200,169,110,.12)}
+.gsr-ic{font-size:14px;flex-shrink:0}
+.gsr-lb{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gsr-sub{font-size:10px;color:var(--text3);margin-right:auto;white-space:nowrap;flex-shrink:0}
+.gsr-empty{padding:14px;text-align:center;font-size:11px;color:var(--text2)}
+@media(max-width:768px){#gsearch{max-width:none;margin:0 4px}}
 .tbr{display:flex;align-items:center;gap:7px}
 .uchip{font-size:11px;color:var(--text2);background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:20px;padding:4px 12px;backdrop-filter:blur(8px)}
 .uchip b{color:var(--text)}
@@ -774,6 +791,11 @@ requestAnimationFrame(tick);
     <span>ימי עבודה: <b id="wd">–</b></span>
     <span>עברו: <b id="wdp">–</b></span>
     <span class="live-dot" title="מחובר"></span>
+  </div>
+  <div id="gsearch">
+    <input type="text" id="gsi" placeholder="🔍 חיפוש גלובלי – לקוח, עסקה, פרויקט..." autocomplete="off"
+      oninput="globalSearch(this.value)" onkeydown="if(event.key==='Escape'){this.value='';globalSearch('')}">
+    <div id="gsres"></div>
   </div>
   <div class="tbr">
     <div class="uchip">👤 <b id="uname">–</b></div>
@@ -1664,6 +1686,40 @@ function filt(ev,...ids){
 
 // ===== RENDER ALL =====
 function rAll(){rDash();rDeals();rTenders();rDists();rSalary();rMeetings();rAlerts();rClients();rWorkPlan();updateExportCounts();setTimeout(initDragScrolls,100);}
+
+// ===== GLOBAL SEARCH =====
+let _gsRes=[];
+function globalSearch(q){
+  q=(q||'').trim().toLowerCase();
+  const box=document.getElementById('gsres'); if(!box)return;
+  _gsRes=[];
+  if(!q){box.classList.remove('show');box.innerHTML='';return;}
+  const hit=(...v)=>v.some(x=>String(x==null?'':x).toLowerCase().includes(q));
+  const push=(icon,label,sub,type,id)=>{ if(_gsRes.length<25)_gsRes.push({icon,label,sub,type,id}); };
+  D.deals.forEach(d=>{ if(hit(d.co,d.srv,d.ct,d.num,d.no)) push('💼',d.co||'(ללא שם)','עסקה'+(d.srv?' · '+d.srv:''),'deal',d.id); });
+  D.clients.forEach(c=>{ if(hit(c.name,c.contact,c.email,c.phone,c.cp)) push('🏢',c.name||'(ללא שם)','לקוח'+(c.contact?' · '+c.contact:''),'client',c.id); });
+  D.dists.forEach(d=>{ if(hit(d.co,d.cl,d.no,d.so,d.hd)) push('🚀',d.co||'(ללא שם)','הפצה'+(d.no?' · #'+d.no:''),'dist',d.id); });
+  D.salary.forEach(s=>{ if(hit(s.cl,s.pj,s.no)) push('💰',s.cl||'(ללא שם)','שכר'+(s.pj?' · '+s.pj:''),'salary',s.id); });
+  D.tenders.forEach(t=>{ if(hit(t.name,t.proj,t.handler)) push('📋',t.name||'(ללא שם)','מכרז','tender',t.id); });
+  D.meetings.forEach(m=>{ if(hit(m.cl,m.no)) push('🤝',m.cl||'(ללא שם)','פגישה','meeting',m.id); });
+  if(!_gsRes.length){ box.innerHTML='<div class="gsr-empty">לא נמצאו תוצאות</div>'; box.classList.add('show'); return; }
+  box.innerHTML=_gsRes.map((r,i)=>`<div class="gsr" onclick="gsGo(${i})"><span class="gsr-ic">${r.icon}</span><span class="gsr-lb">${r.label}</span><span class="gsr-sub">${r.sub}</span></div>`).join('');
+  box.classList.add('show');
+}
+function gsGo(i){
+  const r=_gsRes[i]; if(!r)return;
+  const box=document.getElementById('gsres'); if(box)box.classList.remove('show');
+  const si=document.getElementById('gsi'); if(si)si.value='';
+  if(r.type==='client'){ if(typeof openClientModal==='function')openClientModal(r.id); return; }
+  const secMap={deal:'deals',dist:'dists',salary:'salary',tender:'tenders',meeting:'meetings'};
+  nav(secMap[r.type]);
+  setTimeout(()=>openM(r.type,r.id),340);
+}
+// close the search dropdown when clicking elsewhere
+document.addEventListener('mousedown',e=>{
+  const gs=document.getElementById('gsearch');
+  if(gs && !gs.contains(e.target)){ const box=document.getElementById('gsres'); if(box)box.classList.remove('show'); }
+});
 
 // ===== ALERTS =====
 function getAlerts(){
