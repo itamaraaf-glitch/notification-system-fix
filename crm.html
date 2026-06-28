@@ -724,8 +724,8 @@ requestAnimationFrame(tick);
   <div class="lcard">
     <div class="llogo">CRM <span>| HOT Business</span></div>
     <div class="lsub">מערכת ניהול יומית – כניסה מאובטחת</div>
-    <div class="lg"><label>שם משתמש</label><input type="text" id="lu" placeholder="שם משתמש" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <div class="lg"><label>סיסמה</label><input type="password" id="lp" placeholder="סיסמה" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="lg"><label>שם משתמש</label><input type="text" id="lu" placeholder="שם משתמש" autocomplete="off" name="usr_2f9x" readonly onfocus="this.removeAttribute('readonly')" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="lg"><label>סיסמה</label><input type="password" id="lp" placeholder="סיסמה" autocomplete="new-password" name="pwd_7k3q" readonly onfocus="this.removeAttribute('readonly')" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="lbtn" onclick="doLogin()">כניסה למערכת</button>
     <div class="lerr" id="lerr"></div>
     <div class="lcard-glare"></div>
@@ -1403,6 +1403,30 @@ function doLogout(){
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);
   else run();
+})();
+
+// Security: keep login fields empty — defeat browser/password-manager autofill
+(function clearLoginFields(){
+  function wipe(){
+    const u=document.getElementById('lu'), p=document.getElementById('lp');
+    if(!u||!p) return;
+    // only clear while the login screen is showing (never wipe mid-typing inside the app)
+    const login=document.getElementById('login');
+    const active=document.activeElement;
+    if(login && login.style.display!=='none'){
+      if(active!==u) u.value='';   // don't wipe a field the user is typing in
+      if(active!==p) p.value='';
+    }
+  }
+  function run(){
+    wipe();
+    // autofill can land 0–600ms after load, so wipe a few times
+    [120,300,600,1000].forEach(ms=>setTimeout(wipe,ms));
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);
+  else run();
+  // also clear whenever the tab regains focus on the login screen
+  window.addEventListener('pageshow',run);
 })();
 
 // 3D card tilt — mouse parallax with glare
