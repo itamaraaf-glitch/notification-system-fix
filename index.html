@@ -704,25 +704,20 @@ let t = 0;
 const STEP = 0.038;
 const half = SPREAD / 2;
 
-// Frame throttle: ~30fps on login screen, ~20fps once inside the app
-// (the background only peeks through transparent areas there, so it can be slower)
-let last = 0;
-function loggedIn(){
-  const app = document.getElementById('app');
-  return app && app.style.display !== 'none' && app.style.display !== '';
-}
+// Run every frame for smooth flow; scale motion by real elapsed time
+// (delta-time) so the speed stays constant and never "crawls" if fps dips.
+let lastT = performance.now();
 function tick(now){
   requestAnimationFrame(tick);
-  const interval = loggedIn() ? 50 : 33;
-  if(now - last < interval) return;
-  last = now;
+  const k = Math.min(3, (now - lastT) / 16.7); // 1 == a 60fps frame; clamp big gaps
+  lastT = now;
 
-  t += 0.00038 * (interval / 16.7); // keep flow speed consistent across frame rates
+  t += 0.00038 * k;
   for(let i = 0; i < COUNT; i++){
     const x = pos[i*3], y = pos[i*3+1];
     const a = flowAngle(x, y, t);
-    pos[i*3]   += Math.cos(a) * STEP;
-    pos[i*3+1] += Math.sin(a) * STEP;
+    pos[i*3]   += Math.cos(a) * STEP * k;
+    pos[i*3+1] += Math.sin(a) * STEP * k;
     // wrap toroidal edges
     if(pos[i*3]   >  half) pos[i*3]   = -half + 0.01;
     if(pos[i*3]   < -half) pos[i*3]   =  half - 0.01;
