@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מערכת התראות - HOT Business CRM</title>
+
+  <style>
+    /* =============================================
+       Reset & Variables
+    ============================================= */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --color-bg:           #0f1117;
+      --color-surface:      #1a1d27;
+      --color-surface-up:   #222533;
+      --color-border:       rgba(255,255,255,0.08);
+      --color-accent:       #4f6ef7;
+      --color-accent-glow:  rgba(79,110,247,0.25);
+      --color-text:         #e8eaf0;
+      --color-muted:        #8a8fa8;
+      --color-warning:      #f59e0b;
+      --color-error:        #ef4444;
+      --color-success:      #22c55e;
+      --color-info:         #38bdf8;
+      --grid-size:          32px;
+      --grid-dim:           rgba(79,110,247,0.07);
+      --grid-bright:        rgba(79,110,247,0.14);
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      min-height: 100vh;
+      direction: rtl;
+      cursor: none;
+    }
+
+    /* =============================================
+       Overlay — grid gradient + radial glow
+    ============================================= */
+    .overlay {
+      position: relative;
+      min-height: 100vh;
+      isolation: isolate;
+    }
+
+    .overlay::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--grid-bright) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-bright) 1px, transparent 1px),
+        linear-gradient(var(--grid-dim) calc(var(--grid-size) / 2), transparent calc(var(--grid-size) / 2)),
+        linear-gradient(90deg, var(--grid-dim) calc(var(--grid-size) / 2), transparent calc(var(--grid-size) / 2));
+      background-size:
+        var(--grid-size) var(--grid-size),
+        var(--grid-size) var(--grid-size),
+        calc(var(--grid-size) / 2) calc(var(--grid-size) / 2),
+        calc(var(--grid-size) / 2) calc(var(--grid-size) / 2);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .overlay::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(
+        ellipse 80% 60% at 50% 0%,
+        var(--color-accent-glow) 0%,
+        transparent 70%
+      );
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* =============================================
+       Custom cursor
+    ============================================= */
+    .cursor {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--color-accent);
+      border-radius: 50%;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      transition: width 0.15s ease, height 0.15s ease;
+      z-index: 9999;
+      mix-blend-mode: difference;
+    }
+
+    .cursor-coords {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem;
+      font-family: monospace;
+      color: var(--color-muted);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    /* =============================================
+       Typography
+    ============================================= */
+    .text-display {
+      font-size: clamp(2rem, 8vw, 8rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .text {
+      mix-blend-mode: difference;
+    }
+
+    /* =============================================
+       Layout
+    ============================================= */
+    .app {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* =============================================
+       Hero
+    ============================================= */
+    .hero {
+      padding: 4rem 0 3rem;
+      text-align: center;
+    }
+
+    .hero__eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+      color: var(--color-muted);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 999px;
+      padding: 0.35rem 1rem;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .hero__heading {
+      color: var(--color-text);
+      margin-bottom: 1rem;
+    }
+
+    .hero__heading em {
+      color: var(--color-accent);
+      font-style: normal;
+    }
+
+    .hero__sub {
+      font-size: 1.05rem;
+      color: var(--color-muted);
+      max-width: 480px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.6;
+    }
+
+    /* =============================================
+       Header
+    ============================================= */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 1.75rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+      margin-bottom: 3rem;
+      backdrop-filter: blur(8px);
+    }
+
+    .header__logo {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .header__logo span { color: var(--color-accent); }
+
+    .header__badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--color-muted);
+      background: var(--color-surface-up);
+      border: 1px solid var(--color-border);
+      border-radius: 999px;
+      padding: 0.35rem 0.9rem;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--color-success);
+      box-shadow: 0 0 6px var(--color-success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* =============================================
+       Stats — 3D perspective cards
+    ============================================= */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+
+    /* .parent sets the 3D context for each card */
+    .parent {
+      perspective: 1000px;
+    }
+
+    /* .thumbnail is the card surface that rotates */
+    .thumbnail {
+      transform: rotateY(-45deg);
+      transition: transform 0.4s ease;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .thumbnail:hover {
+      transform: rotateY(0deg);
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 1px var(--color-accent-glow), 0 4px 24px rgba(0,0,0,0.3);
+    }
+
+    .stat-card__label {
+      font-size: 0.75rem;
+      color: var(--color-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .stat-card__value {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .stat-card__value--success { color: var(--color-success); }
+    .stat-card__value--warning { color: var(--color-warning); }
+    .stat-card__value--error   { color: var(--color-error); }
+    .stat-card__value--info    { color: var(--color-info); }
+
+    /* =============================================
+       Notification list
+    ============================================= */
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--color-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 1rem;
+    }
+
+    .notifications {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 3rem;
+    }
+
+    .notification-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      transition: background 0.2s, border-color 0.2s;
+      cursor: none;
+    }
+
+    .notification-card:hover {
+      background: var(--color-surface-up);
+      border-color: rgba(255,255,255,0.14);
+    }
+
+    .notification-card--warning { border-right: 3px solid var(--color-warning); }
+    .notification-card--error   { border-right: 3px solid var(--color-error); }
+    .notification-card--success { border-right: 3px solid var(--color-success); }
+    .notification-card--info    { border-right: 3px solid var(--color-info); }
+
+    .notification-card__icon {
+      font-size: 1.25rem;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+
+    .notification-card__body { flex: 1; min-width: 0; }
+
+    .notification-card__title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .notification-card__message {
+      font-size: 0.82rem;
+      color: var(--color-muted);
+      line-height: 1.5;
+    }
+
+    .notification-card__meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .notification-card__time {
+      font-size: 0.75rem;
+      color: var(--color-muted);
+      white-space: nowrap;
+    }
+
+    .severity-chip {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border-radius: 999px;
+      padding: 0.2rem 0.6rem;
+      white-space: nowrap;
+    }
+
+    .severity-chip--warning { background: rgba(245,158,11,0.15); color: var(--color-warning); }
+    .severity-chip--error   { background: rgba(239,68,68,0.15);  color: var(--color-error); }
+    .severity-chip--success { background: rgba(34,197,94,0.15);  color: var(--color-success); }
+    .severity-chip--info    { background: rgba(56,189,248,0.15); color: var(--color-info); }
+
+    /* =============================================
+       Footer
+    ============================================= */
+    .footer {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--color-muted);
+      padding-bottom: 3rem;
+    }
+
+    .footer a { color: inherit; }
+  </style>
+</head>
+<body>
+
+<!-- Grid overlay background (.overlay::before) + radial glow (.overlay::after) -->
+<div class="overlay">
+  <div class="app">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header__logo"><span>HOT</span> Business · מערכת התראות</div>
+      <div class="header__badge">
+        <span class="badge-dot"></span>
+        פעיל · גרסה 2.0
+      </div>
+    </header>
+
+    <!-- Hero — .text-display + .text (mix-blend-mode: difference) -->
+    <section class="hero">
+      <div class="hero__eyebrow">
+        <span class="badge-dot"></span>
+        מערכת התראות החכמה
+      </div>
+      <h1 class="hero__heading text-display text">
+        <em>0</em> התראות תקועות
+      </h1>
+      <p class="hero__sub">ניקוי אוטומטי כל שעה · סנכרון מלא · ביצועים מהירים פי 10</p>
+    </section>
+
+    <!-- Stats — .parent (perspective) + .thumbnail (rotateY) -->
+    <div class="stats">
+      <div class="parent">
+        <div class="thumbnail">
+          <span class="stat-card__label">התראות פעילות</span>
+          <span class="stat-card__value stat-card__value--info">14</span>
+        </div>
+      </div>
+      <div class="parent">
+        <div class="thumbnail">
+          <span class="stat-card__label">נוקו היום</span>
+          <span class="stat-card__value stat-card__value--success">32</span>
+        </div>
+      </div>
+      <div class="parent">
+        <div class="thumbnail">
+          <span class="stat-card__label">דחוף</span>
+          <span class="stat-card__value stat-card__value--error">3</span>
+        </div>
+      </div>
+      <div class="parent">
+        <div class="thumbnail">
+          <span class="stat-card__label">אזהרות</span>
+          <span class="stat-card__value stat-card__value--warning">7</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <p class="section-title">התראות אחרונות</p>
+    <div class="notifications">
+
+      <div class="notification-card notification-card--error">
+        <span class="notification-card__icon">🔴</span>
+        <div class="notification-card__body">
+          <div class="notification-card__title">עסקה ללא לקוח מקושר</div>
+          <div class="notification-card__message">עסקה #8821 מקושרת ללקוח שנמחק מהמערכת. יש לטפל ידנית.</div>
+        </div>
+        <div class="notification-card__meta">
+          <span class="severity-chip severity-chip--error">דחוף</span>
+          <span class="notification-card__time">לפני 5 דקות</span>
+        </div>
+      </div>
+
+      <div class="notification-card notification-card--warning">
+        <span class="notification-card__icon">🟠</span>
+        <div class="notification-card__body">
+          <div class="notification-card__title">משימה ללא בעלים</div>
+          <div class="notification-card__message">משימה #4417 לא שויכה לאף נציג. הועברה לתור הכללי.</div>
+        </div>
+        <div class="notification-card__meta">
+          <span class="severity-chip severity-chip--warning">אזהרה</span>
+          <span class="notification-card__time">לפני 18 דקות</span>
+        </div>
+      </div>
+
+      <div class="notification-card notification-card--success">
+        <span class="notification-card__icon">✅</span>
+        <div class="notification-card__body">
+          <div class="notification-card__title">ניקוי אוטומטי הסתיים</div>
+          <div class="notification-card__message">32 התראות עם נושאים שנמחקו נוקו בהצלחה בסבב הבדיקה האחרון.</div>
+        </div>
+        <div class="notification-card__meta">
+          <span class="severity-chip severity-chip--success">תקין</span>
+          <span class="notification-card__time">לפני שעה</span>
+        </div>
+      </div>
+
+      <div class="notification-card notification-card--info">
+        <span class="notification-card__icon">🔵</span>
+        <div class="notification-card__body">
+          <div class="notification-card__title">לקוח חדש נוסף</div>
+          <div class="notification-card__message">לקוח "ישראל ישראלי" נוסף למערכת ושויך לנציג מיכל כהן.</div>
+        </div>
+        <div class="notification-card__meta">
+          <span class="severity-chip severity-chip--info">מידע</span>
+          <span class="notification-card__time">לפני 2 שעות</span>
+        </div>
+      </div>
+
+      <div class="notification-card notification-card--warning">
+        <span class="notification-card__icon">🟠</span>
+        <div class="notification-card__body">
+          <div class="notification-card__title">חוזה עתיד לפוג</div>
+          <div class="notification-card__message">חוזה מספר #3302 עם לקוח "טכנולוגיות ב.מ" יפוג בעוד 3 ימים.</div>
+        </div>
+        <div class="notification-card__meta">
+          <span class="severity-chip severity-chip--warning">אזהרה</span>
+          <span class="notification-card__time">לפני 3 שעות</span>
+        </div>
+      </div>
+
+    </div>
+
+    <footer class="footer">
+      HOT Business CRM &copy; 2026 ·
+      <a href="https://itamaroshrit.netlify.app">itamaroshrit.netlify.app</a>
+    </footer>
+
+  </div>
+</div>
+
+<!-- Custom cursor -->
+<div class="cursor" aria-hidden="true">
+  <span class="cursor-coords"></span>
+</div>
+
+<script>
+  const cursor = document.querySelector('.cursor');
+  const coords  = document.querySelector('.cursor-coords');
+
+  document.addEventListener('mousemove', (event) => {
+    requestAnimationFrame(() => {
+      cursor.style.left = event.clientX + 'px';
+      cursor.style.top  = event.clientY + 'px';
+      coords.textContent = `X: ${event.clientX}, Y: ${event.clientY}`;
+    });
+  });
+</script>
+
+</body>
+</html>
