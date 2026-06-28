@@ -77,6 +77,11 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-
 .lg{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;text-align:right}
 .lg label{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
 .lg input{background:rgba(255,255,255,.04);border:1px solid var(--border2);color:var(--text);border-radius:10px;padding:11px 14px;font-family:'Heebo',sans-serif;font-size:13px;outline:none;width:100%;transition:all .25s}
+/* neutralise the browser autofill white/yellow highlight to match the dark theme */
+.lg input:-webkit-autofill,.lg input:-webkit-autofill:hover,.lg input:-webkit-autofill:focus{
+  -webkit-text-fill-color:var(--text);
+  -webkit-box-shadow:0 0 0 1000px rgba(20,24,40,.98) inset;
+  caret-color:var(--text);transition:background-color 9999s ease-in-out 0s}
 .lg input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,169,110,.14),inset 0 1px 0 rgba(255,255,255,.06)}
 .lbtn{
   width:100%;padding:12px;
@@ -724,8 +729,11 @@ requestAnimationFrame(tick);
   <div class="lcard">
     <div class="llogo">CRM <span>| HOT Business</span></div>
     <div class="lsub">מערכת ניהול יומית – כניסה מאובטחת</div>
+    <!-- decoy fields: the browser autofills THESE (off-screen), leaving the real ones empty -->
+    <input type="text" tabindex="-1" aria-hidden="true" autocomplete="username" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;top:-9999px">
+    <input type="password" tabindex="-1" aria-hidden="true" autocomplete="current-password" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;top:-9999px">
     <div class="lg"><label>שם משתמש</label><input type="text" id="lu" placeholder="שם משתמש" autocomplete="off" name="usr_2f9x" readonly onfocus="this.removeAttribute('readonly')" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <div class="lg"><label>סיסמה</label><input type="password" id="lp" placeholder="סיסמה" autocomplete="new-password" name="pwd_7k3q" readonly onfocus="this.removeAttribute('readonly')" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="lg"><label>סיסמה</label><input type="text" id="lp" placeholder="סיסמה" autocomplete="off" name="pwd_7k3q" readonly onfocus="this.removeAttribute('readonly');this.type='password'" onblur="if(!this.value)this.type='text'" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="lbtn" onclick="doLogin()">כניסה למערכת</button>
     <div class="lerr" id="lerr"></div>
     <div class="lcard-glare"></div>
