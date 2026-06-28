@@ -1134,6 +1134,15 @@ requestAnimationFrame(tick);
     <div class="g"><label>סטטוס</label><select id="dst2"><option>ממתין לתשובה</option><option>נסגר</option><option>בטיפול</option><option>הוצאת הצעה</option><option>בעיה</option></select></div>
     <div class="g"><label>סוג</label><select id="dty"><option value="long">טווח ארוך</option><option value="short">טווח קצר</option></select></div>
     <div class="gf"><label>הערות</label><textarea id="dno" rows="2"></textarea></div>
+    <div class="gf"><label>📎 הצעת מחיר ללקוח (Excel)</label>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="file" id="dquote" accept=".xlsx,.xls,.csv" style="display:none" onchange="onQuoteFile(event)">
+        <button type="button" class="btn btns" onclick="document.getElementById('dquote').click()" style="border-color:#06d6a0;color:#06d6a0">בחר קובץ</button>
+        <span id="dquote-status" style="font-size:11px;color:var(--text2)">לא צורף קובץ</span>
+        <button type="button" class="btn btns" id="dquote-dl" onclick="downloadQuote()" style="display:none;border-color:#4cc9f0;color:#4cc9f0">⬇ הורד</button>
+        <button type="button" class="btn btns btnd" id="dquote-rm" onclick="removeQuote()" style="display:none">🗑 הסר</button>
+      </div>
+    </div>
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
     <button class="btn" onclick="closeM('mdeal')">ביטול</button>
@@ -1726,7 +1735,7 @@ function rDeals(){
       const ib=d.inf&&d.inf.includes('הוט')?`<span class="badge bb">HOT</span>`:d.inf==='365'?`<span class="badge bgr">365</span>`:`<span class="badge bgr">${d.inf||'–'}</span>`;
       const cc=d.ch>=1?'ng':d.ch>=0.75?'ny':'nr';
       const chk=SEL[sk]&&SEL[sk].has(d.id)?'checked':'';
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(d.date)}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(d.date)}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap">${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד הצעת מחיר: ${d.quote.name||''}" style="border-color:#4cc9f0;color:#4cc9f0">📎</button> `:''}<button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
     };
     const div=(cls,icon,lbl,n)=>`<tr class="mdiv ${cls}"><td colspan="18">${icon} ${lbl} <span style="font-weight:400;opacity:.8">(${n})</span></td></tr>`;
     let html='';
@@ -2728,6 +2737,9 @@ function openM(type,id){
     document.getElementById('dtit').textContent=isNew?'עסקה חדשה':'עריכת עסקה';
     const d=isNew?{}:D.deals.find(x=>x.id==id)||{};
     document.getElementById('dd').value=d.date||nd();document.getElementById('dco').value=d.co||'';document.getElementById('dcp').value=d.cp||'';document.getElementById('din').value=d.inf||'הוט';document.getElementById('dsr').value=d.srv||'';document.getElementById('dv').value=d.v||0;document.getElementById('dmv').value=d.mv||0;document.getElementById('ddi').value=d.di||0;document.getElementById('ddn').value=d.dn||0;document.getElementById('dot').value=d.ot||0;document.getElementById('dotc').value=d.otc||0;document.getElementById('dct').value=d.ct||'';document.getElementById('dch').value=d.ch||0.99;document.getElementById('dst2').value=d.st||'ממתין לתשובה';document.getElementById('dty').value=d.ty||'long';document.getElementById('dno').value=d.no||'';
+    pendingQuote = d.quote || null;
+    document.getElementById('dquote').value='';
+    updateQuoteStatus();
   }else if(type==='tender'){
     document.getElementById('ttit').textContent=isNew?'מכרז חדש':'עריכת מכרז';
     const t=isNew?{}:D.tenders.find(x=>x.id==id)||{};
@@ -2750,8 +2762,63 @@ function openM(type,id){
 function closeM(id){document.getElementById(id).classList.remove('open');EI=null;ET=null;}
 
 // ===== SAVE FUNCTIONS =====
+// ===== PRICE-QUOTE FILE ATTACHMENT (per deal) =====
+let pendingQuote = null; // {name,type,size,data(base64 dataURL)}
+const QUOTE_MAX = 2 * 1024 * 1024; // 2MB cap to protect localStorage
+function onQuoteFile(ev){
+  const f = ev.target.files && ev.target.files[0];
+  if(!f) return;
+  if(f.size > QUOTE_MAX){
+    toast('⚠️ הקובץ גדול מדי (מקסימום 2MB)','warn');
+    ev.target.value='';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e=>{
+    pendingQuote = {name:f.name, type:f.type||'', size:f.size, data:e.target.result};
+    updateQuoteStatus();
+    toast('📎 הצעת המחיר צורפה (שמור עסקה לסיום)','ok');
+  };
+  reader.onerror = ()=> toast('⚠️ שגיאה בקריאת הקובץ','warn');
+  reader.readAsDataURL(f);
+}
+function updateQuoteStatus(){
+  const st=document.getElementById('dquote-status');
+  const dl=document.getElementById('dquote-dl');
+  const rm=document.getElementById('dquote-rm');
+  if(!st) return;
+  if(pendingQuote){
+    const kb=Math.round((pendingQuote.size||0)/1024);
+    st.innerHTML='📄 '+pendingQuote.name+' <span style="color:var(--text3)">('+kb+'KB)</span>';
+    st.style.color='var(--green)';
+    if(dl)dl.style.display='';
+    if(rm)rm.style.display='';
+  }else{
+    st.textContent='לא צורף קובץ';
+    st.style.color='var(--text2)';
+    if(dl)dl.style.display='none';
+    if(rm)rm.style.display='none';
+  }
+}
+function removeQuote(){
+  pendingQuote=null;
+  const inp=document.getElementById('dquote'); if(inp)inp.value='';
+  updateQuoteStatus();
+}
+function downloadQuote(q){
+  const file = q || pendingQuote;
+  if(!file || !file.data){toast('⚠️ אין קובץ להורדה','warn');return;}
+  const a=document.createElement('a');
+  a.href=file.data; a.download=file.name||'quote.xlsx';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function downloadDealQuote(id){
+  const d=D.deals.find(x=>x.id==id);
+  if(!d||!d.quote){toast('⚠️ לעסקה זו אין הצעת מחיר מצורפת','warn');return;}
+  downloadQuote(d.quote);
+}
 function saveDeal(){
-  const row={date:document.getElementById('dd').value,co:document.getElementById('dco').value,cp:document.getElementById('dcp').value,inf:document.getElementById('din').value,srv:document.getElementById('dsr').value,v:+document.getElementById('dv').value,mv:+document.getElementById('dmv').value,di:+document.getElementById('ddi').value,dn:+document.getElementById('ddn').value,ot:+document.getElementById('dot').value,otc:+document.getElementById('dotc').value,ct:document.getElementById('dct').value,ch:+document.getElementById('dch').value,st:document.getElementById('dst2').value,ty:document.getElementById('dty').value,no:document.getElementById('dno').value};
+  const row={date:document.getElementById('dd').value,co:document.getElementById('dco').value,cp:document.getElementById('dcp').value,inf:document.getElementById('din').value,srv:document.getElementById('dsr').value,v:+document.getElementById('dv').value,mv:+document.getElementById('dmv').value,di:+document.getElementById('ddi').value,dn:+document.getElementById('ddn').value,ot:+document.getElementById('dot').value,otc:+document.getElementById('dotc').value,ct:document.getElementById('dct').value,ch:+document.getElementById('dch').value,st:document.getElementById('dst2').value,ty:document.getElementById('dty').value,no:document.getElementById('dno').value,quote:pendingQuote||null};
   if(!row.co){alert('יש להזין שם חברה');return;}
   let savedDeal;
   if(EI){dbUpdate('deals',EI,row);savedDeal=D.deals.find(x=>x.id==EI);}
