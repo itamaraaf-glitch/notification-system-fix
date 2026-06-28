@@ -853,6 +853,9 @@ requestAnimationFrame(tick);
     </div>
   </div>
   <div class="dgrid">
+    <div class="dpanel" style="grid-column:1/-1"><h4>🔥 דחוף – לטיפול עכשיו</h4><div id="urgentlist" style="display:flex;flex-direction:column;gap:5px;max-height:260px;overflow-y:auto"></div></div>
+  </div>
+  <div class="dgrid">
     <div class="dpanel"><h4>💼 סטטוס עסקאות</h4><div id="dspanel" style="display:flex;flex-direction:column;gap:6px"></div></div>
     <div class="dpanel"><h4>📈 מדדים מהירים</h4><div id="qspanel" style="display:flex;flex-direction:column;gap:6px"></div></div>
   </div>
@@ -1871,6 +1874,22 @@ function rDash(){
   D.dists.filter(d=>d.st!=='הושלם').forEach(d=>{const p=pri(d,'dist');if(p==='r')pi.push({p,t:d.co,s:d.st});});
   pi.sort((a,b)=>a.p==='r'?-1:1);
   document.getElementById('prilist').innerHTML=pi.length?pi.slice(0,8).map(i=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border)">${pB(i.p)}<div><div style="font-size:11px;font-weight:600">${i.t}</div><div style="font-size:10px;color:var(--text2)">${i.s}</div></div></div>`).join(''):'<div style="font-size:11px;color:var(--text2)">✅ אין פריטים קריטיים</div>';
+  // 🔥 urgent list — date-driven alerts (crit first), clickable to client / alerts
+  const uEl=document.getElementById('urgentlist');
+  if(uEl){
+    const ord={crit:0,warn:1,info:2};
+    const urg=al.slice().sort((a,b)=>(ord[a.type]??3)-(ord[b.type]??3)).slice(0,10);
+    uEl.innerHTML=urg.length?urg.map((x,i)=>{
+      const c=x.co?D.clients.find(cl=>cl.name===x.co):null;
+      const act=c?`openClientModal('${c.id}')`:`nav('alerts')`;
+      const dot=x.type==='crit'?'#e63946':x.type==='warn'?'#f4a261':'#4cc9f0';
+      return`<div onclick="${act}" style="display:flex;align-items:center;gap:9px;padding:7px 4px;border-bottom:1px solid var(--border);cursor:pointer">
+        <span style="width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0;box-shadow:0 0 8px ${dot}"></span>
+        <div style="min-width:0"><div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${x.h}</div><div style="font-size:10px;color:var(--text2)">${x.s}</div></div>
+        ${c?'<span style="margin-right:auto;font-size:10px;color:#4cc9f0;flex-shrink:0">📧 לקוח →</span>':''}
+      </div>`;
+    }).join(''):'<div style="font-size:11px;color:var(--text2);padding:8px">✅ אין משימות דחופות — כל הכבוד!</div>';
+  }
   const off=226-(held/MEETING_GOAL)*226;
   document.getElementById('mcirc').setAttribute('stroke-dashoffset',Math.max(0,off));
   document.getElementById('mnum').innerHTML=`${held}<br><span>מתוך ${MEETING_GOAL}</span>`;
@@ -2354,9 +2373,15 @@ function saveClient(){
   const stillOpen=[];let moved=0;
   (row.potential||[]).forEach(p=>{ if(p.status==='נסגר'){convertPotentialToProduct(row,p);moved++;} else stillOpen.push(p); });
   row.potential=stillOpen;
-  if(EI){dbUpdate('clients',EI,row);}else{dbInsert('clients',row);}
-  closeM('mclient');rClients();rWorkPlan();
-  if(moved)showToast(`🎉 ${moved} מוצרים שנסגרו נוספו לכרטיס הלקוח`,'ok');
+  const doSave=()=>{
+    if(EI){dbUpdate('clients',EI,row);}else{dbInsert('clients',row);}
+    closeM('mclient');rClients();rWorkPlan();
+    if(moved)showToast(`🎉 ${moved} מוצרים שנסגרו נוספו לכרטיס הלקוח`,'ok');
+  };
+  // duplicate detection — warn before creating a second card with the same name
+  const dup=!EI && D.clients.some(c=>(c.name||'').trim().toLowerCase()===name.toLowerCase());
+  if(dup) confirmAct(`כבר קיים כרטיס לקוח בשם "${name}". ליצור כרטיס נוסף בכל זאת?`, doSave, 'כן, צור בכל זאת');
+  else doSave();
 }
 
 function filterClients(){
@@ -3097,16 +3122,22 @@ function downloadDealQuote(id){
 function saveDeal(){
   const row={date:document.getElementById('dd').value,co:document.getElementById('dco').value,cp:document.getElementById('dcp').value,inf:document.getElementById('din').value,srv:document.getElementById('dsr').value,v:+document.getElementById('dv').value,mv:+document.getElementById('dmv').value,di:+document.getElementById('ddi').value,dn:+document.getElementById('ddn').value,ot:+document.getElementById('dot').value,otc:+document.getElementById('dotc').value,ct:document.getElementById('dct').value,ch:+document.getElementById('dch').value,st:document.getElementById('dst2').value,ty:document.getElementById('dty').value,no:document.getElementById('dno').value,quote:pendingQuote||null};
   if(!row.co){alert('יש להזין שם חברה');return;}
-  let savedDeal;
-  if(EI){dbUpdate('deals',EI,row);savedDeal=D.deals.find(x=>x.id==EI);}
-  else{row.num=nextDealNum();savedDeal=dbInsert('deals',row);}
-  if(savedDeal&&savedDeal.st==='נסגר'){
-    syncDealToClient(savedDeal);
-    syncDealToSalary(savedDeal);
-    syncDealToDist(savedDeal);
-    saveAll(); // persist the sync flags set on the deal
-  }
-  closeM('mdeal');rAll();
+  const doSave=()=>{
+    let savedDeal;
+    if(EI){dbUpdate('deals',EI,row);savedDeal=D.deals.find(x=>x.id==EI);}
+    else{row.num=nextDealNum();savedDeal=dbInsert('deals',row);}
+    if(savedDeal&&savedDeal.st==='נסגר'){
+      syncDealToClient(savedDeal);
+      syncDealToSalary(savedDeal);
+      syncDealToDist(savedDeal);
+      saveAll(); // persist the sync flags set on the deal
+    }
+    closeM('mdeal');rAll();
+  };
+  // duplicate detection — warn if this company already has an open deal
+  const dupDeal=!EI && D.deals.find(d=>(d.co||'').trim().toLowerCase()===row.co.trim().toLowerCase()&&d.st!=='נסגר');
+  if(dupDeal) confirmAct(`כבר קיימת עסקה פתוחה עבור "${row.co}" (${dupDeal.srv||'ללא שירות'}). להוסיף עסקה נוספת?`, doSave, 'כן, הוסף');
+  else doSave();
 }
 function syncDealToSalary(deal,silent){
   if(deal.st!=='נסגר')return false;
@@ -3662,7 +3693,28 @@ setInterval(()=>{ const app=document.getElementById('app'); if(app&&app.style.di
 
 // ===== KEYBOARD SHORTCUTS =====
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape')document.querySelectorAll('.mw.open').forEach(m=>m.classList.remove('open'));
+  // Ctrl/Cmd+K or "/" → focus global search
+  if(((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k')){
+    e.preventDefault(); const gsi=document.getElementById('gsi'); if(gsi){gsi.focus();gsi.select();} return;
+  }
+  if(e.key==='Escape'){
+    document.querySelectorAll('.mw.open').forEach(m=>m.classList.remove('open'));
+    const gb=document.getElementById('gsres'); if(gb)gb.classList.remove('show');
+    return;
+  }
+  // the rest are single-key shortcuts — ignore while typing or when a modal is open
+  const tag=(e.target.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='textarea'||tag==='select'||e.target.isContentEditable)return;
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const app=document.getElementById('app'); if(!app||app.style.display==='none')return;
+  if(document.querySelector('.mw.open'))return;
+  if(e.key==='/'){ e.preventDefault(); const gsi=document.getElementById('gsi'); if(gsi){gsi.focus();gsi.select();} return; }
+  // "n" → new record for the current section
+  if(e.key==='n'||e.key==='N'){
+    const map={deals:'deal',tenders:'tender',dists:'dist',salary:'salary',meetings:'meeting'};
+    if(map[currentSec]){ e.preventDefault(); openM(map[currentSec],null); }
+    else if(currentSec==='clients'){ e.preventDefault(); openClientModal(); }
+  }
 });
 
 // ===== SEED DATA =====
