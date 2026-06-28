@@ -2264,8 +2264,13 @@ function saveClient(){
   const row={name,cp:document.getElementById('cl-cp').value,contact:document.getElementById('cl-contact').value,phone:document.getElementById('cl-phone').value,email:document.getElementById('cl-email').value,address:document.getElementById('cl-address').value,status:document.getElementById('cl-status').value,genNotes:document.getElementById('cl-gen-notes').value};
   Object.keys(ITEM_CFG).forEach(type=>{row[type]=getItemData(type);});
   row.potential=getPotentialData();
+  // any potential marked 'נסגר' moves into the client's purchased products
+  const stillOpen=[];let moved=0;
+  (row.potential||[]).forEach(p=>{ if(p.status==='נסגר'){convertPotentialToProduct(row,p);moved++;} else stillOpen.push(p); });
+  row.potential=stillOpen;
   if(EI){dbUpdate('clients',EI,row);}else{dbInsert('clients',row);}
-  closeM('mclient');rClients();
+  closeM('mclient');rClients();rWorkPlan();
+  if(moved)showToast(`🎉 ${moved} מוצרים שנסגרו נוספו לכרטיס הלקוח`,'ok');
 }
 
 function filterClients(){
@@ -2778,9 +2783,57 @@ function manualSyncDeals(){
 }
 
 // ===== WORK PLAN =====
+// map a potential product's type → a client-card category
+const POT_TYPE_MAP={
+  'FortiGate':'forti','פורטיגייט':'forti',
+  'Microsoft 365':'ms365','M365':'ms365',
+  'Starlink':'starlink','סטארלינק':'starlink',
+  'CYBIZ / אבטחה':'cybiz','CYBIZ':'cybiz','אבטחה':'cybiz',
+  'קו תקשורת':'lines','קו':'lines',
+  'HP / Aruba':'hp','Aruba':'hp',
+  'Helpdesk':'helpdesk',
+  'Cisco':'cisco','Juniper':'juniper',
+  'מרכזייה':'pbx','PBX':'pbx','שרתים':'servers'
+};
+function mapPotentialType(pt){
+  if(!pt)return'extra';
+  if(POT_TYPE_MAP[pt])return POT_TYPE_MAP[pt];
+  const bare=l=>l.replace(/^\S+\s*/,''); // strip leading emoji from a label
+  const found=Object.keys(ITEM_CFG).find(t=>t===pt||ITEM_CFG[t].label.includes(pt)||pt.includes(bare(ITEM_CFG[t].label)));
+  return found||'extra';
+}
+// move a closed potential into the client card as a purchased product
+function convertPotentialToProduct(client,pot){
+  const type=mapPotentialType(pot.productType);
+  const cfg=ITEM_CFG[type]||ITEM_CFG.extra;
+  const realType=ITEM_CFG[type]?type:'extra';
+  if(!client[realType])client[realType]=[];
+  const has=k=>cfg.fields.some(f=>f.k===k);
+  const item={};
+  if(realType==='extra')item.name=pot.product||pot.productType||'פתרון';
+  if(has('monthly')&&pot.estimatedValue)item.monthly=+pot.estimatedValue;
+  const bits=['נרכש מתהליך עבודה'];
+  if(pot.product)bits.push(pot.product);
+  if(pot.estimatedValue)bits.push('שווי '+fmt(+pot.estimatedValue));
+  if(pot.notes&&!['הזדמנות upsell','הצעה אוטומטית'].includes(pot.notes))bits.push(pot.notes);
+  bits.push('('+nd()+')');
+  if(has('notes'))item.notes=bits.join(' · ');
+  client[realType].push(item);
+  return realType;
+}
 function updatePotentialStatus(clientId,idx,newStatus){
   const client=D.clients.find(c=>c.id==clientId);
   if(!client||(client.potential||[])[idx]===undefined)return;
+  if(newStatus==='נסגר'){
+    const pot=client.potential[idx];
+    convertPotentialToProduct(client,pot);
+    client.potential.splice(idx,1); // leaves the workplan activity
+    dbUpdate('clients',clientId,client);
+    rWorkPlan();
+    if(typeof rClients==='function')rClients();
+    showToast(`🎉 ${client.name}: ${pot.productType||pot.product||'מוצר'} נסגר ונוסף לכרטיס הלקוח כמוצר שנרכש`,'ok');
+    return;
+  }
   client.potential[idx].status=newStatus;
   dbUpdate('clients',clientId,client);
   rWorkPlan();
