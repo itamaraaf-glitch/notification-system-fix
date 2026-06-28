@@ -597,7 +597,7 @@ const H   = () => window.innerHeight;
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({canvas:cvs, antialias:false, powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setPixelRatio(1);
 renderer.setSize(W(), H());
 
 const scene  = new THREE.Scene();
@@ -627,7 +627,7 @@ const spTex = new THREE.CanvasTexture(sp);
 
 // Particle count – fewer on mobile for 60 fps
 const mobile = W() < 768;
-const COUNT  = mobile ? 1800 : 4500;
+const COUNT  = mobile ? 1500 : 2200;
 const SPREAD = 95;
 
 const geo = new THREE.BufferGeometry();
@@ -680,9 +680,20 @@ let t = 0;
 const STEP = 0.038;
 const half = SPREAD / 2;
 
-function tick(){
+// Frame throttle: ~30fps on login screen, ~20fps once inside the app
+// (the background only peeks through transparent areas there, so it can be slower)
+let last = 0;
+function loggedIn(){
+  const app = document.getElementById('app');
+  return app && app.style.display !== 'none' && app.style.display !== '';
+}
+function tick(now){
   requestAnimationFrame(tick);
-  t += 0.00038;
+  const interval = loggedIn() ? 50 : 33;
+  if(now - last < interval) return;
+  last = now;
+
+  t += 0.00038 * (interval / 16.7); // keep flow speed consistent across frame rates
   for(let i = 0; i < COUNT; i++){
     const x = pos[i*3], y = pos[i*3+1];
     const a = flowAngle(x, y, t);
@@ -706,7 +717,7 @@ window.addEventListener('resize', () => {
   bloom.resolution.set(W(), H());
 });
 
-tick();
+requestAnimationFrame(tick);
 </script>
 
 <!-- THREE.JS LOGIN OBJECT -->
