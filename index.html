@@ -801,6 +801,7 @@ requestAnimationFrame(tick);
     <div class="uchip">👤 <b id="uname">–</b></div>
     <span class="save-ind" id="saveind">✦ נשמר</span>
     <button class="btn" onclick="saveAll()" style="background:var(--tealdim);color:var(--teal);border:1px solid rgba(6,214,160,.4);font-size:11px;padding:4px 12px;border-radius:20px">💾 שמור</button>
+    <button class="btn" id="undo-btn" onclick="undoLast()" title="בטל את המחיקה האחרונה" style="display:none;background:rgba(244,162,97,.14);color:#f4a261;border:1px solid rgba(244,162,97,.45);font-size:11px;padding:4px 12px;border-radius:20px">↩ בטל מחיקה</button>
     <button class="abtn" onclick="nav('alerts')">⚠ <span id="acnt">0</span></button>
     <button class="btn btnbk" onclick="backupData()" title="גיבוי">💾 גיבוי</button>
     <button class="btn" onclick="restoreData()" title="שחזור">📂</button>
@@ -1625,9 +1626,34 @@ function nextDealNum(){
 function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000}};}
 function dbInsert(table,row){row.id=genId();D[table].push(row);saveAll();return row;}
 function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0)D[table][i]={...D[table][i],...row};saveAll();}
+// ===== GLOBAL UNDO (for accidental deletes in any section) =====
+let _undoStack=[];
+function pushUndo(label){
+  try{
+    _undoStack.push({data:JSON.stringify(D),label:label||'מחיקה',ts:Date.now()});
+    if(_undoStack.length>25)_undoStack.shift();
+    updateUndoBtn();
+  }catch(e){console.warn('pushUndo failed',e);}
+}
+function updateUndoBtn(){
+  const b=document.getElementById('undo-btn'); if(!b)return;
+  if(_undoStack.length){ b.style.display=''; b.title='בטל: '+_undoStack[_undoStack.length-1].label; }
+  else b.style.display='none';
+}
+function undoLast(){
+  if(!_undoStack.length){toast('אין פעולה לביטול','warn');return;}
+  const snap=_undoStack.pop();
+  try{
+    idbBackup(JSON.stringify(D)); // safety snapshot of current state before reverting
+    D=Object.assign(emptyData(),JSON.parse(snap.data));
+    saveAll();rAll();updateUndoBtn();
+    toast('↩ בוטל: '+snap.label,'ok');
+  }catch(e){alert('שגיאה בביטול: '+e.message);}
+}
 function dbDelete(table,id){
   const item=D[table].find(x=>x.id==id);
   if(!item)return;
+  pushUndo('מחיקת פריט ('+table+')');
   // Delete immediately
   D[table]=D[table].filter(x=>x.id!=id);
   saveAll();
@@ -3038,6 +3064,7 @@ function updatePotentialPriority(clientId,idx,newPri){
 function removePotential(clientId,idx){
   const client=D.clients.find(c=>c.id==clientId);
   if(!client)return;
+  pushUndo('מחיקת מוצר בתהליך עבודה');
   client.potential.splice(idx,1);
   dbUpdate('clients',clientId,client);
   rWorkPlan();
@@ -3346,8 +3373,8 @@ function deleteSelected(key){
   if(!SEL[key]||SEL[key].size===0)return;
   const tblMap={'deals-long':'deals','deals-short':'deals','tenders':'tenders','dists-long':'dists','dists-short':'dists','salary-service':'salary','salary-equip':'salary','meetings':'meetings'};
   const tbl=tblMap[key];
-  if(tbl){D[tbl]=D[tbl].filter(x=>!SEL[key].has(x.id));saveAll();}
   const n=SEL[key].size;
+  if(tbl){pushUndo('מחיקת '+n+' פריטים');D[tbl]=D[tbl].filter(x=>!SEL[key].has(x.id));saveAll();}
   SEL[key]=new Set();rAll();
   showToast('🗑 '+n+' פריטים נמחקו','ok');
 }
@@ -3356,7 +3383,7 @@ function deleteAll(section){
   const tbl=map[section];if(!tbl)return;
   const n=D[tbl].length;
   if(!n){showToast('אין פריטים למחיקה','warn');return;}
-  const saved=[...D[tbl]];
+  pushUndo('מחיקת כל ה'+section+' ('+n+')');
   D[tbl]=[];saveAll();rAll();
   showToast('🗑 כל '+n+' הפריטים נמחקו','ok');
 }
