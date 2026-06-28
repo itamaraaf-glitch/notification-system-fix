@@ -1675,8 +1675,8 @@ function rDash(){
 function rDeals(){
   const curM=nd().substring(0,7);
   const allCarry=D.deals.filter(d=>(d.date||'').substring(0,7)<curM&&d.st!=='נסגר');
-  const allNewThis=D.deals.filter(d=>(d.date||'').substring(0,7)===curM&&d.st!=='נסגר');
-  const allClosedThis=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)===curM);
+  const allNewThis=D.deals.filter(d=>(d.date||'').substring(0,7)>=curM&&d.st!=='נסגר');
+  const allClosedThis=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=curM);
   const allPendingArch=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<curM);
   const arch=(D.archivedDeals||[]).length;
   const totalActive=allCarry.length+allNewThis.length;
@@ -1716,8 +1716,8 @@ function rDeals(){
     const items=D.deals.filter(d=>d.ty===ty);
     const sk=ty==='long'?'deals-long':'deals-short';
     const carries=items.filter(d=>(d.date||'').substring(0,7)<curM&&d.st!=='נסגר');
-    const newThis=items.filter(d=>(d.date||'').substring(0,7)===curM&&d.st!=='נסגר');
-    const closedThis=items.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)===curM);
+    const newThis=items.filter(d=>(d.date||'').substring(0,7)>=curM&&d.st!=='נסגר');
+    const closedThis=items.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=curM);
     const pendingArch=items.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<curM);
     const mkRow=d=>{
       const p=pri(d,'deal');
@@ -2976,6 +2976,29 @@ const IMP_MAP={
   clients:{'שם חברה':'name','איש קשר':'contact','טלפון':'phone','אימייל':'email','כתובת':'address','סטטוס':'status','הערות':'genNotes'}
 };
 const IMP_NUM={deals:['v','mv','di','dn','ot','otc'],tenders:['amount','qty'],dists:['inc','eq'],salary:['qt','tr','cl2','pv'],meetings:['nu'],clients:[]};
+// date fields per section — normalised to YYYY-MM-DD so month filtering works
+const IMP_DATE={deals:['date'],tenders:['pub','deadline'],dists:['dt'],salary:[],meetings:['dt'],clients:[]};
+function _pad2(n){return String(n).padStart(2,'0');}
+function _toYMD(d){return d.getFullYear()+'-'+_pad2(d.getMonth()+1)+'-'+_pad2(d.getDate());}
+// Accepts Excel Date objects, Excel serial numbers, and common string formats
+function normalizeImportDate(v){
+  if(v==null||v==='')return'';
+  if(v instanceof Date&&!isNaN(v))return _toYMD(v);
+  const sNum=String(v).trim();
+  // Excel serial number (days since 1899-12-30)
+  if(typeof v==='number'||(/^\d+(\.\d+)?$/.test(sNum)&&+sNum>1000&&+sNum<80000)){
+    const d=new Date(Math.round((+sNum-25569)*86400*1000));
+    if(!isNaN(d))return _toYMD(d);
+  }
+  const s=sNum;
+  let m=s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);            // YYYY-MM-DD
+  if(m)return m[1]+'-'+_pad2(m[2])+'-'+_pad2(m[3]);
+  m=s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/);              // DD/MM/YYYY
+  if(m){let y=m[3];if(y.length===2)y='20'+y;return y+'-'+_pad2(m[2])+'-'+_pad2(m[1]);}
+  const d=new Date(s);
+  if(!isNaN(d))return _toYMD(d);
+  return s;
+}
 
 function importFromExcel(sec){
   const el=document.getElementById('imp-'+sec);
@@ -2989,13 +3012,14 @@ function handleImport(ev,sec){
   reader.onload=function(e){
     try{
       if(!window.XLSX){toast('⚠️ ספריית Excel טרם נטענה – רענן ונסה שוב','warn');return;}
-      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
       if(!data||data.length<2){toast('⚠️ הקובץ ריק או חסרות שורות נתונים','warn');return;}
       const hdrs=data[0].map(h=>String(h||'').trim().toLowerCase());
       const smap=IMP_MAP[sec]||{};
       const numFlds=new Set(IMP_NUM[sec]||[]);
+      const dateFlds=new Set(IMP_DATE[sec]||[]);
       // map column index → field key
       const colMap={};
       hdrs.forEach((h,i)=>{
@@ -3008,6 +3032,7 @@ function handleImport(ev,sec){
       rows.forEach(row=>{
         const obj={};
         Object.entries(colMap).forEach(([i,key])=>{
+          if(dateFlds.has(key)){obj[key]=normalizeImportDate(row[i]);return;}
           let v=String(row[i]??'').trim();
           if(key==='ty'){
             v=sec==='salary'?(v==='שירות'||v==='service'?'service':'equipment'):(v==='ארוך'||v==='long'?'long':'short');
