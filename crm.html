@@ -612,11 +612,16 @@ import {OutputPass}     from 'three/addons/postprocessing/OutputPass.js';
 const cvs = document.getElementById('bg-canvas');
 const W   = () => window.innerWidth;
 const H   = () => window.innerHeight;
+// Render the background at a capped internal resolution and let CSS upscale it.
+// Bloom cost scales with pixel count, so this is the big win on hi-res laptops.
+const CAP = 820;
+const RW  = () => Math.round(W() * Math.min(1, CAP/Math.max(W(),H())));
+const RH  = () => Math.round(H() * Math.min(1, CAP/Math.max(W(),H())));
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({canvas:cvs, antialias:false, powerPreference:'high-performance'});
 renderer.setPixelRatio(1);
-renderer.setSize(W(), H());
+renderer.setSize(RW(), RH(), false); // false → keep CSS size at 100%, only shrink the buffer
 
 const scene  = new THREE.Scene();
 scene.background = new THREE.Color(0x06080f);
@@ -624,10 +629,11 @@ scene.background = new THREE.Color(0x06080f);
 const camera = new THREE.PerspectiveCamera(60, W()/H(), 0.1, 500);
 camera.position.z = 45;
 
-// Bloom post-processing
+// Bloom post-processing (sized to the reduced buffer)
 const composer = new EffectComposer(renderer);
+composer.setSize(RW(), RH());
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(W(), H()), 1.35, 0.55, 0.70);
+const bloom = new UnrealBloomPass(new THREE.Vector2(RW(), RH()), 1.2, 0.5, 0.72);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
@@ -645,7 +651,7 @@ const spTex = new THREE.CanvasTexture(sp);
 
 // Particle count – fewer on mobile for 60 fps
 const mobile = W() < 768;
-const COUNT  = mobile ? 1500 : 2200;
+const COUNT  = mobile ? 1500 : 1600;
 const SPREAD = 95;
 
 const geo = new THREE.BufferGeometry();
@@ -730,9 +736,9 @@ function tick(now){
 window.addEventListener('resize', () => {
   camera.aspect = W()/H();
   camera.updateProjectionMatrix();
-  renderer.setSize(W(), H());
-  composer.setSize(W(), H());
-  bloom.resolution.set(W(), H());
+  renderer.setSize(RW(), RH(), false);
+  composer.setSize(RW(), RH());
+  bloom.resolution.set(RW(), RH());
 });
 
 requestAnimationFrame(tick);
