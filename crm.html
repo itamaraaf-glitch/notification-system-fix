@@ -975,6 +975,7 @@ requestAnimationFrame(tick);
       <button class="btn btnd" onclick="deleteAll('dists')" title="מחק את כל ההפצות">🗑 מחק הכל</button>
     </div>
   </div>
+  <div id="dist-goal-top"></div>
   <div class="tabs" id="dists-tabs">
     <div class="tab active" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDists()">מרכזים / ארוך</div>
     <div class="tab" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDists()">הפצות – קצר</div>
@@ -1366,7 +1367,7 @@ function handlerEmails(name){
   const h=HANDLERS.find(x=>x.name===name);
   return h?h.emails:[];
 }
-let D = {deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000}};
+let D = {deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000}};
 let EI = null, ET = null;
 const SEL = {};
 
@@ -1577,7 +1578,7 @@ function loadAll(){
       D.deals=p.deals||[];D.tenders=p.tenders||[];D.dists=p.dists||[];
       D.salary=p.salary||[];D.meetings=p.meetings||[];D.clients=p.clients||[];
       D.archivedDeals=p.archivedDeals||[];D.archivedTenders=p.archivedTenders||[];D.archivedDists=p.archivedDists||[];D.archivedSalary=p.archivedSalary||[];D.archivedMeetings=p.archivedMeetings||[];D.lastCycleMonth=p.lastCycleMonth||'';
-      D.goals=p.goals||{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000};
+      D.goals=p.goals||{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000};
       // Only seed if this is truly a first-time load (all tables empty AND no initialized flag)
       const allEmpty=!D.deals.length&&!D.tenders.length&&!D.dists.length&&!D.salary.length&&!D.meetings.length&&!D.clients.length;
       if(allEmpty&&!localStorage.getItem(LS_KEY+'_init'))seedData();
@@ -1621,7 +1622,7 @@ function nextDealNum(){
   return (nums.length?Math.max(...nums):0)+1;
 }
 // a complete empty dataset template so restores never drop a section
-function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000}};}
+function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000}};}
 function dbInsert(table,row){row.id=genId();D[table].push(row);saveAll();return row;}
 function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0)D[table][i]={...D[table][i],...row};saveAll();}
 function dbDelete(table,id){
@@ -1984,7 +1985,7 @@ function rDeals(){
 function rDealSum(){
   const curQ=curQuarterStr();
   const l=D.deals.filter(d=>d.ty==='long'),s=D.deals.filter(d=>d.ty==='short'),sm=(arr,k)=>arr.reduce((a,d)=>a+(d[k]||0),0);
-  if(!D.goals)D.goals={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000};
+  if(!D.goals)D.goals={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000};
   const goal=D.goals.deals||GOAL_DEALS;
   const arch=D.archivedDeals||[];
   const quarters=getLast4Quarters();
@@ -2110,6 +2111,14 @@ function rTenders(){
 
 // ===== DISTS =====
 function rDists(){
+  const gt=document.getElementById('dist-goal-top');
+  if(gt){
+    const done=[...D.dists,...(D.archivedDists||[])].filter(d=>d.st==='הושלם');
+    const incDone=done.reduce((a,d)=>a+(d.inc||0),0);
+    const eqDone =done.reduce((a,d)=>a+(d.eq||0),0);
+    gt.innerHTML=goalBannerInline('💰 יעד הכנסה','dists',incDone,14000,'#06d6a0')
+               +goalBannerInline('📦 יעד ציוד','distsEq',eqDone,30000,'#4cc9f0');
+  }
   ['long','short'].forEach(ty=>{
     const tbId=ty==='long'?'ldtb':'sdtb',ftId=ty==='long'?'ldft':'sdft';
     const items=D.dists.filter(d=>d.ty===ty);const t=nd();
@@ -2130,7 +2139,7 @@ function rDists(){
 function rDistSum(){
   const curQ=curQuarterStr();
   const l=D.dists.filter(d=>d.ty==='long'),s=D.dists.filter(d=>d.ty==='short'),sm=(arr,k)=>arr.reduce((a,d)=>a+(d[k]||0),0);
-  if(!D.goals)D.goals={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000};
+  if(!D.goals)D.goals={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000};
   const goal=D.goals.dists||GOAL_DISTS;
   const archD=D.archivedDists||[];
   const quarters=getLast4Quarters();
@@ -2166,7 +2175,7 @@ function rSalary(){
 }
 // generic always-visible, editable goal banner
 function goalBannerInline(label,goalKey,curVal,defGoal,accent){
-  if(!D.goals)D.goals={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000};
+  if(!D.goals)D.goals={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000};
   const goal=D.goals[goalKey]||defGoal;
   const pct=goal?Math.round(curVal/goal*100):0;
   const col=pct>=100?'var(--teal)':pct>=50?'#f4a261':'#e63946';
@@ -2194,7 +2203,7 @@ function salGoalBanner(){
 function rSalSum(){
   const curQ=curQuarterStr();
   const sv=D.salary.filter(s=>s.ty==='service'),eq=D.salary.filter(s=>s.ty==='equipment'),sm=(arr,k)=>arr.reduce((s,i)=>s+(i[k]||0),0);
-  if(!D.goals)D.goals={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000};
+  if(!D.goals)D.goals={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000};
   const goal=D.goals.sal||GOAL_DEALS;
   const archS=D.archivedSalary||[];
   const quarters=getLast4Quarters();
@@ -2707,13 +2716,14 @@ function monthsOfQ(qs){
 }
 function qLabel(qs){const[y,q]=qs.split('-');return`${q}'${y.substring(2)}`;}
 function setGoal(section,val){
-  if(!D.goals)D.goals={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000};
+  if(!D.goals)D.goals={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000};
   const v=Math.max(1000,+val||0);
   if(!v)return;
   D.goals[section]=v;
   saveAll();
   if(section==='deals'){rDealSum();rDeals();}
-  else if(section==='dists')rDistSum();
+  else if(section==='dists'){rDistSum();rDists();}
+  else if(section==='distsEq')rDists();
   else if(section==='sal'||section==='salEq'){rSalary();rSalSum();}
   else if(section==='dealsEq')rDeals();
 }
