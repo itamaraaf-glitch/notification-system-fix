@@ -1751,11 +1751,10 @@ function rAlerts(){
   document.getElementById('alcont').innerHTML=a.length?a.map((x,i)=>{
     let mailBtn='';
     if(x.co){
-      const c=D.clients.find(cl=>cl.name===x.co);
-      if(c){
-        const has=!!(c.email&&c.email.trim());
-        mailBtn=`<button class="btn btns" onclick="sendAlertEmail('${c.id}',${i})" title="${has?'שלח את ההתראה במייל ללקוח':'אין מייל ללקוח – הוסף בכרטיס'}" style="margin-top:8px;border-color:#4cc9f0;color:#4cc9f0;opacity:${has?1:.45}">📧 שלח ללקוח</button>`;
-      }
+      const c=D.clients.find(cl=>(cl.name||'').trim()===(x.co||'').trim());
+      const has=!!(c&&c.email&&c.email.trim());
+      const tip=has?'שלח את ההתראה במייל ללקוח':(c?'אין מייל ללקוח – הוסף בכרטיס':'אין כרטיס לקוח – ייפתח כרטיס חדש');
+      mailBtn=`<button class="btn btns" onclick="sendAlertEmail(${i})" title="${tip}" style="margin-top:8px;border-color:#4cc9f0;color:#4cc9f0;opacity:${has?1:.6}">📧 שלח ללקוח</button>`;
     }
     return`<div class="ac ${x.type}"><div class="at">${x.type==='crit'?'🔴 קריטי':x.type==='warn'?'🟠 אזהרה':'ℹ מידע'}</div><div class="ah">${x.h}</div><div class="as">${x.s}</div>${mailBtn}</div>`;
   }).join(''):'<div class="ac info"><div class="at">מידע</div><div class="ah">✅ אין התראות פעילות</div></div>';
@@ -1847,16 +1846,24 @@ function buildAlertEmail(c,al){
   const body=lines.concat(['',''], sign).join('\n'); // RTL applied centrally at send time
   return {subject, body};
 }
-function sendAlertEmail(clientId,idx){
-  const c=D.clients.find(x=>x.id==clientId);
-  if(!c)return;
+function sendAlertEmail(idx){
+  const al=(window._alertsCache||[])[idx]; if(!al)return;
+  const co=(al.co||'').trim();
+  let c=D.clients.find(x=>(x.name||'').trim()===co);
+  // no client card yet → open a new card prefilled with the company name
+  if(!c){
+    toast('📇 אין כרטיס לקוח עבור '+co+' — נפתח כרטיס חדש להוספת מייל','warn');
+    openClientModal();
+    setTimeout(()=>{const n=document.getElementById('cl-name');if(n)n.value=co;const e=document.getElementById('cl-email');if(e){e.focus();e.style.borderColor='var(--blue)';}},300);
+    return;
+  }
+  // client exists but has no email → open the card focused on the email field
   if(!c.email||!c.email.trim()){
     toast('📧 אין מייל ללקוח – הוסף ושמור בכרטיס','warn');
     openClientModal(c.id);
     setTimeout(()=>{const f=document.getElementById('cl-email');if(f){f.focus();f.style.borderColor='var(--blue)';}},300);
     return;
   }
-  const al=(window._alertsCache||[])[idx]||{};
   const {subject,body}=buildAlertEmail(c,al);
   openMail(c.email, subject, body);
 }
