@@ -259,6 +259,7 @@ tr.mdiv-carry>td{background:rgba(244,162,97,.08);color:#f4a261;border-color:rgba
 tr.mdiv-new>td{background:rgba(6,214,160,.07);color:var(--teal);border-color:rgba(6,214,160,.18)}
 tr.mdiv-closed>td{background:rgba(76,201,240,.07);color:var(--blue);border-color:rgba(76,201,240,.18)}
 tr.mdiv-pending>td{background:rgba(139,92,246,.06);color:var(--purple);border-color:rgba(139,92,246,.15)}
+tr.mdiv-client>td{background:rgba(200,169,110,.10);color:var(--gold);border-color:rgba(200,169,110,.25);font-size:12px;cursor:pointer}
 tr.mdiv>td:first-child{border-right:3px solid currentColor}
 .month-pulse{animation:glowBorder 2s ease infinite}
 
@@ -2715,13 +2716,23 @@ function rWorkPlan(){
   const stOpts=st=>POT_STATUSES.map(s=>`<option ${s===st?'selected':''}>${s}</option>`).join('');
   const priOpts=pr=>['גבוהה','בינונית','נמוכה'].map(p=>`<option ${p===pr?'selected':''}>${p}</option>`).join('');
   const tbEl=document.getElementById('wptb');
-  if(tbEl)tbEl.innerHTML=all.map(p=>{
+  // group every product/activity under its client so each company appears once
+  const groups={};
+  all.forEach(p=>{ (groups[p.clientId]=groups[p.clientId]||{name:p.clientName,id:p.clientId,items:[]}).items.push(p); });
+  const groupArr=Object.values(groups).map(g=>{
+    g.items.sort((a,b)=>{const pa=priO[a.priority]??1,pb=priO[b.priority]??1;if(pa!==pb)return pa-pb;return(a.targetDate||'').localeCompare(b.targetDate||'');});
+    g.bestPri=Math.min(...g.items.map(it=>priO[it.priority]??1));
+    g.total=g.items.reduce((s,it)=>s+(+it.estimatedValue||0),0);
+    return g;
+  });
+  groupArr.sort((a,b)=>{ if(a.bestPri!==b.bestPri)return a.bestPri-b.bestPri; return (a.name||'').localeCompare(b.name||''); });
+  const rowHtml=p=>{
     let dH='–';
     if(p.targetDate&&p.status!=='נסגר'){const d=db(nd(),p.targetDate);dH=d<0?`<b style="color:#e63946">עבר ${Math.abs(d)}י</b>`:`<b style="color:${d<=7?'#f4a261':'var(--teal)'}">${d}י</b>`;}
     const rc=p.priority==='גבוהה'?'pr':p.priority==='בינונית'?'po':'pg';
     const isThisM=p.targetDate&&p.targetDate.substring(0,7)===curM&&p.status!=='נסגר';
     return`<tr class="${rc}"${isThisM?' style="background:rgba(76,201,240,.05)"':''}>
-      <td style="font-weight:700;color:#4cc9f0;cursor:pointer;white-space:nowrap" onclick="openClientModal('${p.clientId}')">${p.clientName}${isThisM?'<br><span class="badge bb" style="font-size:8px;padding:1px 6px">🎯 החודש</span>':''}</td>
+      <td style="text-align:center;color:var(--text3)">${isThisM?'<span class="badge bb" style="font-size:8px;padding:1px 6px">🎯</span>':'↳'}<span style="display:none">${p.clientName||''}</span></td>
       <td style="white-space:nowrap;font-size:11px">${p.productType||'–'}</td>
       <td style="font-weight:600">${p.product||'–'}</td>
       <td class="nb">${p.estimatedValue?fmt(+p.estimatedValue):'–'}</td>
@@ -2735,7 +2746,13 @@ function rWorkPlan(){
         <button class="btn btns btnd" onclick="removePotential('${p.clientId}',${p.potIdx})" title="מחק">🗑</button>
       </td>
     </tr>`;
-  }).join('')||'<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text2)">אין מוצרים פוטנציאליים – פתח כרטיס לקוח והוסף, או סגור עסקה כדי לקבל הצעות אוטומטיות</td></tr>';
+  };
+  let wpHtml='';
+  groupArr.forEach(g=>{
+    wpHtml+=`<tr class="mdiv mdiv-client"><td colspan="10" onclick="openClientModal('${g.id}')">🏢 ${g.name} <span style="font-weight:400;opacity:.85">(${g.items.length} פעילויות · שווי ${fmt(g.total)})</span></td></tr>`;
+    wpHtml+=g.items.map(rowHtml).join('');
+  });
+  if(tbEl)tbEl.innerHTML=wpHtml||'<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text2)">אין מוצרים פוטנציאליים – פתח כרטיס לקוח והוסף, או סגור עסקה כדי לקבל הצעות אוטומטיות</td></tr>';
   const ftEl=document.getElementById('wpft');
   if(ftEl)ftEl.innerHTML=`<span class="fi">מוצרים: <b>${all.length}</b></span><span class="fi">שווי פוטנציאלי: <b class="ny">${fmt(totalVal)}</b></span><span class="fi">עדיפות גבוהה: <b style="color:#e63946">${high}</b></span><span class="fi">בתהליך: <b class="nb">${inProg}</b></span><span class="fi">יעד החודש: <b style="color:var(--blue)">${thisMonth}</b></span><span class="fi">נסגרו: <b class="ng">${closed}</b></span>`;
 }
