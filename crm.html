@@ -3676,13 +3676,12 @@ function nav(s){
   else init();
 })();
 
-// ── DARK CUSTOM DROPDOWN (desktop) ────────────────────────────────────
+// ── DARK CUSTOM DROPDOWN (all devices) ────────────────────────────────
 // The native <option> list renders white on some OSes regardless of CSS,
-// making options unreadable. On mouse/fine-pointer devices we suppress the
-// native popup and draw our own dark list (black bg, white text). The real
-// <select> still holds the value and fires 'change', so all logic is intact.
+// making options unreadable. We suppress the native popup and draw our own
+// dark list (black bg, white text). The real <select> still holds the value
+// and fires 'change', so all existing logic stays intact.
 (function(){
-  if(!window.matchMedia || !matchMedia('(pointer:fine)').matches) return; // mobile keeps native
   let panel = null, openSel = null;
 
   function close(){ if(panel){ panel.remove(); panel = null; openSel = null; } }
@@ -3723,17 +3722,20 @@ function nav(s){
     panel.style.left = left + 'px';
   }
 
-  document.addEventListener('mousedown',e=>{
+  function onPress(e){
     const sel = e.target.closest ? e.target.closest('select') : null;
     if(sel){
-      e.preventDefault();           // suppress native white popup
+      e.preventDefault();           // suppress native white popup (mouse + touch)
+      e.stopPropagation();
       if(openSel === sel) close(); else open(sel);
       return;
     }
     if(panel && !panel.contains(e.target)) close();
-  }, true);
-  // keep the native keyboard popup from opening on focus/click too
-  document.addEventListener('click',e=>{ if(e.target.closest && e.target.closest('select')) e.preventDefault(); }, true);
+  }
+  document.addEventListener('mousedown',  onPress, true);
+  document.addEventListener('touchstart', onPress, {capture:true, passive:false});
+  // also swallow the follow-up click so the native popup never opens
+  document.addEventListener('click',e=>{ if(e.target.closest && e.target.closest('select')){ e.preventDefault(); e.stopPropagation(); } }, true);
   window.addEventListener('scroll', e=>{ if(panel && (e.target===panel || panel.contains(e.target))) return; close(); }, true);
   window.addEventListener('resize', close);
   document.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
