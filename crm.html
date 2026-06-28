@@ -1950,7 +1950,13 @@ function rDash(){
 function rDeals(){
   const curM=nd().substring(0,7);
   const eqEl=document.getElementById('deal-eq-goal-top');
-  if(eqEl){ const otcClosed=[...D.deals,...(D.archivedDeals||[])].filter(d=>d.st==='נסגר').reduce((a,d)=>a+(d.otc||0),0); eqEl.innerHTML=goalBannerInline('📦 יעד ציוד (OTC)','dealsEq',otcClosed,30000,'#4cc9f0'); }
+  if(eqEl){
+    const closed=[...D.deals,...(D.archivedDeals||[])].filter(d=>d.st==='נסגר');
+    const vClosed  =closed.reduce((a,d)=>a+(d.v||0),0);
+    const otcClosed=closed.reduce((a,d)=>a+(d.otc||0),0);
+    eqEl.innerHTML=goalBannerInline('💰 יעד שירות','deals',vClosed,15000,'#06d6a0')
+                 +goalBannerInline('📦 יעד ציוד (OTC)','dealsEq',otcClosed,30000,'#4cc9f0');
+  }
   const allCarry=D.deals.filter(d=>(d.date||'').substring(0,7)<curM&&d.st!=='נסגר');
   const allNewThis=D.deals.filter(d=>(d.date||'').substring(0,7)>=curM&&d.st!=='נסגר');
   const allClosedThis=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=curM);
