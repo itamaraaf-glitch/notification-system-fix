@@ -2844,17 +2844,20 @@ function saveDeal(){
 function syncDealToSalary(deal,silent){
   if(deal.st!=='נסגר')return false;
   let created=false;
-  const no=(deal.srv||'')+(deal.no?' | '+deal.no:'');
+  // carry the deal range (long/short) + service + notes into the salary record
+  const rangeLabel=deal.ty==='long'?'טווח ארוך':'טווח קצר';
+  const no=rangeLabel+(deal.srv?' | '+deal.srv:'')+(deal.no?' | '+deal.no:'');
+  const range=deal.ty||'long';
   const hasService=deal.ty==='long'||(deal.v||0)>0||(deal.mv||0)>0;
   const svcSynced=D.salary.some(s=>s._dealId==deal.id&&s.ty==='service');
   if(hasService&&!svcSynced){
-    dbInsert('salary',{pj:deal.num||'',cl:deal.co||'',qt:1,tr:deal.v||0,cl2:deal.mv||0,pv:0,st:'פתוח',ty:'service',no,_dealId:deal.id});
+    dbInsert('salary',{pj:deal.num||'',cl:deal.co||'',qt:1,tr:deal.v||0,cl2:deal.mv||0,pv:0,st:'פתוח',ty:'service',range,no,_dealId:deal.id});
     created=true;
   }
   const hasEquip=(deal.ot||0)>0;
   const eqSynced=D.salary.some(s=>s._dealId==deal.id&&s.ty==='equipment');
   if(hasEquip&&!eqSynced){
-    dbInsert('salary',{pj:deal.num||'',cl:deal.co||'',qt:1,tr:deal.ot||0,cl2:deal.otc||0,pv:0,st:'פתוח',ty:'equipment',no,_dealId:deal.id});
+    dbInsert('salary',{pj:deal.num||'',cl:deal.co||'',qt:1,tr:deal.ot||0,cl2:deal.otc||0,pv:0,st:'פתוח',ty:'equipment',range,no,_dealId:deal.id});
     created=true;
   }
   if(created&&!silent)toast('💰 העסקה נוספה אוטומטית לפרויקטי שכר','ok');
@@ -2891,12 +2894,20 @@ function saveTender(){
   if(EI){dbUpdate('tenders',EI,row);}else{dbInsert('tenders',row);}
   closeM('mtender');rAll();
 }
-// sync the distribution's project number → linked salary project(s)
+// sync the distribution's project number (and range) → matching salary project(s).
+// Match by deal link when present, otherwise by company/client name.
 function syncDistToSalary(dist){
-  if(!dist||!dist._dealId||!dist.no)return false;
+  if(!dist||!dist.no)return false;
   let updated=0;
   D.salary.forEach(s=>{
-    if(s._dealId==dist._dealId&&s.pj!==dist.no){dbUpdate('salary',s.id,{pj:dist.no});updated++;}
+    const linked = dist._dealId && s._dealId==dist._dealId;
+    const sameCo = !s._dealId && s.cl && dist.co && s.cl===dist.co;
+    if(linked||sameCo){
+      const patch={};
+      if(s.pj!==dist.no) patch.pj=dist.no;
+      if(dist.ty && s.range!==dist.ty) patch.range=dist.ty;
+      if(Object.keys(patch).length){dbUpdate('salary',s.id,patch);updated++;}
+    }
   });
   return updated>0;
 }
