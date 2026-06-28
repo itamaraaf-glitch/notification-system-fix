@@ -284,10 +284,19 @@ input[type=text],input[type=date],input[type=number],select,textarea{
 }
 input:focus,select:focus,textarea:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(230,57,70,.12),inset 0 1px 0 rgba(255,255,255,.06)}
 .srch{min-width:130px;max-width:200px}
-/* dropdown options: black text on white — readable on every browser/OS,
-   regardless of whether the native popup honours dark backgrounds */
+/* dropdown options: black text on white — fallback for any native popup */
 select option{background:#ffffff;color:#111111}
 select option:checked,select option:hover{background:#2563eb;color:#ffffff}
+/* custom select trigger — looks like a select, opens our dark list */
+.cs-trigger{
+  background:rgba(255,255,255,.04);border:1px solid var(--border2);color:var(--text);
+  border-radius:8px;padding:8px 30px 8px 11px;font-family:'Heebo',sans-serif;font-size:12px;
+  outline:none;width:100%;text-align:right;cursor:pointer;position:relative;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:all .22s;backdrop-filter:blur(4px);
+}
+.cs-trigger::after{content:'▾';position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:10px;pointer-events:none}
+.cs-trigger:hover,.cs-trigger.open{border-color:var(--gold)}
+.cs-trigger.open::after{content:'▴'}
 
 /* ─── BUTTONS ─── */
 .btn{
@@ -2750,6 +2759,7 @@ function openM(type,id){
     document.getElementById('mdt').value=m.dt||nd();document.getElementById('mcl').value=m.cl||'';document.getElementById('mnu').value=m.nu||'';document.getElementById('mhl').value=m.hl||'כן';document.getElementById('mno').value=m.no||'';
   }
   document.getElementById('m'+type).classList.add('open');
+  if(window.csResync) csResync(); // refresh custom dropdown labels with loaded values
 }
 function closeM(id){document.getElementById(id).classList.remove('open');EI=null;ET=null;}
 
@@ -3676,25 +3686,28 @@ function nav(s){
   else init();
 })();
 
-// ── DARK CUSTOM DROPDOWN (all devices) ────────────────────────────────
-// The native <option> list renders white on some OSes regardless of CSS,
-// making options unreadable. We suppress the native popup and draw our own
-// dark list (black bg, white text). The real <select> still holds the value
-// and fires 'change', so all existing logic stays intact.
+// ── DARK CUSTOM DROPDOWN (replaces native <select> popup) ─────────────
+// On some browsers/OSes the native <option> list renders white and ignores
+// CSS, leaving options unreadable. preventing the native popup via
+// preventDefault is unreliable in Chrome, so instead we HIDE each <select>
+// and show a styled trigger button that opens our own dark list. The real
+// <select> still holds the value and fires 'change', so all logic stays intact.
 (function(){
-  let panel = null, openSel = null;
+  let panel = null, openFor = null;
 
-  function close(){ if(panel){ panel.remove(); panel = null; openSel = null; } }
+  function close(){
+    if(panel){ panel.remove(); panel = null; openFor = null; }
+    document.querySelectorAll('.cs-trigger.open').forEach(t=>t.classList.remove('open'));
+  }
 
-  function open(sel){
-    close();
-    openSel = sel;
-    const r = sel.getBoundingClientRect();
+  function buildPanel(sel, anchor){
+    close(); openFor = sel; anchor.classList.add('open');
+    const r = anchor.getBoundingClientRect();
     panel = document.createElement('div');
     panel.style.cssText =
-      'position:fixed;z-index:99999;max-height:280px;overflow-y:auto;'+
-      'background:#0a0d18;border:1px solid rgba(200,169,110,.32);border-radius:9px;'+
-      'box-shadow:0 16px 48px rgba(0,0,0,.75);padding:5px;'+
+      'position:fixed;z-index:99999;max-height:300px;overflow-y:auto;'+
+      'background:#0a0d18;border:1px solid rgba(200,169,110,.34);border-radius:9px;'+
+      'box-shadow:0 16px 48px rgba(0,0,0,.78);padding:5px;'+
       'min-width:'+Math.max(r.width,130)+'px;direction:rtl';
     Array.from(sel.options).forEach((o,i)=>{
       const it = document.createElement('div');
@@ -3713,7 +3726,6 @@ function nav(s){
       panel.appendChild(it);
     });
     document.body.appendChild(panel);
-    // position (flip up / clamp into viewport)
     let top = r.bottom + 3, left = r.left;
     const pr = panel.getBoundingClientRect();
     if(top + pr.height > innerHeight - 6) top = Math.max(6, r.top - pr.height - 3);
@@ -3722,23 +3734,49 @@ function nav(s){
     panel.style.left = left + 'px';
   }
 
-  function onPress(e){
-    const sel = e.target.closest ? e.target.closest('select') : null;
-    if(sel){
-      e.preventDefault();           // suppress native white popup (mouse + touch)
-      e.stopPropagation();
-      if(openSel === sel) close(); else open(sel);
-      return;
-    }
-    if(panel && !panel.contains(e.target)) close();
+  function enhance(sel){
+    if(sel.dataset.csDone || sel.multiple || sel.size>1) return;
+    sel.dataset.csDone = '1';
+    const t = document.createElement('button');
+    t.type = 'button'; t.className = 'cs-trigger';
+    const inl = sel.getAttribute('style'); if(inl) t.setAttribute('style', inl);
+    sel.style.display = 'none';
+    sel.insertAdjacentElement('beforebegin', t);
+    const sync = ()=>{ const o = sel.options[sel.selectedIndex]; t.textContent = o ? o.textContent : ''; };
+    sync();
+    t._sync = sync; sel._csTrigger = t;
+    sel.addEventListener('change', sync);
+    t.addEventListener('mousedown', e=>{
+      e.preventDefault(); e.stopPropagation();
+      if(openFor === sel) close(); else buildPanel(sel, t);
+    });
   }
-  document.addEventListener('mousedown',  onPress, true);
-  document.addEventListener('touchstart', onPress, {capture:true, passive:false});
-  // also swallow the follow-up click so the native popup never opens
-  document.addEventListener('click',e=>{ if(e.target.closest && e.target.closest('select')){ e.preventDefault(); e.stopPropagation(); } }, true);
+
+  function scan(root){ (root||document).querySelectorAll('select').forEach(enhance); }
+
+  // re-sync trigger labels after values are set programmatically (e.g. modal edit)
+  window.csResync = ()=>document.querySelectorAll('select[data-cs-done]').forEach(s=>{ if(s._csTrigger) s._csTrigger._sync(); });
+
+  function start(){
+    scan();
+    const mo = new MutationObserver(muts=>{
+      muts.forEach(m=>m.addedNodes.forEach(n=>{
+        if(n.nodeType!==1) return;
+        if(n.tagName==='SELECT') enhance(n);
+        else if(n.querySelectorAll) n.querySelectorAll('select').forEach(enhance);
+      }));
+    });
+    mo.observe(document.body,{childList:true,subtree:true});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+
+  document.addEventListener('mousedown', e=>{
+    if(panel && !panel.contains(e.target) && !(e.target.closest && e.target.closest('.cs-trigger'))) close();
+  }, true);
   window.addEventListener('scroll', e=>{ if(panel && (e.target===panel || panel.contains(e.target))) return; close(); }, true);
   window.addEventListener('resize', close);
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') close(); });
 })();
 
 // ── 3D TILT ON CARDS (touch + mouse) ──────────────────────────────────
