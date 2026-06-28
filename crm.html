@@ -1671,6 +1671,23 @@ function rAlerts(){
 // body renders right-to-left and correctly ordered in the recipient's client.
 function rtlText(s){ return String(s==null?'':s).split('\n').map(l=>l?('‏'+l):l).join('\n'); }
 
+// Open an email without navigating the page away (which would unload the app
+// and force a re-login). `to` may be one address or an array; extra addresses
+// go into CC so the To field never contains a comma.
+function openMail(to, subject, body, cc){
+  let toList = Array.isArray(to) ? to.slice() : [to];
+  toList = toList.filter(e=>e && String(e).trim());
+  const primary = toList[0] || '';
+  const ccList = toList.slice(1).concat(cc ? (Array.isArray(cc)?cc:[cc]) : []).filter(Boolean);
+  let href = 'mailto:' + encodeURIComponent(primary).replace(/%40/g,'@')
+    + '?subject=' + encodeURIComponent(subject||'')
+    + '&body=' + encodeURIComponent(rtlText(body));
+  if(ccList.length) href += '&cc=' + encodeURIComponent(ccList.join(','));
+  const a = document.createElement('a');
+  a.href = href; a.target = '_blank'; a.rel = 'noopener'; a.style.display = 'none';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
 // professional, client-facing email per alert kind (never the internal wording)
 function buildAlertEmail(c,al){
   const greet=(c.contact||c.name||'לקוח יקר');
@@ -1747,7 +1764,7 @@ function sendAlertEmail(clientId,idx){
   }
   const al=(window._alertsCache||[])[idx]||{};
   const {subject,body}=buildAlertEmail(c,al);
-  window.location.href='mailto:'+c.email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(rtlText(body));
+  openMail(c.email, subject, body);
 }
 
 // ===== DASHBOARD =====
@@ -2361,13 +2378,13 @@ function sendEmailToClient(id){
   }
   const body=buildClientGmailUrl(c);
   const subject='HOT Business – הצעה ל'+c.name;
-  window.location.href='mailto:'+c.email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(rtlText(body));
+  openMail(c.email, subject, body);
 }
 function openEmailCompose(c){
   if(!c||!c.email)return;
   const body=buildClientGmailUrl(c);
   const subject='HOT Business – הצעה ל'+c.name;
-  window.location.href='mailto:'+c.email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(rtlText(body));
+  openMail(c.email, subject, body);
 }
 function emailFromClientForm(){
   const email=document.getElementById('cl-email').value.trim();
@@ -2376,14 +2393,14 @@ function emailFromClientForm(){
   if(c){
     // לקוח קיים — שלח עם כל נתוני המוצרים, הערות, תפוגות
     const body=buildClientGmailUrl({...c,email});
-    window.location.href='mailto:'+email+'?subject='+encodeURIComponent('HOT Business – הצעה ל'+c.name)+'&body='+encodeURIComponent(rtlText(body));
+    openMail(email, 'HOT Business – הצעה ל'+c.name, body);
   }else{
     // לקוח חדש שטרם נשמר — בנה מהשדות הפתוחים
     const name=document.getElementById('cl-name').value.trim()||'הלקוח';
     const contact=document.getElementById('cl-contact').value.trim();
     const genNotes=document.getElementById('cl-gen-notes').value.trim();
     const body=buildClientGmailUrl({email,name,contact,genNotes});
-    window.location.href='mailto:'+email+'?subject='+encodeURIComponent('HOT Business – הצעה ל'+name)+'&body='+encodeURIComponent(rtlText(body));
+    openMail(email, 'HOT Business – הצעה ל'+name, body);
   }
 }
 function buildDistEmailBody(d){
@@ -2419,7 +2436,7 @@ function sendEmailToDist(id){
   if(!mgr){toast('⚠️ לא נבחר מנהל פרויקט','warn');return;}
   const subject=`HOT Business – הפצה ${d.no||d.co||''} – ${d.co||''}`;
   const body=buildDistEmailBody(d);
-  window.location.href='mailto:'+mgr.email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(rtlText(body));
+  openMail(mgr.email, subject, body);
 }
 function emailFromDistForm(){
   const hdName=document.getElementById('dih').value;
@@ -2441,7 +2458,7 @@ function emailFromDistForm(){
   };
   const subject=`HOT Business – הפצה ${d.no||d.co||''} – ${d.co||''}`;
   const body=buildDistEmailBody(d);
-  window.location.href='mailto:'+mgr.email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(rtlText(body));
+  openMail(mgr.email, subject, body);
 }
 function buildHandlerEmailBody(d,greet){
   const lines=[
@@ -2489,7 +2506,7 @@ function emailHandlerFromDistForm(){
   const greet=hpName==='כולם'?'לכולם':hpName;
   const subject=`HOT Business – הפצה ${d.no||d.co||''} – ${d.co||''}`;
   const body=buildHandlerEmailBody(d,greet);
-  window.location.href='mailto:'+emails.join(',')+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(rtlText(body));
+  openMail(emails, subject, body);
 }
 function buildGmailUrl(){
   const to=document.getElementById('em-to').value.trim();
