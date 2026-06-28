@@ -1098,8 +1098,16 @@ requestAnimationFrame(tick);
     <div class="tw" style="cursor:pointer" onclick="exportAll()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📊</div><div style="font-weight:700;margin-bottom:4px">כל הנתונים</div><div style="font-size:11px;color:var(--text2)">כל הנושאים</div><div style="margin-top:10px;background:#e63946;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא הכל</div></div></div>
     <div class="tw" style="cursor:pointer" onclick="backupData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💾</div><div style="font-weight:700;margin-bottom:4px">גיבוי מלא</div><div style="font-size:11px;color:var(--text2)">קובץ JSON לשחזור</div><div style="margin-top:10px;background:#0078d4;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">💾 הורד גיבוי</div></div></div>
     <div class="tw" style="cursor:pointer" onclick="restoreData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📂</div><div style="font-weight:700;margin-bottom:4px">שחזור נתונים</div><div style="font-size:11px;color:var(--text2)">מקובץ JSON</div><div style="margin-top:10px;background:#7b5ea7;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📂 שחזר מגיבוי</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="openAutoBackups()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🛡️</div><div style="font-weight:700;margin-bottom:4px">גיבויים אוטומטיים</div><div style="font-size:11px;color:var(--text2)">30 גיבויים אחרונים · שחזור בקליק</div><div style="margin-top:10px;background:#06d6a0;color:#000;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">🛡️ צפה ושחזר</div></div></div>
   </div>
 </div>
+
+<!-- AUTO-BACKUPS MODAL -->
+<div class="mw" id="mbackups"><div class="modal">
+  <div class="mhdr"><h3>🛡️ גיבויים אוטומטיים</h3><button class="mcls" onclick="closeM('mbackups')">✕</button></div>
+  <div style="font-size:11px;color:var(--text2);margin-bottom:10px">המערכת שומרת גיבוי מלא אוטומטית ברקע. בחר נקודת זמן לשחזור:</div>
+  <div id="bk-list" style="max-height:50vh;overflow-y:auto"></div>
+</div></div>
 
 <!-- WORKPLAN -->
 <div class="sec" id="sec-workplan">
@@ -1516,6 +1524,7 @@ function saveAll(){
     if(!verify||verify!==snap)throw new Error('אימות כתיבה נכשל');
     _quotaAlerted=false;
     showSaved();
+    if(typeof scheduleAutoBackup==='function')scheduleAutoBackup(); // silent IndexedDB snapshot
   }catch(e){
     console.error('שגיאת שמירה:',e);
     const quota = e && (e.name==='QuotaExceededError' || e.code===22 || e.code===1014 || /quota|exceed/i.test(e.message||''));
@@ -1555,6 +1564,8 @@ function loadAll(){
     saveAll();
   }
   rAll();
+  // automatic backups: a snapshot now + the once-a-day complete file
+  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); }catch(e){} }, 2500);
 }
 setInterval(()=>{try{localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}},30000);
 window.addEventListener('beforeunload',()=>{try{localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}});
@@ -3492,6 +3503,97 @@ function restoreData(){
   };
   inp.click();
 }
+
+// ===== AUTOMATIC BACKUP (IndexedDB rolling snapshots + daily file) =====
+const IDB_NAME='cem_hot_backups', IDB_STORE='snapshots', IDB_KEEP=30;
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    let r;
+    try{ r=indexedDB.open(IDB_NAME,1); }catch(e){ return rej(e); }
+    r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE,{keyPath:'ts'});};
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>rej(r.error);
+  });
+}
+function idbList(){
+  return new Promise(res=>{
+    idbOpen().then(db=>{
+      const tx=db.transaction(IDB_STORE,'readonly');
+      const req=tx.objectStore(IDB_STORE).getAll();
+      req.onsuccess=()=>res((req.result||[]).sort((a,b)=>a.ts-b.ts));
+      req.onerror=()=>res([]);
+    }).catch(()=>res([]));
+  });
+}
+async function idbBackup(){
+  try{
+    const db=await idbOpen();
+    const snap={ts:Date.now(), date:new Date().toISOString(), data:JSON.stringify(D)};
+    await new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).put(snap);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});
+    const all=await idbList();
+    if(all.length>IDB_KEEP){
+      const del=all.slice(0,all.length-IDB_KEEP);
+      const db2=await idbOpen();
+      const tx=db2.transaction(IDB_STORE,'readwrite');
+      del.forEach(s=>tx.objectStore(IDB_STORE).delete(s.ts));
+    }
+  }catch(e){console.warn('auto-backup (idb) failed:',e);}
+}
+let _idbT=null;
+function scheduleAutoBackup(){ clearTimeout(_idbT); _idbT=setTimeout(idbBackup,8000); } // debounced after saves
+// silent daily complete file download, once per calendar day
+function maybeDailyBackupFile(){
+  try{
+    const today=nd();
+    if(localStorage.getItem('cem_last_dl')===today)return;
+    // only after the user is in the app
+    const app=document.getElementById('app');
+    if(!app||app.style.display==='none')return;
+    const json=JSON.stringify(D,null,2);
+    const blob=new Blob([json],{type:'application/json;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    a.href=url;a.download='crm_autobackup_'+today+'.json';document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},800);
+    localStorage.setItem('cem_last_dl',today);
+    showToast('💾 גיבוי יומי אוטומטי הורד','ok');
+  }catch(e){console.warn('daily backup file failed:',e);}
+}
+// restore-from-auto-backup UI
+async function openAutoBackups(){
+  const list=await idbList();
+  const box=document.getElementById('bk-list');
+  if(!box)return;
+  if(!list.length){box.innerHTML='<div style="color:var(--text2);text-align:center;padding:20px">אין עדיין גיבויים אוטומטיים</div>';}
+  else{
+    box.innerHTML=list.slice().reverse().map(s=>{
+      let d={};try{d=JSON.parse(s.data);}catch(e){}
+      const cnt=(d.deals||[]).length+' עסקאות · '+(d.clients||[]).length+' לקוחות · '+(d.dists||[]).length+' הפצות';
+      const dt=new Date(s.ts).toLocaleString('he-IL');
+      const kb=Math.round((s.data||'').length/1024);
+      return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border)">
+        <div><div style="font-size:12px;font-weight:600">${dt}</div><div style="font-size:10px;color:var(--text2)">${cnt} · ${kb}KB</div></div>
+        <button class="btn btns" onclick="restoreFromIdb(${s.ts})" style="border-color:#06d6a0;color:#06d6a0">↩ שחזר</button>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('mbackups').classList.add('open');
+}
+async function restoreFromIdb(ts){
+  const list=await idbList();
+  const snap=list.find(s=>s.ts===ts);
+  if(!snap)return;
+  confirmAct('לשחזר את הנתונים מהגיבוי הזה? כל הנתונים הנוכחיים יוחלפו.',()=>{
+    try{
+      const p=JSON.parse(snap.data);
+      D={deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],...p};
+      saveAll();rAll();
+      document.getElementById('mbackups').classList.remove('open');
+      toast('✅ הנתונים שוחזרו מהגיבוי האוטומטי','ok');
+    }catch(e){alert('שגיאה בשחזור: '+e.message);}
+  },'כן, שחזר');
+}
+// periodic snapshot every 5 minutes while the app is open
+setInterval(()=>{ const app=document.getElementById('app'); if(app&&app.style.display!=='none') idbBackup(); }, 5*60*1000);
 
 // ===== KEYBOARD SHORTCUTS =====
 document.addEventListener('keydown',e=>{
