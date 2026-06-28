@@ -925,7 +925,7 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
       <button onclick="clearSel('deals-short')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
     </div></div>
   </div>
-  <div id="sumt" style="display:none"><div id="deal-goal-box"></div><div class="krow" id="dsk"></div><div class="tw" id="dst"></div></div>
+  <div id="sumt" style="display:none"><div id="deal-goal-box"></div><div id="deal-pipeline-box" style="padding:0 4px"></div><div class="krow" id="dsk"></div><div class="tw" id="dst"></div></div>
   <div id="archivt" style="display:none"><div id="archive-deals-content" style="padding:4px 0"></div></div>
 </div>
 
@@ -2038,6 +2038,43 @@ function rDealSum(){
   const curVal=(qData.find(x=>x.qs===curQ)||{val:0}).val;
   const gb=document.getElementById('deal-goal-box');
   if(gb)gb.innerHTML=goalBarHtml('🎯 יעד עסקאות רבעוני',curVal,goal,qData,'teal','deals');
+
+  // Pipeline probability forecast (active deals only, not נסגר)
+  const active=D.deals.filter(d=>d.st!=='נסגר');
+  const p75=active.filter(d=>(d.ch||0)>=0.75);
+  const p99=active.filter(d=>(d.ch||0)>=0.99);
+  const mv75=p75.reduce((a,d)=>a+(d.mv||0),0), v75=p75.reduce((a,d)=>a+(d.v||0),0);
+  const mv99=p99.reduce((a,d)=>a+(d.mv||0),0), v99=p99.reduce((a,d)=>a+(d.v||0),0);
+  const pb=document.getElementById('deal-pipeline-box');
+  if(pb)pb.innerHTML=`<div style="margin:8px 0 10px">
+    <div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">📊 התכנות חודש נוכחי</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="background:linear-gradient(135deg,rgba(244,162,97,.13),rgba(16,21,37,.6));border:1px solid rgba(244,162,97,.3);border-radius:12px;padding:12px 16px">
+        <div style="font-size:10px;font-weight:800;color:#f4a261;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🎯 75% להתכנות</div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-size:11px;color:var(--text2)">חודש נוכחי ₪</span>
+          <b style="color:#f4a261;font-size:16px">${fmt(mv75)}</b>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+          <span style="font-size:11px;color:var(--text2)">שווי כולל</span>
+          <span style="color:var(--text);font-size:12px">${fmt(v75)}</span>
+        </div>
+        <div style="font-size:10px;color:var(--text3)">${p75.length} עסקאות פעילות (75%+)</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(6,214,160,.13),rgba(16,21,37,.6));border:1px solid rgba(6,214,160,.3);border-radius:12px;padding:12px 16px">
+        <div style="font-size:10px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🔥 99% לקראת סגירה</div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+          <span style="font-size:11px;color:var(--text2)">חודש נוכחי ₪</span>
+          <b style="color:var(--teal);font-size:16px">${fmt(mv99)}</b>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+          <span style="font-size:11px;color:var(--text2)">שווי כולל</span>
+          <span style="color:var(--text);font-size:12px">${fmt(v99)}</span>
+        </div>
+        <div style="font-size:10px;color:var(--text3)">${p99.length} עסקאות פעילות (99%+)</div>
+      </div>
+    </div>
+  </div>`;
   document.getElementById('dsk').innerHTML=`<div class="kc"><div class="lb">שווי ארוך</div><div class="vl">₪${Math.round(sm(l,'v')/1000)}K</div></div><div class="kc y"><div class="lb">שווי קצר</div><div class="vl">₪${Math.round(sm(s,'v')/1000)}K</div></div><div class="kc g"><div class="lb">סה"כ</div><div class="vl">₪${Math.round((sm(l,'v')+sm(s,'v'))/1000)}K</div></div><div class="kc g"><div class="lb">הפצות ארוך</div><div class="vl">₪${Math.round(sm(l,'di')/1000)}K</div></div><div class="kc y"><div class="lb">הפצות קצר</div><div class="vl">₪${Math.round(sm(s,'di')/1000)}K</div></div><div class="kc p"><div class="lb">OTC כולל</div><div class="vl">₪${Math.round((sm(l,'otc')+sm(s,'otc'))/1000)}K</div></div>`;
   document.getElementById('dst').innerHTML=`<div class="thdr">סיכום עסקאות</div><div class="tscroll"><table><thead><tr style="background:var(--s1)"><th>קטגוריה</th><th>כמות</th><th>שווי</th><th>הפצות</th><th>OTC</th></tr></thead><tbody><tr><td style="font-weight:600">טווח ארוך</td><td>${l.length}</td><td>${fmt(sm(l,'v'))}</td><td>${fmt(sm(l,'di'))}</td><td>${fmt(sm(l,'otc'))}</td></tr><tr><td style="font-weight:600">טווח קצר</td><td>${s.length}</td><td>${fmt(sm(s,'v'))}</td><td>${fmt(sm(s,'di'))}</td><td>${fmt(sm(s,'otc'))}</td></tr><tr style="background:var(--s3);font-weight:700"><td>סה"כ</td><td>${D.deals.length}</td><td>${fmt(sm(l,'v')+sm(s,'v'))}</td><td>${fmt(sm(l,'di')+sm(s,'di'))}</td><td>${fmt(sm(l,'otc')+sm(s,'otc'))}</td></tr></tbody></table></div>`;
 }
