@@ -612,17 +612,12 @@ import {OutputPass}     from 'three/addons/postprocessing/OutputPass.js';
 const cvs = document.getElementById('bg-canvas');
 const W   = () => window.innerWidth;
 const H   = () => window.innerHeight;
-// Render the background at a capped internal resolution and let CSS upscale it.
-// Bloom cost scales with pixel count; this caps it on hi-res laptops while
-// staying crisp enough to look rich (not blurry/"cheap").
-const CAP = 1280;
-const RW  = () => Math.round(W() * Math.min(1, CAP/Math.max(W(),H())));
-const RH  = () => Math.round(H() * Math.min(1, CAP/Math.max(W(),H())));
+const mobile = W() < 768;
 
-// Renderer
+// Renderer — crisp native resolution on every device
 const renderer = new THREE.WebGLRenderer({canvas:cvs, antialias:false, powerPreference:'high-performance'});
 renderer.setPixelRatio(1);
-renderer.setSize(RW(), RH(), false); // false → keep CSS size at 100%, only shrink the buffer
+renderer.setSize(W(), H());
 
 const scene  = new THREE.Scene();
 scene.background = new THREE.Color(0x06080f);
@@ -630,13 +625,18 @@ scene.background = new THREE.Color(0x06080f);
 const camera = new THREE.PerspectiveCamera(60, W()/H(), 0.1, 500);
 camera.position.z = 45;
 
-// Bloom post-processing (sized to the reduced buffer)
-const composer = new EffectComposer(renderer);
-composer.setSize(RW(), RH());
-composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(RW(), RH()), 1.4, 0.55, 0.68);
-composer.addPass(bloom);
-composer.addPass(new OutputPass());
+// Bloom only on mobile, where the small native resolution makes it cheap and
+// it looks beautiful. On desktop the bloom pass over a hi-res screen is what
+// caused stutter, so we skip it and render crisp at native resolution, faking
+// the glow with a soft halo particle layer — smooth 60fps flow like mobile.
+let composer = null, bloom = null;
+if(mobile){
+  composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  bloom = new UnrealBloomPass(new THREE.Vector2(W(), H()), 1.35, 0.55, 0.7);
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+}
 
 // Soft glow sprite texture
 const sp = document.createElement('canvas');
@@ -650,9 +650,7 @@ c2.fillStyle = gr;
 c2.fillRect(0,0,64,64);
 const spTex = new THREE.CanvasTexture(sp);
 
-// Particle count – fewer on mobile for 60 fps
-const mobile = W() < 768;
-const COUNT  = mobile ? 1500 : 2600;
+const COUNT  = mobile ? 1500 : 2200;
 const SPREAD = 95;
 
 const geo = new THREE.BufferGeometry();
@@ -679,10 +677,10 @@ geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
 geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
 
 const mat = new THREE.PointsMaterial({
-  size: mobile ? 0.22 : 0.21,
+  size: mobile ? 0.22 : 0.16,
   vertexColors: true,
   transparent: true,
-  opacity: 0.92,
+  opacity: 0.95,
   map: spTex,
   sizeAttenuation: true,
   blending: THREE.AdditiveBlending,
@@ -691,6 +689,16 @@ const mat = new THREE.PointsMaterial({
 
 const pts = new THREE.Points(geo, mat);
 scene.add(pts);
+
+// Desktop: a second, larger, dimmer layer on the SAME geometry gives each star
+// a soft additive halo — mimics the bloom glow at a fraction of the cost.
+if(!mobile){
+  const haloMat = new THREE.PointsMaterial({
+    size: 0.5, vertexColors: true, transparent: true, opacity: 0.22,
+    map: spTex, sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  scene.add(new THREE.Points(geo, haloMat));
+}
 
 // Organic flow field — layered waves create turbulent, alive motion
 function flowAngle(x, y, t){
@@ -726,15 +734,14 @@ function tick(now){
     if(pos[i*3+1] < -half) pos[i*3+1] =  half - 0.01;
   }
   geo.attributes.position.needsUpdate = true;
-  composer.render();
+  if(composer) composer.render(); else renderer.render(scene, camera);
 }
 
 window.addEventListener('resize', () => {
   camera.aspect = W()/H();
   camera.updateProjectionMatrix();
-  renderer.setSize(RW(), RH(), false);
-  composer.setSize(RW(), RH());
-  bloom.resolution.set(RW(), RH());
+  renderer.setSize(W(), H());
+  if(composer){ composer.setSize(W(), H()); bloom.resolution.set(W(), H()); }
 });
 
 requestAnimationFrame(tick);
