@@ -2869,12 +2869,22 @@ function saveTender(){
   if(EI){dbUpdate('tenders',EI,row);}else{dbInsert('tenders',row);}
   closeM('mtender');rAll();
 }
+// sync the distribution's project number → linked salary project(s)
+function syncDistToSalary(dist){
+  if(!dist||!dist._dealId||!dist.no)return false;
+  let updated=0;
+  D.salary.forEach(s=>{
+    if(s._dealId==dist._dealId&&s.pj!==dist.no){dbUpdate('salary',s.id,{pj:dist.no});updated++;}
+  });
+  return updated>0;
+}
 function saveDist(){
   const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,hd:document.getElementById('dih').value,hp:document.getElementById('dihp').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,mi:document.getElementById('dimi').value};
   if(!row.co){alert('יש להזין שם חברה');return;}
   let savedDist;
   if(EI){dbUpdate('dists',EI,row);savedDist=D.dists.find(x=>x.id==EI);}else{savedDist=dbInsert('dists',row);}
   if(savedDist&&savedDist.st==='הושלם')syncDistToClient(savedDist);
+  if(savedDist&&syncDistToSalary(savedDist))toast('🔗 מספר הפרויקט סונכרן לפרויקטי שכר','ok');
   closeM('mdist');rAll();
 }
 function saveSal(){
