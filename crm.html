@@ -1191,6 +1191,7 @@ requestAnimationFrame(tick);
     <div class="g"><label>סיכוי</label><select id="dch"><option value="1">100% – נסגר</option><option value="0.99" selected>99%</option><option value="0.75">75%</option><option value="0.5">50%</option><option value="0.25">25%</option></select></div>
     <div class="g"><label>סטטוס</label><select id="dst2"><option>ממתין לתשובה</option><option>נסגר</option><option>בטיפול</option><option>הוצאת הצעה</option><option>בעיה</option></select></div>
     <div class="g"><label>סוג</label><select id="dty"><option value="long">טווח ארוך</option><option value="short">טווח קצר</option></select></div>
+    <div class="g"><label>סוג מוצר / ציוד</label><select id="dptype"><option value="">— אוטומטי לפי שירות —</option><option value="lines">📡 קו תקשורת</option><option value="forti">🛡️ FortiGate</option><option value="cisco">🔵 Cisco</option><option value="hp">🟣 HP / Aruba</option><option value="juniper">🟢 Juniper</option><option value="cybiz">🔐 CYBIZ / אבטחה</option><option value="starlink">🛰️ Starlink</option><option value="pbx">☎️ מרכזייה</option><option value="ms365">📧 Microsoft 365</option><option value="helpdesk">🎧 Helpdesk</option><option value="servers">🖥️ שרתים</option><option value="extra">📝 פתרון נוסף</option></select></div>
     <div class="gf"><label>הערות</label><textarea id="dno" rows="2"></textarea></div>
     <div class="gf"><label>📎 הצעת מחיר ללקוח (Excel)</label>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -1251,6 +1252,7 @@ requestAnimationFrame(tick);
     <div class="g"><label>תאריך</label><input type="date" id="didt"></div>
     <div class="g"><label>סטטוס</label><select id="dist2"><option>ממתין להפצה</option><option>הושלם</option><option>בהתקנה</option><option>בעיה</option></select></div>
     <div class="g"><label>סוג</label><select id="dity"><option value="long">מרכז – ארוך</option><option value="short">הפצה – קצר</option></select></div>
+    <div class="g"><label>סוג מוצר / ציוד</label><select id="diptype"><option value="">— אוטומטי —</option><option value="lines">📡 קו תקשורת</option><option value="forti">🛡️ FortiGate</option><option value="cisco">🔵 Cisco</option><option value="hp">🟣 HP / Aruba</option><option value="juniper">🟢 Juniper</option><option value="cybiz">🔐 CYBIZ / אבטחה</option><option value="starlink">🛰️ Starlink</option><option value="pbx">☎️ מרכזייה</option><option value="ms365">📧 Microsoft 365</option><option value="helpdesk">🎧 Helpdesk</option><option value="servers">🖥️ שרתים</option><option value="extra">📝 פתרון נוסף</option></select></div>
     <div class="gf"><label>חוסרים</label><textarea id="dimi" rows="2"></textarea></div>
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
@@ -2758,8 +2760,14 @@ function manualRunCycle(){
   }
 }
 
+// product-type helpers (key ↔ label) for display + Excel round-trip
+function ptypeLabel(k){ return (k&&ITEM_CFG[k])?ITEM_CFG[k].label:''; }
+function ptypeKey(s){ if(!s)return''; if(ITEM_CFG[s])return s; const f=Object.keys(ITEM_CFG).find(t=>ITEM_CFG[t].label===s||ITEM_CFG[t].label.includes(s)||s.includes(ITEM_CFG[t].label.replace(/^\S+\s*/,''))); return f||''; }
+
 // ===== DEAL → CLIENT AUTO SYNC =====
 function mapDealToItemType(deal){
+  // explicit product type chosen on the deal wins over the heuristic
+  if(deal.ptype && ITEM_CFG[deal.ptype]) return deal.ptype;
   const inf=(deal.inf||'').toUpperCase();
   const srv=(deal.srv||'').toLowerCase();
   if(inf==='STARLINK'||srv.includes('starlink')||srv.includes('סטארלינק'))return'starlink';
@@ -2788,6 +2796,21 @@ function buildItemFromDeal(deal,type){
     case'ms365':return{plan:'Business Standard',licenses:'',expiry:'',monthly:mo,notes:note};
     default:return{name:deal.srv||'',vendor:'HOT Business',expiry:'',monthly:mo,notes:note};
   }
+}
+// generic client-card item for any category (used by dist→client and conversions)
+function buildClientItem(type,{srv,monthly,note}){
+  const cfg=ITEM_CFG[type]||ITEM_CFG.extra;
+  const has=k=>cfg.fields.some(f=>f.k===k);
+  const item={};
+  if(type==='extra')item.name=srv||'פתרון';
+  if(type==='lines'){item.lineType='HOT';item.speed=srv||'';}
+  if(has('model'))item.model=srv||'';
+  if(has('solution'))item.solution=srv||'';
+  if(has('unit'))item.unit=srv||'';
+  if(has('monthly')&&monthly)item.monthly=+monthly;
+  if(has('expiry'))item.expiry='';
+  if(has('notes'))item.notes=note||'';
+  return item;
 }
 
 // ─── UPSELL SUGGESTIONS ───
@@ -2853,8 +2876,10 @@ function syncDistToClient(dist){
     Object.keys(ITEM_CFG).forEach(t=>{client[t]=[];});
   }
   if(!client.syncedDeals)client.syncedDeals=[];
-  if(!client.lines)client.lines=[];
-  client.lines.push({lineType:'HOT',speed:dist.so||dist.it||'',ip:'',expiry:'',monthly:dist.inc||0,notes:`הפצה #${dist.no||''} | ${dist.dt||''}`});
+  // add the equipment/product to the matching client-card category (per the dist's type)
+  const type=(dist.ptype&&ITEM_CFG[dist.ptype])?dist.ptype:'lines';
+  if(!client[type])client[type]=[];
+  client[type].push(buildClientItem(type,{srv:dist.so||dist.it||'',monthly:dist.inc||0,note:`הפצה #${dist.no||''} | ${dist.dt||''}`}));
   client.syncedDeals.push(syncKey);
   if(client.id){dbUpdate('clients',client.id,client);}
   else{dbInsert('clients',client);}
@@ -3037,7 +3062,7 @@ function openM(type,id){
   if(type==='deal'){
     document.getElementById('dtit').textContent=isNew?'עסקה חדשה':'עריכת עסקה';
     const d=isNew?{}:D.deals.find(x=>x.id==id)||{};
-    document.getElementById('dd').value=d.date||nd();document.getElementById('dco').value=d.co||'';document.getElementById('dcp').value=d.cp||'';document.getElementById('din').value=d.inf||'הוט';document.getElementById('dsr').value=d.srv||'';document.getElementById('dv').value=d.v||0;document.getElementById('dmv').value=d.mv||0;document.getElementById('ddi').value=d.di||0;document.getElementById('ddn').value=d.dn||0;document.getElementById('dot').value=d.ot||0;document.getElementById('dotc').value=d.otc||0;document.getElementById('dct').value=d.ct||'';document.getElementById('dch').value=d.ch||0.99;document.getElementById('dst2').value=d.st||'ממתין לתשובה';document.getElementById('dty').value=d.ty||'long';document.getElementById('dno').value=d.no||'';
+    document.getElementById('dd').value=d.date||nd();document.getElementById('dco').value=d.co||'';document.getElementById('dcp').value=d.cp||'';document.getElementById('din').value=d.inf||'הוט';document.getElementById('dsr').value=d.srv||'';document.getElementById('dv').value=d.v||0;document.getElementById('dmv').value=d.mv||0;document.getElementById('ddi').value=d.di||0;document.getElementById('ddn').value=d.dn||0;document.getElementById('dot').value=d.ot||0;document.getElementById('dotc').value=d.otc||0;document.getElementById('dct').value=d.ct||'';document.getElementById('dch').value=d.ch||0.99;document.getElementById('dst2').value=d.st||'ממתין לתשובה';document.getElementById('dty').value=d.ty||'long';document.getElementById('dno').value=d.no||'';document.getElementById('dptype').value=d.ptype||'';
     pendingQuote = d.quote || null;
     document.getElementById('dquote').value='';
     updateQuoteStatus();
@@ -3048,7 +3073,7 @@ function openM(type,id){
   }else if(type==='dist'){
     document.getElementById('ditit').textContent=isNew?'הפצה חדשה':'עריכת הפצה';
     const d=isNew?{}:D.dists.find(x=>x.id==id)||{};
-    document.getElementById('dico').value=d.co||'';document.getElementById('diproj').value=d.no||'';document.getElementById('dicl').value=d.cl||'';document.getElementById('dih').value=d.hd||'';document.getElementById('dihp').value=d.hp||'';document.getElementById('diit').value=d.it||'';document.getElementById('diso').value=d.so||'';document.getElementById('diad').value=d.ad||'';document.getElementById('diin').value=d.inc||0;document.getElementById('dieq').value=d.eq||0;document.getElementById('didt').value=d.dt||'';document.getElementById('dist2').value=d.st||'ממתין להפצה';document.getElementById('dity').value=d.ty||'short';document.getElementById('dimi').value=d.mi||'';
+    document.getElementById('dico').value=d.co||'';document.getElementById('diproj').value=d.no||'';document.getElementById('dicl').value=d.cl||'';document.getElementById('dih').value=d.hd||'';document.getElementById('dihp').value=d.hp||'';document.getElementById('diit').value=d.it||'';document.getElementById('diso').value=d.so||'';document.getElementById('diad').value=d.ad||'';document.getElementById('diin').value=d.inc||0;document.getElementById('dieq').value=d.eq||0;document.getElementById('didt').value=d.dt||'';document.getElementById('dist2').value=d.st||'ממתין להפצה';document.getElementById('dity').value=d.ty||'short';document.getElementById('diptype').value=d.ptype||'';document.getElementById('dimi').value=d.mi||'';
   }else if(type==='salary'){
     document.getElementById('sttit').textContent=isNew?'פרויקט לשכר':'עריכת פרויקט';
     const s=isNew?{}:D.salary.find(x=>x.id==id)||{};
@@ -3120,7 +3145,7 @@ function downloadDealQuote(id){
   downloadQuote(d.quote);
 }
 function saveDeal(){
-  const row={date:document.getElementById('dd').value,co:document.getElementById('dco').value,cp:document.getElementById('dcp').value,inf:document.getElementById('din').value,srv:document.getElementById('dsr').value,v:+document.getElementById('dv').value,mv:+document.getElementById('dmv').value,di:+document.getElementById('ddi').value,dn:+document.getElementById('ddn').value,ot:+document.getElementById('dot').value,otc:+document.getElementById('dotc').value,ct:document.getElementById('dct').value,ch:+document.getElementById('dch').value,st:document.getElementById('dst2').value,ty:document.getElementById('dty').value,no:document.getElementById('dno').value,quote:pendingQuote||null};
+  const row={date:document.getElementById('dd').value,co:document.getElementById('dco').value,cp:document.getElementById('dcp').value,inf:document.getElementById('din').value,srv:document.getElementById('dsr').value,v:+document.getElementById('dv').value,mv:+document.getElementById('dmv').value,di:+document.getElementById('ddi').value,dn:+document.getElementById('ddn').value,ot:+document.getElementById('dot').value,otc:+document.getElementById('dotc').value,ct:document.getElementById('dct').value,ch:+document.getElementById('dch').value,st:document.getElementById('dst2').value,ty:document.getElementById('dty').value,ptype:document.getElementById('dptype').value,no:document.getElementById('dno').value,quote:pendingQuote||null};
   if(!row.co){alert('יש להזין שם חברה');return;}
   const doSave=()=>{
     let savedDeal;
@@ -3146,7 +3171,7 @@ function syncDealToSalary(deal,silent){
   let created=false;
   // carry the deal range (long/short) + service + notes into the salary record
   const rangeLabel=deal.ty==='long'?'טווח ארוך':'טווח קצר';
-  const no=rangeLabel+(deal.srv?' | '+deal.srv:'')+(deal.no?' | '+deal.no:'');
+  const no=rangeLabel+(deal.ptype&&ITEM_CFG[deal.ptype]?' | '+ITEM_CFG[deal.ptype].label:'')+(deal.srv?' | '+deal.srv:'')+(deal.no?' | '+deal.no:'');
   const range=deal.ty||'long';
   const hasService=deal.ty==='long'||(deal.v||0)>0||(deal.mv||0)>0;
   const svcSynced=D.salary.some(s=>s._dealId==deal.id&&s.ty==='service');
@@ -3182,6 +3207,7 @@ function syncDealToDist(deal,silent){
     dt:deal.date||nd(),
     st:'ממתין להפצה',
     ty:deal.ty||'long',
+    ptype:deal.ptype||'',
     mi:deal.no||'',
     _dealId:deal.id
   };
@@ -3213,7 +3239,7 @@ function syncDistToSalary(dist){
   return updated>0;
 }
 function saveDist(){
-  const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,hd:document.getElementById('dih').value,hp:document.getElementById('dihp').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,mi:document.getElementById('dimi').value};
+  const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,hd:document.getElementById('dih').value,hp:document.getElementById('dihp').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,ptype:document.getElementById('diptype').value,mi:document.getElementById('dimi').value};
   if(!row.co){alert('יש להזין שם חברה');return;}
   let savedDist;
   if(EI){dbUpdate('dists',EI,row);savedDist=D.dists.find(x=>x.id==EI);}else{savedDist=dbInsert('dists',row);}
@@ -3312,9 +3338,9 @@ function dlCSV(name,csv){
 }
 // ===== EXCEL IMPORT =====
 const IMP_MAP={
-  deals:{'תאריך':'date','#':'num','שם חברה':'co','תשתית':'inf','שירות':'srv','שווי':'v','חודש נוכחי':'mv','הפצה':'di','חודש הבא':'dn','otc נסגר':'otc','otc':'ot','מול מי':'ct','סיכוי':'ch','סטטוס':'st','סוג':'ty','הערות':'no'},
+  deals:{'תאריך':'date','#':'num','שם חברה':'co','תשתית':'inf','שירות':'srv','שווי':'v','חודש נוכחי':'mv','הפצה':'di','חודש הבא':'dn','otc נסגר':'otc','otc':'ot','מול מי':'ct','סיכוי':'ch','סטטוס':'st','סוג':'ty','סוג מוצר':'ptype','הערות':'no'},
   tenders:{'שם מכרז':'name','מס פרויקט':'proj','פרסום':'pub','הצעה':'quote','שאלות':'questions','הגשה':'deadline','סבבים':'rounds','מטפל':'handler','סכום':'amount','כמות':'qty','הוגשה':'submitted','צימוד':'linked','מסמכים':'docs','הערות':'notes'},
-  dists:{'מטפל':'hd','גורם מטפל':'hp','מס פרויקט':'no','שם חברה':'co','לקוח':'cl','it':'it','פתרון':'so','כתובת':'ad','הכנסה חודשית':'inc','ציוד':'eq','חוסרים':'mi','סטטוס':'st','תאריך':'dt','סוג':'ty'},
+  dists:{'מטפל':'hd','גורם מטפל':'hp','מס פרויקט':'no','שם חברה':'co','לקוח':'cl','it':'it','פתרון':'so','כתובת':'ad','הכנסה חודשית':'inc','ציוד':'eq','חוסרים':'mi','סטטוס':'st','תאריך':'dt','סוג':'ty','סוג מוצר':'ptype'},
   salary:{'מס פרויקט':'pj','שם לקוח':'cl','כמות':'qt','יעד':'tr','סגירה':'cl2','יתרה':'pv','סטטוס':'st','סוג':'ty','הערות':'no'},
   meetings:{'תאריך':'dt','שם לקוח':'cl','מס פגישה':'nu','התקיימה':'hl','הערות':'no'},
   clients:{'שם חברה':'name','איש קשר':'contact','טלפון':'phone','אימייל':'email','כתובת':'address','סטטוס':'status','הערות':'genNotes'}
@@ -3388,6 +3414,7 @@ function handleImport(ev,sec){
           }
           obj[key]=v;
         });
+        if(obj.ptype)obj.ptype=ptypeKey(obj.ptype); // accept label or key, store the key
         if(!Object.values(obj).some(v=>v!==''&&v!==0)){skipped++;return;}
         if(sec==='clients'&&!obj.name){skipped++;return;}
         if(sec==='clients'&&D.clients.some(c=>c.name&&c.name===obj.name)){skipped++;return;}
@@ -3410,9 +3437,9 @@ function handleImport(ev,sec){
 function exportExcel(section){
   let hdrs,rows;
   switch(section){
-    case'deals':hdrs=['תאריך','#','שם חברה','תשתית','שירות','שווי','חודש נוכחי','הפצה','חודש הבא','OTC','OTC נסגר','מול מי','סיכוי','סטטוס','סוג','הערות'];rows=D.deals.map(d=>[d.date||'',d.num||'',d.co||'',d.inf||'',d.srv||'',d.v||0,d.mv||0,d.di||0,d.dn||0,d.ot||0,d.otc||0,d.ct||'',Math.round((d.ch||0)*100)+'%',d.st||'',d.ty==='long'?'ארוך':'קצר',d.no||'']);break;
+    case'deals':hdrs=['תאריך','#','שם חברה','תשתית','שירות','שווי','חודש נוכחי','הפצה','חודש הבא','OTC','OTC נסגר','מול מי','סיכוי','סטטוס','סוג','סוג מוצר','הערות'];rows=D.deals.map(d=>[d.date||'',d.num||'',d.co||'',d.inf||'',d.srv||'',d.v||0,d.mv||0,d.di||0,d.dn||0,d.ot||0,d.otc||0,d.ct||'',Math.round((d.ch||0)*100)+'%',d.st||'',d.ty==='long'?'ארוך':'קצר',ptypeLabel(d.ptype),d.no||'']);break;
     case'tenders':hdrs=['שם מכרז','מס פרויקט','פרסום','הצעה','שאלות','הגשה','סבבים','מטפל','סכום','כמות','הוגשה','צימוד','מסמכים','הערות'];rows=D.tenders.map(t=>[t.name||'',t.proj||'',t.pub||'',t.quote||'',t.questions||'',t.deadline||'',t.rounds||'',t.handler||'',t.amount||0,t.qty||1,t.submitted||'',t.linked||'',t.docs||'',t.notes||'']);break;
-    case'dists':hdrs=['מטפל','גורם מטפל','מס פרויקט','שם חברה','לקוח','IT','פתרון','כתובת','הכנסה חודשית','ציוד','חוסרים','סטטוס','תאריך','סוג'];rows=D.dists.map(d=>[d.hd||'',d.hp||'',d.no||'',d.co||'',d.cl||'',d.it||'',d.so||'',d.ad||'',d.inc||0,d.eq||0,d.mi||'',d.st||'',d.dt||'',d.ty==='long'?'ארוך':'קצר']);break;
+    case'dists':hdrs=['מטפל','גורם מטפל','מס פרויקט','שם חברה','לקוח','IT','פתרון','כתובת','הכנסה חודשית','ציוד','חוסרים','סטטוס','תאריך','סוג','סוג מוצר'];rows=D.dists.map(d=>[d.hd||'',d.hp||'',d.no||'',d.co||'',d.cl||'',d.it||'',d.so||'',d.ad||'',d.inc||0,d.eq||0,d.mi||'',d.st||'',d.dt||'',d.ty==='long'?'ארוך':'קצר',ptypeLabel(d.ptype)]);break;
     case'salary':hdrs=['מס פרויקט','שם לקוח','כמות','יעד','סגירה','יתרה','סטטוס','סוג','הערות'];rows=D.salary.map(s=>[s.pj||'',s.cl||'',s.qt||1,s.tr||0,s.cl2||0,s.pv||0,s.st||'',s.ty==='service'?'שירות':'ציוד',s.no||'']);break;
     case'meetings':hdrs=['תאריך','שם לקוח','מס פגישה','התקיימה','הערות'];rows=D.meetings.map(m=>[m.dt||'',m.cl||'',m.nu||'',m.hl||'',m.no||'']);break;
     case'clients':hdrs=['שם חברה','איש קשר','טלפון','אימייל','כתובת','סטטוס','קווים','FORTI','CISCO','M365','STARLINK','הערות'];rows=D.clients.map(c=>[c.name||'',c.contact||'',c.phone||'',c.email||'',c.address||'',c.status||'',(c.lines||[]).length,(c.forti||[]).length,(c.cisco||[]).length,(c.ms365||[]).length,(c.starlink||[]).length,c.genNotes||'']);break;
