@@ -54,7 +54,10 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-
   box-shadow:0 32px 80px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.04),0 0 80px rgba(200,169,110,.07);
   backdrop-filter:blur(16px);position:relative;overflow:hidden;
   transform-style:preserve-3d;will-change:transform;
+  /* pure-CSS single fade-in — starts on first paint, no GSAP/CDN dependency, no flash */
+  animation:lcardIn .4s ease-out both;
 }
+@keyframes lcardIn{from{opacity:0}to{opacity:1}}
 .lcard-glare{position:absolute;inset:0;border-radius:20px;pointer-events:none;
   opacity:0;transition:opacity .35s;
   background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.13) 0%,transparent 65%)}
@@ -1359,7 +1362,7 @@ function doLogin(){
   const loginEl=document.getElementById('login');
   const appEl=document.getElementById('app');
   if(window.gsap){
-    gsap.to(loginEl,{opacity:0,scale:1.04,duration:0.5,ease:'power2.in',onComplete:()=>{
+    gsap.to(loginEl,{opacity:0,duration:0.18,ease:'power2.in',onComplete:()=>{
       loginEl.style.display='none';
       appEl.style.display='flex';
       document.getElementById('uname').textContent=f.n;
@@ -1368,9 +1371,9 @@ function doLogin(){
       document.getElementById('wd').textContent=wdM(n.getFullYear(),n.getMonth());
       document.getElementById('wdp').textContent=wdP(n.getFullYear(),n.getMonth(),n.getDate());
       loadAll();
-      gsap.from('#topbar',{y:-54,opacity:0,duration:0.55,ease:'power3.out'});
-      gsap.from('#sidebar',{opacity:0,x:40,duration:0.6,ease:'power3.out',delay:0.12});
-      gsap.from('.sec.active',{opacity:0,y:28,duration:0.7,ease:'power3.out',delay:0.25});
+      // quick, single reveal of the app shell
+      gsap.from('#topbar',{y:-30,opacity:0,duration:0.28,ease:'power2.out'});
+      gsap.from('.sec.active',{opacity:0,duration:0.3,ease:'power2.out'});
     }});
   }else{
     loginEl.style.display='none';
@@ -1405,22 +1408,8 @@ function doLogout(){
   }
 }
 
-// GSAP login card entrance (runs once on first load)
-(function initLoginAnim(){
-  function run(){
-    if(!window.gsap){setTimeout(run,60);return;}
-    const card=document.querySelector('.lcard');
-    if(!card)return;
-    // opacity only — transform is owned by the 3D tilt rAF loop below
-    gsap.fromTo(card,{opacity:0},{opacity:1,duration:1.0,ease:'power3.out',delay:0.4});
-    gsap.fromTo('.llogo',{opacity:0,y:22},{opacity:1,y:0,duration:0.8,ease:'power3.out',delay:0.75});
-    gsap.fromTo('.lsub', {opacity:0,y:16},{opacity:1,y:0,duration:0.7,ease:'power3.out',delay:0.95});
-    gsap.fromTo('.lg',   {opacity:0,y:14},{opacity:1,y:0,stagger:0.12,duration:0.55,ease:'power3.out',delay:1.1});
-    gsap.fromTo('.lbtn', {opacity:0,y:10},{opacity:1,y:0,duration:0.55,ease:'power3.out',delay:1.45});
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);
-  else run();
-})();
+// Login card entrance is now a single pure-CSS fade-in (.lcard animation) —
+// no GSAP/CDN dependency, so the card appears once and never flashes.
 
 // Security: keep login fields empty — defeat browser/password-manager autofill
 (function clearLoginFields(){
