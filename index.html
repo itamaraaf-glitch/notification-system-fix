@@ -3676,6 +3676,69 @@ function nav(s){
   else init();
 })();
 
+// ── DARK CUSTOM DROPDOWN (desktop) ────────────────────────────────────
+// The native <option> list renders white on some OSes regardless of CSS,
+// making options unreadable. On mouse/fine-pointer devices we suppress the
+// native popup and draw our own dark list (black bg, white text). The real
+// <select> still holds the value and fires 'change', so all logic is intact.
+(function(){
+  if(!window.matchMedia || !matchMedia('(pointer:fine)').matches) return; // mobile keeps native
+  let panel = null, openSel = null;
+
+  function close(){ if(panel){ panel.remove(); panel = null; openSel = null; } }
+
+  function open(sel){
+    close();
+    openSel = sel;
+    const r = sel.getBoundingClientRect();
+    panel = document.createElement('div');
+    panel.style.cssText =
+      'position:fixed;z-index:99999;max-height:280px;overflow-y:auto;'+
+      'background:#0a0d18;border:1px solid rgba(200,169,110,.32);border-radius:9px;'+
+      'box-shadow:0 16px 48px rgba(0,0,0,.75);padding:5px;'+
+      'min-width:'+Math.max(r.width,130)+'px;direction:rtl';
+    Array.from(sel.options).forEach((o,i)=>{
+      const it = document.createElement('div');
+      it.textContent = o.textContent;
+      it.style.cssText =
+        'padding:9px 13px;font-size:13px;font-family:Heebo,sans-serif;color:#fff;'+
+        'cursor:pointer;border-radius:6px;text-align:right;white-space:nowrap;'+
+        (i===sel.selectedIndex ? 'background:#2563eb;font-weight:600;' : '');
+      it.addEventListener('mouseenter',()=>{ if(i!==sel.selectedIndex) it.style.background='rgba(255,255,255,.10)'; });
+      it.addEventListener('mouseleave',()=>{ if(i!==sel.selectedIndex) it.style.background=''; });
+      it.addEventListener('mousedown',ev=>{
+        ev.preventDefault(); ev.stopPropagation();
+        if(sel.selectedIndex !== i){ sel.selectedIndex = i; sel.dispatchEvent(new Event('change',{bubbles:true})); }
+        close();
+      });
+      panel.appendChild(it);
+    });
+    document.body.appendChild(panel);
+    // position (flip up / clamp into viewport)
+    let top = r.bottom + 3, left = r.left;
+    const pr = panel.getBoundingClientRect();
+    if(top + pr.height > innerHeight - 6) top = Math.max(6, r.top - pr.height - 3);
+    if(left + pr.width  > innerWidth  - 6) left = Math.max(6, innerWidth - pr.width - 6);
+    panel.style.top = top + 'px';
+    panel.style.left = left + 'px';
+  }
+
+  document.addEventListener('mousedown',e=>{
+    const sel = e.target.closest ? e.target.closest('select') : null;
+    if(sel){
+      e.preventDefault();           // suppress native white popup
+      if(openSel === sel) close(); else open(sel);
+      return;
+    }
+    if(panel && !panel.contains(e.target)) close();
+  }, true);
+  // keep the native keyboard popup from opening on focus/click too
+  document.addEventListener('click',e=>{ if(e.target.closest && e.target.closest('select')) e.preventDefault(); }, true);
+  window.addEventListener('scroll', e=>{ if(panel && (e.target===panel || panel.contains(e.target))) return; close(); }, true);
+  window.addEventListener('resize', close);
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
+})();
+
 // ── 3D TILT ON CARDS (touch + mouse) ──────────────────────────────────
 (function(){
   const TILT_SELECTORS = '.kc,.dpanel,.cl-card';
