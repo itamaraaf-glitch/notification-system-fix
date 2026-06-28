@@ -282,13 +282,12 @@ input[type=text],input[type=date],input[type=number],select,textarea{
   border-radius:8px;padding:8px 11px;font-family:'Heebo',sans-serif;font-size:12px;outline:none;width:100%;
   transition:all .22s;backdrop-filter:blur(4px)
 }
-/* render native dropdown / date popups in dark mode so options are readable */
-select,input[type=date]{color-scheme:dark}
 input:focus,select:focus,textarea:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(230,57,70,.12),inset 0 1px 0 rgba(255,255,255,.06)}
 .srch{min-width:130px;max-width:200px}
-/* high-contrast option list: light text on dark background */
-select option{background:#0a0d18;color:#fff}
-select option:checked,select option:hover{background:#1a2540;color:#fff}
+/* dropdown options: black text on white — readable on every browser/OS,
+   regardless of whether the native popup honours dark backgrounds */
+select option{background:#ffffff;color:#111111}
+select option:checked,select option:hover{background:#2563eb;color:#ffffff}
 
 /* ─── BUTTONS ─── */
 .btn{
