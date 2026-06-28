@@ -1506,17 +1506,29 @@ function doLogout(){
 })();
 
 // ===== STORAGE =====
+let _quotaAlerted=false;
 function saveAll(){
   try{
     const snap=JSON.stringify(D);
     localStorage.setItem(LS_KEY,snap);
-    // Verify write succeeded
+    // Verify write succeeded (read back and compare)
     const verify=localStorage.getItem(LS_KEY);
     if(!verify||verify!==snap)throw new Error('אימות כתיבה נכשל');
+    _quotaAlerted=false;
     showSaved();
   }catch(e){
     console.error('שגיאת שמירה:',e);
-    showToast('⚠️ שגיאה בשמירה! '+e.message,'warn');
+    const quota = e && (e.name==='QuotaExceededError' || e.code===22 || e.code===1014 || /quota|exceed/i.test(e.message||''));
+    if(quota){
+      // loud + blocking so the user can never lose data silently
+      if(!_quotaAlerted){
+        _quotaAlerted=true;
+        alert('⚠️ האחסון המקומי מלא — השמירה האחרונה לא הצליחה!\n\nכדי לא לאבד נתונים, עכשיו:\n1. ייצא גיבוי (סעיף "ייצוא" → גיבוי JSON).\n2. הסר קובץ הצעת מחיר גדול מעסקה, או מחק רשומות שאינן נחוצות.\n\nהנתונים שעל המסך עדיין קיימים — גבה אותם לפני שתסגור.');
+      }
+      showToast('⚠️ האחסון מלא! ייצא גיבוי והסר קבצים גדולים','warn');
+    }else{
+      showToast('⚠️ שגיאה בשמירה! '+e.message,'warn');
+    }
   }
 }
 function loadAll(){
@@ -2955,12 +2967,12 @@ function closeM(id){document.getElementById(id).classList.remove('open');EI=null
 // ===== SAVE FUNCTIONS =====
 // ===== PRICE-QUOTE FILE ATTACHMENT (per deal) =====
 let pendingQuote = null; // {name,type,size,data(base64 dataURL)}
-const QUOTE_MAX = 2 * 1024 * 1024; // 2MB cap to protect localStorage
+const QUOTE_MAX = 1024 * 1024; // 1MB cap (base64 inflates ~33%) to protect localStorage
 function onQuoteFile(ev){
   const f = ev.target.files && ev.target.files[0];
   if(!f) return;
   if(f.size > QUOTE_MAX){
-    toast('⚠️ הקובץ גדול מדי (מקסימום 2MB)','warn');
+    toast('⚠️ הקובץ גדול מדי (מקסימום 1MB)','warn');
     ev.target.value='';
     return;
   }
@@ -3018,11 +3030,14 @@ function saveDeal(){
     syncDealToClient(savedDeal);
     syncDealToSalary(savedDeal);
     syncDealToDist(savedDeal);
+    saveAll(); // persist the sync flags set on the deal
   }
   closeM('mdeal');rAll();
 }
 function syncDealToSalary(deal,silent){
   if(deal.st!=='נסגר')return false;
+  if(deal._salSynced)return false;   // already handled once — never resurrect a deleted entry
+  deal._salSynced=true;              // permanent flag (persisted by the caller's saveAll)
   let created=false;
   // carry the deal range (long/short) + service + notes into the salary record
   const rangeLabel=deal.ty==='long'?'טווח ארוך':'טווח קצר';
@@ -3041,12 +3056,13 @@ function syncDealToSalary(deal,silent){
     created=true;
   }
   if(created&&!silent)toast('💰 העסקה נוספה אוטומטית לפרויקטי שכר','ok');
-  return created;
+  return true; // flag was flipped — return true so the caller persists it
 }
 function syncDealToDist(deal,silent){
   if(deal.st!=='נסגר')return false;
-  const alreadySynced=D.dists.some(d=>d._dealId==deal.id);
-  if(alreadySynced)return false;
+  if(deal._distSynced)return false;  // already handled once — never resurrect a deleted dist
+  deal._distSynced=true;             // permanent flag (persisted by the caller's saveAll)
+  if(D.dists.some(d=>d._dealId==deal.id))return true; // already had one — just flag, no duplicate
   const row={
     co:deal.co||'',
     no:String(deal.num||''),
