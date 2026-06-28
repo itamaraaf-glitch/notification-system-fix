@@ -1638,9 +1638,9 @@ function rAll(){rDash();rDeals();rTenders();rDists();rSalary();rMeetings();rAler
 // ===== ALERTS =====
 function getAlerts(){
   const a=[];const t=nd();
-  D.deals.forEach(d=>{if(d.date&&d.st!=='נסגר'&&(now()-new Date(d.date))/(30*86400000)>3)a.push({type:'crit',h:`עסקה ישנה – ${d.co}`,s:`פתוחה מעל 3 חודשים! שווי: ${fmt(d.v)}`,co:d.co});});
-  D.dists.forEach(d=>{if(d.dt&&d.st!=='הושלם'&&db(d.dt,t)>7)a.push({type:'crit',h:`הפצה תקועה – ${d.co}`,s:`${db(d.dt,t)} ימים ללא התקדמות`,co:d.co});});
-  D.salary.forEach(s=>{if(s.st!=='סגור'&&(s.pv||0)>0)a.push({type:'warn',h:`שכר לא ממומש – ${s.cl}`,s:`יתרה: ${fmt(s.pv)}`,co:s.cl});});
+  D.deals.forEach(d=>{if(d.date&&d.st!=='נסגר'&&(now()-new Date(d.date))/(30*86400000)>3)a.push({type:'crit',h:`עסקה ישנה – ${d.co}`,s:`פתוחה מעל 3 חודשים! שווי: ${fmt(d.v)}`,co:d.co,kind:'deal',meta:{srv:d.srv}});});
+  D.dists.forEach(d=>{if(d.dt&&d.st!=='הושלם'&&db(d.dt,t)>7)a.push({type:'crit',h:`הפצה תקועה – ${d.co}`,s:`${db(d.dt,t)} ימים ללא התקדמות`,co:d.co,kind:'dist',meta:{srv:d.so}});});
+  D.salary.forEach(s=>{if(s.st!=='סגור'&&(s.pv||0)>0)a.push({type:'warn',h:`שכר לא ממומש – ${s.cl}`,s:`יתרה: ${fmt(s.pv)}`,co:s.cl,kind:'salary'});});
   D.tenders.forEach(t2=>{
     if(t2.deadline){const dl=db(t,t2.deadline);if(dl>=0&&dl<=5&&t2.submitted!=='כן')a.push({type:'crit',h:`מכרז דחוף – ${t2.name}`,s:`נותרו ${dl} ימים!`});}
     if(t2.questions){const dq=db(t,t2.questions);if(dq>=0&&dq<=2)a.push({type:'warn',h:`מועד שאלות – ${t2.name}`,s:`נותרו ${dq} ימים`});}
@@ -1667,6 +1667,73 @@ function rAlerts(){
   }).join(''):'<div class="ac info"><div class="at">מידע</div><div class="ah">✅ אין התראות פעילות</div></div>';
   window._alertsCache=a; // for the email sender to read the alert text
 }
+// professional, client-facing email per alert kind (never the internal wording)
+function buildAlertEmail(c,al){
+  const greet=(c.contact||c.name||'לקוח יקר');
+  const m=al.meta||{};
+  const sign=['בברכה,','איתמר ונדן','HOT Business','Itamar.venden@hot.net.il'];
+  let subject, lines;
+  switch(al.kind){
+    case 'expiry':
+      subject='HOT Business – חידוש '+(m.label||'שירות');
+      lines=[
+        'שלום '+greet+',',
+        '',
+        'ברצוננו להזכיר כי תוקף ה'+(m.label||'שירות')+' שברשותכם '+
+          (m.days===0?'פג היום.':'עתיד לפוג בעוד '+m.days+' ימים'+(m.date?' (בתאריך '+m.date+')':'')+'.'),
+        'נשמח לסייע לכם בתהליך החידוש ולוודא המשך שירות רציף וללא תקלות.',
+        '',
+        'נשמח לתאם שיחה קצרה בנוחותכם להשלמת התהליך.'
+      ];
+      break;
+    case 'dist':
+      subject='HOT Business – עדכון בנוגע לפרויקט שלכם';
+      lines=[
+        'שלום '+greet+',',
+        '',
+        'ברצוננו לעדכן ולתאם איתכם את המשך התקדמות '+(m.srv?('הפרויקט ('+m.srv+')'):'הפרויקט')+' שלכם.',
+        'אנו פועלים לקדם את התהליך ולהשלימו בהקדם ובאיכות הגבוהה ביותר.',
+        '',
+        'נשמח לתאם מועד נוח להמשך הטיפול.'
+      ];
+      break;
+    case 'deal':
+      subject='HOT Business – המשך טיפול בהצעה שלכם';
+      lines=[
+        'שלום '+greet+',',
+        '',
+        'ברצוננו לחזור אליכם בנוגע להצעה'+(m.srv?(' עבור '+m.srv):'')+' שהוגשה לכם.',
+        'נשמח לענות על כל שאלה ולקדם יחד את ההצעה בהתאם לצרכים שלכם.',
+        '',
+        'נשמח לתאם שיחה קצרה בנוחותכם.'
+      ];
+      break;
+    case 'potential':
+      subject='HOT Business – הצעה שתשמח אתכם';
+      lines=[
+        'שלום '+greet+',',
+        '',
+        'בהמשך לקשר בינינו, נשמח לקדם עבורכם את '+(m.product||'הפתרון שדיברנו עליו')+'.',
+        'מדובר בפתרון שיכול לחזק ולשדרג את השירות הקיים אצלכם.',
+        '',
+        'נשמח לתאם שיחה קצרה להצגת ההצעה ולמענה על כל שאלה.'
+      ];
+      break;
+    default: // salary / generic
+      subject='HOT Business – המשך טיפול בפרויקט שלכם';
+      lines=[
+        'שלום '+greet+',',
+        '',
+        'ברצוננו לוודא שהכל מתנהל לשביעות רצונכם ולתאם את המשך הטיפול בפרויקט שלכם.',
+        '',
+        'נשמח לתאם שיחה קצרה בנוחותכם.'
+      ];
+  }
+  // prefix each non-empty line with an RTL mark so Hebrew renders right-aligned
+  // and ordered correctly in the recipient's mail client
+  const body=lines.concat(['',''], sign).map(l=>l?('‏'+l):l).join('\n');
+  return {subject, body};
+}
 function sendAlertEmail(clientId,idx){
   const c=D.clients.find(x=>x.id==clientId);
   if(!c)return;
@@ -1677,10 +1744,7 @@ function sendAlertEmail(clientId,idx){
     return;
   }
   const al=(window._alertsCache||[])[idx]||{};
-  const subject='HOT Business – '+(al.h||'עדכון');
-  const body='שלום '+(c.contact||c.name||'')+',\n\n'+
-    'ברצוננו לעדכן אותך בנוגע ל: '+(al.h||'')+'\n'+(al.s||'')+'\n\n'+
-    'נשמח לתאם שיחה להמשך טיפול.\n\nבברכה,\nאיתמר ונדן\nHOT Business\nItamar.venden@hot.net.il';
+  const {subject,body}=buildAlertEmail(c,al);
   window.location.href='mailto:'+c.email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
 }
 
@@ -2139,7 +2203,7 @@ function getClientAlerts(){
         if(item.expiry){
           const d=db(nd(),item.expiry);
           if(d>=0&&d<=30){
-            alerts.push({type:d<=7?'crit':'warn',h:`תפוגת ${ITEM_CFG[type].label} – ${c.name}`,s:d===0?'פג היום!':d+' ימים לתפוגה',co:c.name});
+            alerts.push({type:d<=7?'crit':'warn',h:`תפוגת ${ITEM_CFG[type].label} – ${c.name}`,s:d===0?'פג היום!':d+' ימים לתפוגה',co:c.name,kind:'expiry',meta:{label:ITEM_CFG[type].label,days:d,date:item.expiry}});
           }
         }
       });
@@ -2149,8 +2213,8 @@ function getClientAlerts(){
     (c.potential||[]).forEach(p=>{
       if(p.status!=='נסגר'&&p.targetDate){
         const d=db(nd(),p.targetDate);
-        if(d<0)alerts.push({type:'warn',h:`יעד סגירה עבר – ${c.name}`,s:`${p.productType||p.product||'מוצר'}: ${Math.abs(d)} ימים באיחור`,co:c.name});
-        else if(d<=7)alerts.push({type:'info',h:`יעד סגירה קרוב – ${c.name}`,s:`${p.productType||p.product||'מוצר'}: ${d} ימים`,co:c.name});
+        if(d<0)alerts.push({type:'warn',h:`יעד סגירה עבר – ${c.name}`,s:`${p.productType||p.product||'מוצר'}: ${Math.abs(d)} ימים באיחור`,co:c.name,kind:'potential',meta:{product:p.productType||p.product}});
+        else if(d<=7)alerts.push({type:'info',h:`יעד סגירה קרוב – ${c.name}`,s:`${p.productType||p.product||'מוצר'}: ${d} ימים`,co:c.name,kind:'potential',meta:{product:p.productType||p.product}});
       }
     });
   });
