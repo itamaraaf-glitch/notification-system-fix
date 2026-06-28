@@ -1586,6 +1586,13 @@ document.addEventListener('mousedown',function(e){
 
 // ===== ID / DB =====
 function genId(){return Date.now().toString(36)+Math.random().toString(36).substr(2);}
+// next deal number = max existing (incl. archive) + 1 — avoids collisions after deletes
+function nextDealNum(){
+  const nums=[...D.deals,...(D.archivedDeals||[])].map(d=>+d.num||0);
+  return (nums.length?Math.max(...nums):0)+1;
+}
+// a complete empty dataset template so restores never drop a section
+function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000}};}
 function dbInsert(table,row){row.id=genId();D[table].push(row);saveAll();return row;}
 function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0)D[table][i]={...D[table][i],...row};saveAll();}
 function dbDelete(table,id){
@@ -3036,7 +3043,7 @@ function saveDeal(){
   if(!row.co){alert('יש להזין שם חברה');return;}
   let savedDeal;
   if(EI){dbUpdate('deals',EI,row);savedDeal=D.deals.find(x=>x.id==EI);}
-  else{row.num=D.deals.length+1;savedDeal=dbInsert('deals',row);}
+  else{row.num=nextDealNum();savedDeal=dbInsert('deals',row);}
   if(savedDeal&&savedDeal.st==='נסגר'){
     syncDealToClient(savedDeal);
     syncDealToSalary(savedDeal);
@@ -3300,7 +3307,7 @@ function handleImport(ev,sec){
         // section defaults
         const defs={deals:{st:'ממתין לתשובה',ty:'long',date:nd()},tenders:{submitted:'לא',qty:1},dists:{st:'ממתין להפצה',ty:'long',dt:nd()},salary:{st:'פתוח',ty:'service',qt:1},meetings:{dt:nd(),hl:'לא'},clients:{status:'לקוח'}};
         Object.entries(defs[sec]||{}).forEach(([k,dv])=>{if(!obj[k]&&obj[k]!==0)obj[k]=dv;});
-        if(sec==='deals'&&!obj.num)obj.num=D.deals.length+added+1;
+        if(sec==='deals'&&!obj.num)obj.num=nextDealNum();
         const ins=dbInsert(sec,obj);
         if(ins&&sec==='deals'&&ins.st==='נסגר'){syncDealToClient(ins,true);syncDealToSalary(ins,true);syncDealToDist(ins,true);}
         added++;
@@ -3494,7 +3501,8 @@ function restoreData(){
       try{
         const p=JSON.parse(ev.target.result);
         confirmAct('זה ישחזר ויחליף את כל הנתונים הקיימים. להמשיך?',()=>{
-          D={deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],...p};
+          idbBackup(JSON.stringify(D)); // safety snapshot of current data before replacing
+          D=Object.assign(emptyData(),p);
           saveAll();rAll();toast('✅ הנתונים שוחזרו בהצלחה!','ok');
         },'כן, שחזר');
       }catch(err){alert('שגיאה בפרסינג הקובץ: '+err.message);}
@@ -3525,10 +3533,10 @@ function idbList(){
     }).catch(()=>res([]));
   });
 }
-async function idbBackup(){
+async function idbBackup(jsonStr){
   try{
     const db=await idbOpen();
-    const snap={ts:Date.now(), date:new Date().toISOString(), data:JSON.stringify(D)};
+    const snap={ts:Date.now(), date:new Date().toISOString(), data:(jsonStr!=null?jsonStr:JSON.stringify(D))};
     await new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).put(snap);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});
     const all=await idbList();
     if(all.length>IDB_KEEP){
@@ -3585,7 +3593,8 @@ async function restoreFromIdb(ts){
   confirmAct('לשחזר את הנתונים מהגיבוי הזה? כל הנתונים הנוכחיים יוחלפו.',()=>{
     try{
       const p=JSON.parse(snap.data);
-      D={deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],...p};
+      idbBackup(JSON.stringify(D)); // safety snapshot of current data before replacing
+      D=Object.assign(emptyData(),p);
       saveAll();rAll();
       document.getElementById('mbackups').classList.remove('open');
       toast('✅ הנתונים שוחזרו מהגיבוי האוטומטי','ok');
