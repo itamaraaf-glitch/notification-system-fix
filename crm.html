@@ -1023,6 +1023,7 @@ requestAnimationFrame(tick);
       <button class="btn btnd" onclick="deleteAll('salary')" title="מחק את כל פרויקטי השכר">🗑 מחק הכל</button>
     </div>
   </div>
+  <div id="sal-goal-top"></div>
   <div class="tabs" id="salary-tabs">
     <div class="tab active" onclick="swTab(this,'salary-tabs','ssvc','seq','ssum','archivsal');rSalary()">שירות</div>
     <div class="tab" onclick="swTab(this,'salary-tabs','ssvc','seq','ssum','archivsal');rSalary()">ציוד (OTC)</div>
@@ -2144,6 +2145,7 @@ function rDistSum(){
 
 // ===== SALARY =====
 function rSalary(){
+  const gt=document.getElementById('sal-goal-top'); if(gt)gt.innerHTML=salGoalBanner();
   ['service','equipment'].forEach(ty=>{
     const tbId=ty==='service'?'svctb':'eqtb',ftId=ty==='service'?'svcft':'eqft';
     const items=D.salary.filter(s=>s.ty===ty);
@@ -2158,6 +2160,27 @@ function rSalary(){
     document.getElementById(ftId).innerHTML=`<span class="fi">פרויקטים: <b>${items.length}</b></span><span class="fi">יעד: <b>${fmt(tt)}</b></span><span class="fi">נסגר: <b>${fmt(tc)}</b></span><span class="fi">יתרה: <b style="color:#e63946">${fmt(tp)}</b></span><span class="fi">עמידה: <b style="color:${p2>=100?'var(--teal)':p2>=50?'#f4a261':'#e63946'}">${p2}%</b></span>`;
     updateSelBar(sk);
   });
+}
+// always-visible, editable salary target banner (top of the salary section)
+function salGoalBanner(){
+  if(!D.goals)D.goals={deals:15000,dists:14000,sal:15000};
+  const goal=D.goals.sal||15000;
+  const curVal=D.salary.filter(s=>s.st==='סגור').reduce((s,i)=>s+(i.cl2||0),0);
+  const pct=goal?Math.round(curVal/goal*100):0;
+  const col=pct>=100?'var(--teal)':pct>=50?'#f4a261':'#e63946';
+  return`<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:linear-gradient(135deg,rgba(200,169,110,.10),rgba(16,21,37,.6));border:1px solid rgba(200,169,110,.22);border-radius:12px;padding:10px 16px;margin-bottom:12px">
+    <span style="font-weight:800;color:var(--gold);font-size:13px">💰 יעד שכר רבעוני</span>
+    <div style="display:flex;align-items:center;gap:5px">
+      <input type="number" value="${goal}" min="1000" step="1000" onchange="setGoal('sal',this.value)" onblur="setGoal('sal',this.value)"
+        style="width:96px;font-size:13px;font-weight:700;text-align:center;background:rgba(255,255,255,.07);border:1px solid rgba(200,169,110,.35);border-radius:8px;padding:4px 8px;color:var(--text);font-family:inherit;outline:none">
+      <span style="color:var(--text2);font-size:12px">₪</span>
+    </div>
+    <span style="font-size:12px;color:var(--text2)">נסגר ברבעון: <b style="color:var(--teal)">${fmt(curVal)}</b></span>
+    <div style="flex:1;min-width:140px;height:9px;background:rgba(255,255,255,.06);border-radius:20px;overflow:hidden">
+      <div style="width:${Math.min(pct,100)}%;height:100%;background:${col};border-radius:20px;transition:width .4s"></div>
+    </div>
+    <b style="color:${col};font-size:14px">${pct}%</b>
+  </div>`;
 }
 function rSalSum(){
   const curQ=curQuarterStr();
@@ -2175,6 +2198,7 @@ function rSalSum(){
   const curIdx=qData.findIndex(x=>x.qs===curQ);
   if(curIdx>=0)qData[curIdx].val+=curSalVal;
   const curVal=(qData.find(x=>x.qs===curQ)||{val:0}).val;
+  const gt=document.getElementById('sal-goal-top'); if(gt)gt.innerHTML=salGoalBanner();
   const gb=document.getElementById('sal-goal-box');
   if(gb)gb.innerHTML=goalBarHtml('💰 יעד שכר רבעוני',curVal,goal,qData,'gold','sal');
   document.getElementById('ssk').innerHTML=`<div class="kc"><div class="lb">שירות – יעד</div><div class="vl">₪${Math.round(sm(sv,'tr')/1000)}K</div><div class="sb">${sv.length} פרויקטים</div></div><div class="kc g"><div class="lb">שירות – נסגר</div><div class="vl">₪${Math.round(sm(sv,'cl2')/1000)}K</div></div><div class="kc r"><div class="lb">שירות – יתרה</div><div class="vl">₪${Math.round(sm(sv,'pv')/1000)}K</div></div><div class="kc"><div class="lb">ציוד – יעד</div><div class="vl">₪${Math.round(sm(eq,'tr')/1000)}K</div><div class="sb">${eq.length} פרויקטים</div></div><div class="kc g"><div class="lb">ציוד – נסגר</div><div class="vl">₪${Math.round(sm(eq,'cl2')/1000)}K</div></div><div class="kc y"><div class="lb">סה"כ כולל</div><div class="vl">₪${Math.round((sm(sv,'tr')+sm(eq,'tr'))/1000)}K</div></div>`;
