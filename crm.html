@@ -1572,37 +1572,74 @@ function saveAll(){
     }
   }
 }
-function loadAll(){
-  try{
-    const s=localStorage.getItem(LS_KEY);
-    if(s){
-      const p=JSON.parse(s);
-      D.deals=p.deals||[];D.tenders=p.tenders||[];D.dists=p.dists||[];
-      D.salary=p.salary||[];D.meetings=p.meetings||[];D.clients=p.clients||[];
-      D.archivedDeals=p.archivedDeals||[];D.archivedTenders=p.archivedTenders||[];D.archivedDists=p.archivedDists||[];D.archivedSalary=p.archivedSalary||[];D.archivedMeetings=p.archivedMeetings||[];D.lastCycleMonth=p.lastCycleMonth||'';
-      D.goals=p.goals||{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000};
-      // Only seed if this is truly a first-time load (all tables empty AND no initialized flag)
-      const allEmpty=!D.deals.length&&!D.tenders.length&&!D.dists.length&&!D.salary.length&&!D.meetings.length&&!D.clients.length;
-      if(allEmpty&&!localStorage.getItem(LS_KEY+'_init'))seedData();
-    }else{seedData();}
-  }catch(e){console.error(e);seedData();}
+const _GOAL_DEFAULTS={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000};
+function _finishLoad(){
   syncAllDealsToClients();
   syncAllDealsToDists();
   syncAllDealsToSalary();
   runMonthlyCycle();
-  // Mark as initialized so loadAll never calls seedData again after first load
   if(!localStorage.getItem(LS_KEY+'_init')){
     localStorage.setItem(LS_KEY+'_init','1');
     saveAll();
   }
   rAll();
-  // automatic backups: a snapshot now + the once-a-day complete file
   setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); }catch(e){} }, 2500);
 }
-setInterval(()=>{try{localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}},30000);
-window.addEventListener('beforeunload',()=>{try{localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}});
+function loadAll(){
+  let parsed=false;
+  try{
+    const s=localStorage.getItem(LS_KEY);
+    if(s){
+      const p=JSON.parse(s);
+      parsed=true;
+      D.deals=p.deals||[];D.tenders=p.tenders||[];D.dists=p.dists||[];
+      D.salary=p.salary||[];D.meetings=p.meetings||[];D.clients=p.clients||[];
+      D.archivedDeals=p.archivedDeals||[];D.archivedTenders=p.archivedTenders||[];D.archivedDists=p.archivedDists||[];D.archivedSalary=p.archivedSalary||[];D.archivedMeetings=p.archivedMeetings||[];D.lastCycleMonth=p.lastCycleMonth||'';
+      // Merge with defaults so new goal keys are never undefined in old saves
+      D.goals=Object.assign({},_GOAL_DEFAULTS,p.goals||{});
+      // Only seed demo data if all tables are empty AND no initialized flag
+      const allEmpty=!D.deals.length&&!D.tenders.length&&!D.dists.length&&!D.salary.length&&!D.meetings.length&&!D.clients.length;
+      if(allEmpty&&!localStorage.getItem(LS_KEY+'_init'))seedData();
+    }else{seedData();}
+  }catch(e){
+    console.error('loadAll parse error:',e);
+    if(parsed){
+      // Parse succeeded but field assignment failed — data may be partially loaded
+      D.goals=Object.assign({},_GOAL_DEFAULTS,D.goals||{});
+    } else {
+      // localStorage data is unreadable — attempt async IDB recovery instead of wiping with seedData
+      setTimeout(async()=>{
+        try{
+          const list=await idbList();
+          if(list.length){
+            const rec=JSON.parse(list[list.length-1].data);
+            D=Object.assign(emptyData(),rec);
+            D.goals=Object.assign({},_GOAL_DEFAULTS,D.goals||{});
+            showToast('✅ הנתונים שוחזרו מגיבוי אוטומטי!','ok');
+          }else{
+            showToast('⚠️ לא ניתן לטעון נתונים — פתח גיבוי ידני מסעיף ייצוא','warn');
+          }
+        }catch(e2){console.error('IDB recovery failed',e2);}
+        _finishLoad();
+      },300);
+      return; // don't proceed with empty/corrupt D until recovery completes
+    }
+  }
+  _finishLoad();
+}
+// Background saves with proper quota detection (no silent failures)
+function _bgSave(){
+  try{
+    localStorage.setItem(LS_KEY,JSON.stringify(D));
+  }catch(e){
+    const quota=e&&(e.name==='QuotaExceededError'||e.code===22||e.code===1014||/quota|exceed/i.test(e.message||''));
+    if(quota&&!_quotaAlerted){_quotaAlerted=true;alert('⚠️ האחסון המקומי מלא — שמירת הרקע נכשלה!\n\nייצא גיבוי עכשיו מסעיף "ייצוא".');showToast('⚠️ האחסון מלא! ייצא גיבוי','warn');}
+  }
+}
+setInterval(_bgSave,30000);
+window.addEventListener('beforeunload',_bgSave);
 // iOS does not fire beforeunload reliably — use visibilitychange as backup save
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){try{localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')_bgSave();});
 
 // ===== RIPPLE EFFECT =====
 document.addEventListener('mousedown',function(e){
@@ -1652,8 +1689,9 @@ function undoLast(){
   }catch(e){alert('שגיאה בביטול: '+e.message);}
 }
 function dbDelete(table,id){
-  const item=D[table].find(x=>x.id==id);
-  if(!item)return;
+  const origIdx=D[table].findIndex(x=>x.id==id);
+  if(origIdx<0)return;
+  const item=D[table][origIdx];
   pushUndo('מחיקת פריט ('+table+')');
   // Delete immediately
   D[table]=D[table].filter(x=>x.id!=id);
@@ -1673,7 +1711,7 @@ function dbDelete(table,id){
     e.stopPropagation();
     if(undone)return;
     undone=true;
-    D[table].push(item);
+    D[table].splice(Math.min(origIdx,D[table].length),0,item); // restore to original position
     saveAll();
     rAll();
     t.style.opacity='0';
