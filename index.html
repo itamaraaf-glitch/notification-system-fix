@@ -834,6 +834,34 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
 /* ── Fancy badge borders ── */
 .badge{backdrop-filter:blur(6px);letter-spacing:.4px}
 
+/* ── Mobile FAB ── */
+#mob-fab-btn{
+  position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));left:16px;
+  width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;z-index:51;
+  background:linear-gradient(135deg,var(--gold),#8a6530);
+  color:#050508;font-size:26px;font-weight:300;line-height:1;
+  box-shadow:0 6px 24px rgba(200,169,110,.5),0 2px 8px rgba(0,0,0,.4);
+  transition:transform .22s cubic-bezier(.34,1.56,.64,1),box-shadow .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+#mob-fab-btn:active{transform:scale(.9)}
+#mob-fab-btn.open{transform:rotate(45deg) scale(1.08);box-shadow:0 10px 36px rgba(200,169,110,.7)}
+.fab-item{
+  display:flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,rgba(12,16,32,.97),rgba(8,11,22,.98));
+  border:1px solid rgba(200,169,110,.22);border-radius:24px;
+  color:var(--text);padding:9px 16px 9px 12px;font-family:'Heebo',sans-serif;
+  font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;
+  box-shadow:0 4px 20px rgba(0,0,0,.5),0 0 0 1px rgba(200,169,110,.08);
+  transition:all .15s;-webkit-tap-highlight-color:transparent;
+  animation:fabItemIn .2s cubic-bezier(.34,1.56,.64,1) both;
+}
+.fab-item:active{opacity:.75;transform:scale(.95)}
+@keyframes fabItemIn{from{opacity:0;transform:translateY(12px) scale(.9)}to{opacity:1;transform:none}}
+@media(max-width:480px){
+  body.logged-in #mob-fab{display:block}
+}
+
 /* ── Mobile nav active glow pulse ── */
 @keyframes navDotPulse{0%,100%{box-shadow:0 0 8px var(--gold),0 0 16px rgba(200,169,110,.3)}50%{box-shadow:0 0 14px var(--gold2),0 0 28px rgba(200,169,110,.55)}}
 .mn-item.active::before{animation:navDotPulse 2.2s ease-in-out infinite}
@@ -3612,6 +3640,7 @@ function rWorkPlan(){
 
 // ===== MODALS =====
 function openM(type,id){
+  if(typeof closeFab==='function')closeFab();
   EI=id;ET=type;const isNew=!id;
   if(type==='deal'){
     document.getElementById('dtit').textContent=isNew?'עסקה חדשה':'עריכת עסקה';
@@ -4300,6 +4329,30 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+// ===== MOBILE FAB =====
+let _fabOpen=false;
+function toggleFab(){
+  _fabOpen=!_fabOpen;
+  const btn=document.getElementById('mob-fab-btn');
+  const menu=document.getElementById('mob-fab-menu');
+  if(btn) btn.classList.toggle('open',_fabOpen);
+  if(menu){
+    if(_fabOpen){ menu.style.display='flex'; }
+    else{ menu.style.display='none'; }
+  }
+}
+function closeFab(){
+  _fabOpen=false;
+  const btn=document.getElementById('mob-fab-btn');
+  const menu=document.getElementById('mob-fab-menu');
+  if(btn) btn.classList.remove('open');
+  if(menu) menu.style.display='none';
+}
+// Close FAB when tapping outside
+document.addEventListener('click',e=>{
+  if(_fabOpen&&!e.target.closest('#mob-fab')&&!e.target.closest('#mob-fab-menu'))closeFab();
+});
+
 // ===== SEED DATA =====
 function seedData(){
   const g=()=>genId();
@@ -4384,6 +4437,17 @@ function seedData(){
   <div class="mn-item" data-sec="workplan" onclick="nav('workplan')"><span class="mn-ic">🎯</span><span class="mn-lb">תכנון</span></div>
   <div class="mn-item" data-sec="export" onclick="nav('export')"><span class="mn-ic">📥</span><span class="mn-lb">ייצוא</span></div>
 </nav>
+
+<!-- Mobile FAB — quick add button (visible only on mobile when logged in) -->
+<div id="mob-fab" style="display:none">
+  <div id="mob-fab-menu" style="display:none;position:fixed;bottom:calc(130px + env(safe-area-inset-bottom));left:16px;z-index:51;display:none;flex-direction:column;gap:8px;align-items:flex-start">
+    <button class="fab-item" onclick="closeFab();openM('deal',null)">💼 <span>עסקה חדשה</span></button>
+    <button class="fab-item" onclick="closeFab();openM('meeting',null)">🤝 <span>פגישה חדשה</span></button>
+    <button class="fab-item" onclick="closeFab();openClientModal(null)">🏢 <span>לקוח חדש</span></button>
+    <button class="fab-item" onclick="closeFab();openM('tender',null)">📋 <span>מכרז חדש</span></button>
+  </div>
+  <button id="mob-fab-btn" onclick="toggleFab()" aria-label="הוסף">＋</button>
+</div>
 
 <!-- Custom confirm dialog (replaces window.confirm which is blocked on iOS standalone) -->
 <div id="cbar">
