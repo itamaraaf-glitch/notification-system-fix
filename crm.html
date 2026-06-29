@@ -5,7 +5,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>CRM | HOT Business v3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -465,20 +465,104 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
   .sec{display:block!important}.tw{break-inside:avoid}
 }
 
+/* ─── MOBILE BOTTOM NAV ─── */
+#mob-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:rgba(6,8,14,.97);border-top:1px solid rgba(200,169,110,.12);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  overflow-x:auto;overflow-y:hidden;white-space:nowrap;
+  -webkit-overflow-scrolling:touch;
+  height:calc(58px + env(safe-area-inset-bottom));
+  padding-bottom:env(safe-area-inset-bottom);
+  scrollbar-width:none;direction:rtl;
+}
+#mob-nav::-webkit-scrollbar{display:none}
+.mn-item{
+  display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+  min-width:54px;padding:5px 8px 4px;cursor:pointer;vertical-align:top;height:58px;
+  transition:color .18s;color:rgba(221,225,245,.35);-webkit-tap-highlight-color:transparent;
+}
+.mn-item.active{color:var(--gold)}
+.mn-item:active{opacity:.6}
+.mn-ic{font-size:20px;line-height:1.2}
+.mn-lb{font-size:8.5px;font-weight:700;margin-top:2px;white-space:nowrap;letter-spacing:.2px}
+
 /* ─── RESPONSIVE ─── */
 @media(max-width:768px){
   #sidebar{width:46px;min-width:46px}
-  .ni{justify-content:center;padding:8px 0;font-size:16px;margin:1px 0;border-radius:0}
-  .ni span,.nsec{display:none}
+  .ni{justify-content:center;padding:10px 0;margin:1px 0;border-radius:0;gap:0}
+  /* hide section labels, keep emoji (first span) visible */
+  .ni span:last-child,.nsec{display:none}
+  .ni span:first-child{font-size:18px;display:block}
   .stit{font-size:15px}
   .krow{grid-template-columns:repeat(2,1fr)}
   .dgrid{grid-template-columns:1fr}
   #topbar .dstrip{display:none}
   .tscroll{max-height:50vh}
+  /* bigger touch targets */
+  .btn,.abtn,.lout{min-height:36px}
+  .tab{padding:10px 14px;min-height:40px}
 }
 @media(max-width:480px){
+  /* sidebar replaced by bottom nav */
   #sidebar{display:none}
+  /* show mobile bottom nav when logged in */
+  body.logged-in #mob-nav{display:flex}
+  /* topbar: hide non-essential items */
+  #topbar{padding:0 10px;height:48px}
+  .logo span{display:none}
+  .uchip,.save-ind{display:none!important}
+  .mob-hide{display:none!important}
+  /* alerts button slightly bigger */
+  .abtn{min-width:44px;min-height:44px}
+  .lout{font-size:11px;padding:5px 9px}
+  #gsearch{max-width:calc(100vw - 180px);margin:0 4px}
+  /* section padding accounts for bottom nav */
+  .sec.active{padding:12px 12px calc(66px + env(safe-area-inset-bottom))}
+  /* KPI cards 2-col */
   .krow{grid-template-columns:1fr 1fr}
+  /* KPI values smaller */
+  .kc .vl{font-size:18px}
+  /* grid panels stack */
+  .dgrid{grid-template-columns:1fr}
+  /* tables taller allowed */
+  .tscroll{max-height:52vh}
+  /* section header wrap */
+  .shdr{flex-direction:column;align-items:flex-start;gap:8px}
+  .shdr > div:last-child{width:100%;justify-content:flex-start;flex-wrap:wrap}
+  /* modal as bottom sheet */
+  .mw{align-items:flex-end;padding:0!important}
+  .modal{
+    border-radius:18px 18px 0 0;
+    max-height:92vh;width:100%;max-width:100%;
+    padding:16px 12px 20px;
+  }
+  /* form grid collapses to single column */
+  .fg{grid-template-columns:1fr!important}
+  /* tabs scrollable */
+  .tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{white-space:nowrap;flex-shrink:0;padding:9px 13px}
+  /* login card full-width on small screens */
+  .lcard{width:calc(100% - 24px);padding:24px 18px 32px;border-radius:16px}
+  /* iOS: prevent auto-zoom on input focus (need ≥16px font) */
+  input[type=text],input[type=date],input[type=number],select,textarea,
+  .lg input,.cs-trigger{font-size:16px!important}
+  /* modal bottom sheet handle indicator */
+  .modal{padding-top:24px}
+  .modal::before{
+    content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);
+    width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);
+    pointer-events:none;
+  }
+  /* #main takes full width */
+  #layout{overflow:hidden}
+  /* push confirm bar and toasts above the bottom nav */
+  #cbar.show{bottom:calc(58px + env(safe-area-inset-bottom))}
+  .toast{bottom:calc(70px + env(safe-area-inset-bottom));left:12px;right:12px;max-width:100%;font-size:13px}
+  #drag-hint{bottom:calc(70px + env(safe-area-inset-bottom))}
+  /* global search results shorter on mobile */
+  #gsres{max-height:50vh}
 }
 
 /* ── CINEMATIC NAV TRANSITIONS ──────────────── */
@@ -801,11 +885,11 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
   <div class="tbr">
     <div class="uchip">👤 <b id="uname">–</b></div>
     <span class="save-ind" id="saveind">✦ נשמר</span>
-    <button class="btn" onclick="saveAll()" style="background:var(--tealdim);color:var(--teal);border:1px solid rgba(6,214,160,.4);font-size:11px;padding:4px 12px;border-radius:20px">💾 שמור</button>
-    <button class="btn" id="undo-btn" onclick="undoLast()" title="בטל את המחיקה האחרונה" style="display:none;background:rgba(244,162,97,.14);color:#f4a261;border:1px solid rgba(244,162,97,.45);font-size:11px;padding:4px 12px;border-radius:20px">↩ בטל מחיקה</button>
+    <button class="btn mob-hide" onclick="saveAll()" style="background:var(--tealdim);color:var(--teal);border:1px solid rgba(6,214,160,.4);font-size:11px;padding:4px 12px;border-radius:20px">💾 שמור</button>
+    <button class="btn mob-hide" id="undo-btn" onclick="undoLast()" title="בטל את המחיקה האחרונה" style="display:none;background:rgba(244,162,97,.14);color:#f4a261;border:1px solid rgba(244,162,97,.45);font-size:11px;padding:4px 12px;border-radius:20px">↩ בטל מחיקה</button>
     <button class="abtn" onclick="nav('alerts')">⚠ <span id="acnt">0</span></button>
-    <button class="btn btnbk" onclick="backupData()" title="גיבוי">💾 גיבוי</button>
-    <button class="btn" onclick="restoreData()" title="שחזור">📂</button>
+    <button class="btn btnbk mob-hide" onclick="backupData()" title="גיבוי">💾 גיבוי</button>
+    <button class="btn mob-hide" onclick="restoreData()" title="שחזור">📂</button>
     <button class="lout" onclick="doLogout()">יציאה</button>
   </div>
 </div>
@@ -1439,6 +1523,7 @@ function doLogin(){
     document.getElementById('td').textContent=n.toLocaleDateString('en-GB');
     document.getElementById('wd').textContent=wdM(n.getFullYear(),n.getMonth());
     document.getElementById('wdp').textContent=wdP(n.getFullYear(),n.getMonth(),n.getDate());
+    document.body.classList.add('logged-in');
     loadAll();
     requestAnimationFrame(()=>{ appEl.style.opacity='1'; });
     setTimeout(()=>{ appEl.style.transition=''; },300);
@@ -1446,6 +1531,7 @@ function doLogin(){
 }
 function doLogout(){
   saveAll();
+  document.body.classList.remove('logged-in');
   const appEl=document.getElementById('app');
   const loginEl=document.getElementById('login');
   appEl.style.transition='opacity .25s ease-in';
@@ -1459,6 +1545,10 @@ function doLogout(){
     loginEl.style.transition='opacity .4s ease-out';
     document.getElementById('lu').value='';
     document.getElementById('lp').value='';
+    // reset mobile nav to dashboard on logout
+    document.querySelectorAll('#mob-nav .mn-item').forEach(x=>x.classList.remove('active'));
+    const dashItem=document.querySelector('#mob-nav [data-sec="dashboard"]');
+    if(dashItem) dashItem.classList.add('active');
     requestAnimationFrame(()=>{ loginEl.style.opacity='1'; });
     setTimeout(()=>{ loginEl.style.transition=''; },420);
   },260);
@@ -4036,6 +4126,20 @@ function seedData(){
 </script>
 
 
+<!-- Mobile bottom navigation — visible only on <480px screens (CSS-controlled) -->
+<nav id="mob-nav" aria-label="ניווט ראשי">
+  <div class="mn-item active" data-sec="dashboard" onclick="nav('dashboard')"><span class="mn-ic">📊</span><span class="mn-lb">בקרה</span></div>
+  <div class="mn-item" data-sec="alerts" onclick="nav('alerts')"><span class="mn-ic">⚠️</span><span class="mn-lb">התראות</span></div>
+  <div class="mn-item" data-sec="deals" onclick="nav('deals')"><span class="mn-ic">💼</span><span class="mn-lb">עסקאות</span></div>
+  <div class="mn-item" data-sec="tenders" onclick="nav('tenders')"><span class="mn-ic">📋</span><span class="mn-lb">מכרזים</span></div>
+  <div class="mn-item" data-sec="dists" onclick="nav('dists')"><span class="mn-ic">🚀</span><span class="mn-lb">הפצות</span></div>
+  <div class="mn-item" data-sec="salary" onclick="nav('salary')"><span class="mn-ic">💰</span><span class="mn-lb">שכר</span></div>
+  <div class="mn-item" data-sec="meetings" onclick="nav('meetings')"><span class="mn-ic">🤝</span><span class="mn-lb">פגישות</span></div>
+  <div class="mn-item" data-sec="clients" onclick="nav('clients')"><span class="mn-ic">🏢</span><span class="mn-lb">לקוחות</span></div>
+  <div class="mn-item" data-sec="workplan" onclick="nav('workplan')"><span class="mn-ic">🎯</span><span class="mn-lb">תכנון</span></div>
+  <div class="mn-item" data-sec="export" onclick="nav('export')"><span class="mn-ic">📥</span><span class="mn-lb">ייצוא</span></div>
+</nav>
+
 <!-- Custom confirm dialog (replaces window.confirm which is blocked on iOS standalone) -->
 <div id="cbar">
   <div id="cbar-msg"></div>
@@ -4080,10 +4184,13 @@ function nav(s){
     inSec.style.transform  = `translateX(${dir * -55}px)`;
     inSec.classList.add('active');
 
-    // Update nav highlight
+    // Update nav highlight (sidebar + mobile bottom nav)
     document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
     const navEl = document.getElementById('nv-'+s);
     if(navEl) navEl.classList.add('active');
+    document.querySelectorAll('#mob-nav .mn-item').forEach(x=>x.classList.remove('active'));
+    const mobEl = document.querySelector(`#mob-nav [data-sec="${s}"]`);
+    if(mobEl) mobEl.classList.add('active');
 
     // Render new section content
     const renders = {
@@ -4254,11 +4361,9 @@ function refreshEdges(){} // no-op, kept so nav() calls don't throw
         (i===sel.selectedIndex ? 'background:#2563eb;font-weight:600;' : '');
       it.addEventListener('mouseenter',()=>{ if(i!==sel.selectedIndex) it.style.background='rgba(255,255,255,.10)'; });
       it.addEventListener('mouseleave',()=>{ if(i!==sel.selectedIndex) it.style.background=''; });
-      it.addEventListener('mousedown',ev=>{
-        ev.preventDefault(); ev.stopPropagation();
-        if(sel.selectedIndex !== i){ sel.selectedIndex = i; sel.dispatchEvent(new Event('change',{bubbles:true})); }
-        close();
-      });
+      function selectItem(ev){ ev.preventDefault(); ev.stopPropagation(); if(sel.selectedIndex!==i){sel.selectedIndex=i;sel.dispatchEvent(new Event('change',{bubbles:true}));} close(); }
+      it.addEventListener('mousedown', selectItem);
+      it.addEventListener('touchend',  selectItem);
       panel.appendChild(it);
     });
     document.body.appendChild(panel);
@@ -4282,10 +4387,9 @@ function refreshEdges(){} // no-op, kept so nav() calls don't throw
     sync();
     t._sync = sync; sel._csTrigger = t;
     sel.addEventListener('change', sync);
-    t.addEventListener('mousedown', e=>{
-      e.preventDefault(); e.stopPropagation();
-      if(openFor === sel) close(); else buildPanel(sel, t);
-    });
+    function togglePanel(e){ e.preventDefault(); e.stopPropagation(); if(openFor===sel) close(); else buildPanel(sel,t); }
+    t.addEventListener('mousedown', togglePanel);
+    t.addEventListener('touchend',  togglePanel);
   }
 
   function scan(root){ (root||document).querySelectorAll('select').forEach(enhance); }
