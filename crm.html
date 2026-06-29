@@ -8,7 +8,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>CRM | HOT Business v3</title>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700&display=swap" onload="this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700&display=swap"></noscript>
 <style>
 :root{
   --bg:#06080f;--s1:#0c1022;--s2:#101525;--s3:#141a2e;
@@ -613,7 +616,7 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
 <body>
 
 <!-- STARFIELD BACKGROUND CANVAS — pure Canvas 2D, zero external dependencies -->
-<canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block"></canvas>
+<canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block;will-change:transform;transform:translateZ(0)"></canvas>
 <script>
 (function(){
   const cvs = document.getElementById('bg-canvas');
@@ -627,12 +630,12 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
   const rp  = () => PAL[Math.floor(Math.random() * PAL.length)];
 
   // ── Regular stars ────────────────────────────────────────────────────────
-  const STARS = mob ? 220 : 380;
+  const STARS = mob ? 180 : 300;
   const stars = Array.from({length: STARS}, () => {
     const [r,g,b] = rp(), sz = 0.35 + Math.random() * 2;
     return {
       x: Math.random() * W, y: Math.random() * H,
-      r, g, b, sz,
+      r, g, b, col: `rgb(${r},${g},${b})`, sz,
       base: 0.15 + Math.random() * 0.75,
       ts: 0.3 + Math.random() * 1.6,
       tp: Math.random() * Math.PI * 2,
@@ -642,12 +645,12 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
   });
 
   // ── Bright accent "sparkle" stars ────────────────────────────────────────
-  const ACCENT = mob ? 10 : 20;
+  const ACCENT = mob ? 8 : 16;
   const accents = Array.from({length: ACCENT}, () => {
     const [r,g,b] = rp();
     return {
       x: Math.random() * W, y: Math.random() * H,
-      r, g, b,
+      r, g, b, col: `rgb(${r},${g},${b})`,
       sz: 1.2 + Math.random() * 2.8,
       sp: 0.25 + Math.random() * 0.9,
       ph: Math.random() * Math.PI * 2,
@@ -655,34 +658,41 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
   });
 
   // ── Flow-field particles ─────────────────────────────────────────────────
-  const FLOW = mob ? 80 : 160;
+  const FLOW = mob ? 45 : 90;
   const flow = Array.from({length: FLOW}, () => {
     const [r,g,b] = rp();
     return {
       x: Math.random() * W, y: Math.random() * H,
       r, g, b,
+      col: `rgb(${r},${g},${b})`,
       sz: 0.5 + Math.random() * 1.2,
       spd: 0.18 + Math.random() * 0.55,
       a: Math.random() * Math.PI * 2,
-      alpha: 0.08 + Math.random() * 0.35,
+      alpha: 0.12 + Math.random() * 0.3,
       life: Math.random(),
     };
   });
-  function flowDir(x, y, t){
-    return (Math.sin(x*.045+t) * Math.cos(y*.03+t*.7) +
-            Math.sin(x*.07-y*.05+t*1.2)*.5 +
-            Math.cos(x*.028+y*.06-t*.85)*.3) * Math.PI;
-  }
+  // single trig call per particle instead of 4 — visually indistinguishable at 30fps
+  function flowDir(x, y, t){ return Math.sin(x*.04 + y*.025 + t) * Math.PI; }
 
-  let T = 0;
+  let T = 0, _lastT = 0, _hidden = false;
+  document.addEventListener('visibilitychange', () => {
+    _hidden = document.visibilityState === 'hidden';
+    if(!_hidden) requestAnimationFrame(draw);
+  });
+
   function draw(now){
+    if(_hidden) return;
     requestAnimationFrame(draw);
+    // cap at ~30 fps — canvas is decorative; halves CPU vs 60fps
+    if(now - _lastT < 30) return;
+    _lastT = now;
     T = now * .001;
 
     ctx.fillStyle = '#06080f';
     ctx.fillRect(0, 0, W, H);
 
-    // ── Flow particles ──────────────────────────────────────────────────────
+    // ── Flow particles — flat fill, no gradient (eliminates 90 gradient objects/frame)
     for(const p of flow){
       p.a = flowDir(p.x, p.y, T);
       p.x += Math.cos(p.a) * p.spd;
@@ -690,13 +700,9 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
       if(p.x < 0) p.x = W; if(p.x > W) p.x = 0;
       if(p.y < 0) p.y = H; if(p.y > H) p.y = 0;
       p.life = (p.life + .003) % 1;
-      const fade = Math.sin(p.life * Math.PI);
-      ctx.globalAlpha = p.alpha * fade;
-      const grd = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.sz*5);
-      grd.addColorStop(0, `rgb(${p.r},${p.g},${p.b})`);
-      grd.addColorStop(1, 'transparent');
-      ctx.fillStyle = grd;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.sz*5, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = p.alpha * Math.sin(p.life * Math.PI);
+      ctx.fillStyle = p.col;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.sz * 3, 0, Math.PI*2); ctx.fill();
     }
 
     // ── Regular stars ───────────────────────────────────────────────────────
@@ -705,18 +711,15 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
       if(s.x < 0) s.x = W; if(s.x > W) s.x = 0;
       if(s.y < 0) s.y = H; if(s.y > H) s.y = 0;
       const al = s.base * (.4 + .6 * (.5 + .5 * Math.sin(T * s.ts + s.tp)));
-      // soft glow halo
+      // glow via shadowBlur — one state set instead of a new gradient object
       if(s.sz > 1.2){
-        const g2 = ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.sz*5);
-        g2.addColorStop(0, `rgba(${s.r},${s.g},${s.b},${al*.5})`);
-        g2.addColorStop(1, 'transparent');
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = g2;
-        ctx.beginPath(); ctx.arc(s.x,s.y,s.sz*5,0,Math.PI*2); ctx.fill();
+        ctx.shadowColor = s.col;
+        ctx.shadowBlur  = s.sz * 5;
       }
       ctx.globalAlpha = al;
-      ctx.fillStyle = `rgb(${s.r},${s.g},${s.b})`;
-      ctx.beginPath(); ctx.arc(s.x,s.y,s.sz,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle   = s.col;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.sz, 0, Math.PI*2); ctx.fill();
+      if(s.sz > 1.2) ctx.shadowBlur = 0;
     }
 
     // ── Accent sparkle stars ────────────────────────────────────────────────
@@ -725,21 +728,21 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
       const pulse = .5 + .5 * Math.sin(T * a.sp + a.ph);
       const al    = .35 + .65 * pulse;
       const sz    = a.sz * (.75 + .25 * pulse);
-      // outer glow
-      const grd = ctx.createRadialGradient(a.x,a.y,0,a.x,a.y,sz*7);
-      grd.addColorStop(0,   `rgba(${a.r},${a.g},${a.b},${al*.7})`);
-      grd.addColorStop(0.4, `rgba(${a.r},${a.g},${a.b},${al*.15})`);
-      grd.addColorStop(1,   'transparent');
-      ctx.fillStyle = grd;
-      ctx.beginPath(); ctx.arc(a.x,a.y,sz*7,0,Math.PI*2); ctx.fill();
+      // glow via shadowBlur — no per-accent gradient object
+      ctx.globalAlpha   = al * .75;
+      ctx.fillStyle     = a.col;
+      ctx.shadowColor   = a.col;
+      ctx.shadowBlur    = sz * 9;
+      ctx.beginPath(); ctx.arc(a.x, a.y, sz * 1.2, 0, Math.PI*2); ctx.fill();
+      ctx.shadowBlur    = 0;
       // white core
-      ctx.globalAlpha = al;
-      ctx.fillStyle = `rgb(255,255,255)`;
-      ctx.beginPath(); ctx.arc(a.x,a.y,sz*.45,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha   = al;
+      ctx.fillStyle     = '#fff';
+      ctx.beginPath(); ctx.arc(a.x, a.y, sz * .45, 0, Math.PI*2); ctx.fill();
       // cross-hair sparkle lines
-      ctx.globalAlpha = al * .55;
-      ctx.strokeStyle = `rgb(${a.r},${a.g},${a.b})`;
-      ctx.lineWidth   = 0.6;
+      ctx.globalAlpha   = al * .45;
+      ctx.strokeStyle   = a.col;
+      ctx.lineWidth     = 0.6;
       const cl = sz * 5;
       ctx.beginPath();
       ctx.moveTo(a.x-cl,a.y); ctx.lineTo(a.x+cl,a.y);
@@ -762,8 +765,6 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
 })();
 </script>
 
-<!-- GSAP -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
 
 <!-- LOGIN -->
@@ -1423,51 +1424,44 @@ function doLogin(){
   document.getElementById('lerr').textContent='';
   const loginEl=document.getElementById('login');
   const appEl=document.getElementById('app');
-  if(window.gsap){
-    gsap.to(loginEl,{opacity:0,duration:0.18,ease:'power2.in',onComplete:()=>{
-      loginEl.style.display='none';
-      appEl.style.display='flex';
-      document.getElementById('uname').textContent=f.n;
-      const n=now();
-      document.getElementById('td').textContent=n.toLocaleDateString('en-GB');
-      document.getElementById('wd').textContent=wdM(n.getFullYear(),n.getMonth());
-      document.getElementById('wdp').textContent=wdP(n.getFullYear(),n.getMonth(),n.getDate());
-      loadAll();
-      // quick, single reveal of the app shell
-      gsap.from('#topbar',{y:-30,opacity:0,duration:0.28,ease:'power2.out'});
-      gsap.from('.sec.active',{opacity:0,duration:0.3,ease:'power2.out'});
-    }});
-  }else{
+  if(window._stopCardTilt) window._stopCardTilt();
+  loginEl.style.transition='opacity .18s ease-in';
+  loginEl.style.opacity='0';
+  setTimeout(()=>{
     loginEl.style.display='none';
+    loginEl.style.opacity='';
+    loginEl.style.transition='';
+    appEl.style.opacity='0';
     appEl.style.display='flex';
+    appEl.style.transition='opacity .28s ease-out';
     document.getElementById('uname').textContent=f.n;
     const n=now();
     document.getElementById('td').textContent=n.toLocaleDateString('en-GB');
     document.getElementById('wd').textContent=wdM(n.getFullYear(),n.getMonth());
     document.getElementById('wdp').textContent=wdP(n.getFullYear(),n.getMonth(),n.getDate());
     loadAll();
-  }
+    requestAnimationFrame(()=>{ appEl.style.opacity='1'; });
+    setTimeout(()=>{ appEl.style.transition=''; },300);
+  },180);
 }
 function doLogout(){
   saveAll();
   const appEl=document.getElementById('app');
   const loginEl=document.getElementById('login');
-  if(window.gsap){
-    gsap.to(appEl,{opacity:0,duration:0.35,ease:'power2.in',onComplete:()=>{
-      appEl.style.display='none';
-      appEl.style.opacity='';
-      loginEl.style.display='flex';
-      loginEl.style.opacity='0';
-      document.getElementById('lu').value='';
-      document.getElementById('lp').value='';
-      gsap.to(loginEl,{opacity:1,duration:0.5,ease:'power2.out'});
-    }});
-  }else{
+  appEl.style.transition='opacity .25s ease-in';
+  appEl.style.opacity='0';
+  setTimeout(()=>{
     appEl.style.display='none';
+    appEl.style.opacity='';
+    appEl.style.transition='';
+    loginEl.style.opacity='0';
     loginEl.style.display='flex';
+    loginEl.style.transition='opacity .4s ease-out';
     document.getElementById('lu').value='';
     document.getElementById('lp').value='';
-  }
+    requestAnimationFrame(()=>{ loginEl.style.opacity='1'; });
+    setTimeout(()=>{ loginEl.style.transition=''; },420);
+  },260);
 }
 
 // Login card entrance is now a single pure-CSS fade-in (.lcard animation) —
@@ -1530,14 +1524,19 @@ function doLogout(){
     },{passive:true});
     loginEl.addEventListener('touchend',()=>{tx=0;ty=0;});
 
+    let tiltActive = true;
+    window._stopCardTilt = () => { tiltActive = false; };
     function frame(){
+      if(!tiltActive) return;
       requestAnimationFrame(frame);
       const ease=0.07;
       cx+=(tx-cx)*ease; cy+=(ty-cy)*ease; scale+=(targetScale-scale)*ease;
-      card.style.transform=`rotateX(${cx.toFixed(2)}deg) rotateY(${cy.toFixed(2)}deg) scale(${scale.toFixed(4)})`;
-      // shift shadow to match tilt direction
-      const sx=(-cy*2).toFixed(1), sy=(cx*2+32).toFixed(1);
-      card.style.boxShadow=`${sx}px ${sy}px 80px rgba(0,0,0,.78),0 0 0 1px rgba(255,255,255,.04),0 0 80px rgba(200,169,110,.08)`;
+      // skip write if values haven't meaningfully changed
+      if(Math.abs(cx)>.01||Math.abs(cy)>.01||Math.abs(scale-1)>.0001){
+        card.style.transform=`rotateX(${cx.toFixed(2)}deg) rotateY(${cy.toFixed(2)}deg) scale(${scale.toFixed(4)})`;
+        const sx=(-cy*2).toFixed(1), sy=(cx*2+32).toFixed(1);
+        card.style.boxShadow=`${sx}px ${sy}px 80px rgba(0,0,0,.78),0 0 0 1px rgba(255,255,255,.04),0 0 80px rgba(200,169,110,.08)`;
+      }
     }
     frame();
   }
@@ -1758,7 +1757,15 @@ function filt(ev,...ids){
 }
 
 // ===== RENDER ALL =====
-function rAll(){rDash();rDeals();rTenders();rDists();rSalary();rMeetings();rAlerts();rClients();rWorkPlan();updateExportCounts();setTimeout(initDragScrolls,100);}
+function rAll(){
+  // Render the visible section immediately, defer the rest to next idle tick
+  rDash(); rAlerts();
+  const ric = window.requestIdleCallback || (fn => setTimeout(fn, 80));
+  ric(() => { rDeals(); rTenders(); });
+  ric(() => { rDists(); rSalary(); });
+  ric(() => { rMeetings(); rClients(); rWorkPlan(); updateExportCounts(); });
+  setTimeout(initDragScrolls, 150);
+}
 
 // ===== GLOBAL SEARCH =====
 let _gsRes=[];
