@@ -830,6 +830,25 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
 
 /* ── Fancy badge borders ── */
 .badge{backdrop-filter:blur(6px);letter-spacing:.4px}
+
+/* ── Mobile nav active glow pulse ── */
+@keyframes navDotPulse{0%,100%{box-shadow:0 0 8px var(--gold),0 0 16px rgba(200,169,110,.3)}50%{box-shadow:0 0 14px var(--gold2),0 0 28px rgba(200,169,110,.55)}}
+.mn-item.active::before{animation:navDotPulse 2.2s ease-in-out infinite}
+/* ── Mobile nav scroll fade hint ── */
+#mob-nav::after{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:22px;pointer-events:none;
+  background:linear-gradient(to right,rgba(5,7,14,.92),transparent);
+}
+
+/* ── Dashboard welcome card entrance ── */
+#dash-welcome > div{will-change:transform}
+
+/* ── Section titles shimmer on entrance ── */
+@keyframes titleShimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+.sec.active .stit{
+  background-size:200% auto;
+  animation:titleShimmer 4s linear infinite;
+}
 </style>
 </head>
 <body>
@@ -1021,6 +1040,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <span>📅 <b id="td">–</b></span>
     <span>ימי עבודה: <b id="wd">–</b></span>
     <span>עברו: <b id="wdp">–</b></span>
+    <span id="live-clock" style="color:var(--gold2);font-weight:700;letter-spacing:.5px;font-size:12px;font-variant-numeric:tabular-nums"></span>
     <span class="live-dot" title="מחובר"></span>
   </div>
   <div id="gsearch">
@@ -1072,6 +1092,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
 <!-- DASHBOARD -->
 <div class="sec active" id="sec-dashboard">
   <div class="shdr"><div class="stit">📊 לוח בקרה</div><button class="btn btns" onclick="loadAll();toast('✅ לוח הבקרה עודכן','ok')" style="font-size:11px;padding:6px 14px;border-color:var(--teal);color:var(--teal)">🔄 רענן</button></div>
+  <div id="dash-welcome"></div>
   <div class="krow" id="krow"></div>
   <div class="dgrid">
     <div class="dpanel"><h4>📌 עדיפות פעולה</h4><div id="prilist" style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto"></div></div>
@@ -1670,6 +1691,17 @@ function doLogin(){
     document.getElementById('wd').textContent=wdM(n.getFullYear(),n.getMonth());
     document.getElementById('wdp').textContent=wdP(n.getFullYear(),n.getMonth(),n.getDate());
     document.body.classList.add('logged-in');
+    // Live clock
+    (function startClock(){
+      const el=document.getElementById('live-clock');
+      if(!el) return;
+      const tick=()=>{
+        if(!document.body.classList.contains('logged-in')){el.textContent='';return;}
+        el.textContent=new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        setTimeout(tick,1000);
+      };
+      tick();
+    })();
     loadAll();
     requestAnimationFrame(()=>{ appEl.style.opacity='1'; });
     setTimeout(()=>{ appEl.style.transition=''; },300);
@@ -2197,6 +2229,46 @@ function rDash(){
   const al=getAlerts();
   const tv=D.deals.reduce((s,d)=>s+(d.v||0),0),tot=D.deals.reduce((s,d)=>s+(d.otc||0),0),cls=D.deals.filter(d=>d.st==='נסגר').length;
   const held=D.meetings.filter(m=>m.hl==='כן').length,pct=Math.round((held/MEETING_GOAL)*100);
+  // Welcome card
+  const wEl=document.getElementById('dash-welcome');
+  if(wEl){
+    const h=now().getHours();
+    const greetWord=h<5?'לילה טוב':h<12?'בוקר טוב':h<17?'שלום':h<21?'ערב טוב':'לילה טוב';
+    const uname=document.getElementById('uname').textContent;
+    const firstName=uname.split(' ')[0];
+    const today=now().toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    const critCount=al.filter(x=>x.type==='crit').length;
+    const statusLine=critCount>0
+      ?`<span style="color:var(--red2)">⚠ ${critCount} התראות קריטיות ממתינות</span>`
+      :`<span style="color:var(--teal)">✅ אין פריטים קריטיים — המערכת תקינה</span>`;
+    wEl.innerHTML=`<div style="background:linear-gradient(135deg,rgba(200,169,110,.07),rgba(200,169,110,.02),rgba(10,14,28,.85));
+      border:1px solid rgba(200,169,110,.16);border-radius:16px;padding:18px 22px;margin-bottom:18px;
+      box-shadow:0 6px 28px rgba(0,0,0,.45),inset 0 1px 0 rgba(200,169,110,.14);
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+      position:relative;overflow:hidden;animation:cardIn .35s ease">
+      <div style="position:absolute;top:0;left:0;right:0;height:1px;
+        background:linear-gradient(90deg,transparent,rgba(200,169,110,.45),transparent)"></div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.7px;text-transform:uppercase;margin-bottom:5px">${today}</div>
+        <div style="font-size:21px;font-weight:800;letter-spacing:-.2px;background:linear-gradient(135deg,var(--text) 30%,var(--gold2) 70%,var(--gold3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:5px">${greetWord}, ${firstName} ✦</div>
+        <div style="font-size:11px">${statusLine}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="text-align:center;background:rgba(76,201,240,.06);border:1px solid rgba(76,201,240,.15);border-radius:12px;padding:10px 16px">
+          <div style="font-size:20px;font-weight:900;color:var(--blue)">${D.deals.length}</div>
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">עסקאות</div>
+        </div>
+        <div style="text-align:center;background:rgba(6,214,160,.06);border:1px solid rgba(6,214,160,.15);border-radius:12px;padding:10px 16px">
+          <div style="font-size:20px;font-weight:900;color:var(--teal)">${held}</div>
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">פגישות</div>
+        </div>
+        <div style="text-align:center;background:${critCount>0?'rgba(230,57,70,.08)':'rgba(255,255,255,.03)'};border:1px solid ${critCount>0?'rgba(230,57,70,.25)':'var(--border)'};border-radius:12px;padding:10px 16px">
+          <div style="font-size:20px;font-weight:900;color:${critCount>0?'var(--red2)':'var(--text3)'}">${al.length}</div>
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">התראות</div>
+        </div>
+      </div>
+    </div>`;
+  }
   document.getElementById('krow').innerHTML=`
     <div class="kc r"><div class="lb">התראות</div><div class="vl">${al.length}</div><div class="sb">דורשות טיפול</div></div>
     <div class="kc"><div class="lb">עסקאות</div><div class="vl">${D.deals.length}</div><div class="sb">${cls} נסגרו</div></div>
