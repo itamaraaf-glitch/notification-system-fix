@@ -694,6 +694,142 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
 
 /* Touch tilt — applied by JS on touchmove inside cards */
 .tilt-active{transition:transform .05s linear !important}
+
+/* ═══════════════════════════════════
+   ✦ LUXURY PREMIUM LAYER ✦
+═══════════════════════════════════ */
+:root{
+  --gold3:#f5e4b0;
+  --gold-glow:rgba(200,169,110,.22);
+  --lux-shadow:0 40px 100px rgba(0,0,0,.8),0 0 0 1px rgba(200,169,110,.1),0 0 80px rgba(200,169,110,.08);
+}
+
+/* ── Richer starfield ambient ──────────────── */
+#bg-canvas{opacity:.9;filter:contrast(1.05) brightness(1.08)}
+
+/* ── Login card: deeper glass + shimmer shimmer ── */
+.lcard{
+  background:linear-gradient(145deg,rgba(12,16,32,.98),rgba(6,9,20,.99));
+  box-shadow:0 48px 100px rgba(0,0,0,.85),0 0 0 1px rgba(200,169,110,.14),0 0 100px rgba(200,169,110,.1),inset 0 1px 0 rgba(255,255,255,.07);
+  border-color:rgba(200,169,110,.22);
+}
+.lcard::before{background:linear-gradient(90deg,transparent,rgba(200,169,110,.65),transparent)}
+
+/* ── Section titles: three-stop gold gradient ── */
+.stit{
+  font-size:23px;
+  background:linear-gradient(130deg,var(--text) 10%,var(--gold2) 55%,var(--gold3) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+
+/* ── Section header divider: gold shimmer line ── */
+.shdr{border-bottom:1px solid rgba(200,169,110,.15)}
+.shdr::after{content:'';display:block;position:absolute;bottom:-1px;left:5%;right:5%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(200,169,110,.35),transparent);pointer-events:none}
+.shdr{position:relative}
+
+/* ── KPI cards: stronger gold hover glow ── */
+.kc:hover{
+  box-shadow:0 22px 60px rgba(0,0,0,.7),0 0 0 1px rgba(200,169,110,.18),0 0 50px rgba(200,169,110,.1) !important;
+  border-color:rgba(200,169,110,.22) !important;
+}
+.kc:hover::after{opacity:1}
+
+/* ── Grid panels: glass luxury upgrade ── */
+.dpanel{
+  background:linear-gradient(145deg,rgba(14,18,34,.98),rgba(8,11,22,.99));
+  border-color:rgba(200,169,110,.12);
+  box-shadow:0 8px 36px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.04),inset 0 0 0 1px rgba(200,169,110,.04);
+  backdrop-filter:blur(12px);
+  position:relative;overflow:hidden;
+}
+.dpanel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(200,169,110,.4),transparent);pointer-events:none}
+
+/* ── Table wrapper: luxury glass ── */
+.tw{
+  background:linear-gradient(170deg,rgba(13,17,32,.98),rgba(7,10,20,.99));
+  border-color:rgba(200,169,110,.1);
+  box-shadow:0 10px 48px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+/* ── Table rows: gold hover instead of harsh red ── */
+tr:hover td{background:rgba(200,169,110,.045) !important}
+
+/* ── Modal: premium depth ── */
+.modal{
+  background:linear-gradient(145deg,rgba(11,15,30,.99),rgba(7,10,20,.99));
+  box-shadow:0 60px 120px rgba(0,0,0,.92),0 0 0 1px rgba(200,169,110,.12),0 0 100px rgba(200,169,110,.09);
+  border-color:rgba(200,169,110,.22);
+}
+
+/* ── Goal/progress bars: gold gradient glow ── */
+.gbar-fill{
+  background:linear-gradient(90deg,#a07840,var(--gold),var(--gold2),var(--gold3)) !important;
+  box-shadow:0 0 14px rgba(200,169,110,.5);
+}
+
+/* ── Sidebar active item: gold ambient glow ── */
+.ni.active{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),-3px 0 18px rgba(200,169,110,.15) !important;
+}
+.ni:hover{background:rgba(200,169,110,.08) !important}
+
+/* ── Topbar: deeper glass ── */
+#topbar{
+  background:linear-gradient(90deg,rgba(8,10,20,.99),rgba(12,15,28,.99));
+  box-shadow:0 2px 30px rgba(0,0,0,.75),inset 0 -1px 0 rgba(200,169,110,.1);
+}
+#topbar::after{opacity:.8}
+
+/* ── Premium gold button: stronger radiance ── */
+.btnp:hover{
+  box-shadow:0 22px 70px rgba(200,169,110,.8),0 0 55px rgba(200,169,110,.45),inset 0 1px 0 rgba(255,255,255,.35) !important;
+}
+
+/* ── Tabs: richer active glow ── */
+.tab.active{background:rgba(200,169,110,.1)}
+.tab.active::after{left:10%;right:10%;filter:blur(5px);opacity:.9}
+
+/* ── Mobile bottom nav: premium glass + active dot ── */
+#mob-nav{
+  background:rgba(5,7,14,.96);
+  border-top:1px solid rgba(200,169,110,.18);
+  box-shadow:0 -8px 32px rgba(0,0,0,.7),0 -1px 0 rgba(200,169,110,.08);
+}
+.mn-item{position:relative}
+.mn-item.active{color:var(--gold2)}
+.mn-item.active::before{
+  content:'';position:absolute;top:5px;left:50%;transform:translateX(-50%);
+  width:18px;height:2px;border-radius:1px;
+  background:linear-gradient(90deg,var(--gold),var(--gold2));
+  box-shadow:0 0 10px var(--gold),0 0 20px rgba(200,169,110,.4);
+}
+
+/* ── Toast: glass upgrade ── */
+.toast{
+  backdrop-filter:blur(16px);
+  box-shadow:0 12px 40px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.06);
+}
+
+/* ── Scrollbar: richer gold gradient ── */
+::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,var(--gold2),var(--gold),rgba(200,169,110,.3));
+  box-shadow:inset 0 0 3px rgba(200,169,110,.3);
+}
+
+/* ── Alert cards: premium dark glass ── */
+.ac{
+  backdrop-filter:blur(10px);
+  box-shadow:0 6px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+/* ── KPI card label: slightly elevated ── */
+.kc .lb{letter-spacing:.5px}
+.kc .vl{letter-spacing:-.8px}
+
+/* ── Fancy badge borders ── */
+.badge{backdrop-filter:blur(6px);letter-spacing:.4px}
 </style>
 </head>
 <body>
