@@ -834,7 +834,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
 </head>
 <body>
 
-<!-- STARFIELD BACKGROUND CANVAS — pure Canvas 2D, zero external dependencies -->
+<!-- LUXURY OFFICE BACKGROUND — architectural grid, ambient spotlights, floating dust -->
 <canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block;will-change:transform;transform:translateZ(0)"></canvas>
 <script>
 (function(){
@@ -844,55 +844,77 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   cvs.width = W; cvs.height = H;
   const mob = W < 768;
 
-  // CRM palette  [r, g, b]
-  const PAL = [[200,169,110],[6,214,160],[76,201,240],[139,92,246]];
-  const rp  = () => PAL[Math.floor(Math.random() * PAL.length)];
+  // ── Offscreen canvas for the static grid (drawn once, stamped each frame)
+  let gridCvs = null;
+  function buildGrid(){
+    gridCvs = document.createElement('canvas');
+    gridCvs.width = W; gridCvs.height = H;
+    const gc = gridCvs.getContext('2d');
+    const GS = mob ? 70 : 95; // grid spacing px
+    // Primary gold grid
+    gc.strokeStyle = 'rgba(200,169,110,0.055)';
+    gc.lineWidth   = 0.6;
+    gc.beginPath();
+    for(let x = GS; x < W; x += GS){ gc.moveTo(x,0); gc.lineTo(x,H); }
+    for(let y = GS; y < H; y += GS){ gc.moveTo(0,y); gc.lineTo(W,y); }
+    gc.stroke();
+    // Finer sub-grid
+    gc.strokeStyle = 'rgba(200,169,110,0.022)';
+    gc.lineWidth   = 0.35;
+    const SG = GS / 3;
+    gc.beginPath();
+    for(let x = SG; x < W; x += SG){ gc.moveTo(x,0); gc.lineTo(x,H); }
+    for(let y = SG; y < H; y += SG){ gc.moveTo(0,y); gc.lineTo(W,y); }
+    gc.stroke();
+    // Corner accent marks at grid intersections (small cross marks)
+    gc.strokeStyle = 'rgba(200,169,110,0.1)';
+    gc.lineWidth   = 0.5;
+    const CSZ = 4;
+    gc.beginPath();
+    for(let x = GS; x < W; x += GS)
+      for(let y = GS; y < H; y += GS){
+        gc.moveTo(x-CSZ,y); gc.lineTo(x+CSZ,y);
+        gc.moveTo(x,y-CSZ); gc.lineTo(x,y+CSZ);
+      }
+    gc.stroke();
+  }
+  buildGrid();
 
-  // ── Regular stars ────────────────────────────────────────────────────────
-  const STARS = mob ? 180 : 300;
-  const stars = Array.from({length: STARS}, () => {
-    const [r,g,b] = rp(), sz = 0.35 + Math.random() * 2;
-    return {
-      x: Math.random() * W, y: Math.random() * H,
-      r, g, b, col: `rgb(${r},${g},${b})`, sz,
-      base: 0.15 + Math.random() * 0.75,
-      ts: 0.3 + Math.random() * 1.6,
-      tp: Math.random() * Math.PI * 2,
-      vx: (Math.random() - .5) * 0.06,
-      vy: (Math.random() - .5) * 0.06,
-    };
-  });
+  // ── Ambient ceiling spotlights
+  const SPOT_DEF = [
+    { fx:.18, fy:-.05, fc:[200,169,110], base:.055, spd:.28 },
+    { fx:.82, fy:.22,  fc:[76,201,240],  base:.03,  spd:.22 },
+    { fx:.5,  fy:1.1,  fc:[139,92,246],  base:.035, spd:.35 },
+    { fx:.08, fy:.75,  fc:[200,169,110], base:.025, spd:.18 },
+    { fx:.92, fy:.78,  fc:[6,214,160],   base:.02,  spd:.30 },
+  ];
+  const spots = SPOT_DEF.map(d => ({
+    ...d, ph: Math.random() * Math.PI * 2,
+    get x(){ return W * d.fx; }, get y(){ return H * d.fy; },
+    get r(){ return Math.max(W,H) * (mob ? .55 : .5); },
+  }));
 
-  // ── Bright accent "sparkle" stars ────────────────────────────────────────
-  const ACCENT = mob ? 8 : 16;
-  const accents = Array.from({length: ACCENT}, () => {
-    const [r,g,b] = rp();
-    return {
-      x: Math.random() * W, y: Math.random() * H,
-      r, g, b, col: `rgb(${r},${g},${b})`,
-      sz: 1.2 + Math.random() * 2.8,
-      sp: 0.25 + Math.random() * 0.9,
-      ph: Math.random() * Math.PI * 2,
-    };
-  });
+  // ── Floating dust particles (very slow drift, gold-tinted)
+  const NDUST = mob ? 28 : 55;
+  const dust  = Array.from({length: NDUST}, () => ({
+    x: Math.random() * W, y: Math.random() * H,
+    sz:  0.25 + Math.random() * 0.65,
+    spd: 0.03  + Math.random() * 0.09,
+    ax:  (Math.random() - .5) * 0.015,
+    vx: (Math.random() - .5) * 0.04,
+    vy: -(0.02 + Math.random() * 0.06), // slow rise
+    ph:  Math.random() * Math.PI * 2,
+    life: Math.random(),
+  }));
 
-  // ── Flow-field particles ─────────────────────────────────────────────────
-  const FLOW = mob ? 45 : 90;
-  const flow = Array.from({length: FLOW}, () => {
-    const [r,g,b] = rp();
-    return {
-      x: Math.random() * W, y: Math.random() * H,
-      r, g, b,
-      col: `rgb(${r},${g},${b})`,
-      sz: 0.5 + Math.random() * 1.2,
-      spd: 0.18 + Math.random() * 0.55,
-      a: Math.random() * Math.PI * 2,
-      alpha: 0.12 + Math.random() * 0.3,
-      life: Math.random(),
-    };
-  });
-  // single trig call per particle instead of 4 — visually indistinguishable at 30fps
-  function flowDir(x, y, t){ return Math.sin(x*.04 + y*.025 + t) * Math.PI; }
+  // ── Bokeh circles (out-of-focus light blobs, stationary)
+  const NBOKEH = mob ? 4 : 8;
+  const bokeh  = Array.from({length: NBOKEH}, () => ({
+    x: Math.random() * W, y: Math.random() * H,
+    r: 40 + Math.random() * 90,
+    col: [[200,169,110],[76,201,240],[139,92,246]][Math.floor(Math.random()*3)],
+    ph: Math.random() * Math.PI * 2, spd: .1 + Math.random() * .15,
+  }));
 
   let T = 0, _lastT = 0, _hidden = false;
   document.addEventListener('visibilitychange', () => {
@@ -903,81 +925,70 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   function draw(now){
     if(_hidden) return;
     requestAnimationFrame(draw);
-    // cap at ~30 fps — canvas is decorative; halves CPU vs 60fps
-    if(now - _lastT < 30) return;
-    _lastT = now;
-    T = now * .001;
+    if(now - _lastT < 33) return; // ~30fps
+    _lastT = now; T = now * .001;
 
-    ctx.fillStyle = '#06080f';
+    // ── Base: deep luxury charcoal
+    ctx.globalAlpha = 1;
+    ctx.fillStyle   = '#060810';
     ctx.fillRect(0, 0, W, H);
 
-    // ── Flow particles — flat fill, no gradient (eliminates 90 gradient objects/frame)
-    for(const p of flow){
-      p.a = flowDir(p.x, p.y, T);
-      p.x += Math.cos(p.a) * p.spd;
-      p.y += Math.sin(p.a) * p.spd;
-      if(p.x < 0) p.x = W; if(p.x > W) p.x = 0;
-      if(p.y < 0) p.y = H; if(p.y > H) p.y = 0;
-      p.life = (p.life + .003) % 1;
-      ctx.globalAlpha = p.alpha * Math.sin(p.life * Math.PI);
-      ctx.fillStyle = p.col;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.sz * 3, 0, Math.PI*2); ctx.fill();
+    // ── Ambient spotlights (breathing radial glows)
+    for(const s of spots){
+      const al  = s.base * (.65 + .35 * Math.sin(T * s.spd + s.ph));
+      const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
+      const [r,g,b] = s.fc;
+      grd.addColorStop(0,   `rgba(${r},${g},${b},${(al*2.2).toFixed(3)})`);
+      grd.addColorStop(.35, `rgba(${r},${g},${b},${(al*.55).toFixed(3)})`);
+      grd.addColorStop(1,   'rgba(0,0,0,0)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, W, H);
     }
 
-    // ── Regular stars ───────────────────────────────────────────────────────
-    for(const s of stars){
-      s.x += s.vx; s.y += s.vy;
-      if(s.x < 0) s.x = W; if(s.x > W) s.x = 0;
-      if(s.y < 0) s.y = H; if(s.y > H) s.y = 0;
-      const al = s.base * (.4 + .6 * (.5 + .5 * Math.sin(T * s.ts + s.tp)));
-      // glow via shadowBlur — one state set instead of a new gradient object
-      if(s.sz > 1.2){
-        ctx.shadowColor = s.col;
-        ctx.shadowBlur  = s.sz * 5;
-      }
-      ctx.globalAlpha = al;
-      ctx.fillStyle   = s.col;
-      ctx.beginPath(); ctx.arc(s.x, s.y, s.sz, 0, Math.PI*2); ctx.fill();
-      if(s.sz > 1.2) ctx.shadowBlur = 0;
-    }
+    // ── Static architectural grid
+    ctx.drawImage(gridCvs, 0, 0);
 
-    // ── Accent sparkle stars ────────────────────────────────────────────────
-    ctx.globalAlpha = 1;
-    for(const a of accents){
-      const pulse = .5 + .5 * Math.sin(T * a.sp + a.ph);
-      const al    = .35 + .65 * pulse;
-      const sz    = a.sz * (.75 + .25 * pulse);
-      // glow via shadowBlur — no per-accent gradient object
-      ctx.globalAlpha   = al * .75;
-      ctx.fillStyle     = a.col;
-      ctx.shadowColor   = a.col;
-      ctx.shadowBlur    = sz * 9;
-      ctx.beginPath(); ctx.arc(a.x, a.y, sz * 1.2, 0, Math.PI*2); ctx.fill();
-      ctx.shadowBlur    = 0;
-      // white core
-      ctx.globalAlpha   = al;
-      ctx.fillStyle     = '#fff';
-      ctx.beginPath(); ctx.arc(a.x, a.y, sz * .45, 0, Math.PI*2); ctx.fill();
-      // cross-hair sparkle lines
-      ctx.globalAlpha   = al * .45;
-      ctx.strokeStyle   = a.col;
-      ctx.lineWidth     = 0.6;
-      const cl = sz * 5;
-      ctx.beginPath();
-      ctx.moveTo(a.x-cl,a.y); ctx.lineTo(a.x+cl,a.y);
-      ctx.moveTo(a.x,a.y-cl); ctx.lineTo(a.x,a.y+cl);
-      ctx.stroke();
+    // ── Bokeh blobs (very faint, slowly pulsing)
+    for(const b of bokeh){
+      const al  = 0.012 + 0.01 * Math.sin(T * b.spd + b.ph);
+      const [r,g,bl2] = b.col;
+      const grd = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+      grd.addColorStop(0, `rgba(${r},${g},${bl2},${al})`);
+      grd.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.globalAlpha = 1;
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
     }
+
+    // ── Floating dust
+    ctx.fillStyle = 'rgba(200,169,110,1)';
+    for(const p of dust){
+      p.vx += p.ax; p.vx *= .98;
+      p.x  += p.vx; p.y  += p.vy;
+      if(p.x < -5)  p.x  = W + 5;
+      if(p.x > W+5) p.x  = -5;
+      if(p.y < -5){ p.y  = H + 5; p.x = Math.random() * W; }
+      p.life = (p.life + .0015) % 1;
+      ctx.globalAlpha = 0.06 + .18 * Math.sin(p.life * Math.PI) * (.5 + .5 * Math.sin(T*.4 + p.ph));
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.sz, 0, Math.PI*2); ctx.fill();
+    }
+
+    // ── Vignette — dark frame (luxury cinematic feel)
+    ctx.globalAlpha = 1;
+    const vig = ctx.createRadialGradient(W*.5, H*.5, H*.28, W*.5, H*.5, H*.88);
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(1, 'rgba(0,0,0,0.68)');
+    ctx.fillStyle = vig; ctx.fillRect(0,0,W,H);
+
     ctx.globalAlpha = 1;
   }
 
   window.addEventListener('resize', () => {
     W = window.innerWidth; H = window.innerHeight;
     cvs.width = W; cvs.height = H;
-    stars.forEach(s=>{s.x=Math.random()*W;s.y=Math.random()*H;});
-    accents.forEach(a=>{a.x=Math.random()*W;a.y=Math.random()*H;});
-    flow.forEach(p=>{p.x=Math.random()*W;p.y=Math.random()*H;});
+    buildGrid();
+    dust.forEach(p=>{ p.x=Math.random()*W; p.y=Math.random()*H; });
+    bokeh.forEach(b=>{ b.x=Math.random()*W; b.y=Math.random()*H; });
   });
 
   requestAnimationFrame(draw);
