@@ -712,8 +712,8 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
   --lux-shadow:0 40px 100px rgba(0,0,0,.8),0 0 0 1px rgba(200,169,110,.1),0 0 80px rgba(200,169,110,.08);
 }
 
-/* ── Richer starfield ambient ──────────────── */
-#bg-canvas{opacity:.9;filter:contrast(1.05) brightness(1.08)}
+/* ── Mountain dream canvas ──────────────── */
+#bg-canvas{opacity:.95;filter:contrast(1.02) brightness(1.04)}
 
 /* ── Login card: deeper glass + shimmer shimmer ── */
 .lcard{
@@ -889,7 +889,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
 </head>
 <body>
 
-<!-- LUXURY OFFICE BACKGROUND — architectural grid, ambient spotlights, floating dust -->
+<!-- MOUNTAIN DREAM CANVAS — layered peaks, aurora glow, gold ridge light, drifting stars -->
 <canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block;will-change:transform;transform:translateZ(0)"></canvas>
 <script>
 (function(){
@@ -899,77 +899,45 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   cvs.width = W; cvs.height = H;
   const mob = W < 768;
 
-  // ── Offscreen canvas for the static grid (drawn once, stamped each frame)
-  let gridCvs = null;
-  function buildGrid(){
-    gridCvs = document.createElement('canvas');
-    gridCvs.width = W; gridCvs.height = H;
-    const gc = gridCvs.getContext('2d');
-    const GS = mob ? 70 : 95; // grid spacing px
-    // Primary gold grid
-    gc.strokeStyle = 'rgba(200,169,110,0.055)';
-    gc.lineWidth   = 0.6;
-    gc.beginPath();
-    for(let x = GS; x < W; x += GS){ gc.moveTo(x,0); gc.lineTo(x,H); }
-    for(let y = GS; y < H; y += GS){ gc.moveTo(0,y); gc.lineTo(W,y); }
-    gc.stroke();
-    // Finer sub-grid
-    gc.strokeStyle = 'rgba(200,169,110,0.022)';
-    gc.lineWidth   = 0.35;
-    const SG = GS / 3;
-    gc.beginPath();
-    for(let x = SG; x < W; x += SG){ gc.moveTo(x,0); gc.lineTo(x,H); }
-    for(let y = SG; y < H; y += SG){ gc.moveTo(0,y); gc.lineTo(W,y); }
-    gc.stroke();
-    // Corner accent marks at grid intersections (small cross marks)
-    gc.strokeStyle = 'rgba(200,169,110,0.1)';
-    gc.lineWidth   = 0.5;
-    const CSZ = 4;
-    gc.beginPath();
-    for(let x = GS; x < W; x += GS)
-      for(let y = GS; y < H; y += GS){
-        gc.moveTo(x-CSZ,y); gc.lineTo(x+CSZ,y);
-        gc.moveTo(x,y-CSZ); gc.lineTo(x,y+CSZ);
-      }
-    gc.stroke();
-  }
-  buildGrid();
-
-  // ── Ambient ceiling spotlights
-  const SPOT_DEF = [
-    { fx:.18, fy:-.05, fc:[200,169,110], base:.055, spd:.28 },
-    { fx:.82, fy:.22,  fc:[76,201,240],  base:.03,  spd:.22 },
-    { fx:.5,  fy:1.1,  fc:[139,92,246],  base:.035, spd:.35 },
-    { fx:.08, fy:.75,  fc:[200,169,110], base:.025, spd:.18 },
-    { fx:.92, fy:.78,  fc:[6,214,160],   base:.02,  spd:.30 },
-  ];
-  const spots = SPOT_DEF.map(d => ({
-    ...d, ph: Math.random() * Math.PI * 2,
-    get x(){ return W * d.fx; }, get y(){ return H * d.fy; },
-    get r(){ return Math.max(W,H) * (mob ? .55 : .5); },
+  // ── Stars
+  const NSTARS = mob ? 60 : 130;
+  const stars = Array.from({length: NSTARS}, () => ({
+    x: Math.random() * W, y: Math.random() * H * 0.65,
+    sz: 0.3 + Math.random() * 1.1,
+    ph: Math.random() * Math.PI * 2,
+    spd: 0.4 + Math.random() * 1.2,
   }));
 
-  // ── Floating dust particles (very slow drift, gold-tinted)
-  const NDUST = mob ? 28 : 55;
-  const dust  = Array.from({length: NDUST}, () => ({
+  // ── Gold dust particles
+  const NDUST = mob ? 20 : 40;
+  const dust = Array.from({length: NDUST}, () => ({
     x: Math.random() * W, y: Math.random() * H,
-    sz:  0.25 + Math.random() * 0.65,
-    spd: 0.03  + Math.random() * 0.09,
-    ax:  (Math.random() - .5) * 0.015,
-    vx: (Math.random() - .5) * 0.04,
-    vy: -(0.02 + Math.random() * 0.06), // slow rise
-    ph:  Math.random() * Math.PI * 2,
+    sz: 0.3 + Math.random() * 0.7,
+    vx: (Math.random() - .5) * 0.05,
+    vy: -(0.015 + Math.random() * 0.04),
+    ph: Math.random() * Math.PI * 2,
     life: Math.random(),
   }));
 
-  // ── Bokeh circles (out-of-focus light blobs, stationary)
-  const NBOKEH = mob ? 4 : 8;
-  const bokeh  = Array.from({length: NBOKEH}, () => ({
-    x: Math.random() * W, y: Math.random() * H,
-    r: 40 + Math.random() * 90,
-    col: [[200,169,110],[76,201,240],[139,92,246]][Math.floor(Math.random()*3)],
-    ph: Math.random() * Math.PI * 2, spd: .1 + Math.random() * .15,
-  }));
+  // ── Mountain layers (back to front)
+  const MTN_LAYERS = [
+    { ofs: 0.58, amp: 0.16, freq: 0.00065, phase: 0.0,  col: [12,16,38],  ridge: false },
+    { ofs: 0.63, amp: 0.14, freq: 0.00085, phase: 2.1,  col: [16,22,46],  ridge: false },
+    { ofs: 0.68, amp: 0.12, freq: 0.00110, phase: 4.3,  col: [20,28,54],  ridge: false },
+    { ofs: 0.73, amp: 0.10, freq: 0.00140, phase: 1.5,  col: [14,20,44],  ridge: true  },
+    { ofs: 0.78, amp: 0.08, freq: 0.00175, phase: 3.8,  col: [10,14,34],  ridge: true  },
+  ];
+
+  function mtnY(layer, x, T) {
+    const baseY = H * layer.ofs;
+    const amp   = H * layer.amp;
+    const breathe = Math.sin(T * 0.055 + layer.phase) * H * 0.006;
+    return baseY + breathe
+      - amp * Math.sin(x * layer.freq         + layer.phase)
+      - amp * 0.45 * Math.sin(x * layer.freq * 1.7 + layer.phase * 0.6)
+      - amp * 0.22 * Math.sin(x * layer.freq * 3.1 + layer.phase * 1.3)
+      - amp * 0.10 * Math.sin(x * layer.freq * 5.3 + layer.phase * 0.8);
+  }
 
   let T = 0, _lastT = 0, _hidden = false;
   document.addEventListener('visibilitychange', () => {
@@ -980,70 +948,108 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   function draw(now){
     if(_hidden) return;
     requestAnimationFrame(draw);
-    if(now - _lastT < 33) return; // ~30fps
+    if(now - _lastT < 33) return;
     _lastT = now; T = now * .001;
 
-    // ── Base: deep luxury charcoal
+    // ── Sky gradient
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0,    '#03040c');
+    sky.addColorStop(0.30, '#050710');
+    sky.addColorStop(0.65, '#070918');
+    sky.addColorStop(1,    '#060810');
     ctx.globalAlpha = 1;
-    ctx.fillStyle   = '#060810';
+    ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, H);
 
-    // ── Ambient spotlights (breathing radial glows)
-    for(const s of spots){
-      const al  = s.base * (.65 + .35 * Math.sin(T * s.spd + s.ph));
-      const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r);
-      const [r,g,b] = s.fc;
-      grd.addColorStop(0,   `rgba(${r},${g},${b},${(al*2.2).toFixed(3)})`);
-      grd.addColorStop(.35, `rgba(${r},${g},${b},${(al*.55).toFixed(3)})`);
-      grd.addColorStop(1,   'rgba(0,0,0,0)');
-      ctx.fillStyle = grd;
-      ctx.fillRect(0, 0, W, H);
+    // ── Aurora glow (slow drift, purple-teal)
+    const ax = W * 0.5 + Math.sin(T * 0.09) * W * 0.18;
+    const ay = H * 0.22 + Math.sin(T * 0.07) * H * 0.06;
+    const aura = ctx.createRadialGradient(ax, ay, 0, ax, ay, W * 0.65);
+    aura.addColorStop(0,   `rgba(100,60,200,${(0.038 + 0.018*Math.sin(T*.13)).toFixed(3)})`);
+    aura.addColorStop(0.4, `rgba(60,160,220,${(0.022 + 0.012*Math.sin(T*.17)).toFixed(3)})`);
+    aura.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = aura; ctx.fillRect(0, 0, W, H);
+
+    // ── Gold horizon warmth
+    const gx = W * 0.5 + Math.sin(T * 0.06) * W * 0.08;
+    const gy = H * (0.72 + 0.02 * Math.sin(T * 0.08));
+    const ghz = ctx.createRadialGradient(gx, gy, 0, gx, gy, W * 0.75);
+    ghz.addColorStop(0,   `rgba(200,155,80,${(0.055 + 0.025*Math.sin(T*.18)).toFixed(3)})`);
+    ghz.addColorStop(0.45,`rgba(180,120,50,${(0.022 + 0.010*Math.sin(T*.14)).toFixed(3)})`);
+    ghz.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = ghz; ctx.fillRect(0, 0, W, H);
+
+    // ── Stars (twinkle above mountains)
+    for(const s of stars){
+      const al = 0.55 * (0.45 + 0.55 * Math.sin(T * s.spd + s.ph));
+      ctx.globalAlpha = al;
+      ctx.fillStyle = '#c8d8ff';
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.sz, 0, Math.PI*2); ctx.fill();
     }
-
-    // ── Static architectural grid
-    ctx.drawImage(gridCvs, 0, 0);
-
-    // ── Bokeh blobs (very faint, slowly pulsing)
-    for(const b of bokeh){
-      const al  = 0.012 + 0.01 * Math.sin(T * b.spd + b.ph);
-      const [r,g,bl2] = b.col;
-      const grd = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
-      grd.addColorStop(0, `rgba(${r},${g},${bl2},${al})`);
-      grd.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = grd;
-      ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
-    }
-
-    // ── Floating dust
-    ctx.fillStyle = 'rgba(200,169,110,1)';
-    for(const p of dust){
-      p.vx += p.ax; p.vx *= .98;
-      p.x  += p.vx; p.y  += p.vy;
-      if(p.x < -5)  p.x  = W + 5;
-      if(p.x > W+5) p.x  = -5;
-      if(p.y < -5){ p.y  = H + 5; p.x = Math.random() * W; }
-      p.life = (p.life + .0015) % 1;
-      ctx.globalAlpha = 0.06 + .18 * Math.sin(p.life * Math.PI) * (.5 + .5 * Math.sin(T*.4 + p.ph));
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.sz, 0, Math.PI*2); ctx.fill();
-    }
-
-    // ── Vignette — dark frame (luxury cinematic feel)
     ctx.globalAlpha = 1;
-    const vig = ctx.createRadialGradient(W*.5, H*.5, H*.28, W*.5, H*.5, H*.88);
-    vig.addColorStop(0, 'rgba(0,0,0,0)');
-    vig.addColorStop(1, 'rgba(0,0,0,0.68)');
-    ctx.fillStyle = vig; ctx.fillRect(0,0,W,H);
 
+    // ── Mountain layers
+    for(let li = 0; li < MTN_LAYERS.length; li++){
+      const l = MTN_LAYERS[li];
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      for(let x = 0; x <= W; x += 3){
+        const y = mtnY(l, x, T);
+        if(x === 0) ctx.moveTo(0, y); else ctx.lineTo(x, y);
+      }
+      ctx.lineTo(W, H); ctx.closePath();
+
+      const [r,g,b] = l.col;
+      const mGrad = ctx.createLinearGradient(0, H*(l.ofs - l.amp), 0, H);
+      mGrad.addColorStop(0,   `rgba(${r},${g},${b},0.96)`);
+      mGrad.addColorStop(0.6, `rgba(${r+4},${g+6},${b+10},0.92)`);
+      mGrad.addColorStop(1,   'rgba(6,8,16,0.98)');
+      ctx.fillStyle = mGrad; ctx.fill();
+
+      // Gold ridge highlight on foreground layers
+      if(l.ridge){
+        const ridgeAl = 0.055 + 0.03 * Math.sin(T * 0.22 + li);
+        ctx.beginPath();
+        for(let x = 0; x <= W; x += 3){
+          const y = mtnY(l, x, T);
+          if(x === 0) ctx.moveTo(0, y); else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(200,169,110,${ridgeAl.toFixed(3)})`;
+        ctx.lineWidth = 0.9; ctx.stroke();
+      }
+    }
+
+    // ── Ground mist fade
+    const mist = ctx.createLinearGradient(0, H*0.72, 0, H);
+    mist.addColorStop(0, 'rgba(6,8,16,0)');
+    mist.addColorStop(1, 'rgba(6,8,16,0.96)');
+    ctx.fillStyle = mist; ctx.fillRect(0, H*0.72, W, H*0.28);
+
+    // ── Gold dust
+    ctx.fillStyle = 'rgba(220,180,100,1)';
+    for(const p of dust){
+      p.x += p.vx; p.y += p.vy;
+      if(p.x<-4) p.x=W+4; if(p.x>W+4) p.x=-4;
+      if(p.y<-4){ p.y=H+4; p.x=Math.random()*W; }
+      p.life=(p.life+.001)%1;
+      ctx.globalAlpha = 0.04 + .14 * Math.sin(p.life*Math.PI) * (.5+.5*Math.sin(T*.5+p.ph));
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.sz,0,Math.PI*2); ctx.fill();
+    }
+
+    // ── Vignette
+    ctx.globalAlpha = 1;
+    const vig = ctx.createRadialGradient(W*.5,H*.5,H*.25,W*.5,H*.5,H*.85);
+    vig.addColorStop(0,'rgba(0,0,0,0)');
+    vig.addColorStop(1,'rgba(0,0,0,0.72)');
+    ctx.fillStyle = vig; ctx.fillRect(0,0,W,H);
     ctx.globalAlpha = 1;
   }
 
   window.addEventListener('resize', () => {
     W = window.innerWidth; H = window.innerHeight;
     cvs.width = W; cvs.height = H;
-    buildGrid();
+    stars.forEach(s=>{ s.x=Math.random()*W; s.y=Math.random()*H*0.65; });
     dust.forEach(p=>{ p.x=Math.random()*W; p.y=Math.random()*H; });
-    bokeh.forEach(b=>{ b.x=Math.random()*W; b.y=Math.random()*H; });
   });
 
   requestAnimationFrame(draw);
