@@ -3309,7 +3309,7 @@ function updateQuoteStatus(){
   if(pendingQuote){
     const kb=Math.round((pendingQuote.size||0)/1024);
     st.innerHTML='📄 '+pendingQuote.name+' <span style="color:var(--text3)">('+kb+'KB)</span>';
-    st.style.color='var(--green)';
+    st.style.color='var(--teal)';
     if(dl)dl.style.display='';
     if(rm)rm.style.display='';
   }else{
@@ -3497,9 +3497,11 @@ function deleteAll(section){
   const tbl=map[section];if(!tbl)return;
   const n=D[tbl].length;
   if(!n){showToast('אין פריטים למחיקה','warn');return;}
-  pushUndo('מחיקת כל ה'+section+' ('+n+')');
-  D[tbl]=[];saveAll();rAll();
-  showToast('🗑 כל '+n+' הפריטים נמחקו','ok');
+  confirmAct('למחוק את כל '+n+' הפריטים? פעולה זו ניתנת לביטול.',()=>{
+    pushUndo('מחיקת כל ה'+section+' ('+n+')');
+    D[tbl]=[];saveAll();rAll();
+    showToast('🗑 כל '+n+' הפריטים נמחקו','ok');
+  },'כן, מחק הכל');
 }
 
 // ===== DRAG SCROLL =====
@@ -3532,12 +3534,12 @@ function dlCSV(name,csv){
 const IMP_MAP={
   deals:{'תאריך':'date','#':'num','שם חברה':'co','תשתית':'inf','שירות':'srv','שווי':'v','חודש נוכחי':'mv','הפצה':'di','חודש הבא':'dn','otc נסגר':'otc','otc':'ot','מול מי':'ct','סיכוי':'ch','סטטוס':'st','סוג':'ty','סוג מוצר':'ptype','הערות':'no'},
   tenders:{'שם מכרז':'name','מס פרויקט':'proj','פרסום':'pub','הצעה':'quote','שאלות':'questions','הגשה':'deadline','סבבים':'rounds','מטפל':'handler','סכום':'amount','כמות':'qty','הוגשה':'submitted','צימוד':'linked','מסמכים':'docs','הערות':'notes'},
-  dists:{'מטפל':'hd','גורם מטפל':'hp','מס פרויקט':'no','שם חברה':'co','לקוח':'cl','it':'it','פתרון':'so','כתובת':'ad','הכנסה חודשית':'inc','ציוד':'eq','חוסרים':'mi','סטטוס':'st','תאריך':'dt','סוג':'ty','סוג מוצר':'ptype'},
+  dists:{'מטפל':'hd','גורם מטפל':'hp','מס פרויקט':'no','שם חברה':'co','לקוח':'cl','it':'it','פתרון':'so','כתובת':'ad','הכנסה חודשית':'inc','יעד הכנסה':'tgt','יעד':'tgt','ציוד':'eq','חוסרים':'mi','סטטוס':'st','תאריך':'dt','סוג':'ty','סוג מוצר':'ptype'},
   salary:{'מס פרויקט':'pj','שם לקוח':'cl','כמות':'qt','יעד':'tr','סגירה':'cl2','יתרה':'pv','סטטוס':'st','סוג':'ty','הערות':'no'},
   meetings:{'תאריך':'dt','שם לקוח':'cl','מס פגישה':'nu','התקיימה':'hl','הערות':'no'},
   clients:{'שם חברה':'name','איש קשר':'contact','טלפון':'phone','אימייל':'email','כתובת':'address','סטטוס':'status','הערות':'genNotes'}
 };
-const IMP_NUM={deals:['v','mv','di','dn','ot','otc'],tenders:['amount','qty'],dists:['inc','eq'],salary:['qt','tr','cl2','pv'],meetings:['nu'],clients:[]};
+const IMP_NUM={deals:['v','mv','di','dn','ot','otc'],tenders:['amount','qty'],dists:['inc','tgt','eq'],salary:['qt','tr','cl2','pv'],meetings:['nu'],clients:[]};
 // date fields per section — normalised to YYYY-MM-DD so month filtering works
 const IMP_DATE={deals:['date'],tenders:['pub','deadline'],dists:['dt'],salary:[],meetings:['dt'],clients:[]};
 function _pad2(n){return String(n).padStart(2,'0');}
@@ -3631,7 +3633,7 @@ function exportExcel(section){
   switch(section){
     case'deals':hdrs=['תאריך','#','שם חברה','תשתית','שירות','שווי','חודש נוכחי','הפצה','חודש הבא','OTC','OTC נסגר','מול מי','סיכוי','סטטוס','סוג','סוג מוצר','הערות'];rows=D.deals.map(d=>[d.date||'',d.num||'',d.co||'',d.inf||'',d.srv||'',d.v||0,d.mv||0,d.di||0,d.dn||0,d.ot||0,d.otc||0,d.ct||'',Math.round((d.ch||0)*100)+'%',d.st||'',d.ty==='long'?'ארוך':'קצר',ptypeLabel(d.ptype),d.no||'']);break;
     case'tenders':hdrs=['שם מכרז','מס פרויקט','פרסום','הצעה','שאלות','הגשה','סבבים','מטפל','סכום','כמות','הוגשה','צימוד','מסמכים','הערות'];rows=D.tenders.map(t=>[t.name||'',t.proj||'',t.pub||'',t.quote||'',t.questions||'',t.deadline||'',t.rounds||'',t.handler||'',t.amount||0,t.qty||1,t.submitted||'',t.linked||'',t.docs||'',t.notes||'']);break;
-    case'dists':hdrs=['מטפל','גורם מטפל','מס פרויקט','שם חברה','לקוח','IT','פתרון','כתובת','הכנסה חודשית','ציוד','חוסרים','סטטוס','תאריך','סוג','סוג מוצר'];rows=D.dists.map(d=>[d.hd||'',d.hp||'',d.no||'',d.co||'',d.cl||'',d.it||'',d.so||'',d.ad||'',d.inc||0,d.eq||0,d.mi||'',d.st||'',d.dt||'',d.ty==='long'?'ארוך':'קצר',ptypeLabel(d.ptype)]);break;
+    case'dists':hdrs=['מטפל','גורם מטפל','מס פרויקט','שם חברה','לקוח','IT','פתרון','כתובת','הכנסה חודשית','יעד הכנסה','ציוד','חוסרים','סטטוס','תאריך','סוג','סוג מוצר'];rows=D.dists.map(d=>[d.hd||'',d.hp||'',d.no||'',d.co||'',d.cl||'',d.it||'',d.so||'',d.ad||'',d.inc||0,d.tgt||0,d.eq||0,d.mi||'',d.st||'',d.dt||'',d.ty==='long'?'ארוך':'קצר',ptypeLabel(d.ptype)]);break;
     case'salary':hdrs=['מס פרויקט','שם לקוח','כמות','יעד','סגירה','יתרה','סטטוס','סוג','הערות'];rows=D.salary.map(s=>[s.pj||'',s.cl||'',s.qt||1,s.tr||0,s.cl2||0,s.pv||0,s.st||'',s.ty==='service'?'שירות':'ציוד',s.no||'']);break;
     case'meetings':hdrs=['תאריך','שם לקוח','מס פגישה','התקיימה','הערות'];rows=D.meetings.map(m=>[m.dt||'',m.cl||'',m.nu||'',m.hl||'',m.no||'']);break;
     case'clients':hdrs=['שם חברה','איש קשר','טלפון','אימייל','כתובת','סטטוס','קווים','FORTI','CISCO','M365','STARLINK','הערות'];rows=D.clients.map(c=>[c.name||'',c.contact||'',c.phone||'',c.email||'',c.address||'',c.status||'',(c.lines||[]).length,(c.forti||[]).length,(c.cisco||[]).length,(c.ms365||[]).length,(c.starlink||[]).length,c.genNotes||'']);break;
