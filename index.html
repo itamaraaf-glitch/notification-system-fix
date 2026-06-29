@@ -4175,11 +4175,7 @@ function nav(s){
     }, {passive:true});
     el.addEventListener('touchend', ()=>onEnd());
 
-    // Mouse events
-    el.addEventListener('mousedown',  e=>{ if(!ignore(e) && e.button===0) onStart(e.clientX, e.clientY); });
-    el.addEventListener('mousemove',  e=>{ if(e.buttons===1) onMove(e.clientX, e.clientY); });
-    el.addEventListener('mouseup',    ()=>onEnd());
-    el.addEventListener('mouseleave', ()=>onEnd());
+    // Mouse drag navigation disabled — touch swipe only
   }
 
   function initCinematicNav(){
@@ -4203,89 +4199,8 @@ function nav(s){
   }, 400);
 })();
 
-// ── DESKTOP EDGE DRAG HANDLES — slide screen to screen with the mouse ──
-(function(){
-  const SEC_LBL = {
-    dashboard:'לוח בקרה', alerts:'התראות', deals:'עסקאות', tenders:'מכרזים',
-    dists:'הפצות', salary:'פרויקטי שכר', meetings:'יעד פגישות',
-    clients:'כרטיסי לקוח', workplan:'תהליך עבודה', export:'ייצוא'
-  };
-  const TH = 70; // drag distance to commit
-  const edgeL = document.getElementById('edge-l');
-  const edgeR = document.getElementById('edge-r');
-  if(!edgeL || !edgeR) return;
-
-  // edge-l (visual left)  → next section  (dir +1)
-  // edge-r (visual right) → prev section  (dir -1)
-  function neighbour(dir){
-    const i = SEC_ORDER.indexOf(currentSec) + dir;
-    return (i >= 0 && i < SEC_ORDER.length) ? SEC_ORDER[i] : null;
-  }
-
-  function refreshEdges(){
-    const next = neighbour(+1), prev = neighbour(-1);
-    edgeL.classList.toggle('hidden', !next);
-    edgeR.classList.toggle('hidden', !prev);
-    document.getElementById('edge-l-lbl').textContent = next ? SEC_LBL[next] : '';
-    document.getElementById('edge-r-lbl').textContent = prev ? SEC_LBL[prev] : '';
-  }
-  window.refreshEdges = refreshEdges;
-
-  function bind(handle, dir){
-    let down = false, startX = 0, moved = 0;
-
-    function preview(dx){
-      const sec = document.querySelector('.sec.active');
-      if(!sec || navBusy) return;
-      sec.style.transition = 'none';
-      sec.style.transform  = `translateX(${dx * 0.28}px)`;
-      sec.style.opacity    = String(Math.max(0.75, 1 - Math.abs(dx) * 0.0014));
-    }
-    function reset(){
-      const sec = document.querySelector('.sec.active');
-      if(!sec) return;
-      sec.style.transition = 'transform 300ms cubic-bezier(.34,1.56,.64,1), opacity 300ms ease';
-      sec.style.transform  = 'translateX(0)';
-      sec.style.opacity    = '1';
-      setTimeout(()=>{ sec.style.transition=''; sec.style.transform=''; sec.style.opacity=''; }, 340);
-    }
-
-    handle.addEventListener('mousedown', e=>{
-      if(e.button !== 0 || navBusy) return;
-      down = true; startX = e.clientX; moved = 0;
-      handle.classList.add('dragging');
-      e.preventDefault(); // stop text selection
-    });
-    window.addEventListener('mousemove', e=>{
-      if(!down) return;
-      moved = e.clientX - startX;
-      preview(moved);
-    });
-    window.addEventListener('mouseup', ()=>{
-      if(!down) return;
-      down = false;
-      handle.classList.remove('dragging');
-      const target = neighbour(dir);
-      // commit on a click (tiny move) OR a drag past threshold
-      const isClick = Math.abs(moved) < 6;
-      const committed = Math.abs(moved) >= TH;
-      if(target && (isClick || committed)){
-        const sec = document.querySelector('.sec.active');
-        if(sec){ sec.style.transition=''; sec.style.transform=''; sec.style.opacity=''; }
-        nav(target);
-      } else {
-        reset();
-      }
-      moved = 0;
-    });
-  }
-
-  bind(edgeL, +1);
-  bind(edgeR, -1);
-  refreshEdges();
-})();
-
-// ── MOUSE-WHEEL SECTION NAVIGATION (desktop) ──────────────────────────
+// Edge handles kept in DOM but inactive — navigation by menu only on desktop
+function refreshEdges(){} // no-op, kept so nav() calls don't throw
 
 // ── DARK CUSTOM DROPDOWN (replaces native <select> popup) ─────────────
 // On some browsers/OSes the native <option> list renders white and ignores
