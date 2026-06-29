@@ -4286,68 +4286,6 @@ function nav(s){
 })();
 
 // ── MOUSE-WHEEL SECTION NAVIGATION (desktop) ──────────────────────────
-// Scroll the wheel to glide between sections. Inner content (long tables)
-// scrolls first; once it reaches the edge, another nudge flips the section.
-(function(){
-  const EDGE = 4;        // px tolerance for "at the edge"
-  const NEED = 60;       // wheel delta past the edge to commit a switch
-  const COOLDOWN = 650;  // ms lock after a switch (matches the transition)
-  let acc = 0, lastNav = 0, lastDir = 0;
-
-  // Can any scroll container between target and the active section still
-  // move in this direction? If so, let it scroll normally.
-  function innerCanScroll(target, sec, down){
-    let node = target;
-    while(node && node !== sec.parentElement){
-      if(node.nodeType === 1 && node.scrollHeight > node.clientHeight + 2){
-        const oy = getComputedStyle(node).overflowY;
-        if(oy === 'auto' || oy === 'scroll'){
-          if(down  && node.scrollTop + node.clientHeight < node.scrollHeight - EDGE) return true;
-          if(!down && node.scrollTop > EDGE) return true;
-        }
-      }
-      if(node === sec) break;
-      node = node.parentElement;
-    }
-    return false;
-  }
-
-  function onWheel(e){
-    const sec = document.querySelector('.sec.active');
-    if(!sec) return;
-    const dy = e.deltaY;
-    if(Math.abs(dy) < 1) return;
-    const down = dy > 0;
-
-    // let inner content scroll until it bottoms/tops out
-    if(innerCanScroll(e.target, sec, down)){ acc = 0; return; }
-
-    if(navBusy){ e.preventDefault(); return; }
-    const t = performance.now();
-    if(t - lastNav < COOLDOWN){ e.preventDefault(); return; }
-
-    // reset the accumulator when the scroll direction reverses
-    const dir = down ? 1 : -1;
-    if(dir !== lastDir){ acc = 0; lastDir = dir; }
-    acc += dy;
-
-    const idx = SEC_ORDER.indexOf(currentSec);
-    if(down && acc >= NEED){
-      if(idx + 1 < SEC_ORDER.length){ e.preventDefault(); acc = 0; lastNav = t; nav(SEC_ORDER[idx+1]); }
-      else acc = 0;
-    }else if(!down && acc <= -NEED){
-      if(idx - 1 >= 0){ e.preventDefault(); acc = 0; lastNav = t; nav(SEC_ORDER[idx-1]); }
-      else acc = 0;
-    }
-  }
-
-  function init(){
-    const main = document.getElementById('main');
-    if(main) main.addEventListener('wheel', onWheel, {passive:false});
-  }
-  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-})();
 
 // ── DARK CUSTOM DROPDOWN (replaces native <select> popup) ─────────────
 // On some browsers/OSes the native <option> list renders white and ignores
