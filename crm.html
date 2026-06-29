@@ -1599,7 +1599,23 @@ function loadAll(){
       // Only seed demo data if all tables are empty AND no initialized flag
       const allEmpty=!D.deals.length&&!D.tenders.length&&!D.dists.length&&!D.salary.length&&!D.meetings.length&&!D.clients.length;
       if(allEmpty&&!localStorage.getItem(LS_KEY+'_init'))seedData();
-    }else{seedData();}
+    }else{
+      // localStorage missing — try IDB backup before seeding demo data
+      setTimeout(async()=>{
+        try{
+          const list=await idbList();
+          if(list&&list.length){
+            const rec=JSON.parse(list[list.length-1].data);
+            D=Object.assign(emptyData(),rec);
+            D.goals=Object.assign({},_GOAL_DEFAULTS,D.goals||{});
+            showToast('✅ הנתונים שוחזרו מגיבוי אוטומטי!','ok');
+            saveAll();
+          }else{seedData();}
+        }catch(e2){console.error('IDB check on empty localStorage:',e2);seedData();}
+        _finishLoad();
+      },300);
+      return;
+    }
   }catch(e){
     console.error('loadAll parse error:',e);
     if(parsed){
@@ -2942,6 +2958,10 @@ function runMonthlyCycle(force){
     D.archivedDeals=[...D.archivedDeals,...archDeals];
     const ids=new Set(archDeals.map(d=>d.id));
     D.deals=D.deals.filter(d=>!ids.has(d.id));
+    // Alert the user so they know where the deals went — not deleted!
+    setTimeout(()=>{
+      showToast('📦 '+archDeals.length+' עסקאות שנסגרו הועברו לארכיון החודשי — לא נמחקו! (ארכיון ← עסקאות)','ok');
+    },1500);
   }
   D.lastCycleMonth=cur;
   saveAll();
