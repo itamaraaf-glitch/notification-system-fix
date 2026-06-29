@@ -2150,6 +2150,8 @@ function getAlerts(){
   if(held<10)a.push({type:'info',h:`יעד פגישות – ${held}/${MEETING_GOAL}`,s:`${MEETING_GOAL-held} פגישות נדרשות`});
   a.push(...getClientAlerts());
   document.getElementById('acnt').textContent=a.length;
+  const dot=document.getElementById('mob-alert-dot');
+  if(dot){if(a.length>0){dot.textContent=a.length>99?'99+':a.length;dot.style.display='block';}else{dot.style.display='none';}}
   return a;
 }
 function rAlerts(){
@@ -4432,7 +4434,7 @@ function seedData(){
 <!-- Mobile bottom navigation — visible only on <480px screens (CSS-controlled) -->
 <nav id="mob-nav" aria-label="ניווט ראשי">
   <div class="mn-item active" data-sec="dashboard" onclick="nav('dashboard')"><span class="mn-ic">📊</span><span class="mn-lb">בקרה</span></div>
-  <div class="mn-item" data-sec="alerts" onclick="nav('alerts')"><span class="mn-ic">⚠️</span><span class="mn-lb">התראות</span></div>
+  <div class="mn-item" data-sec="alerts" onclick="nav('alerts')" style="position:relative"><span class="mn-ic">⚠️</span><span class="mn-lb">התראות</span><span id="mob-alert-dot" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;border-radius:8px;background:var(--red);color:#fff;font-size:9px;font-weight:800;line-height:16px;text-align:center;padding:0 3px;box-shadow:0 0 8px rgba(230,57,70,.7)"></span></div>
   <div class="mn-item" data-sec="deals" onclick="nav('deals')"><span class="mn-ic">💼</span><span class="mn-lb">עסקאות</span></div>
   <div class="mn-item" data-sec="tenders" onclick="nav('tenders')"><span class="mn-ic">📋</span><span class="mn-lb">מכרזים</span></div>
   <div class="mn-item" data-sec="dists" onclick="nav('dists')"><span class="mn-ic">🚀</span><span class="mn-lb">הפצות</span></div>
