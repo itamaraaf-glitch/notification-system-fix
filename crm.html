@@ -2322,7 +2322,7 @@ function buildAlertEmail(c,al){
         'שלום '+greet+',',
         '',
         'ברצוננו להזכיר כי תוקף ה'+(m.label||'שירות')+' שברשותכם '+
-          (m.days===0?'פג היום.':'עתיד לפוג בעוד '+m.days+' ימים'+(m.date?' (בתאריך '+m.date+')':'')+'.'),
+          (m.days===0?'פג היום.':'עתיד לפוג בעוד '+m.days+' ימים'+(m.date?' (בתאריך '+fmtDate(m.date)+')':'')+'.'),
         'נשמח לסייע לכם בתהליך החידוש ולוודא המשך שירות רציף וללא תקלות.',
         '',
         'נשמח לתאם שיחה קצרה בנוחותכם להשלמת התהליך.'
@@ -2450,7 +2450,7 @@ function rDash(){
     <div class="kc g"><div class="lb">פגישות</div><div class="vl">${held}/${MEETING_GOAL}</div><div class="sb">${pct}%</div></div>`;
   const pi=[];
   D.deals.filter(d=>d.st!=='נסגר').forEach(d=>{const p=pri(d,'deal');if(p==='r'||p==='o')pi.push({p,t:d.co,s:d.srv||''});});
-  D.tenders.forEach(t=>{const p=pri(t,'ten');if(p==='r'||p==='o')pi.push({p,t:t.name,s:`מועד: ${t.deadline||'–'}`});});
+  D.tenders.forEach(t=>{const p=pri(t,'ten');if(p==='r'||p==='o')pi.push({p,t:t.name,s:`מועד: ${fmtDate(t.deadline)}`});});
   D.dists.filter(d=>d.st!=='הושלם').forEach(d=>{const p=pri(d,'dist');if(p==='r')pi.push({p,t:d.co,s:d.st});});
   pi.sort((a,b)=>a.p==='r'?-1:1);
   document.getElementById('prilist').innerHTML=pi.length?pi.slice(0,8).map(i=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border)">${pB(i.p)}<div><div style="font-size:11px;font-weight:600">${i.t}</div><div style="font-size:10px;color:var(--text2)">${i.s}</div></div></div>`).join(''):'<div style="font-size:11px;color:var(--text2)">✅ אין פריטים קריטיים</div>';
@@ -3233,7 +3233,7 @@ function buildDistEmailBody(d){
     d.it   ?`💻 איש קשר IT: ${d.it}`:'',
     d.inc  ?`💰 הכנסה חודשית: ${d.inc} ₪`:'',
     d.eq   ?`🖥 ציוד: ${d.eq} ₪`:'',
-    d.dt   ?`📅 תאריך: ${d.dt}`:'',
+    d.dt   ?`📅 תאריך: ${fmtDate(d.dt)}`:'',
     d.st   ?`📊 סטטוס: ${d.st}`:'',
     d.mi   ?`⚠️ חוסרים: ${d.mi}`:'',
     d.notes?`📝 הערות: ${d.notes}`:'',
@@ -3289,7 +3289,7 @@ function buildHandlerEmailBody(d,greet){
     d.it   ?`💻 איש קשר IT: ${d.it}`:'',
     d.inc  ?`💰 הכנסה חודשית: ${d.inc} ₪`:'',
     d.eq   ?`🖥 ציוד: ${d.eq} ₪`:'',
-    d.dt   ?`📅 תאריך: ${d.dt}`:'',
+    d.dt   ?`📅 תאריך: ${fmtDate(d.dt)}`:'',
     d.st   ?`📊 סטטוס: ${d.st}`:'',
     d.mi   ?`⚠️ חוסרים: ${d.mi}`:'',
     d.notes?`📝 הערות: ${d.notes}`:'',
@@ -3485,7 +3485,7 @@ function mapDealToItemType(deal){
 }
 
 function buildItemFromDeal(deal,type){
-  const note=`עסקה #${deal.num||''}  |  ${deal.date||''}  |  ${deal.ct||''}`;
+  const note=`עסקה #${deal.num||''}  |  ${fmtDate(deal.date)}  |  ${deal.ct||''}`;
   const mo=deal.mv||deal.v||'';
   switch(type){
     case'lines':return{lineType:deal.inf&&deal.inf.includes('הוט')?'HOT':deal.inf==='RF'?'RF':'צד ג׳',speed:deal.srv||'',ip:'',expiry:'',monthly:mo,notes:note};
@@ -3582,7 +3582,7 @@ function syncDistToClient(dist){
   // add the equipment/product to the matching client-card category (per the dist's type)
   const type=(dist.ptype&&ITEM_CFG[dist.ptype])?dist.ptype:'lines';
   if(!client[type])client[type]=[];
-  client[type].push(buildClientItem(type,{srv:dist.so||dist.it||'',monthly:dist.inc||0,note:`הפצה #${dist.no||''} | ${dist.dt||''}`}));
+  client[type].push(buildClientItem(type,{srv:dist.so||dist.it||'',monthly:dist.inc||0,note:`הפצה #${dist.no||''} | ${fmtDate(dist.dt)}`}));
   client.syncedDeals.push(syncKey);
   if(client.id){dbUpdate('clients',client.id,client);}
   else{dbInsert('clients',client);}
@@ -3740,7 +3740,7 @@ function rWorkPlan(){
       <td style="font-weight:600">${p.product||'–'}</td>
       <td class="nb">${p.estimatedValue?fmt(+p.estimatedValue):'–'}</td>
       <td><select style="font-size:10px;padding:2px 4px;border-radius:6px;min-width:70px" onchange="updatePotentialPriority('${p.clientId}',${p.potIdx},this.value)">${priOpts(p.priority)}</select></td>
-      <td style="font-size:10px;white-space:nowrap">${p.targetDate||'–'}</td>
+      <td style="font-size:10px;white-space:nowrap">${fmtDate(p.targetDate)}</td>
       <td>${dH}</td>
       <td><select style="font-size:10px;padding:2px 4px;border-radius:6px;min-width:110px" onchange="updatePotentialStatus('${p.clientId}',${p.potIdx},this.value)">${stOpts(p.status)}</select></td>
       <td style="font-size:10px;max-width:130px;overflow:hidden;text-overflow:ellipsis">${p.notes||'–'}</td>
@@ -4144,13 +4144,13 @@ function handleImport(ev,sec){
 function exportExcel(section){
   let hdrs,rows;
   switch(section){
-    case'deals':hdrs=['תאריך','#','שם חברה','תשתית','שירות','שווי','חודש נוכחי','הפצה','חודש הבא','OTC','OTC נסגר','מול מי','סיכוי','סטטוס','סוג','סוג מוצר','הערות'];rows=D.deals.map(d=>[d.date||'',d.num||'',d.co||'',d.inf||'',d.srv||'',d.v||0,d.mv||0,d.di||0,d.dn||0,d.ot||0,d.otc||0,d.ct||'',Math.round((d.ch||0)*100)+'%',d.st||'',d.ty==='long'?'ארוך':'קצר',ptypeLabel(d.ptype),d.no||'']);break;
-    case'tenders':hdrs=['שם מכרז','מס פרויקט','פרסום','הצעה','שאלות','הגשה','סבבים','מטפל','סכום','כמות','הוגשה','צימוד','מסמכים','הערות'];rows=D.tenders.map(t=>[t.name||'',t.proj||'',t.pub||'',t.quote||'',t.questions||'',t.deadline||'',t.rounds||'',t.handler||'',t.amount||0,t.qty||1,t.submitted||'',t.linked||'',t.docs||'',t.notes||'']);break;
-    case'dists':hdrs=['מטפל','גורם מטפל','מס פרויקט','שם חברה','לקוח','IT','פתרון','כתובת','הכנסה חודשית','יעד הכנסה','ציוד','חוסרים','סטטוס','תאריך','סוג','סוג מוצר'];rows=D.dists.map(d=>[d.hd||'',d.hp||'',d.no||'',d.co||'',d.cl||'',d.it||'',d.so||'',d.ad||'',d.inc||0,d.tgt||0,d.eq||0,d.mi||'',d.st||'',d.dt||'',d.ty==='long'?'ארוך':'קצר',ptypeLabel(d.ptype)]);break;
+    case'deals':hdrs=['תאריך','#','שם חברה','תשתית','שירות','שווי','חודש נוכחי','הפצה','חודש הבא','OTC','OTC נסגר','מול מי','סיכוי','סטטוס','סוג','סוג מוצר','הערות'];rows=D.deals.map(d=>[d.date?fmtDate(d.date):'',d.num||'',d.co||'',d.inf||'',d.srv||'',d.v||0,d.mv||0,d.di||0,d.dn||0,d.ot||0,d.otc||0,d.ct||'',Math.round((d.ch||0)*100)+'%',d.st||'',d.ty==='long'?'ארוך':'קצר',ptypeLabel(d.ptype),d.no||'']);break;
+    case'tenders':hdrs=['שם מכרז','מס פרויקט','פרסום','הצעה','שאלות','הגשה','סבבים','מטפל','סכום','כמות','הוגשה','צימוד','מסמכים','הערות'];rows=D.tenders.map(t=>[t.name||'',t.proj||'',t.pub?fmtDate(t.pub):'',t.quote||'',t.questions||'',t.deadline?fmtDate(t.deadline):'',t.rounds||'',t.handler||'',t.amount||0,t.qty||1,t.submitted||'',t.linked||'',t.docs||'',t.notes||'']);break;
+    case'dists':hdrs=['מטפל','גורם מטפל','מס פרויקט','שם חברה','לקוח','IT','פתרון','כתובת','הכנסה חודשית','יעד הכנסה','ציוד','חוסרים','סטטוס','תאריך','סוג','סוג מוצר'];rows=D.dists.map(d=>[d.hd||'',d.hp||'',d.no||'',d.co||'',d.cl||'',d.it||'',d.so||'',d.ad||'',d.inc||0,d.tgt||0,d.eq||0,d.mi||'',d.st||'',d.dt?fmtDate(d.dt):'',d.ty==='long'?'ארוך':'קצר',ptypeLabel(d.ptype)]);break;
     case'salary':hdrs=['מס פרויקט','שם לקוח','כמות','יעד','סגירה','יתרה','סטטוס','סוג','הערות'];rows=D.salary.map(s=>[s.pj||'',s.cl||'',s.qt||1,s.tr||0,s.cl2||0,s.pv||0,s.st||'',s.ty==='service'?'שירות':'ציוד',s.no||'']);break;
-    case'meetings':hdrs=['תאריך','שם לקוח','מס פגישה','התקיימה','הערות'];rows=D.meetings.map(m=>[m.dt||'',m.cl||'',m.nu||'',m.hl||'',m.no||'']);break;
+    case'meetings':hdrs=['תאריך','שם לקוח','מס פגישה','התקיימה','הערות'];rows=D.meetings.map(m=>[m.dt?fmtDate(m.dt):'',m.cl||'',m.nu||'',m.hl||'',m.no||'']);break;
     case'clients':hdrs=['שם חברה','איש קשר','טלפון','אימייל','כתובת','סטטוס','קווים','FORTI','CISCO','M365','STARLINK','הערות'];rows=D.clients.map(c=>[c.name||'',c.contact||'',c.phone||'',c.email||'',c.address||'',c.status||'',(c.lines||[]).length,(c.forti||[]).length,(c.cisco||[]).length,(c.ms365||[]).length,(c.starlink||[]).length,c.genNotes||'']);break;
-    case'workplan':{let allPots=[];D.clients.forEach(c=>{(c.potential||[]).forEach(p=>{allPots.push({...p,clientName:c.name});});});hdrs=['לקוח','סוג מוצר','שם מוצר','שווי משוער','עדיפות','יעד סגירה','סטטוס','הערות'];rows=allPots.map(p=>[p.clientName||'',p.productType||'',p.product||'',p.estimatedValue||0,p.priority||'',p.targetDate||'',p.status||'',p.notes||'']);break;}
+    case'workplan':{let allPots=[];D.clients.forEach(c=>{(c.potential||[]).forEach(p=>{allPots.push({...p,clientName:c.name});});});hdrs=['לקוח','סוג מוצר','שם מוצר','שווי משוער','עדיפות','יעד סגירה','סטטוס','הערות'];rows=allPots.map(p=>[p.clientName||'',p.productType||'',p.product||'',p.estimatedValue||0,p.priority||'',p.targetDate?fmtDate(p.targetDate):'',p.status||'',p.notes||'']);break;}
     default:return;
   }
   dlCSV(section,toCSV(hdrs,rows));
