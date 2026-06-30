@@ -903,15 +903,14 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   var reduced=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   if(slow||reduced){v.removeAttribute('autoplay');v.style.opacity='0.92';return;}
 
-  // Fade in once ready
+  // Fade in once ready — check readyState in case canplay already fired
   function show(){v.style.opacity='0.92';}
-  if(v.readyState>=3){show();}else{v.addEventListener('canplay',show,{once:true});}
-  v.load();
+  if(v.readyState>=2){show();}else{v.addEventListener('canplay',show,{once:true});}
 
-  // Smooth loop: reset a tiny bit before the natural loop point to avoid jump
+  // Smooth loop: jump back slightly before the end to avoid the native loop jump
   v.addEventListener('timeupdate',function(){
-    if(v.duration&&isFinite(v.duration)&&v.currentTime>v.duration-0.15){
-      v.currentTime=0.05;
+    if(v.duration&&isFinite(v.duration)&&v.currentTime>v.duration-0.2){
+      v.currentTime=0;
     }
   });
 })();
