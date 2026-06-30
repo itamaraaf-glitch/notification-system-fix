@@ -1375,7 +1375,8 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
 <!-- SALARY -->
 <div class="sec" id="sec-salary">
   <div class="shdr"><div class="stit">💰 פרויקטי שכר</div>
-    <div style="display:flex;gap:6px">
+    <div style="display:flex;gap:6px;align-items:center">
+      <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'svctb','eqtb')">
       <button class="btn btnp" onclick="openM('salary',null)">+ פרויקט לשכר</button>
       <button class="btn" onclick="exportExcel('salary')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
       <button class="btn" onclick="importFromExcel('salary')" style="background:#0078d4;color:#fff;border-color:#0078d4" title="ייבוא מ-Excel">📤 ייבוא</button>
@@ -1784,8 +1785,10 @@ function showSaved(){
 function showToast(msg,type='ok'){
   const t=document.createElement('div');
   t.className=`toast toast-${type}`;t.textContent=msg;
+  const restack=()=>{document.querySelectorAll('.toast').forEach((el,i)=>{el.style.bottom=(16+i*54)+'px';});};
   document.body.appendChild(t);
-  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400);},3500);
+  restack();
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>{t.remove();restack();},400);},3500);
 }
 const toast = showToast;
 
@@ -1867,6 +1870,12 @@ async function doLogin(){
 }
 function doLogout(){
   saveAll();
+  // Clean up Firebase listener to prevent memory/connection leaks
+  if(typeof _fbRef!=='undefined'&&_fbRef){try{_fbRef.off();}catch(e){}_fbRef=null;}
+  if(typeof _fbDB!=='undefined'){_fbDB=null;}
+  if(typeof _fbListening!=='undefined'){_fbListening=false;}
+  if(typeof _fbPushTimer!=='undefined'&&_fbPushTimer){clearTimeout(_fbPushTimer);_fbPushTimer=null;}
+  if(typeof fbStatus==='function')fbStatus('off');
   document.body.classList.remove('logged-in');
   const appEl=document.getElementById('app');
   const loginEl=document.getElementById('login');
@@ -3369,6 +3378,7 @@ function openEmailCompose(c){
 function emailFromClientForm(){
   const email=document.getElementById('cl-email').value.trim();
   if(!email){toast('⚠️ נא להזין כתובת אימייל ללקוח','warn');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){toast('⚠️ כתובת האימייל אינה תקינה','warn');return;}
   let c=EI?D.clients.find(x=>x.id==EI):null;
   if(c){
     // לקוח קיים — שלח עם כל נתוני המוצרים, הערות, תפוגות
@@ -4017,6 +4027,9 @@ function downloadDealQuote(id){
 function saveDeal(){
   const row={date:document.getElementById('dd').value,co:document.getElementById('dco').value,cp:document.getElementById('dcp').value,inf:document.getElementById('din').value,srv:document.getElementById('dsr').value,v:+document.getElementById('dv').value,mv:+document.getElementById('dmv').value,di:+document.getElementById('ddi').value,dn:+document.getElementById('ddn').value,ot:+document.getElementById('dot').value,otc:+document.getElementById('dotc').value,ct:document.getElementById('dct').value,ch:+document.getElementById('dch').value,st:document.getElementById('dst2').value,ty:document.getElementById('dty').value,ptype:document.getElementById('dptype').value,no:document.getElementById('dno').value,quote:pendingQuote||null};
   if(!row.co){alert('יש להזין שם חברה');return;}
+  const _numFieldsDeal=['v','mv','di','dn','ot','otc'];
+  for(const f of _numFieldsDeal){if(isNaN(row[f])||row[f]<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}}
+  if(isNaN(row.ch)||row.ch<0||row.ch>100){alert('עמלה (%) חייבת להיות בין 0 ל-100');return;}
   const doSave=()=>{
     let savedDeal;
     if(EI){dbUpdate('deals',EI,row);savedDeal=D.deals.find(x=>x.id==EI);}
@@ -4088,6 +4101,7 @@ function syncDealToDist(deal,silent){
 function saveTender(){
   const row={name:document.getElementById('tn').value,proj:document.getElementById('tp').value,pub:document.getElementById('tpb').value,link:document.getElementById('tlk').value,quote:document.getElementById('tq').value,questions:document.getElementById('tqs').value,deadline:document.getElementById('tdl').value,rounds:+document.getElementById('tr').value,handler:document.getElementById('th').value,amount:+document.getElementById('tam').value,qty:+document.getElementById('tqt').value,submitted:document.getElementById('tsb').value,linked:document.getElementById('tln').value,docs:document.getElementById('tdc').value,notes:document.getElementById('tno').value};
   if(!row.name){alert('יש להזין שם מכרז');return;}
+  if(isNaN(row.rounds)||row.rounds<0||isNaN(row.amount)||row.amount<0||isNaN(row.qty)||row.qty<0){alert('ערכים מספריים לא יכולים להיות שליליים');return;}
   if(EI){dbUpdate('tenders',EI,row);}else{dbInsert('tenders',row);}
   closeM('mtender');rAll();
 }
@@ -4111,6 +4125,7 @@ function syncDistToSalary(dist){
 function saveDist(){
   const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,hd:document.getElementById('dih').value,hp:document.getElementById('dihp').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,tgt:+document.getElementById('ditgt').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,ptype:document.getElementById('diptype').value,mi:document.getElementById('dimi').value};
   if(!row.co){alert('יש להזין שם חברה');return;}
+  if(isNaN(row.tgt)||row.tgt<0||isNaN(row.inc)||row.inc<0||isNaN(row.eq)||row.eq<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}
   let savedDist;
   if(EI){dbUpdate('dists',EI,row);savedDist=D.dists.find(x=>x.id==EI);}else{savedDist=dbInsert('dists',row);}
   if(savedDist&&savedDist.st==='הושלם')syncDistToClient(savedDist);
@@ -4120,6 +4135,7 @@ function saveDist(){
 function saveSal(){
   const row={pj:document.getElementById('spj').value,cl:document.getElementById('scl').value,qt:+document.getElementById('sqt').value,tr:+document.getElementById('str').value,cl2:+document.getElementById('scl2').value,pv:+document.getElementById('spv').value,st:document.getElementById('sst').value,ty:document.getElementById('sty').value,no:document.getElementById('sno').value};
   if(!row.cl){alert('יש להזין שם לקוח');return;}
+  if(isNaN(row.qt)||row.qt<0||isNaN(row.tr)||row.tr<0||isNaN(row.cl2)||row.cl2<0||isNaN(row.pv)||row.pv<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}
   if(EI){dbUpdate('salary',EI,row);}else{dbInsert('salary',row);}
   closeM('msalary');rAll();
 }
@@ -4835,6 +4851,10 @@ function nav(s){
   wipe.classList.add('wipe-go');
 
   setTimeout(()=>{
+    // Clear selection state for the outgoing section
+    if(SEL[currentSec]){SEL[currentSec].clear();}
+    const outBar=document.getElementById('selbar-'+currentSec);
+    if(outBar)outBar.style.display='none';
     // Hide outgoing section
     outSec.classList.remove('active');
 
