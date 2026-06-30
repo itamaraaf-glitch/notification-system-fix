@@ -2077,11 +2077,13 @@ function gsGo(i){
   nav(secMap[r.type]);
   setTimeout(()=>openM(r.type,r.id),340);
 }
-// close the search dropdown when clicking elsewhere
-document.addEventListener('mousedown',e=>{
+// close the search dropdown when clicking/tapping elsewhere
+function _closeGsIfOutside(e){
   const gs=document.getElementById('gsearch');
   if(gs && !gs.contains(e.target)){ const box=document.getElementById('gsres'); if(box)box.classList.remove('show'); }
-});
+}
+document.addEventListener('mousedown',_closeGsIfOutside);
+document.addEventListener('touchstart',_closeGsIfOutside,{passive:true});
 
 // ===== ALERTS =====
 function getAlerts(){
@@ -4257,6 +4259,13 @@ async function restoreFromIdb(ts){
 // periodic snapshot every 5 minutes while the app is open
 setInterval(()=>{ const app=document.getElementById('app'); if(app&&app.style.display!=='none') idbBackup(); }, 5*60*1000);
 
+// Close modal when tapping the dark backdrop (mobile-friendly)
+document.addEventListener('click',e=>{
+  if(e.target.classList.contains('mw')&&e.target.classList.contains('open')){
+    e.target.classList.remove('open');EI=null;ET=null;
+  }
+},{passive:true});
+
 // ===== KEYBOARD SHORTCUTS =====
 document.addEventListener('keydown',e=>{
   // Ctrl/Cmd+K or "/" → focus global search
@@ -4394,7 +4403,7 @@ function seedData(){
 
 <!-- Mobile FAB — quick add button (visible only on mobile when logged in) -->
 <div id="mob-fab" style="display:none">
-  <div id="mob-fab-menu" style="display:none;position:fixed;bottom:calc(130px + env(safe-area-inset-bottom));left:16px;z-index:51;display:none;flex-direction:column;gap:8px;align-items:flex-start">
+  <div id="mob-fab-menu" style="display:none;position:fixed;bottom:calc(130px + env(safe-area-inset-bottom));left:16px;z-index:51;flex-direction:column;gap:8px;align-items:flex-start">
     <button class="fab-item" onclick="closeFab();openM('deal',null)">💼 <span>עסקה חדשה</span></button>
     <button class="fab-item" onclick="closeFab();openM('meeting',null)">🤝 <span>פגישה חדשה</span></button>
     <button class="fab-item" onclick="closeFab();openClientModal(null)">🏢 <span>לקוח חדש</span></button>
