@@ -715,7 +715,7 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
 }
 
 /* ── Mountain dream canvas ──────────────── */
-#bg-canvas{opacity:.95;filter:contrast(1.0) brightness(1.0)}
+#bg-canvas{display:none}
 
 /* ── Login card: deeper glass + shimmer shimmer ── */
 .lcard{
@@ -906,11 +906,11 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   v.load();
 })();
 </script>
-<!-- overlay canvas: dark vignette + gold dust on top of video -->
-<canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;display:block;will-change:transform;transform:translateZ(0)"></canvas>
+<!-- overlay canvas removed - was causing dark vignette over video -->
 <script>
 (function(){
   const cvs = document.getElementById('bg-canvas');
+  if(!cvs) return;
   const ctx  = cvs.getContext('2d');
   let W = window.innerWidth, H = window.innerHeight;
   cvs.width = W; cvs.height = H;
