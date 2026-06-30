@@ -55,11 +55,12 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-
 
 /* ─── LOGIN ─── */
 #login{display:flex;align-items:center;justify-content:center;min-height:100vh;
-  background:
+  background-color:#04060e;
+  background-image:
     radial-gradient(ellipse 70% 60% at 50% 48%,rgba(3,5,12,.38) 0%,rgba(4,6,14,.72) 100%),
     linear-gradient(to bottom,rgba(3,5,12,.60) 0%,rgba(4,6,14,.35) 35%,rgba(4,6,14,.50) 70%,rgba(2,4,10,.88) 100%),
     url('office-bg.jpg') center 38%/cover no-repeat;
-  position:fixed;inset:0;z-index:2;perspective:1100px;overflow-y:auto}
+  position:fixed;inset:0;z-index:10;perspective:1100px;overflow-y:auto}
 .lcard{
   background:linear-gradient(145deg,rgba(10,13,26,.98),rgba(6,8,18,.99));
   border:1px solid rgba(200,169,110,.22);border-radius:20px;padding:32px 44px 40px;width:380px;text-align:center;
@@ -113,7 +114,7 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-
 .lerr{font-size:11px;color:var(--red);margin-top:10px;min-height:16px}
 
 /* ─── APP SHELL ─── */
-#app{display:none;flex-direction:column;height:100vh;overflow:hidden;position:fixed;inset:0;z-index:2}
+#app{display:none;flex-direction:column;height:100vh;overflow:hidden;position:fixed;inset:0;z-index:10;background:#040608}
 #topbar{
   background:linear-gradient(90deg,rgba(10,13,22,.98),rgba(14,18,32,.98));
   border-bottom:1px solid rgba(200,169,110,.1);
