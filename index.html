@@ -1571,7 +1571,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
 <script>
 // ===== CONSTANTS & STATE =====
 const LS_KEY = 'cem_hot_v3';
-const USERS = [{u:'ITAMAR2026',p:'NOSHrit$2026',n:'איתמר ונדן'}];
+const USERS = [{u:'a807c84541e2426c4bc9695945a4e10180ce457d026c83b4436f9e70aa513a0c',p:'8f08a4a7d32e40da3d3cfe97780bdfb87be8fecf57a4acdd88c30797fb162023',n:'איתמר ונדן'}];
 const MEETING_GOAL = 15;
 const GOAL_DEALS = 15000;
 const GOAL_DISTS = 14000;
@@ -1637,10 +1637,29 @@ function _cNo(){
 }
 
 // ===== AUTH =====
-function doLogin(){
+async function sha256(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+let _loginAttempts=0,_loginLock=0;
+async function doLogin(){
+  const now=Date.now();
+  if(now<_loginLock){
+    const sec=Math.ceil((_loginLock-now)/1000);
+    document.getElementById('lerr').textContent=`נסה שוב בעוד ${sec} שניות`;return;
+  }
   const u=document.getElementById('lu').value.trim(),p=document.getElementById('lp').value;
-  const f=USERS.find(x=>x.u===u&&x.p===p);
-  if(!f){document.getElementById('lerr').textContent='שם משתמש או סיסמה שגויים';return;}
+  if(!u||!p){document.getElementById('lerr').textContent='נא למלא שם משתמש וסיסמה';return;}
+  const [uh,ph]=await Promise.all([sha256(u),sha256(p)]);
+  const f=USERS.find(x=>x.u===uh&&x.p===ph);
+  if(!f){
+    _loginAttempts++;
+    const delay=Math.min(30,Math.pow(2,_loginAttempts-1))*1000;
+    _loginLock=Date.now()+delay;
+    const msg=_loginAttempts>=3?`שם משתמש או סיסמה שגויים — נחסם ל-${delay/1000} שניות`:'שם משתמש או סיסמה שגויים';
+    document.getElementById('lerr').textContent=msg;return;
+  }
+  _loginAttempts=0;_loginLock=0;
   document.getElementById('lerr').textContent='';
   const loginEl=document.getElementById('login');
   const appEl=document.getElementById('app');
