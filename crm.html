@@ -1154,6 +1154,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   </div>
   <div class="tbr">
     <div class="uchip">👤 <b id="uname">–</b></div>
+    <span id="fb-status" onclick="openSyncModal()" title="סנכרון ענן – לחץ להגדרה" style="cursor:pointer;font-size:15px;padding:2px 6px;border-radius:8px;background:rgba(255,255,255,.05);user-select:none">⚡</span>
     <span class="save-ind" id="saveind">✦ נשמר</span>
     <button class="btn mob-hide" onclick="saveAll()" style="background:var(--tealdim);color:var(--teal);border:1px solid rgba(6,214,160,.4);font-size:11px;padding:4px 12px;border-radius:20px">💾 שמור</button>
     <button class="btn mob-hide" id="undo-btn" onclick="undoLast()" title="בטל את המחיקה האחרונה" style="display:none;background:rgba(244,162,97,.14);color:#f4a261;border:1px solid rgba(244,162,97,.45);font-size:11px;padding:4px 12px;border-radius:20px">↩ בטל מחיקה</button>
@@ -1485,6 +1486,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <div class="tw" style="cursor:pointer" onclick="clipboardBackup()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📋</div><div style="font-weight:700;margin-bottom:4px">העתק לגיבוי</div><div style="font-size:11px;color:var(--text2)">העתק נתונים ללוח</div><div style="margin-top:10px;background:#f4a261;color:#000;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📋 העתק ללוח</div></div></div>
     <div class="tw" style="cursor:pointer" onclick="restoreData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📂</div><div style="font-weight:700;margin-bottom:4px">שחזור נתונים</div><div style="font-size:11px;color:var(--text2)">מקובץ JSON</div><div style="margin-top:10px;background:#7b5ea7;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📂 שחזר מגיבוי</div></div></div>
     <div class="tw" style="cursor:pointer" onclick="openAutoBackups()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🛡️</div><div style="font-weight:700;margin-bottom:4px">גיבויים אוטומטיים</div><div style="font-size:11px;color:var(--text2)">30 גיבויים אחרונים · שחזור בקליק</div><div style="margin-top:10px;background:#06d6a0;color:#000;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">🛡️ צפה ושחזר</div></div></div>
+    <div class="tw" style="cursor:pointer;position:relative" onclick="openSyncModal()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">☁️</div><div style="font-weight:700;margin-bottom:4px">סנכרון ענן</div><div style="font-size:11px;color:var(--text2)" id="fb-tile-status">לא מוגדר</div><div style="margin-top:10px;background:#4cc9f0;color:#000;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">☁️ הגדרת סנכרון</div></div></div>
   </div>
 </div>
 
@@ -1493,6 +1495,36 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   <div class="mhdr"><h3>🛡️ גיבויים אוטומטיים</h3><button class="mcls" onclick="closeM('mbackups')">✕</button></div>
   <div style="font-size:11px;color:var(--text2);margin-bottom:10px">המערכת שומרת גיבוי מלא אוטומטית ברקע. בחר נקודת זמן לשחזור:</div>
   <div id="bk-list" style="max-height:50vh;overflow-y:auto"></div>
+</div></div>
+
+<!-- CLOUD SYNC MODAL -->
+<div class="mw" id="msync"><div class="modal" style="max-width:560px">
+  <div class="mhdr"><h3>☁️ סנכרון ענן בין מכשירים</h3><button class="mcls" onclick="closeM('msync')">✕</button></div>
+  <div style="font-size:12px;line-height:1.7;color:var(--text2);margin-bottom:14px">
+    הסנכרון משתמש ב<b style="color:var(--text)">Firebase Realtime Database</b> (חינמי לגמרי) — כל שינוי במחשב מופיע מיידית בנייד ולהיפך.
+    <div style="margin-top:8px;padding:10px 14px;background:rgba(76,201,240,.07);border:1px solid rgba(76,201,240,.2);border-radius:10px;font-size:11px;direction:rtl">
+      <b style="color:var(--blue)">הגדרה חד פעמית – 5 דקות:</b><br>
+      1. פתח <b style="color:var(--text)">console.firebase.google.com</b> ← "Add project" ← תן שם ← המשך<br>
+      2. תפריט שמאל: <b style="color:var(--text)">Build → Realtime Database</b> ← "Create database" ← "Start in test mode" ← Enable<br>
+      3. לחץ ⚙️ (Project settings) ← "Your apps" ← סמל Web &lt;/&gt; ← רשום שם ← "Register app"<br>
+      4. העתק את כל תוכן ה-<b style="color:var(--text)">firebaseConfig</b> (מן ה-{ עד ה-}) והדבק למטה
+    </div>
+  </div>
+  <div style="margin-bottom:12px">
+    <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px">הגדרות Firebase (הדבק firebaseConfig):</label>
+    <textarea id="fb-config-json" rows="9" spellcheck="false" style="width:100%;box-sizing:border-box;font-family:monospace;font-size:11px;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);resize:vertical;direction:ltr" placeholder='{"apiKey":"AIzaSy...","authDomain":"my-proj.firebaseapp.com","databaseURL":"https://my-proj-default-rtdb.firebaseio.com","projectId":"my-proj","storageBucket":"my-proj.appspot.com","messagingSenderId":"123...","appId":"1:123:web:abc..."}'></textarea>
+  </div>
+  <div style="margin-bottom:16px">
+    <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px">קוד סנכרון <span style="font-weight:400;color:var(--text3)">(סיסמה משותפת לכל המכשירים שלך)</span>:</label>
+    <input type="text" id="fb-sync-code" value="hot-crm" style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-size:13px;direction:ltr" placeholder="hot-crm">
+    <div style="font-size:10px;color:var(--text3);margin-top:4px">השתמש באותו קוד בכל המכשירים. שנה אותו אם תרצה להתחיל מחדש.</div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btnp" onclick="saveFBConfig()" style="flex:1;min-width:140px">✅ שמור וחבר</button>
+    <button class="btn" onclick="fbSyncNow()" style="background:rgba(6,214,160,.12);color:var(--teal);border-color:rgba(6,214,160,.3)">⬆️ סנכרן עכשיו</button>
+    <button class="btn btnd" onclick="clearFBSync()" style="min-width:80px">🔌 נתק</button>
+  </div>
+  <div id="fb-sync-log" style="margin-top:10px;font-size:11px;color:var(--text3);min-height:18px"></div>
 </div></div>
 
 <!-- WORKPLAN -->
@@ -1695,6 +1727,8 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   </div>
 </div></div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <div style="display:none">
   <input type="file" id="imp-deals"    accept=".xlsx,.xls,.csv" onchange="handleImport(event,'deals')">
@@ -1949,6 +1983,7 @@ function saveAll(){
     showSaved();
     // Immediate IDB backup — don't delay, so closing the browser right away still saves
     if(typeof idbBackup==='function') idbBackup(snap);
+    fbPush();
   }catch(e){
     console.error('שגיאת שמירה:',e);
     const quota = e && (e.name==='QuotaExceededError' || e.code===22 || e.code===1014 || /quota|exceed/i.test(e.message||''));
@@ -1974,6 +2009,136 @@ function checkBackupAge(){
   const daysSince=Math.floor((Date.now()-new Date(last).getTime())/(86400000));
   if(daysSince>=7) setTimeout(()=>showToast('⚠️ הגיבוי האחרון לפני '+daysSince+' ימים — הורד גיבוי עכשיו!','warn'),2000);
 }
+
+// ===== FIREBASE CLOUD SYNC =====
+const FB_CFG_KEY='cem_fb_config';
+let _fbDB=null,_fbRef=null,_fbListening=false,_fbApplying=false,_fbPushTimer=null;
+
+function fbStatus(state){
+  const el=document.getElementById('fb-status');
+  if(el){
+    const icons={off:'⚡',connecting:'🔄',connected:'☁️',syncing:'⬆️',error:'⚠️'};
+    const tips={off:'לחץ להגדרת סנכרון ענן',connecting:'מתחבר לענן...',connected:'מסונכרן עם הענן – לחץ להגדרות',syncing:'מסנכרן...',error:'שגיאת סנכרון – לחץ לבדיקה'};
+    el.textContent=icons[state]||'⚡';el.title=tips[state]||'';
+  }
+  const ts=document.getElementById('fb-tile-status');
+  if(ts){const m={off:'לא מוגדר',connecting:'מתחבר...',connected:'מחובר ✓',syncing:'מסנכרן...',error:'שגיאה!'};ts.textContent=m[state]||'';}
+  const log=document.getElementById('fb-sync-log');
+  if(log&&state==='error')log.textContent='⚠️ בדוק שה-databaseURL נכון ושחוקי הגישה מוגדרים ל-"test mode"';
+  else if(log&&state==='connected')log.textContent='✅ מחובר – כל שמירה מסתנכרנת אוטומטית בין המכשירים';
+}
+
+async function fbInit(){
+  if(_fbListening)return;
+  const cfgStr=localStorage.getItem(FB_CFG_KEY);
+  if(!cfgStr){fbStatus('off');return;}
+  try{
+    const cfg=JSON.parse(cfgStr);
+    if(!cfg.databaseURL){fbStatus('error');return;}
+    if(typeof firebase==='undefined'){setTimeout(fbInit,1500);return;} // SDK not yet loaded
+    let app;
+    try{app=firebase.app();}catch(e){app=firebase.initializeApp(cfg);}
+    _fbDB=firebase.database(app);
+    const code=cfg.syncCode||'hot-crm';
+    const hash=await sha256('cem:'+code);
+    const path='crm/'+hash.substring(0,32);
+    _fbRef=_fbDB.ref(path);
+    fbStatus('connecting');
+    _fbRef.on('value',snap=>{
+      const remote=snap.val();
+      if(!remote||!remote.data){fbStatus('connected');_fbListening=true;return;}
+      const remoteTs=remote._ts||0;
+      const localTs=parseInt(localStorage.getItem('cem_sync_ts')||'0');
+      if(remoteTs>localTs+500){
+        _fbApplying=true;
+        try{
+          const parsed=JSON.parse(JSON.stringify(remote.data));
+          Object.keys(parsed).forEach(k=>{if(k in D)D[k]=parsed[k];});
+          localStorage.setItem(LS_KEY,JSON.stringify(D));
+          localStorage.setItem('cem_sync_ts',String(remoteTs));
+          rAll();
+          showToast('🔄 סונכרן מהענן – הנתונים עודכנו','ok');
+        }finally{_fbApplying=false;}
+      }
+      fbStatus('connected');
+      _fbListening=true;
+    },err=>{console.error('FB listen:',err.message||err);fbStatus('error');});
+  }catch(e){console.error('fbInit:',e);fbStatus('error');}
+}
+
+function fbPush(){
+  if(_fbApplying||!_fbRef)return;
+  clearTimeout(_fbPushTimer);
+  _fbPushTimer=setTimeout(()=>{
+    const ts=Date.now();
+    localStorage.setItem('cem_sync_ts',String(ts));
+    fbStatus('syncing');
+    _fbRef.set({_ts:ts,data:D})
+      .then(()=>fbStatus('connected'))
+      .catch(e=>{console.error('fbPush:',e);fbStatus('error');});
+  },1000);
+}
+
+async function saveFBConfig(){
+  const raw=(document.getElementById('fb-config-json').value||'').trim();
+  const code=(document.getElementById('fb-sync-code').value||'').trim()||'hot-crm';
+  if(!raw){showToast('⚠️ הדבק את הגדרות Firebase','warn');return;}
+  let cfg;
+  try{
+    let clean=raw.replace(/^(const|let|var)\s+\w+\s*=\s*/,'').replace(/;?\s*$/,'').trim();
+    cfg=JSON.parse(clean);
+  }catch(e){
+    showToast('⚠️ פורמט לא תקין – הדבק את ה-JSON כמות שהוא (מ-{ עד })','warn');
+    return;
+  }
+  if(!cfg.databaseURL){showToast('⚠️ חסר databaseURL — ודא שהפעלת Realtime Database','warn');return;}
+  cfg.syncCode=code;
+  localStorage.setItem(FB_CFG_KEY,JSON.stringify(cfg));
+  if(_fbRef){try{_fbRef.off();}catch(e){}
+    _fbRef=null;}
+  _fbDB=null;_fbListening=false;
+  closeM('msync');
+  showToast('✅ הגדרות סנכרון נשמרו – מתחבר לענן...','ok');
+  await fbInit();
+  fbPush();
+}
+
+function openSyncModal(){
+  const cfgStr=localStorage.getItem(FB_CFG_KEY);
+  if(cfgStr){
+    try{
+      const c=JSON.parse(cfgStr);
+      const {syncCode,...fbCfg}=c;
+      document.getElementById('fb-config-json').value=JSON.stringify(fbCfg,null,2);
+      document.getElementById('fb-sync-code').value=syncCode||'hot-crm';
+    }catch(e){}
+  }else{
+    document.getElementById('fb-config-json').value='';
+    document.getElementById('fb-sync-code').value='hot-crm';
+  }
+  const log=document.getElementById('fb-sync-log');
+  if(log)log.textContent=_fbListening?'✅ מחובר כרגע – כל שמירה מסתנכרנת אוטומטית':'';
+  document.getElementById('msync').classList.add('open');
+}
+
+function clearFBSync(){
+  if(!confirm('לנתק את הסנכרון ולמחוק את הגדרות הענן?'))return;
+  if(_fbRef){try{_fbRef.off();}catch(e){}
+    _fbRef=null;}
+  _fbDB=null;_fbListening=false;
+  localStorage.removeItem(FB_CFG_KEY);
+  localStorage.removeItem('cem_sync_ts');
+  fbStatus('off');
+  closeM('msync');
+  showToast('🔌 הסנכרון נותק','ok');
+}
+
+function fbSyncNow(){
+  if(!_fbRef){openSyncModal();return;}
+  fbPush();
+  showToast('⬆️ מסנכרן לענן...','ok');
+}
+
 function _finishLoad(){
   syncAllDealsToClients();
   syncAllDealsToDists();
@@ -1985,7 +2150,7 @@ function _finishLoad(){
   }
   rAll();
   showLoginHealth();
-  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); checkBackupAge(); }catch(e){} }, 2500);
+  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); checkBackupAge(); fbInit(); }catch(e){} }, 2500);
 }
 function loadAll(){
   let parsed=false;
