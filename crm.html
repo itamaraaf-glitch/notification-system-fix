@@ -1482,6 +1482,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <div class="tw" style="cursor:pointer" onclick="exportExcel('clients')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🏢</div><div style="font-weight:700;margin-bottom:4px">כרטיסי לקוח</div><div style="font-size:11px;color:var(--text2)" id="exp-clients-count">0 לקוחות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
     <div class="tw" style="cursor:pointer" onclick="exportAll()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📊</div><div style="font-weight:700;margin-bottom:4px">כל הנתונים</div><div style="font-size:11px;color:var(--text2)">כל הנושאים</div><div style="margin-top:10px;background:#e63946;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא הכל</div></div></div>
     <div class="tw" style="cursor:pointer" onclick="backupData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💾</div><div style="font-weight:700;margin-bottom:4px">גיבוי מלא</div><div style="font-size:11px;color:var(--text2)">קובץ JSON לשחזור</div><div style="margin-top:10px;background:#0078d4;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">💾 הורד גיבוי</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="clipboardBackup()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📋</div><div style="font-weight:700;margin-bottom:4px">העתק לגיבוי</div><div style="font-size:11px;color:var(--text2)">העתק נתונים ללוח</div><div style="margin-top:10px;background:#f4a261;color:#000;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📋 העתק ללוח</div></div></div>
     <div class="tw" style="cursor:pointer" onclick="restoreData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📂</div><div style="font-weight:700;margin-bottom:4px">שחזור נתונים</div><div style="font-size:11px;color:var(--text2)">מקובץ JSON</div><div style="margin-top:10px;background:#7b5ea7;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📂 שחזר מגיבוי</div></div></div>
     <div class="tw" style="cursor:pointer" onclick="openAutoBackups()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🛡️</div><div style="font-weight:700;margin-bottom:4px">גיבויים אוטומטיים</div><div style="font-size:11px;color:var(--text2)">30 גיבויים אחרונים · שחזור בקליק</div><div style="margin-top:10px;background:#06d6a0;color:#000;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">🛡️ צפה ושחזר</div></div></div>
   </div>
@@ -1963,6 +1964,16 @@ function saveAll(){
   }
 }
 const _GOAL_DEFAULTS={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000};
+function showLoginHealth(){
+  const total=(D.deals.length||0)+(D.tenders.length||0)+(D.dists.length||0)+(D.salary.length||0)+(D.meetings.length||0)+(D.clients.length||0);
+  if(total>0) setTimeout(()=>showToast('✅ '+total+' רשומות נטענו בהצלחה','ok'),600);
+}
+function checkBackupAge(){
+  const last=localStorage.getItem('cem_last_dl');
+  if(!last) return;
+  const daysSince=Math.floor((Date.now()-new Date(last).getTime())/(86400000));
+  if(daysSince>=7) setTimeout(()=>showToast('⚠️ הגיבוי האחרון לפני '+daysSince+' ימים — הורד גיבוי עכשיו!','warn'),2000);
+}
 function _finishLoad(){
   syncAllDealsToClients();
   syncAllDealsToDists();
@@ -1973,7 +1984,8 @@ function _finishLoad(){
     saveAll();
   }
   rAll();
-  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); }catch(e){} }, 2500);
+  showLoginHealth();
+  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); checkBackupAge(); }catch(e){} }, 2500);
 }
 function loadAll(){
   let parsed=false;
@@ -2047,8 +2059,23 @@ function _bgSave(){
 }
 setInterval(_bgSave,30000);
 window.addEventListener('beforeunload',_bgSave);
-// iOS does not fire beforeunload reliably — use visibilitychange as backup save
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')_bgSave();});
+// pagehide fires more reliably than beforeunload on iOS Safari/PWA
+window.addEventListener('pagehide',_bgSave);
+// visibilitychange catches app-switch and tab-switch on all platforms
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')_bgSave()});
+// resume: restore IDB → LS if LS was evicted while page was in bfcache
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){
+    try{
+      const s=localStorage.getItem(LS_KEY);
+      if(!s&&D&&(D.deals.length||D.clients.length)){
+        // LS was cleared while we were in bfcache — write back immediately
+        localStorage.setItem(LS_KEY,JSON.stringify(D));
+        showToast('⚠️ אחסון מקומי אופס — הנתונים שוחזרו בזיכרון','warn');
+      }
+    }catch(e){}
+  }
+});
 
 // ===== RIPPLE EFFECT =====
 document.addEventListener('mousedown',function(e){
@@ -4279,9 +4306,22 @@ function sendWhatsAppMeetings(){
 }
 
 // ===== BACKUP / RESTORE =====
-function backupData(){
+async function backupData(){
   const json=JSON.stringify(D,null,2);
   const fname='crm_backup_'+nd()+'.json';
+  // iOS PWA: Web Share API with file — the ONLY reliable export on iOS home-screen apps
+  if(navigator.canShare){
+    try{
+      const file=new File([json],fname,{type:'application/json'});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:'HOT CRM גיבוי',text:'גיבוי נתונים – HOT Business CRM'});
+        localStorage.setItem('cem_last_dl',nd());
+        toast('✅ הגיבוי שותף בהצלחה','ok');
+        return;
+      }
+    }catch(e){if(e.name!=='AbortError'){/* fall through */}}
+  }
+  // Standard Blob download (desktop / Android)
   try{
     const blob=new Blob([json],{type:'application/json;charset=utf-8'});
     const url=URL.createObjectURL(blob);
@@ -4289,15 +4329,31 @@ function backupData(){
     a.href=url;a.download=fname;a.style.display='none';
     document.body.appendChild(a);a.click();
     setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
+    localStorage.setItem('cem_last_dl',nd());
     toast('💾 הגיבוי הורד: '+fname,'ok');
   }catch(e){
-    // Fallback for iOS/PWA: open as data URI in new tab so user can share/save
+    // Last-resort iOS fallback: open data URI in new tab
     try{
       const uri='data:application/json;charset=utf-8,'+encodeURIComponent(json);
       const w=window.open(uri,'_blank');
       if(!w) toast('⚠️ אפשר חסימת חלונות קופצים ונסה שוב','warn');
       else toast('💾 שמור את הקובץ מהלשונית שנפתחה','info');
     }catch(e2){ toast('⚠️ שגיאה בגיבוי: '+e2.message,'warn'); }
+  }
+}
+// Clipboard export — works on every platform including PWA without any dialog
+async function clipboardBackup(){
+  const json=JSON.stringify(D,null,2);
+  try{
+    await navigator.clipboard.writeText(json);
+    toast('📋 הנתונים הועתקו ללוח — הדבק ב-Notes או מסמך לגיבוי בטוח','ok');
+  }catch(e){
+    try{
+      const ta=document.createElement('textarea');
+      ta.value=json;ta.style.cssText='position:fixed;opacity:0;top:0;left:0;width:1px;height:1px';
+      document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+      toast('📋 הנתונים הועתקו ללוח','ok');
+    }catch(e2){toast('⚠️ לא ניתן להעתיק: '+e2.message,'warn');}
   }
 }
 function restoreData(){
