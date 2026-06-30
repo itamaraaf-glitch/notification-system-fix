@@ -50,6 +50,7 @@ body{font-family:'Heebo',sans-serif;background:#080c18;color:var(--text);font-si
 @keyframes glowBorder{0%,100%{box-shadow:0 0 0 0 var(--reddim)}50%{box-shadow:0 0 18px 2px var(--reddim)}}
 @keyframes gradShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 @keyframes cardIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes vidShow{from{opacity:0}to{opacity:.92}}
 @keyframes cinGlow{0%,100%{box-shadow:0 0 20px rgba(200,169,110,.08)}50%{box-shadow:0 0 40px rgba(200,169,110,.18)}}
 @keyframes bgDrift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 
@@ -892,29 +893,9 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
 <body>
 
 <!-- MOUNTAIN VIDEO BACKGROUND -->
-<video id="vid-bg" autoplay muted loop playsinline poster="office-bg.jpg" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;object-fit:cover;pointer-events:none;opacity:0;transition:opacity 1.4s ease;will-change:transform;transform:translateZ(0)">
+<video id="vid-bg" autoplay muted loop playsinline poster="office-bg.jpg" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;object-fit:cover;pointer-events:none;will-change:transform;transform:translateZ(0);animation:vidShow 2s ease forwards">
   <source src="mountains-bg.mp4" type="video/mp4">
 </video>
-<script>
-(function(){
-  var v=document.getElementById('vid-bg');
-  var conn=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
-  var slow=conn&&(conn.saveData||/2g|slow/.test(conn.effectiveType));
-  var reduced=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-  if(slow||reduced){v.removeAttribute('autoplay');v.style.opacity='0.92';return;}
-
-  // Fade in once ready — check readyState in case canplay already fired
-  function show(){v.style.opacity='0.92';}
-  if(v.readyState>=2){show();}else{v.addEventListener('canplay',show,{once:true});}
-
-  // Smooth loop: jump back slightly before the end to avoid the native loop jump
-  v.addEventListener('timeupdate',function(){
-    if(v.duration&&isFinite(v.duration)&&v.currentTime>v.duration-0.2){
-      v.currentTime=0;
-    }
-  });
-})();
-</script>
 <!-- overlay canvas removed - was causing dark vignette over video -->
 <script>
 (function(){

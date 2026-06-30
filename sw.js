@@ -1,4 +1,4 @@
-const CACHE = 'hot-crm-v4';
+const CACHE = 'hot-crm-v5';
 const ASSETS = ['./manifest.json', './office-bg.jpg', './mountains-bg.mp4'];
 
 self.addEventListener('install', e => {
