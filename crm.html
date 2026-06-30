@@ -4740,6 +4740,18 @@ function refreshEdges(){} // no-op, kept so nav() calls don't throw
   }, {passive:true});
 })();
 </script>
-<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{});}</script>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(reg=>{
+    // Auto-reload when a new SW activates so users get fresh HTML immediately
+    reg.addEventListener('updatefound',()=>{
+      const sw=reg.installing;
+      sw.addEventListener('statechange',()=>{
+        if(sw.state==='activated') window.location.reload();
+      });
+    });
+  }).catch(()=>{});
+}
+</script>
 </body>
 </html>
