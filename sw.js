@@ -1,5 +1,5 @@
-const CACHE = 'hot-crm-v2';
-const ASSETS = ['./crm.html', './manifest.json', './office-bg.jpg', './mountains-bg.mp4'];
+const CACHE = 'hot-crm-v3';
+const ASSETS = ['./manifest.json', './office-bg.jpg', './mountains-bg.mp4'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -17,6 +17,17 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // Navigation requests (HTML pages) always go network-first so users get the latest version
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+  // Assets use cache-first for performance
   e.respondWith(
     caches.match(e.request).then(cached => {
       const network = fetch(e.request).then(res => {
