@@ -1802,12 +1802,12 @@ function saveAll(){
     if(!verify||verify!==snap)throw new Error('אימות כתיבה נכשל');
     _quotaAlerted=false;
     showSaved();
-    if(typeof scheduleAutoBackup==='function')scheduleAutoBackup(); // silent IndexedDB snapshot
+    // Immediate IDB backup — don't delay, so closing the browser right away still saves
+    if(typeof idbBackup==='function') idbBackup(snap);
   }catch(e){
     console.error('שגיאת שמירה:',e);
     const quota = e && (e.name==='QuotaExceededError' || e.code===22 || e.code===1014 || /quota|exceed/i.test(e.message||''));
     if(quota){
-      // loud + blocking so the user can never lose data silently
       if(!_quotaAlerted){
         _quotaAlerted=true;
         alert('⚠️ האחסון המקומי מלא — השמירה האחרונה לא הצליחה!\n\nכדי לא לאבד נתונים, עכשיו:\n1. ייצא גיבוי (סעיף "ייצוא" → גיבוי JSON).\n2. הסר קובץ הצעת מחיר גדול מעסקה, או מחק רשומות שאינן נחוצות.\n\nהנתונים שעל המסך עדיין קיימים — גבה אותם לפני שתסגור.');
@@ -1892,7 +1892,10 @@ function loadAll(){
 // Background saves with proper quota detection (no silent failures)
 function _bgSave(){
   try{
-    localStorage.setItem(LS_KEY,JSON.stringify(D));
+    const snap=JSON.stringify(D);
+    localStorage.setItem(LS_KEY,snap);
+    // Also push to IDB so browser-close doesn't lose the latest state
+    if(typeof idbBackup==='function') idbBackup(snap);
   }catch(e){
     const quota=e&&(e.name==='QuotaExceededError'||e.code===22||e.code===1014||/quota|exceed/i.test(e.message||''));
     if(quota&&!_quotaAlerted){_quotaAlerted=true;alert('⚠️ האחסון המקומי מלא — שמירת הרקע נכשלה!\n\nייצא גיבוי עכשיו מסעיף "ייצוא".');showToast('⚠️ האחסון מלא! ייצא גיבוי','warn');}
@@ -4133,13 +4136,36 @@ function sendWhatsAppMeetings(){
 // ===== BACKUP / RESTORE =====
 function backupData(){
   const json=JSON.stringify(D,null,2);
-  const blob=new Blob([json],{type:'application/json;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);const a=document.createElement('a');
-  a.href=url;a.download='crm_backup_'+nd()+'.json';document.body.appendChild(a);a.click();
-  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},500);
+  const fname='crm_backup_'+nd()+'.json';
+  try{
+    const blob=new Blob([json],{type:'application/json;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=fname;a.style.display='none';
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
+    toast('💾 הגיבוי הורד: '+fname,'ok');
+  }catch(e){
+    // Fallback for iOS/PWA: open as data URI in new tab so user can share/save
+    try{
+      const uri='data:application/json;charset=utf-8,'+encodeURIComponent(json);
+      const w=window.open(uri,'_blank');
+      if(!w) toast('⚠️ אפשר חסימת חלונות קופצים ונסה שוב','warn');
+      else toast('💾 שמור את הקובץ מהלשונית שנפתחה','info');
+    }catch(e2){ toast('⚠️ שגיאה בגיבוי: '+e2.message,'warn'); }
+  }
 }
 function restoreData(){
-  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  // Use a persistent hidden file input in the DOM — programmatic .click() on
+  // a detached element doesn't work in iOS Safari / PWA mode.
+  let inp=document.getElementById('_restore_file_inp');
+  if(!inp){
+    inp=document.createElement('input');
+    inp.type='file';inp.accept='.json';inp.id='_restore_file_inp';
+    inp.style.cssText='position:fixed;opacity:0;pointer-events:none;top:0;left:0;width:1px;height:1px;';
+    document.body.appendChild(inp);
+  }
+  inp.value=''; // reset so same file can be selected again
   inp.onchange=e=>{
     const file=e.target.files[0];if(!file)return;
     const reader=new FileReader();
@@ -4200,14 +4226,19 @@ function maybeDailyBackupFile(){
   try{
     const today=nd();
     if(localStorage.getItem('cem_last_dl')===today)return;
-    // only after the user is in the app
     const app=document.getElementById('app');
     if(!app||app.style.display==='none')return;
     const json=JSON.stringify(D,null,2);
-    const blob=new Blob([json],{type:'application/json;charset=utf-8;'});
-    const url=URL.createObjectURL(blob);const a=document.createElement('a');
-    a.href=url;a.download='crm_autobackup_'+today+'.json';document.body.appendChild(a);a.click();
-    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},800);
+    const fname='crm_autobackup_'+today+'.json';
+    try{
+      const blob=new Blob([json],{type:'application/json;charset=utf-8;'});
+      const url=URL.createObjectURL(blob);const a=document.createElement('a');
+      a.href=url;a.download=fname;document.body.appendChild(a);a.click();
+      setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},800);
+    }catch(e2){
+      // iOS fallback — open as data URI
+      try{ window.open('data:application/json;charset=utf-8,'+encodeURIComponent(json),'_blank'); }catch(e3){}
+    }
     localStorage.setItem('cem_last_dl',today);
     showToast('💾 גיבוי יומי אוטומטי הורד','ok');
   }catch(e){console.warn('daily backup file failed:',e);}
