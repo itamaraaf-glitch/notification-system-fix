@@ -59,7 +59,7 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-
     radial-gradient(ellipse 70% 60% at 50% 48%,rgba(3,5,12,.38) 0%,rgba(4,6,14,.72) 100%),
     linear-gradient(to bottom,rgba(3,5,12,.60) 0%,rgba(4,6,14,.35) 35%,rgba(4,6,14,.50) 70%,rgba(2,4,10,.88) 100%),
     url('office-bg.jpg') center 38%/cover no-repeat;
-  position:relative;z-index:1;perspective:1100px}
+  position:relative;z-index:2;perspective:1100px}
 .lcard{
   background:linear-gradient(145deg,rgba(10,13,26,.98),rgba(6,8,18,.99));
   border:1px solid rgba(200,169,110,.22);border-radius:20px;padding:32px 44px 40px;width:380px;text-align:center;
@@ -113,7 +113,7 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);font-
 .lerr{font-size:11px;color:var(--red);margin-top:10px;min-height:16px}
 
 /* ─── APP SHELL ─── */
-#app{display:none;flex-direction:column;height:100vh;overflow:hidden;position:relative;z-index:1}
+#app{display:none;flex-direction:column;height:100vh;overflow:hidden;position:relative;z-index:2}
 #topbar{
   background:linear-gradient(90deg,rgba(10,13,22,.98),rgba(14,18,32,.98));
   border-bottom:1px solid rgba(200,169,110,.1);
@@ -889,8 +889,12 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
 </head>
 <body>
 
-<!-- MOUNTAIN DREAM CANVAS — layered peaks, aurora glow, gold ridge light, drifting stars -->
-<canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block;will-change:transform;transform:translateZ(0)"></canvas>
+<!-- MOUNTAIN VIDEO BACKGROUND -->
+<video id="vid-bg" autoplay muted loop playsinline style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;object-fit:cover;pointer-events:none;opacity:.88">
+  <source src="mountains-bg.mp4" type="video/mp4">
+</video>
+<!-- overlay canvas: dark vignette + gold dust on top of video -->
+<canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;display:block;will-change:transform;transform:translateZ(0)"></canvas>
 <script>
 (function(){
   const cvs = document.getElementById('bg-canvas');
@@ -951,79 +955,16 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     if(now - _lastT < 33) return;
     _lastT = now; T = now * .001;
 
-    // ── Sky gradient
-    const sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0,    '#03040c');
-    sky.addColorStop(0.30, '#050710');
-    sky.addColorStop(0.65, '#070918');
-    sky.addColorStop(1,    '#060810');
+    // ── Clear canvas (transparent — video shows through)
+    ctx.clearRect(0, 0, W, H);
+
+    // ── Dark overlay so CRM content stays readable
     ctx.globalAlpha = 1;
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, H);
-
-    // ── Aurora glow (slow drift, purple-teal)
-    const ax = W * 0.5 + Math.sin(T * 0.09) * W * 0.18;
-    const ay = H * 0.22 + Math.sin(T * 0.07) * H * 0.06;
-    const aura = ctx.createRadialGradient(ax, ay, 0, ax, ay, W * 0.65);
-    aura.addColorStop(0,   `rgba(100,60,200,${(0.038 + 0.018*Math.sin(T*.13)).toFixed(3)})`);
-    aura.addColorStop(0.4, `rgba(60,160,220,${(0.022 + 0.012*Math.sin(T*.17)).toFixed(3)})`);
-    aura.addColorStop(1,   'rgba(0,0,0,0)');
-    ctx.fillStyle = aura; ctx.fillRect(0, 0, W, H);
-
-    // ── Gold horizon warmth
-    const gx = W * 0.5 + Math.sin(T * 0.06) * W * 0.08;
-    const gy = H * (0.72 + 0.02 * Math.sin(T * 0.08));
-    const ghz = ctx.createRadialGradient(gx, gy, 0, gx, gy, W * 0.75);
-    ghz.addColorStop(0,   `rgba(200,155,80,${(0.055 + 0.025*Math.sin(T*.18)).toFixed(3)})`);
-    ghz.addColorStop(0.45,`rgba(180,120,50,${(0.022 + 0.010*Math.sin(T*.14)).toFixed(3)})`);
-    ghz.addColorStop(1,   'rgba(0,0,0,0)');
-    ctx.fillStyle = ghz; ctx.fillRect(0, 0, W, H);
-
-    // ── Stars (twinkle above mountains)
-    for(const s of stars){
-      const al = 0.55 * (0.45 + 0.55 * Math.sin(T * s.spd + s.ph));
-      ctx.globalAlpha = al;
-      ctx.fillStyle = '#c8d8ff';
-      ctx.beginPath(); ctx.arc(s.x, s.y, s.sz, 0, Math.PI*2); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-
-    // ── Mountain layers
-    for(let li = 0; li < MTN_LAYERS.length; li++){
-      const l = MTN_LAYERS[li];
-      ctx.beginPath();
-      ctx.moveTo(0, H);
-      for(let x = 0; x <= W; x += 3){
-        const y = mtnY(l, x, T);
-        if(x === 0) ctx.moveTo(0, y); else ctx.lineTo(x, y);
-      }
-      ctx.lineTo(W, H); ctx.closePath();
-
-      const [r,g,b] = l.col;
-      const mGrad = ctx.createLinearGradient(0, H*(l.ofs - l.amp), 0, H);
-      mGrad.addColorStop(0,   `rgba(${r},${g},${b},0.96)`);
-      mGrad.addColorStop(0.6, `rgba(${r+4},${g+6},${b+10},0.92)`);
-      mGrad.addColorStop(1,   'rgba(6,8,16,0.98)');
-      ctx.fillStyle = mGrad; ctx.fill();
-
-      // Gold ridge highlight on foreground layers
-      if(l.ridge){
-        const ridgeAl = 0.055 + 0.03 * Math.sin(T * 0.22 + li);
-        ctx.beginPath();
-        for(let x = 0; x <= W; x += 3){
-          const y = mtnY(l, x, T);
-          if(x === 0) ctx.moveTo(0, y); else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = `rgba(200,169,110,${ridgeAl.toFixed(3)})`;
-        ctx.lineWidth = 0.9; ctx.stroke();
-      }
-    }
-
-    // ── Ground mist fade
-    const mist = ctx.createLinearGradient(0, H*0.72, 0, H);
-    mist.addColorStop(0, 'rgba(6,8,16,0)');
-    mist.addColorStop(1, 'rgba(6,8,16,0.96)');
-    ctx.fillStyle = mist; ctx.fillRect(0, H*0.72, W, H*0.28);
+    const overlay = ctx.createLinearGradient(0, 0, 0, H);
+    overlay.addColorStop(0,   'rgba(4,6,14,.52)');
+    overlay.addColorStop(0.5, 'rgba(4,6,14,.38)');
+    overlay.addColorStop(1,   'rgba(3,5,12,.68)');
+    ctx.fillStyle = overlay; ctx.fillRect(0, 0, W, H);
 
     // ── Gold dust
     ctx.fillStyle = 'rgba(220,180,100,1)';

@@ -1,5 +1,5 @@
 const CACHE = 'hot-crm-v1';
-const ASSETS = ['./crm.html', './manifest.json', './office-bg.jpg'];
+const ASSETS = ['./crm.html', './manifest.json', './office-bg.jpg', './mountains-bg.mp4'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
