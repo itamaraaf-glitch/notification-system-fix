@@ -2094,7 +2094,7 @@ function getAlerts(){
     if(t2.questions){const dq=db(t,t2.questions);if(dq>=0&&dq<=2)a.push({type:'warn',h:`מועד שאלות – ${t2.name}`,s:`נותרו ${dq} ימים`});}
   });
   const held=D.meetings.filter(m=>m.hl==='כן').length;
-  if(held<10)a.push({type:'info',h:`יעד פגישות – ${held}/${MEETING_GOAL}`,s:`${MEETING_GOAL-held} פגישות נדרשות`});
+  if(held<MEETING_GOAL)a.push({type:'info',h:`יעד פגישות – ${held}/${MEETING_GOAL}`,s:`${MEETING_GOAL-held} פגישות נדרשות`});
   a.push(...getClientAlerts());
   document.getElementById('acnt').textContent=a.length;
   const dot=document.getElementById('mob-alert-dot');
