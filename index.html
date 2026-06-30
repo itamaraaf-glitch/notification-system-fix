@@ -1644,9 +1644,9 @@ async function sha256(str){
 }
 let _loginAttempts=0,_loginLock=0;
 async function doLogin(){
-  const now=Date.now();
-  if(now<_loginLock){
-    const sec=Math.ceil((_loginLock-now)/1000);
+  const ts=Date.now();
+  if(ts<_loginLock){
+    const sec=Math.ceil((_loginLock-ts)/1000);
     document.getElementById('lerr').textContent=`נסה שוב בעוד ${sec} שניות`;return;
   }
   const u=document.getElementById('lu').value.trim(),p=document.getElementById('lp').value;
