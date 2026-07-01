@@ -1214,6 +1214,10 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <div class="dpanel" style="grid-column:1/-1"><h4>🔥 דחוף – לטיפול עכשיו</h4><div id="urgentlist" style="display:flex;flex-direction:column;gap:5px;max-height:260px;overflow-y:auto"></div></div>
   </div>
   <div class="dgrid">
+    <div class="dpanel"><h4>📅 פגישות קרובות</h4><div id="upcoming-meetings" style="display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto"></div><button class="btn btnp btns" onclick="openM('meeting',null)" style="margin-top:8px;width:100%;font-size:11px">+ פגישה חדשה</button></div>
+    <div class="dpanel"><h4>⚡ פעולות מהירות</h4><div id="quick-actions-panel" style="display:flex;flex-direction:column;gap:6px"></div></div>
+  </div>
+  <div class="dgrid">
     <div class="dpanel"><h4>💼 סטטוס עסקאות</h4><div id="dspanel" style="display:flex;flex-direction:column;gap:6px"></div></div>
     <div class="dpanel"><h4>📈 מדדים מהירים</h4><div id="qspanel" style="display:flex;flex-direction:column;gap:6px"></div></div>
   </div>
@@ -1427,7 +1431,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
 <div class="sec" id="sec-meetings">
   <div class="shdr">
     <div class="stit">🤝 יעד פגישות</div>
-    <div style="display:flex;gap:6px;align-items:center">
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'mtb')">
       <button class="btn btnp" onclick="openM('meeting',null)">+ פגישה חדשה</button>
       <button class="btn" onclick="exportExcel('meetings')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
@@ -1436,6 +1440,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
       <button class="btn btnd" onclick="deleteAll('meetings')" title="מחק את כל הפגישות">🗑 מחק הכל</button>
     </div>
   </div>
+  <div id="meetings-mini-cal" style="margin-bottom:10px"></div>
   <div class="tabs" id="meetings-tabs">
     <div class="tab active" onclick="swTab(this,'meetings-tabs','mtent','archivmtg');rMeetings()">פגישות חודש נוכחי</div>
     <div class="tab" onclick="swTab(this,'meetings-tabs','mtent','archivmtg');rMeetingsArchive()">📦 ארכיון</div>
@@ -1445,7 +1450,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <div class="tw"><div class="thdr">📅 פגישות – יעד 15/חודש</div>
     <div class="tscroll"><table><thead><tr>
       <th class="cb-th"><input type="checkbox" id="chk-all-meetings" onchange="toggleAll('meetings',this.checked)"></th>
-      <th>#</th><th>תאריך</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th><th>פעולות</th>
+      <th>#</th><th>תאריך</th><th>שעה</th><th>סוג</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th><th>פעולות</th>
     </tr></thead><tbody id="mtb"></tbody></table></div>
     <div class="tft" id="mft"></div>
     <div class="cb-row" id="selbar-meetings" style="display:none">
@@ -1684,9 +1689,11 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   <div class="mhdr"><h3 id="metit">פגישה חדשה</h3><button class="mcls" onclick="closeM('mmeeting')">✕</button></div>
   <div class="fg">
     <div class="g"><label>תאריך</label><input type="date" id="mdt"></div>
-    <div class="g"><label>שם לקוח</label><input type="text" id="mcl"></div>
+    <div class="g"><label>שעה</label><input type="time" id="mtime"></div>
+    <div class="g"><label>סוג פגישה</label><select id="mtype"><option value="פגישה">🤝 פגישה</option><option value="שיחת טלפון">📞 שיחת טלפון</option><option value="זום">🖥 זום</option><option value="Teams">🟦 Teams</option><option value="אחר">📌 אחר</option></select></div>
+    <div class="g"><label>שם לקוח</label><input type="text" id="mcl" list="mcl-list" autocomplete="off"><datalist id="mcl-list"></datalist></div>
     <div class="g"><label>מס׳ פגישה / פרויקט</label><input type="text" id="mnu"></div>
-    <div class="g"><label>התקיימה?</label><select id="mhl"><option value="כן">כן</option><option value="לא">לא</option><option value="מבוטל">מבוטל</option></select></div>
+    <div class="g"><label>התקיימה?</label><select id="mhl"><option value="לא">לא</option><option value="כן">כן</option><option value="מבוטל">מבוטל</option></select></div>
     <div class="gf"><label>הערות</label><textarea id="mno" rows="2"></textarea></div>
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
@@ -1713,6 +1720,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   </div>
   <div id="client-sections"></div>
   <div id="client-deals-section"></div>
+  <div id="client-meetings-section"></div>
   <div class="msec" style="border:1px solid rgba(123,94,167,.4)">
     <div class="msec-hdr">
       <span style="color:#7b5ea7">🎯 מוצרים פוטנציאליים – טרם נרכשו</span>
@@ -1726,6 +1734,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   <div style="display:flex;gap:8px;justify-content:flex-end">
     <button class="btn" onclick="closeM('mclient')">ביטול</button>
     <button class="btn btns" onclick="emailFromClientForm()" style="border-color:#0078d4;color:#4cc9f0">📧 שלח מייל</button>
+    <button class="btn btns" onclick="schedMeetFromClient()" style="border-color:#06d6a0;color:#06d6a0">📅 קבע פגישה</button>
     <button class="btn btnp" onclick="saveClient()">💾 שמור כרטיס לקוח</button>
   </div>
 </div></div>
@@ -1793,6 +1802,17 @@ function showToast(msg,type='ok'){
   setTimeout(()=>{t.style.opacity='0';setTimeout(()=>{t.remove();restack();},400);},3500);
 }
 const toast = showToast;
+
+function showToastWithAction(msg,btnLabel,fn){
+  const t=document.createElement('div');
+  t.className='toast toast-ok';
+  t.style.cssText='display:flex;align-items:center;gap:10px;min-width:240px;max-width:340px';
+  t.innerHTML=`<span style="flex:1;font-size:12px">${msg}</span><button style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:4px 10px;font-family:inherit;font-size:11px;cursor:pointer;white-space:nowrap">${btnLabel}</button>`;
+  t.querySelector('button').onclick=()=>{t.remove();if(fn)fn();};
+  const restack=()=>{document.querySelectorAll('.toast').forEach((el,i)=>{el.style.bottom=(16+i*54)+'px';});};
+  document.body.appendChild(t);restack();
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>{t.remove();restack();},400);},5000);
+}
 
 // ── CUSTOM CONFIRM (window.confirm is blocked on iOS standalone / PWA) ──────
 let _cCb = null;
@@ -1919,6 +1939,7 @@ async function doLogin(){
       tick();
     })();
     loadAll();
+    setTimeout(showTodayMeetings, 1400);
     requestAnimationFrame(()=>{ appEl.style.opacity='1'; });
     setTimeout(()=>{ appEl.style.transition=''; },300);
   },180);
@@ -2741,6 +2762,8 @@ function rDash(){
     <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">שכר ממתין</span><b class="ny">${fmt(so)}</b></div>
     <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">מכרזים פעילים</span><b class="nb">${D.tenders.filter(t=>t.submitted!=='כן').length}</b></div>
     <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">הוגשו</span><b class="ng">${D.tenders.filter(t=>t.submitted==='כן').length}</b></div>`;
+  renderUpcomingMeetings();
+  renderQuickActions();
 }
 
 // ===== DEALS =====
@@ -2807,7 +2830,9 @@ function rDeals(){
       const _dcl=D.clients.find(x=>(x.name||'').trim()===(d.co||'').trim());
       const _hse=!!(_dcl&&_dcl.email&&_dcl.email.trim());
       const deBtn=`<button class="btn btns" onclick="sendEmailToDeal('${d.id}')" title="${_hse?'שלח עדכון מייל ללקוח':'הוסף מייל ללקוח'}" style="font-size:9px;opacity:${_hse?1:0.45}">📧</button> `;
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(d.date)}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap">${deBtn}${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד הצעת מחיר: ${d.quote.name||''}" style="border-color:#4cc9f0;color:#4cc9f0">📎</button> `:''}<button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
+      const coSafe=(d.co||'').replace(/'/g,'&#39;');
+      const schedBtn=`<button class="btn btns" onclick="openMeetingFor('${coSafe}')" title="קבע פגישה עם ${d.co||'לקוח'}" style="border-color:#06d6a0;color:#06d6a0;font-size:9px">📅</button> `;
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(d.date)}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap">${schedBtn}${deBtn}${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד הצעת מחיר: ${d.quote.name||''}" style="border-color:#4cc9f0;color:#4cc9f0">📎</button> `:''}<button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
     };
     const div=(cls,icon,lbl,n)=>`<tr class="mdiv ${cls}"><td colspan="18">${icon} ${lbl} <span style="font-weight:400;opacity:.8">(${n})</span></td></tr>`;
     let html='';
@@ -3154,15 +3179,60 @@ function rSalaryArchive(){
 }
 
 // ===== MEETINGS =====
+function renderMeetingsMiniCal(){
+  const el=document.getElementById('meetings-mini-cal');
+  if(!el)return;
+  const n=now(),y=n.getFullYear(),mo=n.getMonth();
+  const todayStr=nd();
+  const daysInMonth=new Date(y,mo+1,0).getDate();
+  const firstDay=new Date(y,mo,1).getDay(); // 0=Sun
+  const mtgDays=new Set(D.meetings.filter(m=>(m.dt||'').startsWith(`${y}-${String(mo+1).padStart(2,'0')}`)).map(m=>parseInt((m.dt||'').slice(8))));
+  const heldDays=new Set(D.meetings.filter(m=>m.hl==='כן'&&(m.dt||'').startsWith(`${y}-${String(mo+1).padStart(2,'0')}`)).map(m=>parseInt((m.dt||'').slice(8))));
+  const todayDay=n.getDate();
+  const DAYS=['א','ב','ג','ד','ה','ו','ש'];
+  let cells='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:9px">';
+  DAYS.forEach(d=>cells+=`<div style="text-align:center;color:var(--text3);padding:2px;font-weight:700">${d}</div>`);
+  // empty cells before first day
+  for(let i=0;i<firstDay;i++) cells+='<div></div>';
+  for(let d=1;d<=daysInMonth;d++){
+    const isT=d===todayDay;
+    const hasMtg=mtgDays.has(d);
+    const wasHeld=heldDays.has(d);
+    const dStr=`${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const bg=isT?'rgba(200,169,110,.25)':hasMtg?'rgba(6,214,160,.12)':'transparent';
+    const bd=isT?'1px solid rgba(200,169,110,.5)':hasMtg?'1px solid rgba(6,214,160,.3)':'1px solid transparent';
+    const dot=wasHeld?'<span style="display:block;width:4px;height:4px;border-radius:50%;background:#06d6a0;margin:0 auto;margin-top:-1px"></span>':hasMtg?'<span style="display:block;width:4px;height:4px;border-radius:50%;background:#f4a261;margin:0 auto;margin-top:-1px"></span>':'';
+    cells+=`<div onclick="openMeetingFor('');document.getElementById('mdt').value='${dStr}'" style="text-align:center;padding:3px 1px;border-radius:4px;background:${bg};border:${bd};cursor:pointer;color:${isT?'var(--gold)':hasMtg?'var(--teal)':'var(--text2)'};font-weight:${isT||hasMtg?700:400}">${d}${dot}</div>`;
+  }
+  cells+='</div>';
+  const monthName=(MONTH_HE[mo]||'')+' '+y;
+  el.innerHTML=`<div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
+    <div style="font-size:10px;font-weight:700;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:6px">📅 ${monthName} <span style="color:var(--text3);font-weight:400">– לחץ על יום לקביעת פגישה</span></div>
+    ${cells}
+  </div>`;
+}
+
 function rMeetings(){
+  renderMeetingsMiniCal();
   const n=now(),wd=wdM(n.getFullYear(),n.getMonth()),wdp=wdP(n.getFullYear(),n.getMonth(),n.getDate());
   const held=D.meetings.filter(m=>m.hl==='כן').length,pct=Math.round((held/MEETING_GOAL)*100),exp=Math.round((MEETING_GOAL/wd)*wdp);
   document.getElementById('mkrow').innerHTML=`<div class="kc g"><div class="lb">התקיימו</div><div class="vl">${held}</div><div class="sb">מתוך ${MEETING_GOAL}</div></div><div class="kc"><div class="lb">% יעד</div><div class="vl">${pct}%</div></div><div class="kc y"><div class="lb">צפי עד היום</div><div class="vl">${exp}</div><div class="sb">${held>=exp?'✅ בקצב':'⚠ פיגור'}</div></div><div class="kc ${held>=MEETING_GOAL?'g':'r'}"><div class="lb">נדרש</div><div class="vl">${Math.max(0,MEETING_GOAL-held)}</div></div>`;
-  document.getElementById('mtb').innerHTML=D.meetings.map((m,i)=>{
+  const todayStr=nd();
+  const sorted=[...D.meetings].sort((a,b)=>{
+    const da=(a.dt||'')+(a.time||''), db2=(b.dt||'')+(b.time||'');
+    return da<db2?-1:da>db2?1:0;
+  });
+  document.getElementById('mtb').innerHTML=sorted.map((m,i)=>{
     const sb2=m.hl==='כן'?'<span class="badge bg">כן ✓</span>':m.hl==='מבוטל'?'<span class="badge br">מבוטל</span>':'<span class="badge by">לא</span>';
     const chk=SEL['meetings']&&SEL['meetings'].has(m.id)?'checked':'';
-    return`<tr><td class="cb-td"><input type="checkbox" class="cb-item-meetings" ${chk} onchange="toggleSel('meetings','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px">${fmtDate(m.dt)}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb2}</td><td style="font-size:10px">${m.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('meeting','${m.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('meetings','${m.id}')">🗑</button></td></tr>`;
-  }).join('')||emptyRow(8,'🤝',"אין פגישות","openM('meeting',null)");
+    const isToday=m.dt===todayStr;
+    const isFuture=m.dt>todayStr;
+    const rowStyle=isToday?'background:rgba(6,214,160,.06);':'';
+    const timeDisp=m.time?`<span style="font-size:10px;color:var(--gold)">${m.time}</span>`:'<span style="color:var(--text3)">–</span>';
+    const typeIco={פגישה:'🤝',שיחת_טלפון:'📞','שיחת טלפון':'📞',זום:'🖥',Teams:'🟦',אחר:'📌'}[m.mtype||'פגישה']||'🤝';
+    const todayBadge=isToday?'<span class="badge bb" style="font-size:9px;margin-right:2px">היום!</span>':'';
+    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-meetings" ${chk} onchange="toggleSel('meetings','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${todayBadge}</td><td>${timeDisp}</td><td style="font-size:11px">${typeIco}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb2}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${m.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openMeetingFor('${(m.cl||'').replace(/'/g,'&#39;')}')" title="קבע פגישה נוספת עם לקוח זה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns" onclick="openM('meeting','${m.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('meetings','${m.id}')">🗑</button></td></tr>`;
+  }).join('')||emptyRow(10,'🤝',"אין פגישות","openM('meeting',null)");
   document.getElementById('mft').innerHTML=`<span class="fi">סה"כ: <b>${D.meetings.length}</b></span><span class="fi">התקיימו: <b>${held}</b></span><span class="fi">לא: <b>${D.meetings.filter(m=>m.hl!=='כן').length}</b></span><span class="fi">יעד: <b style="color:${pct>=100?'var(--teal)':pct>=66?'#f4a261':'#e63946'}">${pct}%</b></span>`;
   updateSelBar('meetings');
 }
@@ -3324,6 +3394,129 @@ function renderClientDeals(id){
   sec.innerHTML=`<div class="msec" style="border:1px solid rgba(76,201,240,.25)"><div class="msec-hdr"><span style="color:#4cc9f0">💼 עסקאות קשורות (${deals.length})</span><button class="btn btns" onclick="closeM('mclient');setTimeout(()=>{openM('deal',null);setTimeout(()=>{const el=document.getElementById('dco');if(el){el.value=${JSON.stringify(c.name||'')};el.dispatchEvent(new Event('change'));}},50);},100)" style="border-color:#4cc9f0;color:#4cc9f0;font-size:10px">+ עסקה חדשה</button></div>${rows}</div>`;
 }
 
+// ===== MEETING AUTOMATION =====
+function openMeetingFor(clientName){
+  openM('meeting',null);
+  setTimeout(()=>{
+    const el=document.getElementById('mcl');
+    if(el)el.value=clientName||'';
+  },50);
+}
+
+function schedMeetFromClient(){
+  const nameEl=document.getElementById('cl-name');
+  const name=(nameEl?nameEl.value.trim():'');
+  closeM('mclient');
+  setTimeout(()=>openMeetingFor(name),120);
+}
+
+function renderClientMeetings(id){
+  const sec=document.getElementById('client-meetings-section');
+  if(!sec)return;
+  if(!id){sec.style.display='none';sec.innerHTML='';return;}
+  const c=D.clients.find(x=>x.id==id);
+  if(!c){sec.style.display='none';return;}
+  const mtgs=D.meetings.filter(m=>(m.cl||'').trim()===(c.name||'').trim())
+    .sort((a,b)=>((b.dt||'')+(b.time||''))<((a.dt||'')+(a.time||''))?1:-1);
+  const todayStr=nd();
+  const typeIco={פגישה:'🤝',שיחת_טלפון:'📞','שיחת טלפון':'📞',זום:'🖥',Teams:'🟦',אחר:'📌'};
+  const schedBtn=`<button class="btn btns" onclick="schedMeetFromClient()" style="border-color:#06d6a0;color:#06d6a0;font-size:10px">+ קבע פגישה</button>`;
+  if(!mtgs.length){
+    sec.style.display='';
+    sec.innerHTML=`<div class="msec" style="border:1px solid rgba(6,214,160,.2)"><div class="msec-hdr"><span style="color:#06d6a0">📅 פגישות</span>${schedBtn}</div><div style="font-size:11px;color:var(--text3);padding:8px 4px;font-style:italic">אין פגישות קשורות ללקוח זה</div></div>`;
+    return;
+  }
+  const rows=mtgs.map(m=>{
+    const ico=(typeIco[m.mtype||'פגישה']||'🤝');
+    const isToday=m.dt===todayStr;
+    const hlBadge=m.hl==='כן'?'<span style="font-size:9px;color:#06d6a0">✓ התקיימה</span>':m.hl==='מבוטל'?'<span style="font-size:9px;color:#e63946">✕ מבוטל</span>':'<span style="font-size:9px;color:#f4a261">⏳ ממתין</span>';
+    const todayMark=isToday?'<span style="font-size:9px;font-weight:700;color:#4cc9f0;margin-right:3px">היום!</span>':'';
+    return`<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:8px;background:${isToday?'rgba(6,214,160,.07)':'rgba(255,255,255,.03)'};border:1px solid ${isToday?'rgba(6,214,160,.2)':'rgba(255,255,255,.07)'};margin-bottom:4px;flex-wrap:wrap">
+      <span style="font-size:14px">${ico}</span>
+      <span style="font-size:10px;color:var(--text2);white-space:nowrap">${fmtDate(m.dt)}</span>
+      ${m.time?`<span style="font-size:10px;color:var(--gold)">${m.time}</span>`:''}
+      ${todayMark}
+      <span style="font-size:10px;flex:1">${m.nu||''}</span>
+      ${hlBadge}
+      ${m.no?`<span style="font-size:10px;color:var(--text3);flex-basis:100%">${m.no}</span>`:''}
+      <button class="btn btns" onclick="closeM('mclient');setTimeout(()=>openM('meeting','${m.id}'),100)" style="font-size:9px;margin-right:auto">✏️</button>
+    </div>`;
+  }).join('');
+  sec.style.display='';
+  sec.innerHTML=`<div class="msec" style="border:1px solid rgba(6,214,160,.25)"><div class="msec-hdr"><span style="color:#06d6a0">📅 פגישות (${mtgs.length})</span>${schedBtn}</div>${rows}</div>`;
+}
+
+function renderUpcomingMeetings(){
+  const el=document.getElementById('upcoming-meetings');
+  if(!el)return;
+  const todayStr=nd();
+  const upcoming=D.meetings
+    .filter(m=>m.dt>=todayStr&&m.hl!=='מבוטל')
+    .sort((a,b)=>((a.dt||'')+(a.time||''))<((b.dt||'')+(b.time||''))?-1:1)
+    .slice(0,6);
+  if(!upcoming.length){
+    el.innerHTML='<div style="font-size:11px;color:var(--text3);padding:8px">אין פגישות מתוכננות קרובות</div>';
+    return;
+  }
+  const typeIco={פגישה:'🤝',שיחת_טלפון:'📞','שיחת טלפון':'📞',זום:'🖥',Teams:'🟦',אחר:'📌'};
+  el.innerHTML=upcoming.map(m=>{
+    const isToday=m.dt===todayStr;
+    const ico=typeIco[m.mtype||'פגישה']||'🤝';
+    const bg=isToday?'rgba(6,214,160,.1)':'rgba(255,255,255,.03)';
+    const bd=isToday?'rgba(6,214,160,.3)':'var(--border)';
+    const c=D.clients.find(cl=>(cl.name||'').trim()===(m.cl||'').trim());
+    const clAct=c?`openClientModal('${c.id}')`:`nav('meetings')`;
+    return`<div onclick="${clAct}" style="display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:8px;background:${bg};border:1px solid ${bd};cursor:pointer">
+      <span style="font-size:13px">${ico}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.cl||'(ללא שם)'}</div>
+        <div style="font-size:10px;color:var(--text3)">${isToday?'<span style="color:#06d6a0;font-weight:700">היום</span>':fmtDate(m.dt)}${m.time?' · '+m.time:''}</div>
+      </div>
+      ${m.hl==='כן'?'<span style="font-size:10px;color:#06d6a0">✓</span>':''}
+    </div>`;
+  }).join('');
+}
+
+function renderQuickActions(){
+  const el=document.getElementById('quick-actions-panel');
+  if(!el)return;
+  const openDeals=D.deals.filter(d=>d.st!=='נסגר').length;
+  const todayMtgs=D.meetings.filter(m=>m.dt===nd()).length;
+  const pendingSal=D.salary.filter(s=>s.st!=='סגור'&&(s.pv||0)>0).length;
+  const activeTenders=D.tenders.filter(t=>t.submitted!=='כן').length;
+  el.innerHTML=`
+    <div onclick="openM('meeting',null)" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.2);cursor:pointer">
+      <span style="font-size:16px">📅</span>
+      <div style="flex:1"><div style="font-size:11px;font-weight:700;color:#06d6a0">פגישה חדשה</div><div style="font-size:10px;color:var(--text3)">${todayMtgs} היום</div></div>
+    </div>
+    <div onclick="openM('deal',null)" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:rgba(76,201,240,.08);border:1px solid rgba(76,201,240,.2);cursor:pointer">
+      <span style="font-size:16px">💼</span>
+      <div style="flex:1"><div style="font-size:11px;font-weight:700;color:#4cc9f0">עסקה חדשה</div><div style="font-size:10px;color:var(--text3)">${openDeals} פעילות</div></div>
+    </div>
+    <div onclick="openClientModal(null)" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:rgba(200,169,110,.08);border:1px solid rgba(200,169,110,.2);cursor:pointer">
+      <span style="font-size:16px">🏢</span>
+      <div style="flex:1"><div style="font-size:11px;font-weight:700;color:var(--gold)">לקוח חדש</div><div style="font-size:10px;color:var(--text3)">${D.clients.length} לקוחות</div></div>
+    </div>
+    ${activeTenders?`<div onclick="nav('tenders')" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:rgba(244,162,97,.08);border:1px solid rgba(244,162,97,.2);cursor:pointer">
+      <span style="font-size:16px">📋</span>
+      <div style="flex:1"><div style="font-size:11px;font-weight:700;color:#f4a261">מכרזים פעילים</div><div style="font-size:10px;color:var(--text3)">${activeTenders} פתוחים</div></div>
+    </div>`:''}
+    ${pendingSal?`<div onclick="nav('salary')" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);cursor:pointer">
+      <span style="font-size:16px">💰</span>
+      <div style="flex:1"><div style="font-size:11px;font-weight:700;color:var(--purple)">שכר לגביה</div><div style="font-size:10px;color:var(--text3)">${pendingSal} פרויקטים</div></div>
+    </div>`:''}
+  `;
+}
+
+function showTodayMeetings(){
+  const todayStr=nd();
+  const todayMtgs=D.meetings.filter(m=>m.dt===todayStr&&m.hl!=='מבוטל');
+  if(!todayMtgs.length)return;
+  const names=todayMtgs.slice(0,2).map(m=>m.cl||'?').join(', ');
+  const more=todayMtgs.length>2?` +${todayMtgs.length-2}`:'';;
+  showToast(`📅 היום יש לך ${todayMtgs.length} פגישות: ${names}${more}`,'ok');
+}
+
 function openClientModal(id){
   EI=id;ET='client';
   buildClientSections();
@@ -3340,6 +3533,7 @@ function openClientModal(id){
   Object.keys(ITEM_CFG).forEach(type=>populateItems(type,c[type]||[]));
   populatePotentialProducts(c.potential||[]);
   renderClientDeals(id);
+  renderClientMeetings(id);
   document.getElementById('mclient').classList.add('open');
 }
 
@@ -4143,7 +4337,16 @@ function openM(type,id){
   }else if(type==='meeting'){
     document.getElementById('metit').textContent=isNew?'פגישה חדשה':'עריכת פגישה';
     const m=isNew?{}:D.meetings.find(x=>x.id==id)||{};
-    document.getElementById('mdt').value=m.dt||nd();document.getElementById('mcl').value=m.cl||'';document.getElementById('mnu').value=m.nu||'';document.getElementById('mhl').value=m.hl||'כן';document.getElementById('mno').value=m.no||'';
+    document.getElementById('mdt').value=m.dt||nd();
+    document.getElementById('mtime').value=m.time||'';
+    document.getElementById('mtype').value=m.mtype||'פגישה';
+    document.getElementById('mcl').value=m.cl||'';
+    document.getElementById('mnu').value=m.nu||'';
+    document.getElementById('mhl').value=m.hl||'לא';
+    document.getElementById('mno').value=m.no||'';
+    // Populate client name datalist
+    const dl=document.getElementById('mcl-list');
+    if(dl){dl.innerHTML=D.clients.map(c=>`<option value="${(c.name||'').replace(/"/g,'&quot;')}">`).join('');}
   }
   document.getElementById('m'+type).classList.add('open');
   if(window.csResync) csResync(); // refresh custom dropdown labels with loaded values
@@ -4215,6 +4418,7 @@ function saveDeal(){
   for(const f of _numFieldsDeal){if(isNaN(row[f])||row[f]<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}}
   if(isNaN(row.ch)||row.ch<0||row.ch>100){alert('עמלה (%) חייבת להיות בין 0 ל-100');return;}
   const doSave=()=>{
+    const isNew2=!EI;
     let savedDeal;
     if(EI){dbUpdate('deals',EI,row);savedDeal=D.deals.find(x=>x.id==EI);}
     else{row.num=nextDealNum();savedDeal=dbInsert('deals',row);}
@@ -4222,9 +4426,13 @@ function saveDeal(){
       syncDealToClient(savedDeal);
       syncDealToSalary(savedDeal);
       syncDealToDist(savedDeal);
-      saveAll(); // persist the sync flags set on the deal
+      saveAll();
     }
     closeM('mdeal');rAll();
+    // For new deals: suggest scheduling a follow-up meeting
+    if(isNew2&&row.co){
+      showToastWithAction(`💼 עסקה נוספה עבור ${row.co}`,`📅 קבע פגישה`,()=>openMeetingFor(row.co));
+    }
   };
   // duplicate detection — warn if this company already has an open deal
   const dupDeal=!EI && D.deals.find(d=>(d.co||'').trim().toLowerCase()===row.co.trim().toLowerCase()&&d.st!=='נסגר');
@@ -4324,10 +4532,11 @@ function saveSal(){
   closeM('msalary');rAll();
 }
 function saveMeet(){
-  const row={dt:document.getElementById('mdt').value,cl:document.getElementById('mcl').value,nu:document.getElementById('mnu').value,hl:document.getElementById('mhl').value,no:document.getElementById('mno').value};
+  const row={dt:document.getElementById('mdt').value,time:document.getElementById('mtime').value,mtype:document.getElementById('mtype').value,cl:document.getElementById('mcl').value,nu:document.getElementById('mnu').value,hl:document.getElementById('mhl').value,no:document.getElementById('mno').value};
   if(!row.cl){alert('יש להזין שם לקוח');return;}
   if(EI){dbUpdate('meetings',EI,row);}else{dbInsert('meetings',row);}
   closeM('mmeeting');rAll();
+  showToast('✅ הפגישה נשמרה'+(row.dt?' ל-'+fmtDate(row.dt):''),'ok');
 }
 
 // ===== SELECTION =====
