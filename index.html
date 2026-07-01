@@ -4226,11 +4226,11 @@ function dlCSV(name,csv){
 }
 // ===== EXCEL IMPORT =====
 const IMP_MAP={
-  deals:{'תאריך':'date','#':'num','שם חברה':'co','ח.פ':'cp','תשתית':'inf','שירות':'srv','שווי':'v','חודש נוכחי':'mv','הפצה':'di','חודש הבא':'dn','otc נסגר':'otc','otc':'ot','מול מי':'ct','סיכוי':'ch','סטטוס':'st','סוג':'ty','סוג מוצר':'ptype','הערות':'no'},
+  deals:{'תאריך':'date','תאריך עסקה':'date','ת.עסקה':'date','date':'date','#':'num','שם חברה':'co','ח.פ':'cp','תשתית':'inf','שירות':'srv','שווי':'v','חודש נוכחי':'mv','הפצה':'di','חודש הבא':'dn','otc נסגר':'otc','otc':'ot','מול מי':'ct','סיכוי':'ch','סטטוס':'st','סוג':'ty','סוג מוצר':'ptype','הערות':'no'},
   tenders:{'שם מכרז':'name','מס פרויקט':'proj','פרסום':'pub','הצעה':'quote','שאלות':'questions','הגשה':'deadline','סבבים':'rounds','מטפל':'handler','סכום':'amount','כמות':'qty','הוגשה':'submitted','צימוד':'linked','מסמכים':'docs','הערות':'notes'},
-  dists:{'מטפל':'hd','גורם מטפל':'hp','מס פרויקט':'no','שם חברה':'co','לקוח':'cl','it':'it','פתרון':'so','כתובת':'ad','הכנסה חודשית':'inc','יעד הכנסה':'tgt','יעד':'tgt','ציוד':'eq','חוסרים':'mi','סטטוס':'st','תאריך':'dt','סוג':'ty','סוג מוצר':'ptype'},
+  dists:{'מטפל':'hd','גורם מטפל':'hp','מס פרויקט':'no','שם חברה':'co','לקוח':'cl','it':'it','פתרון':'so','כתובת':'ad','הכנסה חודשית':'inc','יעד הכנסה':'tgt','יעד':'tgt','ציוד':'eq','חוסרים':'mi','סטטוס':'st','תאריך':'dt','תאריך הפצה':'dt','date':'dt','סוג':'ty','סוג מוצר':'ptype'},
   salary:{'מס פרויקט':'pj','שם לקוח':'cl','כמות':'qt','יעד':'tr','סגירה':'cl2','יתרה':'pv','סטטוס':'st','סוג':'ty','הערות':'no'},
-  meetings:{'תאריך':'dt','שם לקוח':'cl','מס פגישה':'nu','התקיימה':'hl','הערות':'no'},
+  meetings:{'תאריך':'dt','תאריך פגישה':'dt','date':'dt','שם לקוח':'cl','מס פגישה':'nu','התקיימה':'hl','הערות':'no'},
   clients:{'שם חברה':'name','ח.פ':'cp','איש קשר':'contact','טלפון':'phone','אימייל':'email','כתובת':'address','סטטוס':'status','הערות':'genNotes'}
 };
 const IMP_NUM={deals:['v','mv','di','dn','ot','otc'],tenders:['amount','qty'],dists:['inc','tgt','eq'],salary:['qt','tr','cl2','pv'],meetings:['nu'],clients:[]};
@@ -4244,21 +4244,27 @@ function normalizeImportDate(v){
   if(v==null||v==='')return'';
   if(v instanceof Date&&!isNaN(v))return _toYMD(v);
   const sNum=String(v).trim();
+  if(!sNum)return'';
   // Excel serial number (days since 1899-12-30)
   if(typeof v==='number'||(/^\d+(\.\d+)?$/.test(sNum)&&+sNum>1000&&+sNum<80000)){
-    // Excel serial to UTC date — use Date.UTC so timezone doesn't shift the day
     const ms=Math.round((+sNum-25569)*86400*1000);
     const tmp=new Date(ms);
     if(!isNaN(tmp)){const uf=n=>String(n).padStart(2,'0');return tmp.getUTCFullYear()+'-'+uf(tmp.getUTCMonth()+1)+'-'+uf(tmp.getUTCDate());}
   }
-  const s=sNum;
-  let m=s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);            // YYYY-MM-DD
+  // Strip time part if present (e.g. "01/07/2025 00:00:00" or "2025-07-01T00:00:00")
+  const s=sNum.replace(/[T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/,'').trim();
+  let m=s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);           // YYYY-MM-DD
   if(m)return m[1]+'-'+_pad2(m[2])+'-'+_pad2(m[3]);
-  m=s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/);              // DD/MM/YYYY
+  m=s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/);             // DD/MM/YYYY or DD-MM-YYYY
   if(m){let y=m[3];if(y.length===2)y='20'+y;return y+'-'+_pad2(m[2])+'-'+_pad2(m[1]);}
-  const d=new Date(s);
+  // Relaxed: allow trailing non-digit chars (e.g. "01/07/2025 extra")
+  m=s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if(m)return m[1]+'-'+_pad2(m[2])+'-'+_pad2(m[3]);
+  m=s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/);
+  if(m){let y=m[3];if(y.length===2)y='20'+y;return y+'-'+_pad2(m[2])+'-'+_pad2(m[1]);}
+  const d=new Date(sNum);
   if(!isNaN(d))return _toYMD(d);
-  return s;
+  return'';
 }
 
 function importFromExcel(sec){
@@ -4316,9 +4322,14 @@ function handleImport(ev,sec){
             added++;return;
           }
         }
-        // section defaults
+        // section defaults — date fields: only apply nd() default if the column was absent from the file
+        const mappedKeys=new Set(Object.values(colMap));
         const defs={deals:{st:'ממתין לתשובה',ty:'long',date:nd()},tenders:{submitted:'לא',qty:1},dists:{st:'ממתין להפצה',ty:'long',dt:nd()},salary:{st:'פתוח',ty:'service',qt:1},meetings:{dt:nd(),hl:'לא'},clients:{status:'לקוח'}};
-        Object.entries(defs[sec]||{}).forEach(([k,dv])=>{if(!obj[k]&&obj[k]!==0)obj[k]=dv;});
+        const secDateFlds=new Set(IMP_DATE[sec]||[]);
+        Object.entries(defs[sec]||{}).forEach(([k,dv])=>{
+          if(secDateFlds.has(k)){if(!mappedKeys.has(k))obj[k]=dv;} // date: only default when column absent
+          else if(!obj[k]&&obj[k]!==0)obj[k]=dv;
+        });
         if(sec==='deals'&&!obj.num)obj.num=nextDealNum();
         const ins=dbInsert(sec,obj);
         if(ins&&sec==='deals'&&ins.st==='נסגר'){syncDealToClient(ins,true);syncDealToSalary(ins,true);syncDealToDist(ins,true);}
