@@ -1155,6 +1155,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   <div class="tbr">
     <div class="uchip">👤 <b id="uname">–</b></div>
     <span id="fb-status" onclick="openSyncModal()" title="סנכרון ענן – לחץ להגדרה" style="cursor:pointer;font-size:15px;padding:2px 6px;border-radius:8px;background:rgba(255,255,255,.05);user-select:none">⚡</span>
+    <button id="fb-force-pull" onclick="fbForcePull()" title="סנכרן עכשיו מהענן" style="display:none;border:none;background:rgba(6,214,160,.15);color:#06d6a0;border-radius:8px;padding:2px 8px;font-size:12px;cursor:pointer;font-family:inherit">🔄 סנכרן</button>
     <span class="save-ind" id="saveind">✦ נשמר</span>
     <button class="btn mob-hide" onclick="saveAll()" style="background:var(--tealdim);color:var(--teal);border:1px solid rgba(6,214,160,.4);font-size:11px;padding:4px 12px;border-radius:20px">💾 שמור</button>
     <button class="btn mob-hide" id="undo-btn" onclick="undoLast()" title="בטל את המחיקה האחרונה" style="display:none;background:rgba(244,162,97,.14);color:#f4a261;border:1px solid rgba(244,162,97,.45);font-size:11px;padding:4px 12px;border-radius:20px">↩ בטל מחיקה</button>
@@ -1527,7 +1528,8 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap">
     <button class="btn btnp" onclick="saveFBConfig()" style="flex:1;min-width:140px">✅ שמור וחבר</button>
-    <button class="btn" onclick="fbSyncNow()" style="background:rgba(6,214,160,.12);color:var(--teal);border-color:rgba(6,214,160,.3)">⬆️ סנכרן עכשיו</button>
+    <button class="btn" onclick="fbSyncNow()" style="background:rgba(6,214,160,.12);color:var(--teal);border-color:rgba(6,214,160,.3)">🔄 סנכרן דו-כיווני</button>
+    <button class="btn" onclick="fbForcePull();closeM('msync')" style="background:rgba(76,201,240,.1);color:var(--blue);border-color:rgba(76,201,240,.3)">⬇️ משוך מהענן</button>
     <button class="btn btnd" onclick="clearFBSync()" style="min-width:80px">🔌 נתק</button>
   </div>
   <div id="fb-sync-log" style="margin-top:10px;font-size:11px;color:var(--text3);min-height:18px"></div>
@@ -2069,6 +2071,7 @@ function saveAll(){
     // Immediate IDB backup — don't delay, so closing the browser right away still saves
     if(typeof idbBackup==='function') idbBackup(snap);
     fbPush();
+    bcNotify();
   }catch(e){
     console.error('שגיאת שמירה:',e);
     const quota = e && (e.name==='QuotaExceededError' || e.code===22 || e.code===1014 || /quota|exceed/i.test(e.message||''));
@@ -2098,6 +2101,41 @@ function checkBackupAge(){
 // ===== FIREBASE CLOUD SYNC =====
 const FB_CFG_KEY='cem_fb_config';
 let _fbDB=null,_fbRef=null,_fbListening=false,_fbApplying=false,_fbPushTimer=null;
+let _lastSyncTs=0;
+
+// Smart merge: never overwrites local items — merges by ID, keeps newer _mts per item
+function fbMergeRemote(remote){
+  const cols=['deals','tenders','dists','salary','meetings','clients'];
+  if(!D._deletedIds)D._deletedIds={};
+  const rDel=remote._deletedIds||{};
+  // Merge deletion maps (union)
+  cols.forEach(col=>{
+    if(rDel[col]){if(!D._deletedIds[col])D._deletedIds[col]={};Object.assign(D._deletedIds[col],rDel[col]);}
+  });
+  let changed=false;
+  cols.forEach(col=>{
+    if(!Array.isArray(remote[col]))return;
+    const myDel=D._deletedIds[col]||{};
+    const byId=new Map(D[col].map(x=>[String(x.id),x]));
+    remote[col].forEach(rItem=>{
+      const sid=String(rItem.id);
+      if(myDel[sid])return; // intentionally deleted locally — don't resurrect
+      const lItem=byId.get(sid);
+      if(!lItem){D[col].push(rItem);changed=true;}
+      else if((rItem._mts||0)>(lItem._mts||0)){
+        const idx=D[col].findIndex(x=>String(x.id)===sid);
+        if(idx>=0){D[col][idx]={...lItem,...rItem};changed=true;}
+      }
+    });
+    // Apply remote deletions to local arrays
+    if(Object.keys(myDel).length){
+      const before=D[col].length;
+      D[col]=D[col].filter(x=>!myDel[String(x.id)]);
+      if(D[col].length!==before)changed=true;
+    }
+  });
+  return changed;
+}
 
 function fbStatus(state){
   const el=document.getElementById('fb-status');
@@ -2105,13 +2143,64 @@ function fbStatus(state){
     const icons={off:'⚡',connecting:'🔄',connected:'☁️',syncing:'⬆️',error:'⚠️'};
     const tips={off:'לחץ להגדרת סנכרון ענן',connecting:'מתחבר לענן...',connected:'מסונכרן עם הענן – לחץ להגדרות',syncing:'מסנכרן...',error:'שגיאת סנכרון – לחץ לבדיקה'};
     el.textContent=icons[state]||'⚡';el.title=tips[state]||'';
+    el.style.color=state==='connected'?'#06d6a0':state==='error'?'#ef4444':state==='syncing'?'#fbbf24':'';
   }
   const ts=document.getElementById('fb-tile-status');
   if(ts){const m={off:'לא מוגדר',connecting:'מתחבר...',connected:'מחובר ✓',syncing:'מסנכרן...',error:'שגיאה!'};ts.textContent=m[state]||'';}
   const log=document.getElementById('fb-sync-log');
   if(log&&state==='error')log.textContent='⚠️ בדוק שה-databaseURL נכון ושחוקי הגישה מוגדרים ל-"test mode"';
-  else if(log&&state==='connected')log.textContent='✅ מחובר – כל שמירה מסתנכרנת אוטומטית בין המכשירים';
+  else if(log&&state==='connected'){
+    const when=_lastSyncTs?'סנכרון אחרון: '+new Date(_lastSyncTs).toLocaleTimeString('he-IL'):'ממתין לשינוי ראשון...';
+    log.textContent='✅ מחובר – כל שמירה מסתנכרנת אוטומטית בין המכשירים | '+when;
+  }
+  // Show/hide the force-pull button based on connection state
+  const fpBtn=document.getElementById('fb-force-pull');
+  if(fpBtn)fpBtn.style.display=state==='connected'||state==='syncing'?'':'none';
 }
+
+// Force-pull latest data from Firebase (merge, never overwrite)
+function fbForcePull(){
+  if(!_fbRef){showToast('⚠️ אין חיבור ענן מוגדר — לחץ על ⚡ בסרגל העליון','warn');return;}
+  showToast('🔄 מושך נתונים מהענן...','info');
+  _fbRef.once('value',snap=>{
+    const remote=snap.val();
+    if(!remote||!remote.data){showToast('✅ הנתונים כבר מעודכנים','ok');return;}
+    _fbApplying=true;
+    try{
+      const changed=fbMergeRemote(JSON.parse(JSON.stringify(remote.data)));
+      const newTs=Math.max(remote._ts||0,parseInt(localStorage.getItem('cem_sync_ts')||'0'));
+      localStorage.setItem(LS_KEY,JSON.stringify(D));
+      localStorage.setItem('cem_sync_ts',String(newTs));
+      _lastSyncTs=Date.now();
+      if(changed){rAll();showToast('✅ סונכרן! נתונים חדשים הגיעו מהענן','ok');}
+      else showToast('✅ הנתונים מעודכנים – אין שינויים חדשים','ok');
+    }catch(e2){showToast('⚠️ שגיאת סנכרון: '+e2.message,'warn');}
+    finally{_fbApplying=false;}
+  },err=>showToast('⚠️ לא ניתן לתקשר עם הענן: '+err.message,'warn'));
+}
+
+// BroadcastChannel: sync between tabs in same browser without Firebase
+let _bc=null;
+function initBroadcast(){
+  if(!('BroadcastChannel' in window))return;
+  try{
+    _bc=new BroadcastChannel('cem_hot_sync');
+    _bc.onmessage=e=>{
+      if(_fbApplying)return;
+      if(e.data&&e.data.type==='saved'){
+        // Another tab saved — pull from localStorage (already updated by that tab)
+        const raw=localStorage.getItem(LS_KEY);
+        if(!raw)return;
+        try{
+          const p=JSON.parse(raw);
+          const changed=fbMergeRemote(p);
+          if(changed){D=Object.assign(D,{});rAll();showToast('🔄 עודכן מכרטיסייה אחרת','ok');}
+        }catch(e2){}
+      }
+    };
+  }catch(e){}
+}
+function bcNotify(){try{if(_bc)_bc.postMessage({type:'saved',ts:Date.now()});}catch(e){}}
 
 async function fbInit(){
   if(_fbListening)return;
@@ -2134,17 +2223,16 @@ async function fbInit(){
       if(!remote||!remote.data){fbStatus('connected');_fbListening=true;return;}
       const remoteTs=remote._ts||0;
       const localTs=parseInt(localStorage.getItem('cem_sync_ts')||'0');
-      if(remoteTs>localTs+500){
-        _fbApplying=true;
-        try{
-          const parsed=JSON.parse(JSON.stringify(remote.data));
-          Object.keys(parsed).forEach(k=>{if(k in D)D[k]=parsed[k];});
-          localStorage.setItem(LS_KEY,JSON.stringify(D));
-          localStorage.setItem('cem_sync_ts',String(remoteTs));
-          rAll();
-          showToast('🔄 סונכרן מהענן – הנתונים עודכנו','ok');
-        }finally{_fbApplying=false;}
-      }
+      _fbApplying=true;
+      try{
+        const parsed=JSON.parse(JSON.stringify(remote.data));
+        const changed=fbMergeRemote(parsed);
+        const newTs=Math.max(remoteTs,localTs);
+        localStorage.setItem(LS_KEY,JSON.stringify(D));
+        localStorage.setItem('cem_sync_ts',String(newTs));
+        _lastSyncTs=Date.now();
+        if(changed){rAll();showToast('🔄 עודכן מהענן – נתונים חדשים הגיעו','ok');}
+      }finally{_fbApplying=false;}
       fbStatus('connected');
       _fbListening=true;
     },err=>{console.error('FB listen:',err.message||err);fbStatus('error');});
@@ -2220,8 +2308,20 @@ function clearFBSync(){
 
 function fbSyncNow(){
   if(!_fbRef){openSyncModal();return;}
-  fbPush();
-  showToast('⬆️ מסנכרן לענן...','ok');
+  // Bidirectional: pull latest then push merged data
+  showToast('🔄 מסנכרן עם הענן...','info');
+  _fbRef.once('value',snap=>{
+    const remote=snap.val();
+    if(remote&&remote.data){
+      _fbApplying=true;
+      try{
+        const changed=fbMergeRemote(JSON.parse(JSON.stringify(remote.data)));
+        if(changed){localStorage.setItem(LS_KEY,JSON.stringify(D));rAll();}
+      }finally{_fbApplying=false;}
+    }
+    fbPush();
+    showToast('✅ סנכרון הושלם – מחשב ונייד מסונכרנים','ok');
+  },()=>{fbPush();showToast('⬆️ נשלח לענן','ok');});
 }
 
 function _finishLoad(){
@@ -2235,7 +2335,7 @@ function _finishLoad(){
   }
   rAll();
   showLoginHealth();
-  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); checkBackupAge(); fbInit(); }catch(e){} }, 2500);
+  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); checkBackupAge(); fbInit(); initBroadcast(); }catch(e){} }, 2500);
 }
 function loadAll(){
   let parsed=false;
@@ -2247,6 +2347,7 @@ function loadAll(){
       D.deals=p.deals||[];D.tenders=p.tenders||[];D.dists=p.dists||[];
       D.salary=p.salary||[];D.meetings=p.meetings||[];D.clients=p.clients||[];
       D.archivedDeals=p.archivedDeals||[];D.archivedTenders=p.archivedTenders||[];D.archivedDists=p.archivedDists||[];D.archivedSalary=p.archivedSalary||[];D.archivedMeetings=p.archivedMeetings||[];D.lastCycleMonth=p.lastCycleMonth||'';
+      D._deletedIds=p._deletedIds||{};
       // Merge with defaults so new goal keys are never undefined in old saves
       D.goals=Object.assign({},_GOAL_DEFAULTS,p.goals||{});
       // Only seed demo data if all tables are empty AND no initialized flag
@@ -2313,17 +2414,38 @@ window.addEventListener('beforeunload',_bgSave);
 window.addEventListener('pagehide',_bgSave);
 // visibilitychange catches app-switch and tab-switch on all platforms
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')_bgSave()});
-// resume: restore IDB → LS if LS was evicted while page was in bfcache
+// resume: restore IDB → LS if LS was evicted while page was in bfcache + pull Firebase
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'){
     try{
       const s=localStorage.getItem(LS_KEY);
       if(!s&&D&&(D.deals.length||D.clients.length)){
-        // LS was cleared while we were in bfcache — write back immediately
         localStorage.setItem(LS_KEY,JSON.stringify(D));
         showToast('⚠️ אחסון מקומי אופס — הנתונים שוחזרו בזיכרון','warn');
       }
     }catch(e){}
+    // Pull latest from Firebase when tab becomes active again (after 1s delay)
+    if(_fbRef&&_fbListening&&!_fbApplying){
+      setTimeout(()=>{
+        if(_fbApplying)return;
+        _fbRef.once('value',snap=>{
+          const remote=snap.val();
+          if(!remote||!remote.data)return;
+          const remoteTs=remote._ts||0;
+          const localTs=parseInt(localStorage.getItem('cem_sync_ts')||'0');
+          if(remoteTs>localTs+500){
+            _fbApplying=true;
+            try{
+              const changed=fbMergeRemote(JSON.parse(JSON.stringify(remote.data)));
+              localStorage.setItem(LS_KEY,JSON.stringify(D));
+              localStorage.setItem('cem_sync_ts',String(Math.max(remoteTs,localTs)));
+              _lastSyncTs=Date.now();
+              if(changed){rAll();showToast('🔄 עודכן מהענן','ok');}
+            }finally{_fbApplying=false;}
+          }
+        });
+      },1000);
+    }
   }
 });
 
@@ -2348,9 +2470,9 @@ function nextDealNum(){
   return (nums.length?Math.max(...nums):0)+1;
 }
 // a complete empty dataset template so restores never drop a section
-function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000}};}
-function dbInsert(table,row){row.id=genId();D[table].push(row);saveAll();return row;}
-function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0)D[table][i]={...D[table][i],...row};saveAll();}
+function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000},_deletedIds:{}};}
+function dbInsert(table,row){row.id=genId();row._mts=Date.now();D[table].push(row);saveAll();return row;}
+function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0)D[table][i]={...D[table][i],...row,_mts:Date.now()};saveAll();}
 // ===== GLOBAL UNDO (for accidental deletes in any section) =====
 let _undoStack=[];
 function pushUndo(label){
@@ -2382,6 +2504,9 @@ function dbDelete(table,id){
   confirmAct('למחוק פריט זה?',()=>{
     pushUndo('מחיקת פריט ('+table+')');
     D[table]=D[table].filter(x=>x.id!=id);
+    if(!D._deletedIds)D._deletedIds={};
+    if(!D._deletedIds[table])D._deletedIds[table]={};
+    D._deletedIds[table][String(id)]=Date.now();
     saveAll();
     rAll();
     // Undo toast for 6 seconds after confirmation
