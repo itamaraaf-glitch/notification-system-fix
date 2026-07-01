@@ -4281,7 +4281,7 @@ function handleImport(ev,sec){
       if(!window.XLSX){toast('⚠️ ספריית Excel טרם נטענה – רענן ונסה שוב','warn');return;}
       const wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
       const ws=wb.Sheets[wb.SheetNames[0]];
-      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',dateNF:'YYYY-MM-DD'});
       if(!data||data.length<2){toast('⚠️ הקובץ ריק או חסרות שורות נתונים','warn');return;}
       const hdrs=data[0].map(h=>String(h||'').trim().toLowerCase());
       const smap=IMP_MAP[sec]||{};
