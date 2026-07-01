@@ -4250,7 +4250,8 @@ function normalizeImportDate(v){
   if(!sNum)return'';
   // Excel serial number (days since 1899-12-30)
   if(typeof v==='number'||(/^\d+(\.\d+)?$/.test(sNum)&&+sNum>1000&&+sNum<80000)){
-    const ms=Math.round((+sNum-25569)*86400*1000);
+    const serial=Math.floor(+sNum);
+    const ms=(serial-25569)*86400*1000;
     const tmp=new Date(ms);
     if(!isNaN(tmp)){const uf=n=>String(n).padStart(2,'0');return tmp.getUTCFullYear()+'-'+uf(tmp.getUTCMonth()+1)+'-'+uf(tmp.getUTCDate());}
   }
@@ -4279,9 +4280,9 @@ function handleImport(ev,sec){
   reader.onload=function(e){
     try{
       if(!window.XLSX){toast('⚠️ ספריית Excel טרם נטענה – רענן ונסה שוב','warn');return;}
-      const wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
+      const wb=XLSX.read(e.target.result,{type:'binary'});
       const ws=wb.Sheets[wb.SheetNames[0]];
-      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',dateNF:'YYYY-MM-DD'});
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
       if(!data||data.length<2){toast('⚠️ הקובץ ריק או חסרות שורות נתונים','warn');return;}
       const hdrs=data[0].map(h=>String(h||'').trim().toLowerCase());
       const smap=IMP_MAP[sec]||{};
