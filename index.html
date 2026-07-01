@@ -4308,7 +4308,14 @@ function handleImport(ev,sec){
         if(obj.ptype)obj.ptype=ptypeKey(obj.ptype); // accept label or key, store the key
         if(!Object.values(obj).some(v=>v!==''&&v!==0)){skipped++;return;}
         if(sec==='clients'&&!obj.name){skipped++;return;}
-        if(sec==='clients'&&D.clients.some(c=>c.name&&c.name===obj.name)){skipped++;return;}
+        if(sec==='clients'){
+          const existing=D.clients.find(c=>c.name&&c.name===obj.name);
+          if(existing){
+            const updatable=['cp','contact','phone','email','address','status','genNotes'];
+            updatable.forEach(k=>{if(obj[k]!==undefined&&obj[k]!=='')existing[k]=obj[k];});
+            added++;return;
+          }
+        }
         // section defaults
         const defs={deals:{st:'ממתין לתשובה',ty:'long',date:nd()},tenders:{submitted:'לא',qty:1},dists:{st:'ממתין להפצה',ty:'long',dt:nd()},salary:{st:'פתוח',ty:'service',qt:1},meetings:{dt:nd(),hl:'לא'},clients:{status:'לקוח'}};
         Object.entries(defs[sec]||{}).forEach(([k,dv])=>{if(!obj[k]&&obj[k]!==0)obj[k]=dv;});
