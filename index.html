@@ -1438,6 +1438,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
       <button class="btn" onclick="exportExcel('meetings')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
       <button class="btn" onclick="importFromExcel('meetings')" style="background:#0078d4;color:#fff;border-color:#0078d4" title="ייבוא מ-Excel">📤 ייבוא</button>
       <button class="btn btnwp" onclick="sendWhatsAppMeetings()">📱 WA</button>
+      <button class="btn" onclick="exportMeetingsCalendar()" style="background:rgba(167,139,250,.15);color:#a78bfa;border-color:rgba(167,139,250,.4)" title="ייצוא כל הפגישות הקרובות ליומן">📆 יומן</button>
       <button class="btn btnd" onclick="deleteAll('meetings')" title="מחק את כל הפגישות">🗑 מחק הכל</button>
     </div>
   </div>
@@ -1451,7 +1452,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <div class="tw"><div class="thdr">📅 פגישות – יעד 15/חודש</div>
     <div class="tscroll"><table><thead><tr>
       <th class="cb-th"><input type="checkbox" id="chk-all-meetings" onchange="toggleAll('meetings',this.checked)"></th>
-      <th>#</th><th>תאריך</th><th>שעה</th><th>סוג</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th><th>פעולות</th>
+      <th>#</th><th>תאריך</th><th>שעה</th><th>סוג</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th><th style="min-width:170px">פעולות</th>
     </tr></thead><tbody id="mtb"></tbody></table></div>
     <div class="tft" id="mft"></div>
     <div class="cb-row" id="selbar-meetings" style="display:none">
@@ -1698,8 +1699,10 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <div class="g"><label>התקיימה?</label><select id="mhl"><option value="לא">לא</option><option value="כן">כן</option><option value="מבוטל">מבוטל</option></select></div>
     <div class="gf"><label>הערות</label><textarea id="mno" rows="2"></textarea></div>
   </div>
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
     <button class="btn" onclick="closeM('mmeeting')">ביטול</button>
+    <button id="meet-cal-btn" class="btn" onclick="addToCalendar(EI)" style="display:none;border-color:#a78bfa;color:#a78bfa" title="הורד קובץ ICS להוספה ליומן">📆 הוסף ליומן</button>
+    <button id="meet-invite-btn" class="btn" onclick="sendMeetingInviteEmail(EI)" style="display:none;border-color:#4cc9f0;color:#4cc9f0" title="שלח הזמנת פגישה ללקוח במייל">📧 שלח הזמנה</button>
     <button class="btn btnp" onclick="saveMeet()">שמור פגישה</button>
   </div>
 </div></div>
@@ -3395,8 +3398,9 @@ function rMeetings(){
     const timeDisp=m.time?`<span style="font-size:10px;color:var(--gold)">${m.time}</span>`:'<span style="color:var(--text3)">–</span>';
     const typeIco={פגישה:'🤝',שיחת_טלפון:'📞','שיחת טלפון':'📞',זום:'🖥',Teams:'🟦',אחר:'📌'}[m.mtype||'פגישה']||'🤝';
     const todayBadge=isToday?'<span class="badge bb" style="font-size:9px;margin-right:2px">היום!</span>':'';
-    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-meetings" ${chk} onchange="toggleSel('meetings','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${todayBadge}</td><td>${timeDisp}</td><td style="font-size:11px">${typeIco}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb2}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${m.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openMeetingFor('${(m.cl||'').replace(/'/g,'&#39;')}')" title="קבע פגישה נוספת עם לקוח זה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns" onclick="openM('meeting','${m.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('meetings','${m.id}')">🗑</button></td></tr>`;
-  }).join('')||emptyRow(10,'🤝',"אין פגישות","openM('meeting',null)");
+    const clSafe=(m.cl||'').replace(/'/g,'&#39;');
+    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-meetings" ${chk} onchange="toggleSel('meetings','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${todayBadge}</td><td>${timeDisp}</td><td style="font-size:11px">${typeIco}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb2}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${m.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="showCalendarMenu('${m.id}',event)" title="הוסף ליומן / שלח הזמנה" style="border-color:#a78bfa;color:#a78bfa">📆</button> <button class="btn btns" onclick="openMeetingFor('${clSafe}')" title="קבע פגישה נוספת עם לקוח זה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns" onclick="openM('meeting','${m.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('meetings','${m.id}')">🗑</button></td></tr>`;
+  }).join('')||emptyRow(11,'🤝',"אין פגישות","openM('meeting',null)");
   document.getElementById('mft').innerHTML=`<span class="fi">סה"כ: <b>${D.meetings.length}</b></span><span class="fi">התקיימו: <b>${held}</b></span><span class="fi">לא: <b>${D.meetings.filter(m=>m.hl!=='כן').length}</b></span><span class="fi">יעד: <b style="color:${pct>=100?'var(--teal)':pct>=66?'#f4a261':'#e63946'}">${pct}%</b></span>`;
   updateSelBar('meetings');
 }
@@ -4529,6 +4533,11 @@ function openM(type,id){
     // Populate client name datalist
     const dl=document.getElementById('mcl-list');
     if(dl){dl.innerHTML=D.clients.map(c=>`<option value="${(c.name||'').replace(/"/g,'&quot;')}">`).join('');}
+    // Show calendar & invite buttons only when editing an existing meeting
+    const calBtn=document.getElementById('meet-cal-btn');
+    const invBtn=document.getElementById('meet-invite-btn');
+    if(calBtn)calBtn.style.display=isNew?'none':'';
+    if(invBtn)invBtn.style.display=isNew?'none':'';
   }
   document.getElementById('m'+type).classList.add('open');
   if(window.csResync) csResync(); // refresh custom dropdown labels with loaded values
@@ -5090,6 +5099,147 @@ function sendWhatsAppMeetings(){
     });
   }
   waOpen(msg);
+}
+
+// ===== CALENDAR INTEGRATION =====
+function _icsDate(dt,time){
+  if(!dt)return '';
+  const d=dt.replace(/-/g,'');
+  if(!time)return d;
+  return d+'T'+time.replace(':','')+'00';
+}
+function _icsDateEnd(dt,time,mins){
+  if(!dt)return '';
+  const d=dt.replace(/-/g,'');
+  if(!time)return d;
+  const [h,m]=time.split(':').map(Number);
+  const em=m+(mins||60);
+  const eh=h+Math.floor(em/60);
+  return d+'T'+String(eh%24).padStart(2,'0')+String(em%60).padStart(2,'0')+'00';
+}
+function _icsEsc(s){return String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');}
+function _typeLabel(t){return({פגישה:'פגישה','שיחת טלפון':'שיחת טלפון',זום:'Zoom',Teams:'Teams',אחר:'פגישה'})[t||'פגישה']||t||'פגישה';}
+
+function meetingToICSEvent(m){
+  const uid='hot-crm-'+m.id+'@hot-business';
+  const title=_typeLabel(m.mtype)+' עם '+(m.cl||'לקוח')+' – HOT Business';
+  const hasTime=!!(m.time);
+  const dtstart=_icsDate(m.dt,m.time);
+  const dtend=hasTime?_icsDateEnd(m.dt,m.time,60):dtstart;
+  const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
+  const desc=_icsEsc((m.no||'')+(m.nu?'\nמספר פגישה: '+m.nu:'')+(m.mtype?'\nסוג: '+m.mtype:'')+'\n\nHOT Business CRM');
+  const lines=[
+    'BEGIN:VEVENT',
+    'UID:'+uid,
+    'DTSTAMP:'+stamp,
+    hasTime?'DTSTART:'+dtstart:'DTSTART;VALUE=DATE:'+dtstart,
+    hasTime?'DTEND:'+dtend:'DTEND;VALUE=DATE:'+dtend,
+    'SUMMARY:'+_icsEsc(title),
+    'DESCRIPTION:'+desc,
+    'STATUS:'+(m.hl==='מבוטל'?'CANCELLED':'CONFIRMED'),
+    'CLASS:PRIVATE',
+    'TRANSP:BUSY',
+    'END:VEVENT'
+  ];
+  return lines.join('\r\n');
+}
+
+function _buildICS(events){
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//HOT Business CRM//IL','CALSCALE:GREGORIAN','METHOD:PUBLISH',...events,'END:VCALENDAR'].join('\r\n');
+}
+
+function _downloadICS(content,filename){
+  const blob=new Blob([content],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=filename;a.style.display='none';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),3000);
+}
+
+function addToCalendar(id){
+  const m=D.meetings.find(x=>x.id==id);
+  if(!m){showToast('⚠️ פגישה לא נמצאה','warn');return;}
+  const fname='פגישה_'+(m.cl||'לקוח').replace(/[\s/\\:*?"<>|]/g,'_')+'_'+(m.dt||'').replace(/-/g,'')+'.ics';
+  _downloadICS(_buildICS([meetingToICSEvent(m)]),fname);
+  showToast('📆 קובץ יומן הורד – פתח אותו להוספה ליומן (Apple/Outlook/Google)','ok');
+}
+
+function addToGoogleCalendar(id){
+  const m=D.meetings.find(x=>x.id==id);
+  if(!m){showToast('⚠️ פגישה לא נמצאה','warn');return;}
+  const title=_typeLabel(m.mtype)+' עם '+(m.cl||'לקוח')+' – HOT Business';
+  let dates='';
+  if(m.dt&&m.time){
+    const d=m.dt.replace(/-/g,'');
+    const ts=m.time.replace(':','')+'00';
+    const te=_icsDateEnd(m.dt,m.time,60).split('T')[1];
+    dates=d+'T'+ts+'/'+d+'T'+te;
+  } else if(m.dt){
+    const d=m.dt.replace(/-/g,'');dates=d+'/'+d;
+  }
+  const url='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+encodeURIComponent(dates)+'&details='+encodeURIComponent((m.no||'')+'\nHOT Business CRM');
+  window.open(url,'_blank','noopener,noreferrer');
+}
+
+function exportMeetingsCalendar(){
+  const upcoming=D.meetings.filter(m=>m.dt>=nd()&&m.hl!=='מבוטל').sort((a,b)=>((a.dt||'')+(a.time||'')).localeCompare((b.dt||'')+(b.time||'')));
+  if(!upcoming.length){showToast('⚠️ אין פגישות קרובות לייצוא','warn');return;}
+  _downloadICS(_buildICS(upcoming.map(meetingToICSEvent)),'HOT_CRM_פגישות_קרובות.ics');
+  showToast('📆 יומן עם '+upcoming.length+' פגישות קרובות הורד','ok');
+}
+
+function sendMeetingInviteEmail(id){
+  const m=D.meetings.find(x=>x.id==id);
+  if(!m){showToast('⚠️ פגישה לא נמצאה','warn');return;}
+  const c=m.cl?D.clients.find(cl=>(cl.name||'').trim()===(m.cl||'').trim()):null;
+  if(!c||!c.email){
+    showToast('⚠️ אין כתובת מייל ללקוח זה – הוסף מייל בכרטיס הלקוח','warn');
+    if(c){setTimeout(()=>openM('client',c.id),300);}
+    return;
+  }
+  const typeLabel=_typeLabel(m.mtype||'פגישה');
+  const dateStr=m.dt?fmtDate(m.dt):'';
+  const timeStr=m.time?` בשעה ${m.time}`:'';
+  const subject='HOT Business – הזמנה ל'+typeLabel+(dateStr?' '+dateStr:'');
+  const greet=c.contact?'שלום '+c.contact+',':(c.name?'שלום,':'שלום,');
+  const body=[
+    greet,'',
+    'ברצוני לאשר את '+typeLabel+' שנקבעה ביננו'+( dateStr?' ל'+dateStr+timeStr:'')+'.','',
+    m.no?'פרטים נוספים: '+m.no:'',
+    m.nu?'מספר פגישה: '+m.nu:'',
+    '',
+    'אנא אשר/י את קבלת ההודעה.',
+    '',
+    'בברכה,',
+    'איתמר ונדן',
+    'HOT Business',
+    'Itamar.venden@hot.net.il'
+  ].filter(l=>l!==undefined&&!(l===''&&false)).join('\n').replace(/\n{3,}/g,'\n\n');
+  openMail(c.email, subject, body);
+  showToast('📧 נפתח חלון מייל לשליחת הזמנה ל'+c.name,'ok');
+}
+
+function showCalendarMenu(id,e){
+  e.stopPropagation();
+  const prev=document.getElementById('cal-menu-popup');
+  if(prev){prev.remove();if(prev.dataset.mid===String(id))return;}
+  const menu=document.createElement('div');
+  menu.id='cal-menu-popup';menu.dataset.mid=String(id);
+  menu.style.cssText='position:fixed;background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:6px;z-index:9999;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.6);direction:rtl;';
+  const btn=(icon,label,fn)=>{const b=document.createElement('button');b.style.cssText='display:block;width:100%;background:transparent;border:none;color:var(--text);padding:8px 12px;text-align:right;cursor:pointer;border-radius:8px;font-family:inherit;font-size:12px;';b.innerHTML=icon+' '+label;b.onmouseover=()=>b.style.background='rgba(255,255,255,.07)';b.onmouseout=()=>b.style.background='transparent';b.onclick=()=>{menu.remove();fn();};return b;};
+  const hdr=document.createElement('div');hdr.style.cssText='font-size:10px;color:var(--text3);padding:4px 10px 2px;font-weight:700';hdr.textContent='הוסף פגישה ליומן';menu.appendChild(hdr);
+  menu.appendChild(btn('📅','ICS – Apple / Outlook / כל יומן',()=>addToCalendar(id)));
+  menu.appendChild(btn('🔵','Google Calendar',()=>addToGoogleCalendar(id)));
+  menu.appendChild(document.createElement('hr').cloneNode());
+  menu.lastChild.style.cssText='border:none;border-top:1px solid var(--border);margin:4px 0';
+  menu.appendChild(btn('📧','שלח הזמנה ללקוח במייל',()=>sendMeetingInviteEmail(id)));
+  const el=e.currentTarget||e.target;
+  const rect=el.getBoundingClientRect();
+  const top=Math.min(rect.bottom+4,window.innerHeight-240);
+  const right=Math.max(0,window.innerWidth-rect.right);
+  menu.style.top=top+'px';menu.style.right=right+'px';
+  document.body.appendChild(menu);
+  setTimeout(()=>{document.addEventListener('click',function cl(ev){if(!menu.contains(ev.target)){menu.remove();document.removeEventListener('click',cl);}});},80);
 }
 
 // ===== BACKUP / RESTORE =====
