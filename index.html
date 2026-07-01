@@ -1712,6 +1712,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     </div>
   </div>
   <div id="client-sections"></div>
+  <div id="client-deals-section"></div>
   <div class="msec" style="border:1px solid rgba(123,94,167,.4)">
     <div class="msec-hdr">
       <span style="color:#7b5ea7">🎯 מוצרים פוטנציאליים – טרם נרכשו</span>
@@ -3243,6 +3244,33 @@ function getClientAlerts(){
   return alerts;
 }
 
+function renderClientDeals(id){
+  const sec=document.getElementById('client-deals-section');
+  if(!sec)return;
+  if(!id){sec.style.display='none';sec.innerHTML='';return;}
+  const c=D.clients.find(x=>x.id==id);
+  if(!c){sec.style.display='none';return;}
+  const deals=D.deals.filter(d=>(d.co||'').trim()===(c.name||'').trim());
+  if(!deals.length){
+    sec.style.display='';
+    sec.innerHTML=`<div class="msec" style="border:1px solid rgba(76,201,240,.2)"><div class="msec-hdr"><span style="color:#4cc9f0">💼 עסקאות קשורות</span><button class="btn btns" onclick="closeM('mclient');setTimeout(()=>{openM('deal',null);setTimeout(()=>{const el=document.getElementById('dco');if(el){el.value=${JSON.stringify(c.name||'')};el.dispatchEvent(new Event('change'));}},50);},100)" style="border-color:#4cc9f0;color:#4cc9f0;font-size:10px">+ עסקה חדשה</button></div><div style="font-size:11px;color:var(--text3);padding:8px 4px;font-style:italic">אין עסקאות קשורות ללקוח זה</div></div>`;
+    return;
+  }
+  const stColor=s=>s==='נסגר'?'var(--teal)':s==='בעיה'?'#e63946':s==='ממתין לתשובה'?'#f4a261':'var(--text2)';
+  const rows=deals.map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);margin-bottom:5px;flex-wrap:wrap">
+    <span style="font-size:10px;color:var(--text2);min-width:62px;white-space:nowrap">${fmtDate(d.date)}</span>
+    <span style="font-size:10px;color:var(--text3);min-width:44px">${d.num||'–'}</span>
+    <span style="font-size:10px;flex:1;min-width:80px">${d.srv||'–'}</span>
+    <span style="font-size:10px;color:var(--gold);white-space:nowrap">${fmt(d.v)}</span>
+    <span style="font-size:9px;padding:2px 7px;border-radius:20px;background:${stColor(d.st)}18;color:${stColor(d.st)};border:1px solid ${stColor(d.st)}44;white-space:nowrap">${d.st||''}</span>
+    <button class="btn btns" onclick="sendEmailToDeal('${d.id}')" title="שלח עדכון מייל ללקוח" style="font-size:9px;border-color:#4cc9f0;color:#4cc9f0">📧</button>
+    ${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד: ${(d.quote.name||'').replace(/'/g,'\\'')}" style="font-size:9px;border-color:#06d6a0;color:#06d6a0">📎</button>`:''}
+    <button class="btn btns" onclick="closeM('mclient');setTimeout(()=>openM('deal','${d.id}'),100)" title="פתח עסקה לעריכה" style="font-size:9px">✏️</button>
+  </div>`).join('');
+  sec.style.display='';
+  sec.innerHTML=`<div class="msec" style="border:1px solid rgba(76,201,240,.25)"><div class="msec-hdr"><span style="color:#4cc9f0">💼 עסקאות קשורות (${deals.length})</span><button class="btn btns" onclick="closeM('mclient');setTimeout(()=>{openM('deal',null);setTimeout(()=>{const el=document.getElementById('dco');if(el){el.value=${JSON.stringify(c.name||'')};el.dispatchEvent(new Event('change'));}},50);},100)" style="border-color:#4cc9f0;color:#4cc9f0;font-size:10px">+ עסקה חדשה</button></div>${rows}</div>`;
+}
+
 function openClientModal(id){
   EI=id;ET='client';
   buildClientSections();
@@ -3258,6 +3286,7 @@ function openClientModal(id){
   document.getElementById('cl-gen-notes').value=c.genNotes||'';
   Object.keys(ITEM_CFG).forEach(type=>populateItems(type,c[type]||[]));
   populatePotentialProducts(c.potential||[]);
+  renderClientDeals(id);
   document.getElementById('mclient').classList.add('open');
 }
 
