@@ -2590,6 +2590,7 @@ function _finishLoad(){
   rAll();
   showLoginHealth();
   setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); }catch(e){} }, 2500);
+  setTimeout(()=>{ try{ checkEmptyAndRecovery(); }catch(e){} }, 4000);
 }
 function loadAll(){
   let parsed=false;
@@ -5726,28 +5727,100 @@ async function restoreFromIdb(ts){
   if(!snap)return;
   const timeLabel=new Date(ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
   const dateLabel=new Date(ts).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'});
-  confirmAct(`לשחזר נתונים מגיבוי של ${dateLabel} ${timeLabel}?\n\nהנתונים הנוכחיים יתמזגו עם הגיבוי — שום דבר לא יימחק.`,()=>{
+  const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+  const allCols=['deals','tenders','dists','salary','meetings','clients','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
+  // If current data is empty → full replace; otherwise merge
+  const currentlyEmpty=mainCols.every(c=>!(D[c]||[]).length);
+  const confirmMsg=currentlyEmpty
+    ?`לשחזר נתונים מגיבוי של ${dateLabel} ${timeLabel}?\n\nהמערכת ריקה — כל הנתונים יוחזרו במלואם.`
+    :`לשחזר נתונים מגיבוי של ${dateLabel} ${timeLabel}?\n\nהנתונים הנוכחיים יתמזגו עם הגיבוי — שום דבר לא יימחק.`;
+  confirmAct(confirmMsg,()=>{
     try{
       const p=JSON.parse(snap.data);
-      idbBackup(JSON.stringify(D)); // safety snapshot of current data before merging
-      // Merge: keep all current items + restore items not in current (by ID)
-      const cols=['deals','tenders','dists','salary','meetings','clients','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
-      cols.forEach(col=>{
-        const curr=D[col]||[];
-        const bk=p[col]||[];
-        const currIds=new Set(curr.map(x=>String(x.id)));
-        const missing=bk.filter(x=>!currIds.has(String(x.id)));
-        if(missing.length)D[col]=[...curr,...missing];
-      });
-      // Restore goals and settings if current is empty
-      if(!D.goals||!Object.keys(D.goals).length)D.goals=p.goals||{};
-      D._deletedIds=D._deletedIds||p._deletedIds||{};
+      idbBackup(JSON.stringify(D)); // safety snapshot before any change
+      if(currentlyEmpty){
+        // Full replace — nothing to lose, restore everything
+        allCols.forEach(col=>{D[col]=p[col]||[];});
+        D.goals=p.goals||D.goals||{};
+        D.lastCycleMonth=p.lastCycleMonth||'';
+        D._deletedIds={}; // clear so sync doesn't re-delete restored items
+      }else{
+        // Merge: keep current + add items not present by ID
+        allCols.forEach(col=>{
+          const curr=D[col]||[];
+          const bk=p[col]||[];
+          const currIds=new Set(curr.map(x=>String(x.id)));
+          const missing=bk.filter(x=>!currIds.has(String(x.id)));
+          if(missing.length)D[col]=[...curr,...missing];
+        });
+        if(!D.goals||!Object.keys(D.goals).length)D.goals=p.goals||{};
+        D._deletedIds=D._deletedIds||p._deletedIds||{};
+      }
       saveAll();rAll();
-      document.getElementById('mbackups').classList.remove('open');
-      const totalRestored=['deals','clients','meetings','tenders','dists','salary'].reduce((s,c)=>s+(p[c]||[]).length,0);
-      showToast(`✅ שוחזרו ${totalRestored} רשומות מגיבוי ${dateLabel} ${timeLabel}. שום דבר לא נמחק!`,'ok');
+      const bkModal=document.getElementById('mbackups');
+      if(bkModal)bkModal.classList.remove('open');
+      const eb=document.getElementById('emergency-recovery-bar');
+      if(eb)eb.remove();
+      const totalRestored=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
+      showToast(`✅ שוחזרו ${totalRestored} רשומות מגיבוי ${dateLabel} ${timeLabel}`,'ok');
     }catch(e){alert('שגיאה בשחזור: '+e.message);}
-  },'כן, שחזר ומזג');
+  },currentlyEmpty?'כן, שחזר הכל':'כן, שחזר ומזג');
+}
+async function dumpAllBackups(){
+  try{
+    const list=await idbList();
+    if(!list||!list.length){alert('אין גיבויים אוטומטיים שמורים בדפדפן זה');return;}
+    const out={exported:new Date().toISOString(),count:list.length,backups:list};
+    const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    a.href=url;a.download='crm_all_backups_'+nd()+'.json';
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},800);
+    showToast('💾 כל '+list.length+' הגיבויים הורדו לקובץ','ok');
+  }catch(e){alert('שגיאה בהורדה: '+e.message);}
+}
+async function checkEmptyAndRecovery(){
+  try{
+    const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+    const totalNow=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
+    if(totalNow>0)return; // has data – no need
+    const list=await idbList();
+    if(!list||!list.length)return;
+    // Find backup with most records
+    let bestSnap=null,bestCount=0;
+    list.forEach(s=>{
+      try{const d=JSON.parse(s.data);const cnt=mainCols.reduce((sum,c)=>sum+(d[c]||[]).length,0);if(cnt>bestCount){bestCount=cnt;bestSnap=s;}}catch(e){}
+    });
+    if(!bestSnap||bestCount===0)return;
+    // Find closest to 18:00 today
+    const todayStr=nd();
+    const target18=new Date(todayStr+'T18:00:00').getTime();
+    const todayMid=new Date(todayStr+'T00:00:00').getTime();
+    const todayList=list.filter(s=>s.ts>=todayMid);
+    let snap18=null,diff18=Infinity,cnt18=0;
+    todayList.forEach(s=>{
+      try{const d=JSON.parse(s.data);const cnt=mainCols.reduce((sum,c)=>sum+(d[c]||[]).length,0);const diff=Math.abs(s.ts-target18);if(diff<diff18){diff18=diff;snap18=s;cnt18=cnt;}}catch(e){}
+    });
+    const timeLbl=s=>new Date(s.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+    const dateLbl=s=>new Date(s.ts).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'});
+    // Show emergency banner at top of dashboard
+    const dash=document.getElementById('sec-dashboard');
+    if(!dash||document.getElementById('emergency-recovery-bar'))return;
+    const eb=document.createElement('div');
+    eb.id='emergency-recovery-bar';
+    eb.style.cssText='background:rgba(239,68,68,.13);border:2px solid rgba(239,68,68,.5);border-radius:14px;padding:16px 20px;margin:0 0 16px;direction:rtl;';
+    eb.innerHTML=`<div style="font-size:15px;font-weight:800;color:#f87171;margin-bottom:8px">🚨 המערכת ריקה — נמצאו ${list.length} גיבויים לשחזור!</div>`
+      +`<div style="font-size:12px;color:var(--text2);margin-bottom:12px">הנתונים שמרת היום קיימים בגיבויים האוטומטיים. לחץ על גיבוי מהיר:</div>`
+      +`<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">`
+      +(snap18&&cnt18>0?`<button class="btn" onclick="restoreFromIdb(${snap18.ts})" style="background:rgba(251,191,36,.2);border-color:#fbbf24;color:#fbbf24;font-size:12px;padding:8px 18px;font-weight:700">⭐ שחזר גיבוי 18:00 (${timeLbl(snap18)}, ${cnt18} רשומות)</button>`:'')
+      +`<button class="btn" onclick="restoreFromIdb(${bestSnap.ts})" style="background:rgba(239,68,68,.18);border-color:#f87171;color:#f87171;font-size:12px;padding:8px 18px;font-weight:700">🔄 גיבוי הכי גדול (${timeLbl(bestSnap)}, ${bestCount} רשומות)</button>`
+      +`<button class="btn" onclick="openAutoBackups()" style="font-size:12px;padding:8px 16px">📋 כל הגיבויים (${list.length})</button>`
+      +`<button class="btn" onclick="dumpAllBackups()" style="background:rgba(96,165,250,.1);border-color:#60a5fa;color:#60a5fa;font-size:12px;padding:8px 16px">💾 הורד את כולם</button>`
+      +`</div>`;
+    dash.insertAdjacentElement('afterbegin',eb);
+    // Also show a persistent toast
+    showToast('🚨 המערכת ריקה! לחץ על הכפתור הצהוב בלוח הבקרה לשחזור','warn');
+  }catch(e){console.warn('checkEmptyAndRecovery:',e);}
 }
 // periodic snapshot every 2 minutes while the app is open
 setInterval(()=>{ const app=document.getElementById('app'); if(app&&app.style.display!=='none') idbBackup(); }, 2*60*1000);
