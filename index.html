@@ -2303,36 +2303,33 @@ function dbDelete(table,id){
   const origIdx=D[table].findIndex(x=>x.id==id);
   if(origIdx<0)return;
   const item=D[table][origIdx];
-  pushUndo('מחיקת פריט ('+table+')');
-  // Delete immediately
-  D[table]=D[table].filter(x=>x.id!=id);
-  saveAll();
-  rAll();
-  // Undo toast for 4 seconds
-  let undone=false;
-  const t=document.createElement('div');
-  t.className='toast toast-warn';
-  t.style.cssText='cursor:pointer;display:flex;align-items:center;gap:10px';
-  const msg=document.createElement('span');
-  msg.textContent='הפריט נמחק';
-  const btn=document.createElement('button');
-  btn.textContent='↩ בטל';
-  btn.style.cssText='background:rgba(255,255,255,.25);border:none;color:inherit;padding:3px 10px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700';
-  btn.onclick=(e)=>{
-    e.stopPropagation();
-    if(undone)return;
-    undone=true;
-    D[table].splice(Math.min(origIdx,D[table].length),0,item); // restore to original position
+  confirmAct('למחוק פריט זה?',()=>{
+    pushUndo('מחיקת פריט ('+table+')');
+    D[table]=D[table].filter(x=>x.id!=id);
     saveAll();
     rAll();
-    t.style.opacity='0';
-    setTimeout(()=>t.remove(),400);
-    showToast('↩ שוחזר','ok');
-  };
-  t.appendChild(msg);
-  t.appendChild(btn);
-  document.body.appendChild(t);
-  const tid=setTimeout(()=>{if(!undone){t.style.opacity='0';setTimeout(()=>t.remove(),400);}},4000);
+    // Undo toast for 6 seconds after confirmation
+    let undone=false;
+    const t=document.createElement('div');
+    t.className='toast toast-warn';
+    t.style.cssText='cursor:pointer;display:flex;align-items:center;gap:10px';
+    const msg=document.createElement('span');msg.textContent='הפריט נמחק';
+    const btn=document.createElement('button');
+    btn.textContent='↩ בטל';
+    btn.style.cssText='background:rgba(255,255,255,.25);border:none;color:inherit;padding:3px 10px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700';
+    btn.onclick=(e)=>{
+      e.stopPropagation();
+      if(undone)return;
+      undone=true;
+      D[table].splice(Math.min(origIdx,D[table].length),0,item);
+      saveAll();rAll();
+      t.style.opacity='0';setTimeout(()=>t.remove(),400);
+      showToast('↩ שוחזר','ok');
+    };
+    t.appendChild(msg);t.appendChild(btn);
+    document.body.appendChild(t);
+    setTimeout(()=>{if(!undone){t.style.opacity='0';setTimeout(()=>t.remove(),400);}},6000);
+  },'כן, מחק');
 }
 
 // ===== EMPTY STATE ROW (luxury) =====
@@ -4182,9 +4179,14 @@ function deleteSelected(key){
   const tblMap={'deals-long':'deals','deals-short':'deals','tenders':'tenders','dists-long':'dists','dists-short':'dists','salary-service':'salary','salary-equip':'salary','meetings':'meetings'};
   const tbl=tblMap[key];
   const n=SEL[key].size;
-  if(tbl){pushUndo('מחיקת '+n+' פריטים');D[tbl]=D[tbl].filter(x=>!SEL[key].has(x.id));saveAll();}
-  SEL[key]=new Set();rAll();
-  showToast('🗑 '+n+' פריטים נמחקו','ok');
+  if(!tbl)return;
+  confirmAct('למחוק '+n+' פריטים נבחרים? ניתן לשחזר.',()=>{
+    pushUndo('מחיקת '+n+' פריטים');
+    D[tbl]=D[tbl].filter(x=>!SEL[key].has(x.id));
+    saveAll();
+    SEL[key]=new Set();rAll();
+    showToast('🗑 '+n+' פריטים נמחקו','ok');
+  },'כן, מחק '+n);
 }
 function deleteAll(section){
   const map={deals:'deals',tenders:'tenders',dists:'dists',salary:'salary',meetings:'meetings'};
