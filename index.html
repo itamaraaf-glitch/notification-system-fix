@@ -2459,7 +2459,22 @@ function rAll(){
   ric(() => { rDeals(); rTenders(); });
   ric(() => { rDists(); rSalary(); });
   ric(() => { rMeetings(); rClients(); rWorkPlan(); updateExportCounts(); });
+  ric(() => { updateNavBadges(); });
   setTimeout(initDragScrolls, 150);
+}
+
+function updateNavBadges(){
+  try{
+    const todayStr=nd();
+    const todayCnt=D.meetings.filter(m=>m.dt===todayStr&&m.hl!=='מבוטל').length;
+    const mtgNav=document.getElementById('nv-meetings');
+    if(mtgNav){
+      let badge=mtgNav.querySelector('.nav-badge');
+      if(!badge){badge=document.createElement('span');badge.className='nav-badge';badge.style.cssText='display:inline-block;background:#06d6a0;color:#000;border-radius:10px;padding:0 5px;font-size:9px;font-weight:800;margin-right:4px;min-width:16px;text-align:center;line-height:15px;vertical-align:middle';mtgNav.querySelector('span:last-child').appendChild(badge);}
+      badge.textContent=todayCnt||'';
+      badge.style.display=todayCnt?'inline-block':'none';
+    }
+  }catch(e){}
 }
 
 // ===== GLOBAL SEARCH =====
@@ -2510,6 +2525,17 @@ function getAlerts(){
   });
   const held=D.meetings.filter(m=>m.hl==='כן').length;
   if(held<MEETING_GOAL)a.push({type:'info',h:`יעד פגישות – ${held}/${MEETING_GOAL}`,s:`${MEETING_GOAL-held} פגישות נדרשות`});
+  // Today's meetings that haven't been marked
+  const todayMtgsAlert=D.meetings.filter(m=>m.dt===t&&m.hl!=='כן'&&m.hl!=='מבוטל');
+  if(todayMtgsAlert.length)a.push({type:'warn',h:`📅 פגישות היום (${todayMtgsAlert.length})`,s:todayMtgsAlert.map(m=>m.cl).filter(Boolean).join(', '),kind:'meetings'});
+  // Tomorrow's meetings reminder
+  const tomorrow=new Date(now());tomorrow.setDate(tomorrow.getDate()+1);
+  const tomorrowStr=tomorrow.toISOString().split('T')[0];
+  const tomorrowMtgs=D.meetings.filter(m=>m.dt===tomorrowStr&&m.hl!=='מבוטל');
+  if(tomorrowMtgs.length)a.push({type:'info',h:`📅 פגישות מחר (${tomorrowMtgs.length})`,s:tomorrowMtgs.map(m=>`${m.cl}${m.time?' '+m.time:''}`).filter(Boolean).join(' | '),kind:'meetings'});
+  // Missed meetings (past, not held)
+  const missedMtgs=D.meetings.filter(m=>m.dt&&m.dt<t&&m.hl!=='כן'&&m.hl!=='מבוטל').slice(-3);
+  if(missedMtgs.length)a.push({type:'warn',h:`🤝 פגישות שלא סומנו (${missedMtgs.length})`,s:missedMtgs.map(m=>`${m.cl} ${fmtDate(m.dt)}`).join(', '),kind:'meetings'});
   a.push(...getClientAlerts());
   document.getElementById('acnt').textContent=a.length;
   const dot=document.getElementById('mob-alert-dot');
@@ -2832,7 +2858,11 @@ function rDeals(){
       const deBtn=`<button class="btn btns" onclick="sendEmailToDeal('${d.id}')" title="${_hse?'שלח עדכון מייל ללקוח':'הוסף מייל ללקוח'}" style="font-size:9px;opacity:${_hse?1:0.45}">📧</button> `;
       const coSafe=(d.co||'').replace(/'/g,'&#39;');
       const schedBtn=`<button class="btn btns" onclick="openMeetingFor('${coSafe}')" title="קבע פגישה עם ${d.co||'לקוח'}" style="border-color:#06d6a0;color:#06d6a0;font-size:9px">📅</button> `;
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(d.date)}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap">${schedBtn}${deBtn}${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד הצעת מחיר: ${d.quote.name||''}" style="border-color:#4cc9f0;color:#4cc9f0">📎</button> `:''}<button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
+      // Check for upcoming meeting with this company
+      const curDateStr=nd();
+      const upcomingForDeal=D.meetings.find(m=>(m.cl||'').trim()===(d.co||'').trim()&&m.dt>=curDateStr&&m.hl!=='מבוטל');
+      const mtgChip=upcomingForDeal?`<span title="פגישה ב-${fmtDate(upcomingForDeal.dt)}${upcomingForDeal.time?' '+upcomingForDeal.time:''}" style="font-size:9px;padding:1px 5px;border-radius:8px;background:rgba(6,214,160,.15);color:#06d6a0;border:1px solid rgba(6,214,160,.3);white-space:nowrap;cursor:default">📅${upcomingForDeal.dt===curDateStr?' היום':' '+fmtDate(upcomingForDeal.dt)}</span> `:'';
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(d.date)}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}${mtgChip?'<br>'+mtgChip:''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap">${schedBtn}${deBtn}${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד הצעת מחיר: ${d.quote.name||''}" style="border-color:#4cc9f0;color:#4cc9f0">📎</button> `:''}<button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
     };
     const div=(cls,icon,lbl,n)=>`<tr class="mdiv ${cls}"><td colspan="18">${icon} ${lbl} <span style="font-weight:400;opacity:.8">(${n})</span></td></tr>`;
     let html='';
@@ -2986,11 +3016,13 @@ function rMeetingsArchive(){
     const [y,m]=mo.split('-');
     const name=(MONTH_HE[parseInt(m)-1]||m)+' '+y;
     const held=items.filter(x=>x.hl==='כן').length;
+    const typeIcoArch={פגישה:'🤝',שיחת_טלפון:'📞','שיחת טלפון':'📞',זום:'🖥',Teams:'🟦',אחר:'📌'};
     const rows=items.map((m,i)=>{
       const sb=m.hl==='כן'?'<span class="badge bg">כן ✓</span>':m.hl==='מבוטל'?'<span class="badge br">מבוטל</span>':'<span class="badge by">לא</span>';
-      return`<tr><td>${i+1}</td><td style="font-size:10px">${fmtDate(m.dt)}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb}</td><td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis">${m.no||'–'}</td></tr>`;
+      const ico=typeIcoArch[m.mtype||'פגישה']||'🤝';
+      return`<tr><td>${i+1}</td><td style="font-size:10px">${fmtDate(m.dt)}</td><td style="font-size:10px;color:var(--gold)">${m.time||'–'}</td><td style="font-size:12px">${ico}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb}</td><td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis">${m.no||'–'}</td></tr>`;
     }).join('');
-    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${items.length} פגישות | התקיימו: ${held} | יעד: 15</span></div><div class="tscroll"><table><thead><tr><th>#</th><th>תאריך</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${items.length} פגישות | התקיימו: ${held} | יעד: 15</span></div><div class="tscroll"><table><thead><tr><th>#</th><th>תאריך</th><th>שעה</th><th>סוג</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join('');
   cont.innerHTML=summary+blocks;
 }
@@ -3223,11 +3255,18 @@ function rMeetings(){
     return da<db2?-1:da>db2?1:0;
   });
   document.getElementById('mtb').innerHTML=sorted.map((m,i)=>{
-    const sb2=m.hl==='כן'?'<span class="badge bg">כן ✓</span>':m.hl==='מבוטל'?'<span class="badge br">מבוטל</span>':'<span class="badge by">לא</span>';
-    const chk=SEL['meetings']&&SEL['meetings'].has(m.id)?'checked':'';
+    const isPast=m.dt<todayStr&&m.dt;
     const isToday=m.dt===todayStr;
-    const isFuture=m.dt>todayStr;
-    const rowStyle=isToday?'background:rgba(6,214,160,.06);':'';
+    const isMissed=isPast&&m.hl!=='כן'&&m.hl!=='מבוטל';
+    const hlState=m.hl==='כן'?'כן':m.hl==='מבוטל'?'מבוטל':'לא';
+    const hlNext={כן:'לא',לא:'כן',מבוטל:'כן'};
+    const sb2=m.hl==='כן'
+      ?`<span class="badge bg" onclick="event.stopPropagation();toggleMeetingHeld('${m.id}')" title="לחץ לשינוי" style="cursor:pointer">כן ✓</span>`
+      :m.hl==='מבוטל'
+      ?`<span class="badge br" onclick="event.stopPropagation();toggleMeetingHeld('${m.id}')" title="לחץ לשינוי" style="cursor:pointer">מבוטל</span>`
+      :`<span class="badge ${isMissed?'br':'by'}" onclick="event.stopPropagation();toggleMeetingHeld('${m.id}')" title="לחץ לסימון כהתקיימה" style="cursor:pointer">${isMissed?'⚠ לא':'לא'}</span>`;
+    const chk=SEL['meetings']&&SEL['meetings'].has(m.id)?'checked':'';
+    const rowStyle=isToday?'background:rgba(6,214,160,.06);':isMissed?'background:rgba(230,57,70,.04);':'';
     const timeDisp=m.time?`<span style="font-size:10px;color:var(--gold)">${m.time}</span>`:'<span style="color:var(--text3)">–</span>';
     const typeIco={פגישה:'🤝',שיחת_טלפון:'📞','שיחת טלפון':'📞',זום:'🖥',Teams:'🟦',אחר:'📌'}[m.mtype||'פגישה']||'🤝';
     const todayBadge=isToday?'<span class="badge bb" style="font-size:9px;margin-right:2px">היום!</span>':'';
@@ -3392,6 +3431,15 @@ function renderClientDeals(id){
   </div>`).join('');
   sec.style.display='';
   sec.innerHTML=`<div class="msec" style="border:1px solid rgba(76,201,240,.25)"><div class="msec-hdr"><span style="color:#4cc9f0">💼 עסקאות קשורות (${deals.length})</span><button class="btn btns" onclick="closeM('mclient');setTimeout(()=>{openM('deal',null);setTimeout(()=>{const el=document.getElementById('dco');if(el){el.value=${JSON.stringify(c.name||'')};el.dispatchEvent(new Event('change'));}},50);},100)" style="border-color:#4cc9f0;color:#4cc9f0;font-size:10px">+ עסקה חדשה</button></div>${rows}</div>`;
+}
+
+// ===== MEETING QUICK ACTIONS =====
+function toggleMeetingHeld(id){
+  const m=D.meetings.find(x=>x.id==id);if(!m)return;
+  const cycle={כן:'לא',לא:'כן',מבוטל:'כן'};
+  m.hl=cycle[m.hl]||'כן';
+  saveAll();rMeetings();
+  showToast(m.hl==='כן'?'✅ פגישה סומנה כהתקיימה':m.hl==='לא'?'⏳ פגישה סומנה כלא-התקיימה':'❌ פגישה בוטלה','ok');
 }
 
 // ===== MEETING AUTOMATION =====
@@ -3600,6 +3648,11 @@ function rClients(){
     const mTotal=mRev.reduce((s,x)=>s+x.val,0);
     const mBreakHtml=mRev.map(x=>`<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(212,168,71,.1);color:var(--gold);border:1px solid rgba(212,168,71,.25);white-space:nowrap">${x.cfg.label.split(' ')[0]} ${fmt(x.val)}</span>`).join('');
     const emailBtn=`<button class="btn btns" onclick="event.stopPropagation();sendEmailToClient('${c.id}')" style="font-size:9px;opacity:${c.email?1:.35}" title="${c.email?'שלח מייל ללקוח':'הוסף מייל ללקוח'}">📧</button>`;
+    // meeting summary for client card
+    const todayStrC=nd();
+    const cMtgs=D.meetings.filter(m=>(m.cl||'').trim()===(c.name||'').trim());
+    const nextMtg=cMtgs.filter(m=>m.dt>=todayStrC&&m.hl!=='מבוטל').sort((a,b)=>(a.dt+(a.time||''))<(b.dt+(b.time||''))?-1:1)[0];
+    const lastMtg=cMtgs.filter(m=>m.hl==='כן').sort((a,b)=>(a.dt)<(b.dt)?1:-1)[0];
     return`<div class="client-card" onclick="openClientModal('${c.id}')">
       <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:8px">
         <div>
@@ -3631,6 +3684,10 @@ function rClients(){
       </div>
       ${potActive.length?`<div style="font-size:10px;color:#7b5ea7;padding:3px 8px;background:rgba(123,94,167,.1);border-radius:6px;border:1px solid rgba(123,94,167,.3);margin-bottom:4px">🎯 ${potActive.length} בתהליך עבודה לקוחות${potVal?` · ${fmt(potVal)}`:''}</div>`:''}
       ${warns.length?`<div class="exp-warn">⚠ ${warns.slice(0,2).join(' | ')}</div>`:''}
+      ${nextMtg?`<div style="display:flex;align-items:center;gap:5px;font-size:10px;padding:3px 7px;background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.2);border-radius:6px;margin-top:4px">
+        <span>📅</span><span style="color:#06d6a0;font-weight:700">${nextMtg.dt===todayStrC?'פגישה היום!':'פגישה ב-'+fmtDate(nextMtg.dt)}</span>${nextMtg.time?`<span style="color:var(--text3)">${nextMtg.time}</span>`:''}
+      </div>`:''}
+      ${!nextMtg&&lastMtg?`<div style="font-size:9px;color:var(--text3);margin-top:4px">🤝 פגישה אחרונה: ${fmtDate(lastMtg.dt)}</div>`:''}
       ${c.genNotes?`<div style="font-size:10px;color:var(--text2);margin-top:4px;padding-top:4px;border-top:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.genNotes}">${c.genNotes}</div>`:''}
     </div>`;
   }).join('');
@@ -4887,16 +4944,25 @@ function sendWhatsAppMeetings(){
   msg+=`🎯 יעד: ${MEETING_GOAL} פגישות\n`;
   msg+=`✅ התקיימו: ${held} | ⏳ ממתינות: ${notHeld} | ❌ בוטלו: ${cancelled}\n`;
   msg+=`📈 עמידה: ${pct}%\n\n`;
-  const upcoming=D.meetings.filter(m=>m.hl!=='כן'&&m.hl!=='מבוטל'&&m.dt>=nd()).slice(0,5);
+  const typeIcoWa={פגישה:'🤝',שיחת_טלפון:'📞','שיחת טלפון':'📞',זום:'🖥',Teams:'🟦',אחר:'📌'};
+  const upcoming=D.meetings.filter(m=>m.hl!=='כן'&&m.hl!=='מבוטל'&&m.dt>=nd())
+    .sort((a,b)=>((a.dt||'')+(a.time||'')).localeCompare((b.dt||'')+(b.time||''))).slice(0,6);
   if(upcoming.length){
     msg+=`📅 *פגישות קרובות*\n`;
-    upcoming.sort((a,b)=>(a.dt||'').localeCompare(b.dt||'')).forEach(m=>msg+=`• ${m.cl||'–'} | ${fmtDate(m.dt)}\n`);
+    upcoming.forEach(m=>{
+      const ico=typeIcoWa[m.mtype||'פגישה']||'🤝';
+      const timeStr=m.time?` ${m.time}`:'';
+      msg+=`${ico} ${m.cl||'–'} | ${fmtDate(m.dt)}${timeStr}\n`;
+    });
     msg+='\n';
   }
-  const recentHeld=D.meetings.filter(m=>m.hl==='כן').slice(-4).reverse();
+  const recentHeld=D.meetings.filter(m=>m.hl==='כן').sort((a,b)=>(a.dt||'').localeCompare(b.dt||'')).slice(-4).reverse();
   if(recentHeld.length){
     msg+=`✅ *אחרונות שהתקיימו*\n`;
-    recentHeld.forEach(m=>msg+=`• ${m.cl||'–'} | ${fmtDate(m.dt)}\n`);
+    recentHeld.forEach(m=>{
+      const ico=typeIcoWa[m.mtype||'פגישה']||'🤝';
+      msg+=`${ico} ${m.cl||'–'} | ${fmtDate(m.dt)}\n`;
+    });
   }
   waOpen(msg);
 }
@@ -5109,6 +5175,12 @@ document.addEventListener('keydown',e=>{
     if(map[currentSec]){ e.preventDefault(); openM(map[currentSec],null); }
     else if(currentSec==='clients'){ e.preventDefault(); openClientModal(); }
   }
+  // Section navigation shortcuts: D=deals, M=meetings, C=clients, A=alerts, T=tenders
+  if(e.key==='d'||e.key==='D'){ e.preventDefault(); nav('deals'); }
+  else if(e.key==='m'||e.key==='M'){ e.preventDefault(); nav('meetings'); }
+  else if(e.key==='c'||e.key==='C'){ e.preventDefault(); nav('clients'); }
+  else if(e.key==='a'||e.key==='A'){ e.preventDefault(); nav('alerts'); }
+  else if(e.key==='t'||e.key==='T'){ e.preventDefault(); nav('tenders'); }
 });
 
 // ===== MOBILE FAB =====
