@@ -2720,7 +2720,10 @@ function rDeals(){
       const ib=d.inf&&d.inf.includes('הוט')?`<span class="badge bb">HOT</span>`:d.inf==='365'?`<span class="badge bgr">365</span>`:`<span class="badge bgr">${d.inf||'–'}</span>`;
       const cc=d.ch>=1?'ng':d.ch>=0.75?'ny':'nr';
       const chk=SEL[sk]&&SEL[sk].has(d.id)?'checked':'';
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(d.date)}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap">${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד הצעת מחיר: ${d.quote.name||''}" style="border-color:#4cc9f0;color:#4cc9f0">📎</button> `:''}<button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
+      const _dcl=D.clients.find(x=>(x.name||'').trim()===(d.co||'').trim());
+      const _hse=!!(_dcl&&_dcl.email&&_dcl.email.trim());
+      const deBtn=`<button class="btn btns" onclick="sendEmailToDeal('${d.id}')" title="${_hse?'שלח עדכון מייל ללקוח':'הוסף מייל ללקוח'}" style="font-size:9px;opacity:${_hse?1:0.45}">📧</button> `;
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(d.date)}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap">${deBtn}${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד הצעת מחיר: ${d.quote.name||''}" style="border-color:#4cc9f0;color:#4cc9f0">📎</button> `:''}<button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
     };
     const div=(cls,icon,lbl,n)=>`<tr class="mdiv ${cls}"><td colspan="18">${icon} ${lbl} <span style="font-weight:400;opacity:.8">(${n})</span></td></tr>`;
     let html='';
@@ -3425,6 +3428,75 @@ function sendEmailToDist(id){
   const body=buildDistEmailBody(d);
   openMail(mgr.email, subject, body);
 }
+
+// ===== DEAL STATUS EMAIL =====
+function buildDealEmailBody(d,c){
+  const greet=(c&&c.contact)?c.contact:(c&&c.name?c.name:d.co||'לקוח יקר');
+  const pct=Math.round((d.ch||0)*100);
+  const stPara={
+    'ממתין לתשובה':'הצעת המחיר שהגשנו נמצאת כרגע ממתינה לתשובתכם. ברצוני להזמינכם לפנות אליי בכל שאלה, הבהרה או בקשה — אני כאן לסייע. נשמח לתאם שיחה קצרה בנוחותכם כדי לדון בפרטים ולוודא שההצעה עונה על כל הצרכים שלכם.',
+    'נסגר':'שמח לבשר כי העסקה נסגרה בהצלחה! נתחיל בביצוע ההסדרים הנדרשים בהקדם האפשרי. תודה על האמון שנתתם בנו — אנו מחויבים להעניק לכם שירות מקצועי ואישי לאורך כל הדרך.',
+    'בטיפול':'ההצעה שלכם נמצאת כרגע בטיפול מלא מצדנו. אנו עוקבים אחר כל שלב בתהליך ומוודאים שהדברים מתקדמים בצורה אופטימלית. נעדכן אתכם בכל התפתחות חדשה — ואתם מוזמנים כמובן לפנות אליי ישירות בכל עת.',
+    'הוצאת הצעה':'הצעת המחיר שלנו מוכנה ומפורטת, ומשקפת את הצרכים שציינתם. השתדלנו לגבש פתרון מקצועי ומותאם. נשמח לדון בפרטים, לענות על כל שאלה ולהתאים כל נקודה לפי הצורך — פשוט אמרו מה נדרש.',
+    'בעיה':'ישנה עצירה זמנית בתהליך שחשוב לי לעדכן אתכם לגביה. אנו עובדים על פתרון מהיר ויסודי ונחזור אליכם עם עדכון מלא בהקדם האפשרי. מצטער על אי הנוחות הזמנית ומעריך את סבלנותכם.'
+  }[d.st]||'נשמח להמשיך לקדם יחד את ההצעה ולוודא שהיא עונה על כל הציפיות והצרכים שלכם.';
+
+  const details=[];
+  if(d.num)  details.push('• מספר עסקה: '+d.num);
+  if(d.srv)  details.push('• שירות / פתרון: '+d.srv);
+  if(d.inf)  details.push('• תשתית: '+d.inf);
+  if(d.date) details.push('• תאריך עסקה: '+fmtDate(d.date));
+  if(d.ct)   details.push('• מטפל מטעמנו: '+d.ct);
+
+  const fin=[];
+  if(d.v)   fin.push('• שווי העסקה: ₪'+fmt(d.v));
+  if(d.mv)  fin.push('• ערך חודש נוכחי: ₪'+fmt(d.mv));
+  if(d.dn)  fin.push('• ערך חודש הבא: ₪'+fmt(d.dn));
+  if(d.otc) fin.push('• OTC שנסגר: ₪'+fmt(d.otc));
+
+  const parts=[
+    'שלום '+greet+',',
+    '',
+    'ברצוני לעדכן אתכם לגבי ההצעה שאנו מטפלים עבורכם במסגרת HOT Business.',
+    '',
+    stPara,
+  ];
+  if(details.length){parts.push('');parts.push('📋 פרטי ההצעה:');parts.push(...details);}
+  if(fin.length){parts.push('');parts.push('💰 פירוט כלכלי:');parts.push(...fin);}
+  parts.push('');
+  parts.push('📊 מצב נוכחי:');
+  parts.push('• סטטוס: '+(d.st||'–'));
+  if(d.ch!==undefined&&d.ch!==null) parts.push('• סיכוי לסגירה: '+pct+'%');
+  if(d.no&&d.no.trim()){parts.push('');parts.push('💬 הערות נוספות:');parts.push(d.no.trim());}
+  parts.push('');
+  parts.push('אני זמין לכל שאלה, הבהרה, או שיחה קצרה בנוחותכם.');
+  parts.push('');
+  parts.push('בברכה ובהוקרה,');
+  parts.push('איתמר ונדן');
+  parts.push('HOT Business');
+  parts.push('Itamar.venden@hot.net.il');
+  return parts.join('\n');
+}
+function sendEmailToDeal(id){
+  const d=D.deals.find(x=>x.id==id);if(!d)return;
+  const co=(d.co||'').trim();
+  const c=D.clients.find(x=>(x.name||'').trim()===co);
+  if(!c){
+    toast('📇 אין כרטיס לקוח עבור '+co+' — נפתח כרטיס חדש להוספת מייל','warn');
+    openClientModal();
+    setTimeout(()=>{const n=document.getElementById('cl-name');if(n)n.value=co;const e=document.getElementById('cl-email');if(e){e.focus();e.style.borderColor='var(--blue)';}},300);
+    return;
+  }
+  if(!c.email||!c.email.trim()){
+    toast('📧 אין מייל ללקוח – הוסף ושמור בכרטיס','warn');
+    openClientModal(c.id);
+    setTimeout(()=>{const f=document.getElementById('cl-email');if(f){f.focus();f.style.borderColor='var(--blue)';}},300);
+    return;
+  }
+  const subject='HOT Business – עדכון סטטוס עסקה – '+co;
+  openMail(c.email, subject, buildDealEmailBody(d,c));
+}
+
 function emailFromDistForm(){
   const hdName=document.getElementById('dih').value;
   const mgr=MANAGERS.find(m=>m.name===hdName);
