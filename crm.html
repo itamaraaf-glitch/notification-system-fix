@@ -1587,9 +1587,9 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <div class="g"><label>סוג</label><select id="dty"><option value="long">טווח ארוך</option><option value="short">טווח קצר</option></select></div>
     <div class="g"><label>סוג מוצר / ציוד</label><select id="dptype"><option value="">— אוטומטי לפי שירות —</option><option value="lines">📡 קו תקשורת</option><option value="forti">🛡️ FortiGate</option><option value="cisco">🔵 Cisco</option><option value="hp">🟣 HP / Aruba</option><option value="juniper">🟢 Juniper</option><option value="cybiz">🔐 CYBIZ / אבטחה</option><option value="starlink">🛰️ Starlink</option><option value="pbx">☎️ מרכזייה</option><option value="ms365">📧 Microsoft 365</option><option value="helpdesk">🎧 Helpdesk</option><option value="servers">🖥️ שרתים</option><option value="extra">📝 פתרון נוסף</option></select></div>
     <div class="gf"><label>הערות</label><textarea id="dno" rows="2"></textarea></div>
-    <div class="gf"><label>📎 הצעת מחיר ללקוח (Excel)</label>
+    <div class="gf"><label>📎 צרף קובץ ללקוח (Excel / Word / PDF)</label>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <input type="file" id="dquote" accept=".xlsx,.xls,.csv" style="display:none" onchange="onQuoteFile(event)">
+        <input type="file" id="dquote" accept=".xlsx,.xls,.csv,.pdf,.doc,.docx" style="display:none" onchange="onQuoteFile(event)">
         <button type="button" class="btn btns" onclick="document.getElementById('dquote').click()" style="border-color:#06d6a0;color:#06d6a0">בחר קובץ</button>
         <span id="dquote-status" style="font-size:11px;color:var(--text2)">לא צורף קובץ</span>
         <button type="button" class="btn btns" id="dquote-dl" onclick="downloadQuote()" style="display:none;border-color:#4cc9f0;color:#4cc9f0">⬇ הורד</button>
@@ -4071,7 +4071,7 @@ function closeM(id){document.getElementById(id).classList.remove('open');EI=null
 // ===== SAVE FUNCTIONS =====
 // ===== PRICE-QUOTE FILE ATTACHMENT (per deal) =====
 let pendingQuote = null; // {name,type,size,data(base64 dataURL)}
-const QUOTE_MAX = 1024 * 1024; // 1MB cap (base64 inflates ~33%) to protect localStorage
+const QUOTE_MAX = 2 * 1024 * 1024; // 2MB cap (base64 inflates ~33%) to protect localStorage
 function onQuoteFile(ev){
   const f = ev.target.files && ev.target.files[0];
   if(!f) return;
@@ -4084,7 +4084,7 @@ function onQuoteFile(ev){
   reader.onload = e=>{
     pendingQuote = {name:f.name, type:f.type||'', size:f.size, data:e.target.result};
     updateQuoteStatus();
-    toast('📎 הצעת המחיר צורפה (שמור עסקה לסיום)','ok');
+    toast('📎 הקובץ צורף (שמור עסקה לסיום)','ok');
   };
   reader.onerror = ()=> toast('⚠️ שגיאה בקריאת הקובץ','warn');
   reader.readAsDataURL(f);
@@ -4096,7 +4096,9 @@ function updateQuoteStatus(){
   if(!st) return;
   if(pendingQuote){
     const kb=Math.round((pendingQuote.size||0)/1024);
-    st.innerHTML='📄 '+pendingQuote.name+' <span style="color:var(--text3)">('+kb+'KB)</span>';
+    const ext=(pendingQuote.name||'').split('.').pop().toLowerCase();
+    const ico=ext==='pdf'?'📕':ext==='doc'||ext==='docx'?'📝':'📄';
+    st.innerHTML=ico+' '+pendingQuote.name+' <span style="color:var(--text3)">('+kb+'KB)</span>';
     st.style.color='var(--teal)';
     if(dl)dl.style.display='';
     if(rm)rm.style.display='';
@@ -4116,7 +4118,7 @@ function downloadQuote(q){
   const file = q || pendingQuote;
   if(!file || !file.data){toast('⚠️ אין קובץ להורדה','warn');return;}
   const a=document.createElement('a');
-  a.href=file.data; a.download=file.name||'quote.xlsx';
+  a.href=file.data; a.download=file.name||'quote';
   document.body.appendChild(a); a.click(); a.remove();
 }
 function downloadDealQuote(id){
