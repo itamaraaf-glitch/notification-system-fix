@@ -1160,6 +1160,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <button class="btn mob-hide" onclick="saveAll()" style="background:var(--tealdim);color:var(--teal);border:1px solid rgba(6,214,160,.4);font-size:11px;padding:4px 12px;border-radius:20px">💾 שמור</button>
     <button class="btn mob-hide" id="undo-btn" onclick="undoLast()" title="בטל את המחיקה האחרונה" style="display:none;background:rgba(244,162,97,.14);color:#f4a261;border:1px solid rgba(244,162,97,.45);font-size:11px;padding:4px 12px;border-radius:20px">↩ בטל מחיקה</button>
     <button class="btn mob-hide" onclick="openAutoBackups()" title="שחזר נתונים מגיבוי אוטומטי" style="background:rgba(6,214,160,.1);color:#06d6a0;border:1px solid rgba(6,214,160,.35);font-size:11px;padding:4px 12px;border-radius:20px">🛡️ שחזר</button>
+    <button class="btn mob-hide" onclick="openSendToMobile()" title="שלח נתונים למובייל" style="background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.4);font-size:11px;padding:4px 12px;border-radius:20px">📱 מובייל</button>
     <button class="abtn" onclick="nav('alerts')">⚠ <span id="acnt">0</span></button>
     <button class="btn btnbk mob-hide" onclick="backupData()" title="גיבוי">💾 גיבוי</button>
     <button class="btn mob-hide" onclick="restoreData()" title="שחזור">📂</button>
@@ -1504,6 +1505,12 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   <div class="mhdr"><h3>🛡️ גיבויים אוטומטיים</h3><button class="mcls" onclick="closeM('mbackups')">✕</button></div>
   <div style="font-size:11px;color:var(--text2);margin-bottom:10px">המערכת שומרת גיבוי מלא אוטומטית ברקע. בחר נקודת זמן לשחזור:</div>
   <div id="bk-list" style="max-height:50vh;overflow-y:auto"></div>
+</div></div>
+
+<!-- SEND TO MOBILE MODAL -->
+<div class="mw" id="msendmobile"><div class="modal" style="max-width:520px;direction:rtl">
+  <div class="mhdr"><h3>📱 שלח למובייל</h3><button class="mcls" onclick="closeM('msendmobile')">✕</button></div>
+  <div id="smob-content"></div>
 </div></div>
 
 <!-- CLOUD SYNC MODAL -->
@@ -2527,6 +2534,91 @@ function checkUrlSyncImport(){
       });
     },2000);
   }catch(e){console.warn('sync import check:',e);}
+}
+
+// ===== SEND TO MOBILE =====
+async function openSendToMobile(){
+  const box=document.getElementById('smob-content');
+  if(!box)return;
+  box.innerHTML='<div style="text-align:center;padding:20px;color:var(--text2)">טוען...</div>';
+  document.getElementById('msendmobile').classList.add('open');
+
+  const cfgStr=localStorage.getItem(FB_CFG_KEY);
+  const hasCfg=!!(cfgStr&&JSON.parse(cfgStr).databaseURL);
+  const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+  const totalRec=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
+
+  let html=`<div style="font-size:12px;color:var(--text2);margin-bottom:16px;text-align:center">סה"כ <b style="color:var(--teal)">${totalRec} רשומות</b> ישלחו למובייל</div>`;
+
+  // --- Method 1: QR + Cloud (if sync configured) ---
+  html+=`<div style="border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">`;
+  html+=`<div style="font-size:13px;font-weight:700;margin-bottom:6px">☁️ שיטה 1 — QR + סנכרון ענן <span style="font-size:10px;font-weight:400;color:var(--text2)">(מומלץ)</span></div>`;
+  if(hasCfg){
+    html+=`<div style="font-size:11px;color:var(--text2);margin-bottom:12px">לחץ "שלח עכשיו" — הנתונים יועלו לענן ויוצג QR לסריקה במובייל.</div>`;
+    html+=`<button class="btn" onclick="_smobPushAndQR()" style="background:rgba(167,139,250,.15);border-color:#a78bfa;color:#a78bfa;width:100%;font-size:13px;padding:10px">☁️ שלח לענן + הצג QR</button>`;
+    html+=`<div id="smob-qr-area" style="display:none;text-align:center;margin-top:12px">`;
+    html+=`<img id="smob-qr-img" src="" alt="QR" style="width:180px;height:180px;border-radius:10px;border:2px solid #a78bfa">`;
+    html+=`<div style="font-size:11px;color:var(--text2);margin-top:8px">סרוק את ה-QR במצלמת המובייל</div>`;
+    html+=`<button class="btn" onclick="copySyncLink()" style="margin-top:8px;font-size:11px;border-color:#a78bfa;color:#a78bfa">📋 העתק קישור</button>`;
+    html+=`</div>`;
+  }else{
+    html+=`<div style="font-size:11px;color:var(--text2);margin-bottom:10px">שיטה זו מצריכה הגדרת סנכרון ענן (Firebase).</div>`;
+    html+=`<button class="btn" onclick="closeM('msendmobile');openSyncModal()" style="font-size:11px;border-color:#a78bfa;color:#a78bfa">⚡ הגדר סנכרון ענן עכשיו</button>`;
+  }
+  html+=`</div>`;
+
+  // --- Method 2: JSON file → WhatsApp / Email ---
+  html+=`<div style="border:1px solid var(--border);border-radius:12px;padding:14px">`;
+  html+=`<div style="font-size:13px;font-weight:700;margin-bottom:6px">📁 שיטה 2 — קובץ + וואטסאפ / מייל</div>`;
+  html+=`<div style="font-size:11px;color:var(--text2);margin-bottom:12px">הורד קובץ גיבוי → שלח לעצמך → פתח מהמובייל → ייבא למערכת.</div>`;
+  html+=`<div style="display:flex;flex-direction:column;gap:8px">`;
+  html+=`<button class="btn" onclick="_smobDownloadJSON()" style="background:rgba(6,214,160,.12);border-color:var(--teal);color:var(--teal);font-size:12px;padding:9px">💾 שלב 1: הורד קובץ גיבוי</button>`;
+
+  // WhatsApp deep-link to self (share file instructions)
+  const waText=encodeURIComponent('שמור את קובץ הגיבוי שהורדת ופתח אותו מהאפליקציה בלחיצה על 📂 בסרגל העליון');
+  html+=`<a href="whatsapp://send?text=${waText}" style="text-decoration:none"><button class="btn" style="width:100%;background:rgba(37,211,102,.1);border-color:#25D366;color:#25D366;font-size:12px;padding:9px">📲 שלב 2: פתח וואטסאפ ושלח לעצמך</button></a>`;
+  html+=`<div style="font-size:10px;color:var(--text2);text-align:center;margin-top:4px">במובייל: פתח האפליקציה ← לחץ 📂 ← בחר את הקובץ</div>`;
+  html+=`</div></div>`;
+
+  // QR to open the app on mobile
+  html+=`<div style="text-align:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">`;
+  html+=`<div style="font-size:11px;color:var(--text2);margin-bottom:8px">פתח את האפליקציה במובייל:</div>`;
+  const appUrl='https://itamaroshrit.netlify.app';
+  const openQr='https://api.qrserver.com/v1/create-qr-code/?size=120x120&ecc=L&data='+encodeURIComponent(appUrl);
+  html+=`<img src="${openQr}" alt="QR לפתיחת האפליקציה" style="width:120px;height:120px;border-radius:8px;border:1px solid var(--border)">`;
+  html+=`<div style="font-size:10px;color:var(--text2);margin-top:6px">סרוק לפתיחת CRM HOT</div>`;
+  html+=`</div>`;
+
+  box.innerHTML=html;
+}
+
+async function _smobPushAndQR(){
+  showToast('🔄 שולח נתונים לענן...','info');
+  try{
+    if(_ssUrl){await ssPush();}
+    else if(_fbRef){fbPush();}
+    else{showToast('⚠️ הסנכרון לא מחובר','warn');return;}
+    const url=genSyncShareUrl();
+    if(!url){showToast('⚠️ לא ניתן לייצר קישור','warn');return;}
+    const qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=180x180&ecc=M&data='+encodeURIComponent(url);
+    const area=document.getElementById('smob-qr-area');
+    const img=document.getElementById('smob-qr-img');
+    if(img){img.src=qrSrc;img.onerror=()=>{img.alt='שגיאה בטעינת QR';};}
+    if(area)area.style.display='';
+    showToast('✅ הנתונים הועלו! סרוק את ה-QR במובייל','ok');
+  }catch(e){showToast('⚠️ שגיאה: '+e.message,'warn');}
+}
+
+function _smobDownloadJSON(){
+  try{
+    const json=JSON.stringify(D,null,2);
+    const fname='crm_hot_backup_'+nd()+'.json';
+    const blob=new Blob([json],{type:'application/json;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    a.href=url;a.download=fname;document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},800);
+    showToast('💾 קובץ הגיבוי הורד — שלח אותו לעצמך בוואטסאפ','ok');
+  }catch(e){showToast('⚠️ שגיאה בהורדה: '+e.message,'warn');}
 }
 
 // Network reconnect — when going back online, re-init sync
