@@ -3289,7 +3289,7 @@ function renderClientDeals(id){
     <span style="font-size:10px;color:var(--gold);white-space:nowrap">${fmt(d.v)}</span>
     <span style="font-size:9px;padding:2px 7px;border-radius:20px;background:${stColor(d.st)}18;color:${stColor(d.st)};border:1px solid ${stColor(d.st)}44;white-space:nowrap">${d.st||''}</span>
     <button class="btn btns" onclick="sendEmailToDeal('${d.id}')" title="שלח עדכון מייל ללקוח" style="font-size:9px;border-color:#4cc9f0;color:#4cc9f0">📧</button>
-    ${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד: ${(d.quote.name||'').replace(/'/g,'\\'')}" style="font-size:9px;border-color:#06d6a0;color:#06d6a0">📎</button>`:''}
+    ${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד: ${(d.quote.name||'').replace(/'/g,'&#39;')}" style="font-size:9px;border-color:#06d6a0;color:#06d6a0">📎</button>`:''}
     <button class="btn btns" onclick="closeM('mclient');setTimeout(()=>openM('deal','${d.id}'),100)" title="פתח עסקה לעריכה" style="font-size:9px">✏️</button>
   </div>`).join('');
   sec.style.display='';
