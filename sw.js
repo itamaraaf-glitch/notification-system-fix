@@ -1,4 +1,4 @@
-const CACHE = 'hot-crm-v6';
+const CACHE = 'hot-crm-v7';
 const ASSETS = ['./manifest.json', './office-bg.jpg', './mountains-bg.mp4'];
 
 self.addEventListener('install', e => {
@@ -17,17 +17,14 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  // Navigation requests (HTML pages) always go network-first so users get the latest version
-  if (e.request.mode === 'navigate') {
-    e.respondWith(
-      fetch(e.request).then(res => {
-        if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
-        return res;
-      }).catch(() => caches.match(e.request))
-    );
+  // HTML pages: always network — never serve from cache so login fix always loads
+  if (e.request.mode === 'navigate' ||
+      e.request.url.endsWith('.html') ||
+      e.request.url.endsWith('/')) {
+    e.respondWith(fetch(e.request));
     return;
   }
-  // Assets use cache-first for performance
+  // Assets: cache-first
   e.respondWith(
     caches.match(e.request).then(cached => {
       const network = fetch(e.request).then(res => {
