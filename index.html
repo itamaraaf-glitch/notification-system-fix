@@ -2426,8 +2426,8 @@ document.addEventListener('touchstart',_closeGsIfOutside,{passive:true});
 // ===== ALERTS =====
 function getAlerts(){
   const a=[];const t=nd();
-  D.deals.forEach(d=>{if(d.date&&d.st!=='נסגר'&&(now()-new Date(d.date))/(30*86400000)>3)a.push({type:'crit',h:`עסקה ישנה – ${d.co}`,s:`פתוחה מעל 3 חודשים! שווי: ${fmt(d.v)}`,co:d.co,kind:'deal',meta:{srv:d.srv}});});
-  D.dists.forEach(d=>{if(d.dt&&d.st!=='הושלם'&&db(d.dt,t)>7)a.push({type:'crit',h:`הפצה תקועה – ${d.co}`,s:`${db(d.dt,t)} ימים ללא התקדמות`,co:d.co,kind:'dist',meta:{srv:d.so}});});
+  D.deals.forEach(d=>{if(d.date&&d.st!=='נסגר'&&(now()-new Date(d.date))/(30*86400000)>3)a.push({type:'crit',h:`עסקה ישנה – ${d.co}`,s:`פתוחה מעל 3 חודשים! שווי: ${fmt(d.v)}`,co:d.co,kind:'deal',meta:{srv:d.srv,st:d.st,num:d.num,ch:d.ch,v:d.v}});});
+  D.dists.forEach(d=>{if(d.dt&&d.st!=='הושלם'&&db(d.dt,t)>7)a.push({type:'crit',h:`הפצה תקועה – ${d.co}`,s:`${db(d.dt,t)} ימים ללא התקדמות`,co:d.co,kind:'dist',meta:{srv:d.so,projNo:d.no,manager:d.hd,days:db(d.dt,t)}});});
   D.salary.forEach(s=>{if(s.st!=='סגור'&&(s.pv||0)>0)a.push({type:'warn',h:`שכר לא ממומש – ${s.cl}`,s:`יתרה: ${fmt(s.pv)}`,co:s.cl,kind:'salary'});});
   D.tenders.forEach(t2=>{
     if(t2.deadline){const dl=db(t,t2.deadline);if(dl>=0&&dl<=5&&t2.submitted!=='כן')a.push({type:'crit',h:`מכרז דחוף – ${t2.name}`,s:`נותרו ${dl} ימים!`});}
@@ -2500,28 +2500,57 @@ function buildAlertEmail(c,al){
         'נשמח לתאם שיחה קצרה בנוחותכם להשלמת התהליך.'
       ];
       break;
-    case 'dist':
-      subject='HOT Business – עדכון בנוגע לפרויקט שלכם';
+    case 'dist':{
+      const projLabel=m.projNo?('פרויקט מספר '+m.projNo):'הפרויקט';
+      const mgrLine=m.manager?('מנהל הפרויקט האחראי: '+m.manager+'.'):'';
+      const daysLine=m.days?('הפרויקט ממתין כבר '+m.days+' ימים.'):'';
+      const srvLine=m.srv?('שירות: '+m.srv+'.'):'';
+      subject='HOT Business – עדכון סטטוס '+projLabel;
       lines=[
         'שלום '+greet+',',
         '',
-        'ברצוננו לעדכן ולתאם איתכם את המשך התקדמות '+(m.srv?('הפרויקט ('+m.srv+')'):'הפרויקט')+' שלכם.',
-        'אנו פועלים לקדם את התהליך ולהשלימו בהקדם ובאיכות הגבוהה ביותר.',
+        'ברצוני לעדכן אתכם בנוגע ל'+projLabel+(m.srv?' ('+m.srv+')':'')+' שלכם.',
+        daysLine,
+        mgrLine,
+        srvLine,
         '',
-        'נשמח לתאם מועד נוח להמשך הטיפול.'
-      ];
-      break;
-    case 'deal':
-      subject='HOT Business – המשך טיפול בהצעה שלכם';
-      lines=[
-        'שלום '+greet+',',
-        '',
-        'ברצוננו לחזור אליכם בנוגע להצעה'+(m.srv?(' עבור '+m.srv):'')+' שהוגשה לכם.',
-        'נשמח לענות על כל שאלה ולקדם יחד את ההצעה בהתאם לצרכים שלכם.',
+        'אנו פועלים בכל האמצעים לקדם ולהשלים את הפרויקט בהקדם ובאיכות הגבוהה ביותר.',
+        'נחזור אליכם עם עדכון מלא בהקדם, ואתם מוזמנים כמובן לפנות אליי ישירות בכל שאלה.',
         '',
         'נשמח לתאם שיחה קצרה בנוחותכם.'
-      ];
+      ].filter(l=>l!=='');
       break;
+    }
+    case 'deal':{
+      const stPara={
+        'ממתין לתשובה':'הצעת המחיר שהגשנו נמצאת כרגע ממתינה לתשובתכם. ברצוני להזמינכם לפנות אליי בכל שאלה, הבהרה או בקשה — אני כאן לסייע. נשמח לתאם שיחה קצרה בנוחותכם כדי לדון בפרטים ולוודא שההצעה עונה על כל הצרכים שלכם.',
+        'בטיפול':'ההצעה שלכם נמצאת כרגע בטיפול מלא מצדנו. אנו עוקבים אחר כל שלב בתהליך ומוודאים שהדברים מתקדמים בצורה אופטימלית. נעדכן אתכם בכל התפתחות חדשה — ואתם מוזמנים כמובן לפנות אליי ישירות בכל עת.',
+        'הוצאת הצעה':'הצעת המחיר שלנו מוכנה ומפורטת, ומשקפת את הצרכים שציינתם. השתדלנו לגבש פתרון מקצועי ומותאם. נשמח לדון בפרטים, לענות על כל שאלה ולהתאים כל נקודה לפי הצורך.',
+        'בעיה':'ישנה עצירה זמנית בתהליך שחשוב לי לעדכן אתכם לגביה. אנו עובדים על פתרון מהיר ויסודי ונחזור אליכם עם עדכון מלא בהקדם האפשרי. מצטער על אי הנוחות הזמנית ומעריך את סבלנותכם.'
+      }[m.st]||'ברצוני לחזור אליכם ולעדכן בנוגע להצעה שלכם. נשמח לענות על כל שאלה ולקדם יחד את ההצעה בהתאם לצרכים שלכם.';
+      const numLine=m.num?('מספר הצעה: '+m.num+'.'):'';
+      const srvLine=m.srv?('שירות: '+m.srv+'.'):'';
+      const stLabel=m.st?('סטטוס: '+m.st+'.'):'';
+      const pctLine=(m.ch!=null&&m.ch!==undefined&&m.ch!=='')&&Number(m.ch)>0?('סיכוי סגירה: '+Math.round(Number(m.ch)*100)+'%.'):'';
+      const valLine=m.v?('שווי הצעה: '+fmt(m.v)+'.'):'';
+      subject='HOT Business – עדכון סטטוס הצעה'+(m.num?' מס׳ '+m.num:'')+(m.srv?' – '+m.srv:'');
+      lines=[
+        'שלום '+greet+',',
+        '',
+        stPara,
+        '',
+        '— פרטי ההצעה —',
+        numLine,
+        srvLine,
+        stLabel,
+        pctLine,
+        valLine,
+        '',
+        'אני זמין בכל עת לכל שאלה או בקשה.',
+        'נשמח לתאם שיחה קצרה בנוחותכם.'
+      ].filter(l=>l!=='');
+      break;
+    }
     case 'potential':
       subject='HOT Business – הצעה שתשמח אתכם';
       lines=[
