@@ -1159,6 +1159,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <span class="save-ind" id="saveind">✦ נשמר</span>
     <button class="btn mob-hide" onclick="saveAll()" style="background:var(--tealdim);color:var(--teal);border:1px solid rgba(6,214,160,.4);font-size:11px;padding:4px 12px;border-radius:20px">💾 שמור</button>
     <button class="btn mob-hide" id="undo-btn" onclick="undoLast()" title="בטל את המחיקה האחרונה" style="display:none;background:rgba(244,162,97,.14);color:#f4a261;border:1px solid rgba(244,162,97,.45);font-size:11px;padding:4px 12px;border-radius:20px">↩ בטל מחיקה</button>
+    <button class="btn mob-hide" onclick="openAutoBackups()" title="שחזר נתונים מגיבוי אוטומטי" style="background:rgba(6,214,160,.1);color:#06d6a0;border:1px solid rgba(6,214,160,.35);font-size:11px;padding:4px 12px;border-radius:20px">🛡️ שחזר</button>
     <button class="abtn" onclick="nav('alerts')">⚠ <span id="acnt">0</span></button>
     <button class="btn btnbk mob-hide" onclick="backupData()" title="גיבוי">💾 גיבוי</button>
     <button class="btn mob-hide" onclick="restoreData()" title="שחזור">📂</button>
@@ -2355,7 +2356,30 @@ function loadAll(){
       D.goals=Object.assign({},_GOAL_DEFAULTS,p.goals||{});
       // Only seed demo data if all tables are empty AND no initialized flag
       const allEmpty=!D.deals.length&&!D.tenders.length&&!D.dists.length&&!D.salary.length&&!D.meetings.length&&!D.clients.length;
-      if(allEmpty&&!localStorage.getItem(LS_KEY+'_init'))seedData();
+      if(allEmpty&&!localStorage.getItem(LS_KEY+'_init')){
+        // Before seeding demo data, check IDB for a recent real backup
+        setTimeout(async()=>{
+          try{
+            const bkList=await idbList();
+            if(bkList&&bkList.length){
+              const latest=bkList[bkList.length-1];
+              const latestD=JSON.parse(latest.data);
+              const hasMeaningful=(latestD.deals||[]).length+(latestD.clients||[]).length+(latestD.meetings||[]).length>0;
+              if(hasMeaningful){
+                const when=new Date(latest.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+                showToastWithAction('🛡️ נמצא גיבוי אוטומטי מ-'+when+' – האם לשחזר?','↩ שחזר',()=>{
+                  D=Object.assign(emptyData(),latestD);
+                  localStorage.setItem(LS_KEY+'_init','1');
+                  saveAll();rAll();
+                  showToast('✅ נתונים שוחזרו בהצלחה מהגיבוי האוטומטי','ok');
+                });
+              }else{seedData();}
+            }else{seedData();}
+          }catch(e2){seedData();}
+        },800);
+      }else if(!allEmpty&&!localStorage.getItem(LS_KEY+'_init')){
+        localStorage.setItem(LS_KEY+'_init','1');
+      }
     }else{
       // localStorage missing — try IDB backup before seeding demo data
       setTimeout(async()=>{
@@ -5323,7 +5347,7 @@ function restoreData(){
 }
 
 // ===== AUTOMATIC BACKUP (IndexedDB rolling snapshots + daily file) =====
-const IDB_NAME='cem_hot_backups', IDB_STORE='snapshots', IDB_KEEP=30;
+const IDB_NAME='cem_hot_backups', IDB_STORE='snapshots', IDB_KEEP=100;
 function idbOpen(){
   return new Promise((res,rej)=>{
     let r;
@@ -5386,38 +5410,97 @@ async function openAutoBackups(){
   const list=await idbList();
   const box=document.getElementById('bk-list');
   if(!box)return;
-  if(!list.length){box.innerHTML='<div style="color:var(--text2);text-align:center;padding:20px">אין עדיין גיבויים אוטומטיים</div>';}
-  else{
-    box.innerHTML=list.slice().reverse().map(s=>{
-      let d={};try{d=JSON.parse(s.data);}catch(e){}
-      const cnt=(d.deals||[]).length+' עסקאות · '+(d.clients||[]).length+' לקוחות · '+(d.dists||[]).length+' הפצות';
-      const dt=new Date(s.ts).toLocaleString('he-IL');
-      const kb=Math.round((s.data||'').length/1024);
-      return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border)">
-        <div><div style="font-size:12px;font-weight:600">${dt}</div><div style="font-size:10px;color:var(--text2)">${cnt} · ${kb}KB</div></div>
-        <button class="btn btns" onclick="restoreFromIdb(${s.ts})" style="border-color:#06d6a0;color:#06d6a0">↩ שחזר</button>
-      </div>`;
-    }).join('');
+  if(!list.length){
+    box.innerHTML='<div style="color:var(--text2);text-align:center;padding:30px"><div style="font-size:32px;margin-bottom:8px">🔍</div><div style="font-size:13px;font-weight:600;margin-bottom:6px">אין גיבויים אוטומטיים שמורים</div><div style="font-size:11px">הגיבויים נשמרים אוטומטית כל 2 דקות בזמן השימוש<br>ובמכשיר הנוכחי</div></div>';
+    document.getElementById('mbackups').classList.add('open');
+    return;
   }
+  const sorted=list.slice().reverse(); // newest first
+  const todayStr=nd();
+  const todayMidnight=new Date(todayStr+'T00:00:00').getTime();
+  const todayItems=sorted.filter(s=>s.ts>=todayMidnight);
+  const olderItems=sorted.filter(s=>s.ts<todayMidnight);
+
+  function mkItem(s,highlight){
+    let d={};try{d=JSON.parse(s.data);}catch(e){}
+    const ttl=(d.deals||[]).length+(d.clients||[]).length+(d.meetings||[]).length+(d.dists||[]).length+(d.tenders||[]).length+(d.salary||[]).length;
+    const cnt=(d.deals||[]).length+' עסקאות · '+(d.clients||[]).length+' לקוחות · '+(d.meetings||[]).length+' פגישות';
+    const dt=new Date(s.ts);
+    const timeStr=dt.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+    const dateStr=dt.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'});
+    const isNow=(sorted[0].ts===s.ts);
+    const badge=isNow?'<span style="background:#06d6a0;color:#000;border-radius:4px;font-size:9px;padding:1px 5px;margin-right:4px;font-weight:800">עכשיו</span>':highlight?'<span style="background:#fbbf24;color:#000;border-radius:4px;font-size:9px;padding:1px 5px;margin-right:4px;font-weight:800">קרוב ל-18:00</span>':'';
+    const bg=highlight?'background:rgba(251,191,36,.08);':'';
+    return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);${bg}">
+      <div>
+        <div style="font-size:12px;font-weight:700">${badge}${timeStr} <span style="color:var(--text2);font-weight:400">${dateStr}</span></div>
+        <div style="font-size:10px;color:var(--text2);margin-top:2px">${cnt} · סה"כ ${ttl} רשומות</div>
+      </div>
+      <button class="btn btns" onclick="restoreFromIdb(${s.ts})" style="border-color:#06d6a0;color:#06d6a0;white-space:nowrap">↩ שחזר</button>
+    </div>`;
+  }
+
+  // Find backup closest to 18:00 today
+  const target18=new Date(todayStr+'T18:00:00').getTime();
+  let closest18=null,closest18Diff=Infinity;
+  todayItems.forEach(s=>{const diff=Math.abs(s.ts-target18);if(diff<closest18Diff){closest18Diff=diff;closest18=s;}});
+
+  let html='';
+  if(todayItems.length){
+    html+=`<div style="padding:8px 12px;font-size:11px;font-weight:800;color:var(--teal);background:rgba(6,214,160,.07);border-bottom:1px solid var(--border)">📅 היום – ${todayItems.length} גיבויים</div>`;
+    html+=todayItems.map(s=>mkItem(s,closest18&&s.ts===closest18.ts)).join('');
+  }
+  if(olderItems.length){
+    html+=`<div style="padding:8px 12px;font-size:11px;font-weight:800;color:var(--text3);background:rgba(255,255,255,.03);border-bottom:1px solid var(--border)">📦 ישן יותר – ${olderItems.length} גיבויים</div>`;
+    html+=olderItems.slice(0,10).map(s=>mkItem(s,false)).join('');
+    if(olderItems.length>10)html+=`<div style="text-align:center;padding:8px;font-size:11px;color:var(--text3)">ועוד ${olderItems.length-10} גיבויים ישנים...</div>`;
+  }
+  box.innerHTML=html;
+
+  // Add quick-restore bar for 18:00
+  const hdr=document.getElementById('mbackups').querySelector('.mhdr');
+  if(hdr&&closest18&&!hdr.querySelector('#restore-18-btn')){
+    const diff18=Math.round(Math.abs(closest18.ts-target18)/60000);
+    const timeLabel=new Date(closest18.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+    const bar=document.createElement('div');
+    bar.style.cssText='background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:8px 12px;margin:10px 0;display:flex;align-items:center;justify-content:space-between;gap:10px;direction:rtl;';
+    bar.innerHTML=`<div style="font-size:11px"><b style="color:#fbbf24">⭐ גיבוי קרוב ל-18:00</b><br><span style="color:var(--text2)">${timeLabel} (±${diff18} דקות)</span></div><button class="btn btns" id="restore-18-btn" onclick="restoreFromIdb(${closest18.ts})" style="border-color:#fbbf24;color:#fbbf24;white-space:nowrap">↩ שחזר 18:00</button>`;
+    hdr.insertAdjacentElement('afterend',bar);
+  }
+
   document.getElementById('mbackups').classList.add('open');
 }
 async function restoreFromIdb(ts){
   const list=await idbList();
   const snap=list.find(s=>s.ts===ts);
   if(!snap)return;
-  confirmAct('לשחזר את הנתונים מהגיבוי הזה? כל הנתונים הנוכחיים יוחלפו.',()=>{
+  const timeLabel=new Date(ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  const dateLabel=new Date(ts).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'});
+  confirmAct(`לשחזר נתונים מגיבוי של ${dateLabel} ${timeLabel}?\n\nהנתונים הנוכחיים יתמזגו עם הגיבוי — שום דבר לא יימחק.`,()=>{
     try{
       const p=JSON.parse(snap.data);
-      idbBackup(JSON.stringify(D)); // safety snapshot of current data before replacing
-      D=Object.assign(emptyData(),p);
+      idbBackup(JSON.stringify(D)); // safety snapshot of current data before merging
+      // Merge: keep all current items + restore items not in current (by ID)
+      const cols=['deals','tenders','dists','salary','meetings','clients','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
+      cols.forEach(col=>{
+        const curr=D[col]||[];
+        const bk=p[col]||[];
+        const currIds=new Set(curr.map(x=>String(x.id)));
+        const missing=bk.filter(x=>!currIds.has(String(x.id)));
+        if(missing.length)D[col]=[...curr,...missing];
+      });
+      // Restore goals and settings if current is empty
+      if(!D.goals||!Object.keys(D.goals).length)D.goals=p.goals||{};
+      D._deletedIds=D._deletedIds||p._deletedIds||{};
       saveAll();rAll();
       document.getElementById('mbackups').classList.remove('open');
-      toast('✅ הנתונים שוחזרו מהגיבוי האוטומטי','ok');
+      const totalRestored=['deals','clients','meetings','tenders','dists','salary'].reduce((s,c)=>s+(p[c]||[]).length,0);
+      showToast(`✅ שוחזרו ${totalRestored} רשומות מגיבוי ${dateLabel} ${timeLabel}. שום דבר לא נמחק!`,'ok');
     }catch(e){alert('שגיאה בשחזור: '+e.message);}
-  },'כן, שחזר');
+  },'כן, שחזר ומזג');
 }
-// periodic snapshot every 5 minutes while the app is open
-setInterval(()=>{ const app=document.getElementById('app'); if(app&&app.style.display!=='none') idbBackup(); }, 5*60*1000);
+// periodic snapshot every 2 minutes while the app is open
+setInterval(()=>{ const app=document.getElementById('app'); if(app&&app.style.display!=='none') idbBackup(); }, 2*60*1000);
 
 // Close modal when tapping the dark backdrop (mobile-friendly)
 document.addEventListener('click',e=>{

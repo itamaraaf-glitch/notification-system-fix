@@ -1,4 +1,4 @@
-const CACHE = 'hot-crm-v7';
+const CACHE = 'hot-crm-v8';
 const ASSETS = ['./manifest.json', './office-bg.jpg', './mountains-bg.mp4'];
 
 self.addEventListener('install', e => {
@@ -17,7 +17,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  // HTML pages: always network — never serve from cache so login fix always loads
+  // HTML pages: always network — never serve from cache so updates always load
   if (e.request.mode === 'navigate' ||
       e.request.url.endsWith('.html') ||
       e.request.url.endsWith('/')) {
