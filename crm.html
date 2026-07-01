@@ -1597,8 +1597,9 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
       </div>
     </div>
   </div>
-  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
     <button class="btn" onclick="closeM('mdeal')">ביטול</button>
+    <button class="btn btns" id="deal-email-btn" onclick="sendEmailToDeal(EI)" style="border-color:#0078d4;color:#4cc9f0;display:none">📧 שלח עדכון מייל ללקוח</button>
     <button class="btn btnp" onclick="saveDeal()">שמור עסקה</button>
   </div>
 </div></div>
@@ -4012,6 +4013,7 @@ function openM(type,id){
     document.getElementById('dtit').textContent=isNew?'עסקה חדשה':'עריכת עסקה';
     const d=isNew?{}:D.deals.find(x=>x.id==id)||{};
     document.getElementById('dd').value=d.date||nd();document.getElementById('dco').value=d.co||'';document.getElementById('dcp').value=d.cp||'';document.getElementById('din').value=d.inf||'הוט';document.getElementById('dsr').value=d.srv||'';document.getElementById('dv').value=d.v||0;document.getElementById('dmv').value=d.mv||0;document.getElementById('ddi').value=d.di||0;document.getElementById('ddn').value=d.dn||0;document.getElementById('dot').value=d.ot||0;document.getElementById('dotc').value=d.otc||0;document.getElementById('dct').value=d.ct||'';document.getElementById('dch').value=d.ch||0.99;document.getElementById('dst2').value=d.st||'ממתין לתשובה';document.getElementById('dty').value=d.ty||'long';document.getElementById('dno').value=d.no||'';document.getElementById('dptype').value=d.ptype||'';
+    const _deb=document.getElementById('deal-email-btn');if(_deb)_deb.style.display=isNew?'none':'';
     pendingQuote = d.quote || null;
     document.getElementById('dquote').value='';
     updateQuoteStatus();
