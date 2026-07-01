@@ -1108,12 +1108,12 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   <div class="lcard">
     <div class="llogo">CRM <span>| HOT Business</span></div>
     <div class="lsub">מערכת ניהול יומית – כניסה מאובטחת</div>
-    <!-- decoy fields: the browser autofills THESE (off-screen), leaving the real ones empty -->
-    <input type="text" tabindex="-1" aria-hidden="true" autocomplete="username" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;top:-9999px">
-    <input type="password" tabindex="-1" aria-hidden="true" autocomplete="current-password" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;top:-9999px">
-    <div class="lg"><label>שם משתמש</label><input type="text" id="lu" placeholder="שם משתמש" autocomplete="off" name="usr_2f9x" readonly onfocus="this.removeAttribute('readonly')" onkeydown="if(event.key==='Enter')doLogin()"></div>
-    <div class="lg"><label>סיסמה</label><div style="position:relative"><input type="text" id="lp" placeholder="סיסמה" autocomplete="off" name="pwd_7k3q" readonly onfocus="this.removeAttribute('readonly');this.type='password'" onblur="if(!this.value)this.type='text'" onkeydown="if(event.key==='Enter')doLogin()" style="padding-left:36px"><button type="button" onclick="(function(){const i=document.getElementById('lp');const b=document.getElementById('lp-eye');if(i.type==='password'){i.type='text';b.textContent='🙈';}else{i.type='password';b.textContent='👁';}})()" id="lp-eye" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;line-height:1;color:var(--text3);padding:4px;-webkit-tap-highlight-color:transparent">👁</button></div></div>
-    <button class="lbtn" onclick="doLogin()">כניסה למערכת</button>
+    <!-- honeypot: bots fill this, humans don't see it -->
+    <input type="text" id="lhp" tabindex="-1" aria-hidden="true" autocomplete="username" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;top:-9999px" name="username">
+    <input type="password" tabindex="-1" aria-hidden="true" autocomplete="current-password" style="position:absolute;opacity:0;height:0;width:0;pointer-events:none;top:-9999px" name="password">
+    <div class="lg"><label>שם משתמש</label><input type="text" id="lu" placeholder="שם משתמש" autocomplete="new-password" name="usr_x9k2" spellcheck="false" onkeydown="if(event.key==='Enter')document.getElementById('lp').focus()"></div>
+    <div class="lg"><label>סיסמה</label><div style="position:relative"><input type="password" id="lp" placeholder="סיסמה" autocomplete="new-password" name="pwd_m4r7" onkeydown="if(event.key==='Enter')doLogin()" style="padding-left:36px"><button type="button" onclick="(function(){const i=document.getElementById('lp');const b=document.getElementById('lp-eye');if(i.type==='password'){i.type='text';b.textContent='🙈';}else{i.type='password';b.textContent='👁';}})()" id="lp-eye" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;line-height:1;color:var(--text3);padding:4px;-webkit-tap-highlight-color:transparent">👁</button></div></div>
+    <button class="lbtn" id="lbtn" onclick="doLogin()">כניסה למערכת</button>
     <div class="lerr" id="lerr"></div>
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(200,169,110,.1);display:flex;align-items:center;justify-content:center;gap:12px">
       <span style="font-size:9px;color:rgba(74,82,110,.5);letter-spacing:.8px;text-transform:uppercase">HOT Business · v3.7 · 2026</span>
@@ -1839,27 +1839,55 @@ async function sha256(str){
   }
   return _sha256(str);
 }
-let _loginAttempts=0,_loginLock=0;
+// ── LOGIN SECURITY ──────────────────────────────────────────────────────────
+// Attempts and lock-until are stored in localStorage so page-refresh cannot
+// reset the counter. After 5 wrong tries → 10 min lock; after 10 → 1 hour.
+const _LS_ATT='_hot_att', _LS_LCK='_hot_lck';
+function _getAtt(){return parseInt(localStorage.getItem(_LS_ATT)||'0',10);}
+function _getLck(){return parseInt(localStorage.getItem(_LS_LCK)||'0',10);}
+function _setAtt(n){localStorage.setItem(_LS_ATT,n);}
+function _setLck(ts){localStorage.setItem(_LS_LCK,ts);}
+function _clearAuth(){localStorage.removeItem(_LS_ATT);localStorage.removeItem(_LS_LCK);}
+function _lockDuration(att){
+  if(att>=10)return 3600;   // 1 hour after 10 attempts
+  if(att>=5) return 600;    // 10 min after 5 attempts
+  return Math.min(30,Math.pow(2,att-1)); // 1,2,4,8,16,30 sec
+}
+function _showLockMsg(sec){
+  const m=sec>=3600?'חסום לשעה':sec>=60?`חסום ${Math.ceil(sec/60)} דקות`:`נסה שוב בעוד ${sec} שניות`;
+  document.getElementById('lerr').textContent=m;
+}
+// Disable/enable login button visually
+function _setBusy(on){const b=document.getElementById('lbtn');if(b){b.disabled=on;b.style.opacity=on?'.5':'';}}
+
 async function doLogin(){
-  const ts=Date.now();
-  if(ts<_loginLock){
-    const sec=Math.ceil((_loginLock-ts)/1000);
-    document.getElementById('lerr').textContent=`נסה שוב בעוד ${sec} שניות`;return;
-  }
-  const u=document.getElementById('lu').value.trim(),p=document.getElementById('lp').value;
-  if(!u||!p){document.getElementById('lerr').textContent='נא למלא שם משתמש וסיסמה';return;}
+  const errEl=document.getElementById('lerr');
+  // ── lockout check ──────────────────────────────────────────────────────────
+  const lck=_getLck();const nowMs=Date.now();
+  if(lck>nowMs){_showLockMsg(Math.ceil((lck-nowMs)/1000));return;}
+  // ── honeypot check (bots fill visible-named fields) ───────────────────────
+  const hp=document.getElementById('lhp');
+  if(hp&&hp.value){errEl.textContent='שגיאה';return;} // silent reject
+  // ── empty check ───────────────────────────────────────────────────────────
+  const u=document.getElementById('lu').value.trim();
+  const p=document.getElementById('lp').value;
+  if(!u||!p){errEl.textContent='נא למלא שם משתמש וסיסמה';return;}
+  // ── hash ──────────────────────────────────────────────────────────────────
+  _setBusy(true);errEl.textContent='';
   let uh,ph;
   try{[uh,ph]=await Promise.all([sha256(u),sha256(p)]);}
-  catch(e){document.getElementById('lerr').textContent='שגיאה פנימית – נסה שוב';return;}
+  catch(e){errEl.textContent='שגיאה פנימית – נסה שוב';_setBusy(false);return;}
+  // ── compare ───────────────────────────────────────────────────────────────
   const f=USERS.find(x=>x.u===uh&&x.p===ph);
+  _setBusy(false);
   if(!f){
-    _loginAttempts++;
-    const delay=Math.min(30,Math.pow(2,_loginAttempts-1))*1000;
-    _loginLock=Date.now()+delay;
-    const msg=_loginAttempts>=3?`שם משתמש או סיסמה שגויים — נחסם ל-${delay/1000} שניות`:'שם משתמש או סיסמה שגויים';
-    document.getElementById('lerr').textContent=msg;return;
+    const att=_getAtt()+1;_setAtt(att);
+    const delaySec=_lockDuration(att);
+    _setLck(Date.now()+delaySec*1000);
+    const msg=att>=5?`שם משתמש או סיסמה שגויים — ${delaySec>=3600?'חסום לשעה':delaySec>=60?`חסום ${Math.ceil(delaySec/60)} דקות`:`חסום ${delaySec} שניות`}`:'שם משתמש או סיסמה שגויים';
+    errEl.textContent=msg;return;
   }
-  _loginAttempts=0;_loginLock=0;
+  _clearAuth();
   document.getElementById('lerr').textContent='';
   const loginEl=document.getElementById('login');
   const appEl=document.getElementById('app');
@@ -5346,6 +5374,25 @@ if('serviceWorker' in navigator){
     });
   }).catch(()=>{});
 }
+// ── Login page init: show lockout state if still blocked ────────────────────
+(function(){
+  try{
+    const lck=parseInt(localStorage.getItem('_hot_lck')||'0',10);
+    const rem=lck-Date.now();
+    if(rem>0){
+      const el=document.getElementById('lerr');
+      if(el){
+        const sec=Math.ceil(rem/1000);
+        el.textContent=sec>=3600?'חסום לשעה':sec>=60?`חסום ${Math.ceil(sec/60)} דקות`:`נסה שוב בעוד ${sec} שניות`;
+      }
+      const btn=document.getElementById('lbtn');if(btn){btn.disabled=true;btn.style.opacity='.5';}
+      // re-enable once lock expires
+      setTimeout(()=>{
+        if(el)el.textContent='';if(btn){btn.disabled=false;btn.style.opacity='';}
+      },rem);
+    }
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
