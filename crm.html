@@ -4239,10 +4239,13 @@ const IMP_DATE={deals:['date'],tenders:['pub','deadline','questions','quote'],di
 function _pad2(n){return String(n).padStart(2,'0');}
 // Use UTC methods so Excel Date objects (stored as UTC midnight) don't shift by timezone offset
 function _toYMD(d){return d.getUTCFullYear()+'-'+_pad2(d.getUTCMonth()+1)+'-'+_pad2(d.getUTCDate());}
-// Accepts Excel Date objects, Excel serial numbers, and common string formats
+// Accepts Excel Date objects (raw:true), Excel serial numbers, and common string formats
 function normalizeImportDate(v){
   if(v==null||v==='')return'';
+  // Date object from SheetJS raw:true — stored as UTC midnight
   if(v instanceof Date&&!isNaN(v))return _toYMD(v);
+  // Also handle date-like objects (cross-frame instanceof guard)
+  if(v&&typeof v==='object'&&typeof v.getUTCFullYear==='function'&&!isNaN(v))return _toYMD(v);
   const sNum=String(v).trim();
   if(!sNum)return'';
   // Excel serial number (days since 1899-12-30)
@@ -4251,19 +4254,16 @@ function normalizeImportDate(v){
     const tmp=new Date(ms);
     if(!isNaN(tmp)){const uf=n=>String(n).padStart(2,'0');return tmp.getUTCFullYear()+'-'+uf(tmp.getUTCMonth()+1)+'-'+uf(tmp.getUTCDate());}
   }
-  // Strip time part if present (e.g. "01/07/2025 00:00:00" or "2025-07-01T00:00:00")
+  // Strip time/timezone suffix (e.g. "01/07/2025 00:00:00" or "2025-07-01T00:00:00Z")
   const s=sNum.replace(/[T ]\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/,'').trim();
-  let m=s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);           // YYYY-MM-DD
+  let m;
+  m=s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);               // YYYY-MM-DD (ISO)
   if(m)return m[1]+'-'+_pad2(m[2])+'-'+_pad2(m[3]);
-  m=s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/);             // DD/MM/YYYY or DD-MM-YYYY
+  m=s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/);             // DD/MM/YYYY European
   if(m){let y=m[3];if(y.length===2)y='20'+y;return y+'-'+_pad2(m[2])+'-'+_pad2(m[1]);}
-  // Relaxed: allow trailing non-digit chars (e.g. "01/07/2025 extra")
-  m=s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
-  if(m)return m[1]+'-'+_pad2(m[2])+'-'+_pad2(m[3]);
-  m=s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/);
-  if(m){let y=m[3];if(y.length===2)y='20'+y;return y+'-'+_pad2(m[2])+'-'+_pad2(m[1]);}
+  // Last resort: browser Date parse — use LOCAL time methods to avoid UTC offset shift
   const d=new Date(sNum);
-  if(!isNaN(d))return _toYMD(d);
+  if(!isNaN(d))return d.getFullYear()+'-'+_pad2(d.getMonth()+1)+'-'+_pad2(d.getDate());
   return'';
 }
 
@@ -4281,7 +4281,7 @@ function handleImport(ev,sec){
       if(!window.XLSX){toast('⚠️ ספריית Excel טרם נטענה – רענן ונסה שוב','warn');return;}
       const wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
       const ws=wb.Sheets[wb.SheetNames[0]];
-      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
       if(!data||data.length<2){toast('⚠️ הקובץ ריק או חסרות שורות נתונים','warn');return;}
       const hdrs=data[0].map(h=>String(h||'').trim().toLowerCase());
       const smap=IMP_MAP[sec]||{};
@@ -4322,14 +4322,9 @@ function handleImport(ev,sec){
             added++;return;
           }
         }
-        // section defaults — date fields: only apply nd() default if the column was absent from the file
-        const mappedKeys=new Set(Object.values(colMap));
+        // section defaults — apply only when field is absent/empty
         const defs={deals:{st:'ממתין לתשובה',ty:'long',date:nd()},tenders:{submitted:'לא',qty:1},dists:{st:'ממתין להפצה',ty:'long',dt:nd()},salary:{st:'פתוח',ty:'service',qt:1},meetings:{dt:nd(),hl:'לא'},clients:{status:'לקוח'}};
-        const secDateFlds=new Set(IMP_DATE[sec]||[]);
-        Object.entries(defs[sec]||{}).forEach(([k,dv])=>{
-          if(secDateFlds.has(k)){if(!mappedKeys.has(k))obj[k]=dv;} // date: only default when column absent
-          else if(!obj[k]&&obj[k]!==0)obj[k]=dv;
-        });
+        Object.entries(defs[sec]||{}).forEach(([k,dv])=>{if(!obj[k]&&obj[k]!==0)obj[k]=dv;});
         if(sec==='deals'&&!obj.num)obj.num=nextDealNum();
         const ins=dbInsert(sec,obj);
         if(ins&&sec==='deals'&&ins.st==='נסגר'){syncDealToClient(ins,true);syncDealToSalary(ins,true);syncDealToDist(ins,true);}
