@@ -4226,18 +4226,19 @@ function dlCSV(name,csv){
 }
 // ===== EXCEL IMPORT =====
 const IMP_MAP={
-  deals:{'תאריך':'date','#':'num','שם חברה':'co','תשתית':'inf','שירות':'srv','שווי':'v','חודש נוכחי':'mv','הפצה':'di','חודש הבא':'dn','otc נסגר':'otc','otc':'ot','מול מי':'ct','סיכוי':'ch','סטטוס':'st','סוג':'ty','סוג מוצר':'ptype','הערות':'no'},
+  deals:{'תאריך':'date','#':'num','שם חברה':'co','ח.פ':'cp','תשתית':'inf','שירות':'srv','שווי':'v','חודש נוכחי':'mv','הפצה':'di','חודש הבא':'dn','otc נסגר':'otc','otc':'ot','מול מי':'ct','סיכוי':'ch','סטטוס':'st','סוג':'ty','סוג מוצר':'ptype','הערות':'no'},
   tenders:{'שם מכרז':'name','מס פרויקט':'proj','פרסום':'pub','הצעה':'quote','שאלות':'questions','הגשה':'deadline','סבבים':'rounds','מטפל':'handler','סכום':'amount','כמות':'qty','הוגשה':'submitted','צימוד':'linked','מסמכים':'docs','הערות':'notes'},
   dists:{'מטפל':'hd','גורם מטפל':'hp','מס פרויקט':'no','שם חברה':'co','לקוח':'cl','it':'it','פתרון':'so','כתובת':'ad','הכנסה חודשית':'inc','יעד הכנסה':'tgt','יעד':'tgt','ציוד':'eq','חוסרים':'mi','סטטוס':'st','תאריך':'dt','סוג':'ty','סוג מוצר':'ptype'},
   salary:{'מס פרויקט':'pj','שם לקוח':'cl','כמות':'qt','יעד':'tr','סגירה':'cl2','יתרה':'pv','סטטוס':'st','סוג':'ty','הערות':'no'},
   meetings:{'תאריך':'dt','שם לקוח':'cl','מס פגישה':'nu','התקיימה':'hl','הערות':'no'},
-  clients:{'שם חברה':'name','איש קשר':'contact','טלפון':'phone','אימייל':'email','כתובת':'address','סטטוס':'status','הערות':'genNotes'}
+  clients:{'שם חברה':'name','ח.פ':'cp','איש קשר':'contact','טלפון':'phone','אימייל':'email','כתובת':'address','סטטוס':'status','הערות':'genNotes'}
 };
 const IMP_NUM={deals:['v','mv','di','dn','ot','otc'],tenders:['amount','qty'],dists:['inc','tgt','eq'],salary:['qt','tr','cl2','pv'],meetings:['nu'],clients:[]};
 // date fields per section — normalised to YYYY-MM-DD so month filtering works
 const IMP_DATE={deals:['date'],tenders:['pub','deadline'],dists:['dt'],salary:[],meetings:['dt'],clients:[]};
 function _pad2(n){return String(n).padStart(2,'0');}
-function _toYMD(d){return d.getFullYear()+'-'+_pad2(d.getMonth()+1)+'-'+_pad2(d.getDate());}
+// Use UTC methods so Excel Date objects (stored as UTC midnight) don't shift by timezone offset
+function _toYMD(d){return d.getUTCFullYear()+'-'+_pad2(d.getUTCMonth()+1)+'-'+_pad2(d.getUTCDate());}
 // Accepts Excel Date objects, Excel serial numbers, and common string formats
 function normalizeImportDate(v){
   if(v==null||v==='')return'';
@@ -4245,8 +4246,10 @@ function normalizeImportDate(v){
   const sNum=String(v).trim();
   // Excel serial number (days since 1899-12-30)
   if(typeof v==='number'||(/^\d+(\.\d+)?$/.test(sNum)&&+sNum>1000&&+sNum<80000)){
-    const d=new Date(Math.round((+sNum-25569)*86400*1000));
-    if(!isNaN(d))return _toYMD(d);
+    // Excel serial to UTC date — use Date.UTC so timezone doesn't shift the day
+    const ms=Math.round((+sNum-25569)*86400*1000);
+    const tmp=new Date(ms);
+    if(!isNaN(tmp)){const uf=n=>String(n).padStart(2,'0');return tmp.getUTCFullYear()+'-'+uf(tmp.getUTCMonth()+1)+'-'+uf(tmp.getUTCDate());}
   }
   const s=sNum;
   let m=s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);            // YYYY-MM-DD
@@ -4325,12 +4328,12 @@ function handleImport(ev,sec){
 function exportExcel(section){
   let hdrs,rows;
   switch(section){
-    case'deals':hdrs=['תאריך','#','שם חברה','תשתית','שירות','שווי','חודש נוכחי','הפצה','חודש הבא','OTC','OTC נסגר','מול מי','סיכוי','סטטוס','סוג','סוג מוצר','הערות'];rows=D.deals.map(d=>[d.date?fmtDate(d.date):'',d.num||'',d.co||'',d.inf||'',d.srv||'',d.v||0,d.mv||0,d.di||0,d.dn||0,d.ot||0,d.otc||0,d.ct||'',Math.round((d.ch||0)*100)+'%',d.st||'',d.ty==='long'?'ארוך':'קצר',ptypeLabel(d.ptype),d.no||'']);break;
+    case'deals':hdrs=['תאריך','#','שם חברה','ח.פ','תשתית','שירות','שווי','חודש נוכחי','הפצה','חודש הבא','OTC','OTC נסגר','מול מי','סיכוי','סטטוס','סוג','סוג מוצר','הערות'];rows=D.deals.map(d=>[d.date?fmtDate(d.date):'',d.num||'',d.co||'',d.cp||'',d.inf||'',d.srv||'',d.v||0,d.mv||0,d.di||0,d.dn||0,d.ot||0,d.otc||0,d.ct||'',Math.round((d.ch||0)*100)+'%',d.st||'',d.ty==='long'?'ארוך':'קצר',ptypeLabel(d.ptype),d.no||'']);break;
     case'tenders':hdrs=['שם מכרז','מס פרויקט','פרסום','הצעה','שאלות','הגשה','סבבים','מטפל','סכום','כמות','הוגשה','צימוד','מסמכים','הערות'];rows=D.tenders.map(t=>[t.name||'',t.proj||'',t.pub?fmtDate(t.pub):'',t.quote||'',t.questions||'',t.deadline?fmtDate(t.deadline):'',t.rounds||'',t.handler||'',t.amount||0,t.qty||1,t.submitted||'',t.linked||'',t.docs||'',t.notes||'']);break;
     case'dists':hdrs=['מטפל','גורם מטפל','מס פרויקט','שם חברה','לקוח','IT','פתרון','כתובת','הכנסה חודשית','יעד הכנסה','ציוד','חוסרים','סטטוס','תאריך','סוג','סוג מוצר'];rows=D.dists.map(d=>[d.hd||'',d.hp||'',d.no||'',d.co||'',d.cl||'',d.it||'',d.so||'',d.ad||'',d.inc||0,d.tgt||0,d.eq||0,d.mi||'',d.st||'',d.dt?fmtDate(d.dt):'',d.ty==='long'?'ארוך':'קצר',ptypeLabel(d.ptype)]);break;
     case'salary':hdrs=['מס פרויקט','שם לקוח','כמות','יעד','סגירה','יתרה','סטטוס','סוג','הערות'];rows=D.salary.map(s=>[s.pj||'',s.cl||'',s.qt||1,s.tr||0,s.cl2||0,s.pv||0,s.st||'',s.ty==='service'?'שירות':'ציוד',s.no||'']);break;
     case'meetings':hdrs=['תאריך','שם לקוח','מס פגישה','התקיימה','הערות'];rows=D.meetings.map(m=>[m.dt?fmtDate(m.dt):'',m.cl||'',m.nu||'',m.hl||'',m.no||'']);break;
-    case'clients':hdrs=['שם חברה','איש קשר','טלפון','אימייל','כתובת','סטטוס','קווים','FORTI','CISCO','M365','STARLINK','הערות'];rows=D.clients.map(c=>[c.name||'',c.contact||'',c.phone||'',c.email||'',c.address||'',c.status||'',(c.lines||[]).length,(c.forti||[]).length,(c.cisco||[]).length,(c.ms365||[]).length,(c.starlink||[]).length,c.genNotes||'']);break;
+    case'clients':hdrs=['שם חברה','ח.פ','איש קשר','טלפון','אימייל','כתובת','סטטוס','קווים','FORTI','CISCO','M365','STARLINK','הערות'];rows=D.clients.map(c=>[c.name||'',c.cp||'',c.contact||'',c.phone||'',c.email||'',c.address||'',c.status||'',(c.lines||[]).length,(c.forti||[]).length,(c.cisco||[]).length,(c.ms365||[]).length,(c.starlink||[]).length,c.genNotes||'']);break;
     case'workplan':{let allPots=[];D.clients.forEach(c=>{(c.potential||[]).forEach(p=>{allPots.push({...p,clientName:c.name});});});hdrs=['לקוח','סוג מוצר','שם מוצר','שווי משוער','עדיפות','יעד סגירה','סטטוס','הערות'];rows=allPots.map(p=>[p.clientName||'',p.productType||'',p.product||'',p.estimatedValue||0,p.priority||'',p.targetDate?fmtDate(p.targetDate):'',p.status||'',p.notes||'']);break;}
     default:return;
   }
