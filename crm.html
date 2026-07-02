@@ -991,6 +991,11 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 .cal-menu-btn{display:block;width:100%;background:transparent;border:none;color:var(--text);padding:8px 12px;text-align:right;cursor:pointer;border-radius:8px;font-family:'Heebo',sans-serif;font-size:12px;transition:background .15s}
 .cal-menu-btn:hover{background:rgba(255,255,255,.07)}
 
+/* ── Custom select enhanced dropdown items ── */
+.cs-opt{padding:9px 13px;font-size:13px;font-family:'Heebo',sans-serif;color:#fff;cursor:pointer;border-radius:6px;text-align:right;white-space:nowrap;transition:background .12s}
+.cs-opt:not(.cs-selected):hover{background:rgba(255,255,255,.10)}
+.cs-opt.cs-selected{background:#2563eb;font-weight:600}
+
 /* ── Client card status-matched hover glow ── */
 .client-card.cl-active:hover{box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 32px rgba(6,214,160,.18)}
 .client-card.cl-potential:hover{box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 32px rgba(76,201,240,.18)}
@@ -6712,13 +6717,8 @@ function refreshEdges(){} // no-op, kept so nav() calls don't throw
       'min-width:'+Math.max(r.width,130)+'px;direction:rtl';
     Array.from(sel.options).forEach((o,i)=>{
       const it = document.createElement('div');
+      it.className = 'cs-opt' + (i===sel.selectedIndex ? ' cs-selected' : '');
       it.textContent = o.textContent;
-      it.style.cssText =
-        'padding:9px 13px;font-size:13px;font-family:Heebo,sans-serif;color:#fff;'+
-        'cursor:pointer;border-radius:6px;text-align:right;white-space:nowrap;'+
-        (i===sel.selectedIndex ? 'background:#2563eb;font-weight:600;' : '');
-      it.addEventListener('mouseenter',()=>{ if(i!==sel.selectedIndex) it.style.background='rgba(255,255,255,.10)'; });
-      it.addEventListener('mouseleave',()=>{ if(i!==sel.selectedIndex) it.style.background=''; });
       function selectItem(ev){ ev.preventDefault(); ev.stopPropagation(); if(sel.selectedIndex!==i){sel.selectedIndex=i;sel.dispatchEvent(new Event('change',{bubbles:true}));} close(); }
       it.addEventListener('mousedown', selectItem);
       it.addEventListener('touchend',  selectItem);
