@@ -344,7 +344,7 @@ body{font-family:'Heebo',sans-serif;background:#080c18;color:var(--text);font-si
 .thdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border);font-size:12px;font-weight:800;gap:8px;flex-wrap:wrap;background:rgba(255,255,255,.025);letter-spacing:-.2px}
 .tscroll{overflow:auto;max-height:60vh;cursor:grab;user-select:none;-webkit-overflow-scrolling:touch;touch-action:auto}
 .tscroll:active{cursor:grabbing}
-table{width:max-content;min-width:100%;border-collapse:collapse;font-size:11px}
+table{width:max-content;min-width:100%;border-collapse:collapse;font-size:12px}
 th{position:sticky;top:0;z-index:2;padding:9px 12px;text-align:right;font-weight:800;color:var(--text3);font-size:9px;border-bottom:1px solid var(--border);white-space:nowrap;background:linear-gradient(180deg,#131b2e,#111828);text-transform:uppercase;letter-spacing:.6px;box-shadow:0 1px 0 var(--border)}
 td{padding:8px 12px;border-bottom:1px solid rgba(28,38,64,.4);color:var(--text);vertical-align:middle;white-space:nowrap;transition:background .12s}
 tr:nth-child(even) td{background:rgba(255,255,255,.012)}
@@ -494,7 +494,7 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
 .mcls:hover{color:var(--red);background:rgba(230,57,70,.1)}
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .fg .g{display:flex;flex-direction:column;gap:4px}
-.fg .g label,.fg .gf label{font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.7px}
+.fg .g label,.fg .gf label{font-size:10.5px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.7px}
 .fg .gf{grid-column:1/-1;display:flex;flex-direction:column;gap:4px}
 .msec{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;backdrop-filter:blur(4px)}
 .msec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -1825,6 +1825,14 @@ tr:hover td{background:rgba(255,255,255,.038)!important}
         <button type="button" class="btn btns btnd" id="dquote-rm" onclick="removeQuote()" style="display:none">🗑 הסר</button>
       </div>
     </div>
+    <div class="gf"><label>📎 קבצים מצורפים (Word / PDF / Excel / תמונה)</label>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="file" id="att-inp-deal" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('deal',event)">
+        <button type="button" class="btn btns" onclick="document.getElementById('att-inp-deal').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
+        <span style="font-size:9px;color:var(--text3)">עד 2MB לקובץ</span>
+      </div>
+      <div id="att-list-deal"></div>
+    </div>
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
     <button class="btn" onclick="closeM('mdeal')">ביטול</button>
@@ -1852,6 +1860,14 @@ tr:hover td{background:rgba(255,255,255,.038)!important}
     <div class="g"><label>צימוד?</label><select id="tln"><option value="לא">לא</option><option value="כן">כן</option></select></div>
     <div class="gf"><label>מסמכים</label><input type="text" id="tdc"></div>
     <div class="gf"><label>הערות</label><textarea id="tno" rows="2"></textarea></div>
+    <div class="gf"><label>📎 קבצים מצורפים (Word / PDF / Excel / תמונה)</label>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="file" id="att-inp-tender" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('tender',event)">
+        <button type="button" class="btn btns" onclick="document.getElementById('att-inp-tender').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
+        <span style="font-size:9px;color:var(--text3)">עד 2MB לקובץ</span>
+      </div>
+      <div id="att-list-tender"></div>
+    </div>
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
     <button class="btn" onclick="closeM('mtender')">ביטול</button>
@@ -1879,6 +1895,14 @@ tr:hover td{background:rgba(255,255,255,.038)!important}
     <div class="g"><label>סוג</label><select id="dity"><option value="long">מרכז – ארוך</option><option value="short">הפצה – קצר</option></select></div>
     <div class="g"><label>סוג מוצר / ציוד</label><select id="diptype"><option value="">— אוטומטי —</option><option value="lines">📡 קו תקשורת</option><option value="forti">🛡️ FortiGate</option><option value="cisco">🔵 Cisco</option><option value="hp">🟣 HP / Aruba</option><option value="juniper">🟢 Juniper</option><option value="cybiz">🔐 CYBIZ / אבטחה</option><option value="starlink">🛰️ Starlink</option><option value="pbx">☎️ מרכזייה</option><option value="ms365">📧 Microsoft 365</option><option value="helpdesk">🎧 Helpdesk</option><option value="servers">🖥️ שרתים</option><option value="extra">📝 פתרון נוסף</option></select></div>
     <div class="gf"><label>חוסרים</label><textarea id="dimi" rows="2"></textarea></div>
+    <div class="gf"><label>📎 קבצים מצורפים (Word / PDF / Excel / תמונה)</label>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="file" id="att-inp-dist" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('dist',event)">
+        <button type="button" class="btn btns" onclick="document.getElementById('att-inp-dist').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
+        <span style="font-size:9px;color:var(--text3)">עד 2MB לקובץ</span>
+      </div>
+      <div id="att-list-dist"></div>
+    </div>
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
     <button class="btn" onclick="closeM('mdist')">ביטול</button>
@@ -1901,6 +1925,14 @@ tr:hover td{background:rgba(255,255,255,.038)!important}
     <div class="g"><label>סטטוס</label><select id="sst"><option>פתוח</option><option>בתהליך</option><option>סגור</option><option>חלקי</option></select></div>
     <div class="g"><label>סוג</label><select id="sty"><option value="service">שירות</option><option value="equipment">ציוד (OTC)</option></select></div>
     <div class="gf"><label>הערות</label><textarea id="sno" rows="2"></textarea></div>
+    <div class="gf"><label>📎 קבצים מצורפים (Word / PDF / Excel / תמונה)</label>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="file" id="att-inp-salary" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('salary',event)">
+        <button type="button" class="btn btns" onclick="document.getElementById('att-inp-salary').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
+        <span style="font-size:9px;color:var(--text3)">עד 2MB לקובץ</span>
+      </div>
+      <div id="att-list-salary"></div>
+    </div>
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
     <button class="btn" onclick="closeM('msalary')">ביטול</button>
@@ -1919,12 +1951,39 @@ tr:hover td{background:rgba(255,255,255,.038)!important}
     <div class="g"><label>מס׳ פגישה / פרויקט</label><input type="text" id="mnu"></div>
     <div class="g"><label>התקיימה?</label><select id="mhl"><option value="לא">לא</option><option value="כן">כן</option><option value="מבוטל">מבוטל</option></select></div>
     <div class="gf"><label>הערות</label><textarea id="mno" rows="2"></textarea></div>
+    <div class="gf"><label>📎 קבצים מצורפים (Word / PDF / Excel / תמונה)</label>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="file" id="att-inp-meeting" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('meeting',event)">
+        <button type="button" class="btn btns" onclick="document.getElementById('att-inp-meeting').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
+        <span style="font-size:9px;color:var(--text3)">עד 2MB לקובץ</span>
+      </div>
+      <div id="att-list-meeting"></div>
+    </div>
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
     <button class="btn" onclick="closeM('mmeeting')">ביטול</button>
+    <button id="meet-sum-btn" class="btn" onclick="openMeetingSummary(EI)" style="display:none;border-color:var(--gold);color:var(--gold)" title="סיכום פגישה אוטומטי מקצועי">📝 סיכום פגישה</button>
     <button id="meet-cal-btn" class="btn" onclick="addToCalendar(EI)" style="display:none;border-color:#a78bfa;color:#a78bfa" title="הורד קובץ ICS להוספה ליומן">📆 הוסף ליומן</button>
     <button id="meet-invite-btn" class="btn" onclick="sendMeetingInviteEmail(EI)" style="display:none;border-color:#4cc9f0;color:#4cc9f0" title="שלח הזמנת פגישה ללקוח במייל">📧 שלח הזמנה</button>
     <button class="btn btnp" onclick="saveMeet()">שמור פגישה</button>
+  </div>
+</div></div>
+
+<!-- MEETING SUMMARY MODAL -->
+<div class="mw" id="msummary"><div class="modal" style="max-width:640px">
+  <div class="mhdr"><h3 id="sum-title">📝 סיכום פגישה</h3><button class="mcls" onclick="closeM('msummary')">✕</button></div>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+    <label style="font-size:10px;font-weight:800;color:var(--text3)">🔢 מספר פרויקט</label>
+    <input type="text" id="sum-proj" placeholder="לא חובה" style="width:120px">
+    <button class="btn btns" onclick="regenSummary()" style="border-color:#a78bfa;color:#a78bfa" title="בנה מחדש את הסיכום מנתוני המערכת">🔄 צור מחדש</button>
+    <span style="font-size:9px;color:var(--text3)">הסיכום נבנה אוטומטית מכל נתוני הלקוח — ניתן לערוך לפני שליחה</span>
+  </div>
+  <textarea id="sum-text" rows="18" style="width:100%;font-size:12px;line-height:1.7;direction:rtl"></textarea>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">
+    <button class="btn" onclick="closeM('msummary')">סגור</button>
+    <button class="btn btns" onclick="copySummary()" style="border-color:#f4a261;color:#f4a261">📋 העתק</button>
+    <button class="btn btns" onclick="emailSummary()" style="border-color:#4cc9f0;color:#4cc9f0">📧 שלח במייל</button>
+    <button class="btn btnp" onclick="saveSummaryToMeeting()">💾 שמור בפגישה</button>
   </div>
 </div></div>
 
@@ -1956,6 +2015,14 @@ tr:hover td{background:rgba(255,255,255,.038)!important}
   </div>
   <div class="fg" style="margin-bottom:10px">
     <div class="gf"><label>הערות כלליות</label><textarea id="cl-gen-notes" rows="2"></textarea></div>
+    <div class="gf"><label>📎 קבצים מצורפים (Word / PDF / Excel / תמונה)</label>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="file" id="att-inp-client" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('client',event)">
+        <button type="button" class="btn btns" onclick="document.getElementById('att-inp-client').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
+        <span style="font-size:9px;color:var(--text3)">עד 2MB לקובץ</span>
+      </div>
+      <div id="att-list-client"></div>
+    </div>
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end">
     <button class="btn" onclick="closeM('mclient')">ביטול</button>
@@ -2016,6 +2083,20 @@ const sameCo = (a,b) => {const x=nrmCo(a),y=nrmCo(b);return !!x&&x===y;};
 const findClientByName = name => D.clients.find(c=>sameCo(c.name,name));
 const heldThisMonth = () => {const m=nd().substring(0,7);return D.meetings.filter(x=>x.hl==='כן'&&(x.dt||'').startsWith(m)).length;};
 function wdM(y,m){let c=0;const d=new Date(y,m,1);while(d.getMonth()===m){if(d.getDay()!==5&&d.getDay()!==6)c++;d.setDate(d.getDate()+1);}return c;}
+// תצוגה ישראלית (יום/חודש/שנה) ליד כל שדה תאריך — גם כשהדפדפן מציג mm/dd/yyyy
+function initDateHints(root){
+  (root||document).querySelectorAll('input[type=date]').forEach(inp=>{
+    if(inp._dhint){inp._dhintUpd&&inp._dhintUpd();return;}
+    inp._dhint=true;
+    const b=document.createElement('span');
+    b.style.cssText='display:block;font-size:10px;color:var(--gold);margin-top:2px;font-weight:600;direction:rtl';
+    inp.insertAdjacentElement('afterend',b);
+    const upd=()=>{b.textContent=inp.value?('📅 '+fmtDate(inp.value)):'';};
+    inp._dhintUpd=upd;
+    inp.addEventListener('change',upd);inp.addEventListener('input',upd);
+    upd();
+  });
+}
 function wdP(y,m,dy){let c=0;for(let i=1;i<=dy;i++){const d=new Date(y,m,i);if(d.getDay()!==5&&d.getDay()!==6)c++;}return c;}
 
 // ===== SAVE INDICATOR =====
@@ -3205,12 +3286,35 @@ document.addEventListener('touchstart',_closeGsIfOutside,{passive:true});
 // ===== ALERTS =====
 function getAlerts(){
   const a=[];const t=nd();
-  D.deals.forEach(d=>{if(d.date&&d.st!=='נסגר'&&(now()-new Date(d.date))/(30*86400000)>3)a.push({type:'crit',h:`עסקה ישנה – ${d.co}`,s:`פתוחה מעל 3 חודשים! שווי: ${fmt(d.v)}`,co:d.co,kind:'deal',meta:{srv:d.srv,st:d.st,num:d.num,ch:d.ch,v:d.v}});});
-  D.dists.forEach(d=>{if(d.dt&&d.st!=='הושלם'&&db(d.dt,t)>7)a.push({type:'crit',h:`הפצה תקועה – ${d.co}`,s:`${db(d.dt,t)} ימים ללא התקדמות`,co:d.co,kind:'dist',meta:{srv:d.so,projNo:d.no,manager:d.hd,days:db(d.dt,t)}});});
-  D.salary.forEach(s=>{if(s.st!=='סגור'&&(s.pv||0)>0)a.push({type:'warn',h:`שכר לא ממומש – ${s.cl}`,s:`יתרה: ${fmt(s.pv)}`,co:s.cl,kind:'salary'});});
+  // התראות ממוקדות: כל התראה מציינת מה בדיוק תקוע ולמה — לפי הרקע ברשומה עצמה
+  D.deals.forEach(d=>{
+    if(d.date&&d.st!=='נסגר'&&(now()-new Date(d.date))/(30*86400000)>3){
+      const months=Math.floor((now()-new Date(d.date))/(30*86400000));
+      const reason=d.st==='בעיה'?(d.no?`תקועה בגלל: ${d.no}`:'מסומנת "בעיה" — ראה הערות בעסקה')
+        :d.st==='ממתין לתשובה'?`ממתינה לתשובת ${d.ct||'הלקוח'} מאז ${fmtDate(d.date)}`
+        :`בסטטוס "${d.st||'פתוח'}" מאז ${fmtDate(d.date)}`;
+      a.push({type:'crit',h:`עסקה פתוחה ${months} חודשים – ${d.co}${d.srv?' · '+d.srv:''}`,s:`${reason} | שווי: ${fmt(d.v)}${d.ch?` | סיכוי: ${Math.round((d.ch||0)*100)}%`:''}${d.no&&d.st!=='בעיה'?` | רקע: ${d.no}`:''}`,co:d.co,kind:'deal',meta:{srv:d.srv,st:d.st,num:d.num,ch:d.ch,v:d.v}});
+    }
+  });
+  D.dists.forEach(d=>{
+    if(d.dt&&d.st!=='הושלם'&&db(d.dt,t)>7){
+      const days=db(d.dt,t);
+      const reason=d.mi?`תקוע בגלל חוסרים: ${d.mi}`
+        :d.st==='בעיה'?'מסומן "בעיה" — נדרש טיפול'
+        :d.st==='בהתקנה'?`בהתקנה ${days} ימים — לוודא סיום מול ${d.hd||'מנהל הפרויקט'}`
+        :`בסטטוס "${d.st||'ממתין להפצה'}" ${days} ימים ללא התקדמות`;
+      a.push({type:'crit',h:`פרויקט תקוע – ${d.co}${d.no?' · #'+d.no:''}${d.so?' · '+d.so:''}`,s:`${reason}${d.hd?` | מנהל: ${d.hd}`:''} | מתאריך ${fmtDate(d.dt)}`,co:d.co,kind:'dist',meta:{srv:d.so,projNo:d.no,manager:d.hd,days}});
+    }
+  });
+  D.salary.forEach(sl=>{
+    if(sl.st!=='סגור'&&(sl.pv||0)>0){
+      const kind=sl.ty==='equipment'?'ציוד':'שירות';
+      a.push({type:'warn',h:`שכר לא ממומש – ${sl.cl}${sl.pj?' · פרויקט '+sl.pj:''}`,s:`יתרה לגבייה: ${fmt(sl.pv)} מתוך יעד ${fmt(sl.tr)} (${kind}) | סטטוס: ${sl.st||'פתוח'}${sl.no?` | רקע: ${sl.no}`:''}`,co:sl.cl,kind:'salary'});
+    }
+  });
   D.tenders.forEach(t2=>{
-    if(t2.deadline){const dl=db(t,t2.deadline);if(dl>=0&&dl<=5&&t2.submitted!=='כן')a.push({type:'crit',h:`מכרז דחוף – ${t2.name}`,s:`נותרו ${dl} ימים!`});}
-    if(t2.questions){const dq=db(t,t2.questions);if(dq>=0&&dq<=2)a.push({type:'warn',h:`מועד שאלות – ${t2.name}`,s:`נותרו ${dq} ימים`});}
+    if(t2.deadline){const dl=db(t,t2.deadline);if(dl>=0&&dl<=5&&t2.submitted!=='כן')a.push({type:'crit',h:`הגשת מכרז בעוד ${dl} ימים – ${t2.name}`,s:`מועד הגשה: ${fmtDate(t2.deadline)} | סטטוס: ${t2.submitted==='בתהליך'?'בתהליך הגשה':'טרם הוגש'}${t2.handler?` | מטפל: ${t2.handler}`:''}${t2.amount?` | היקף: ${fmt(t2.amount)}`:''}${t2.notes?` | ${t2.notes}`:''}`});}
+    if(t2.questions){const dq=db(t,t2.questions);if(dq>=0&&dq<=2)a.push({type:'warn',h:`מועד שאלות הבהרה בעוד ${dq} ימים – ${t2.name}`,s:`תאריך אחרון לשאלות: ${fmtDate(t2.questions)}${t2.proj?` | פרויקט: ${t2.proj}`:''}`});}
   });
   const held=heldThisMonth();
   if(held<MEETING_GOAL)a.push({type:'info',h:`יעד פגישות – ${held}/${MEETING_GOAL}`,s:`${MEETING_GOAL-held} פגישות נדרשות`});
@@ -3569,7 +3673,7 @@ function rDeals(){
       const curDateStr=nd();
       const upcomingForDeal=D.meetings.find(m=>sameCo(m.cl,d.co)&&m.dt>=curDateStr&&m.hl!=='מבוטל');
       const mtgChip=upcomingForDeal?`<span title="פגישה ב-${fmtDate(upcomingForDeal.dt)}${upcomingForDeal.time?' '+upcomingForDeal.time:''}" style="font-size:9px;padding:1px 5px;border-radius:8px;background:rgba(6,214,160,.15);color:#06d6a0;border:1px solid rgba(6,214,160,.3);white-space:nowrap;cursor:default">📅${upcomingForDeal.dt===curDateStr?' היום':' '+fmtDate(upcomingForDeal.dt)}</span> `:'';
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(d.date)}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}${mtgChip?'<br>'+mtgChip:''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap">${schedBtn}${deBtn}${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד הצעת מחיר: ${d.quote.name||''}" style="border-color:#4cc9f0;color:#4cc9f0">📎</button> `:''}<button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(d.date)}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}${mtgChip?'<br>'+mtgChip:''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap">${schedBtn}${deBtn}${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד הצעת מחיר: ${d.quote.name||''}" style="border-color:#4cc9f0;color:#4cc9f0">💲</button> `:''}${(d.files&&d.files.length)?`<button class="btn btns" onclick="rowFilesMenu('deals','${d.id}',event)" title="${d.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${d.files.length>1?d.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
     };
     const div=(cls,icon,lbl,n)=>`<tr class="mdiv ${cls}"><td colspan="18">${icon} ${lbl} <span style="font-weight:400;opacity:.8">(${n})</span></td></tr>`;
     let html='';
@@ -3742,7 +3846,7 @@ function rTenders(){
     const lb=tn.linked==='כן'?'<span class="badge bg">כן</span>':'<span class="badge br">לא</span>';
     let qd='–';if(tn.questions){const d=db(t,tn.questions);qd=d>=0?`<b style="color:${d<=2?'#e63946':'#f4a261'}">${d}י</b>`:'<span style="color:#3a4468">עבר</span>';}
     const chk=SEL['tenders']&&SEL['tenders'].has(tn.id)?'checked':'';
-    return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-tenders" ${chk} onchange="toggleSel('tenders','${tn.id}')"></td><td>${pB(p)}</td><td>${sb2}</td><td>${tn.qty||1}</td><td style="font-size:10px">${fmtDate(tn.pub)}</td><td style="font-weight:600;min-width:120px">${tn.name||''}</td><td style="font-size:10px">${tn.proj||'–'}</td><td>${tn.link?`<a href="${tn.link}" target="_blank" style="color:#4cc9f0;font-size:10px">🔗</a>`:'–'}</td><td style="font-size:10px">${fmtDate(tn.quote)}</td><td>${qd}</td><td>${tn.rounds||'–'}</td><td style="font-weight:600;color:#e63946;font-size:10px">${fmtDate(tn.deadline)}</td><td style="font-size:10px">${tn.handler||'–'}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.docs||'–'}</td><td>${lb}</td><td class="nb">${fmt(tn.amount)}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.notes||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('tender','${tn.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tenders','${tn.id}')">🗑</button></td></tr>`;
+    return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-tenders" ${chk} onchange="toggleSel('tenders','${tn.id}')"></td><td>${pB(p)}</td><td>${sb2}</td><td>${tn.qty||1}</td><td style="font-size:10px">${fmtDate(tn.pub)}</td><td style="font-weight:600;min-width:120px">${tn.name||''}</td><td style="font-size:10px">${tn.proj||'–'}</td><td>${tn.link?`<a href="${tn.link}" target="_blank" style="color:#4cc9f0;font-size:10px">🔗</a>`:'–'}</td><td style="font-size:10px">${fmtDate(tn.quote)}</td><td>${qd}</td><td>${tn.rounds||'–'}</td><td style="font-weight:600;color:#e63946;font-size:10px">${fmtDate(tn.deadline)}</td><td style="font-size:10px">${tn.handler||'–'}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.docs||'–'}</td><td>${lb}</td><td class="nb">${fmt(tn.amount)}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.notes||'–'}</td><td style="white-space:nowrap">${(tn.files&&tn.files.length)?`<button class="btn btns" onclick="rowFilesMenu('tenders','${tn.id}',event)" title="${tn.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${tn.files.length>1?tn.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('tender','${tn.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tenders','${tn.id}')">🗑</button></td></tr>`;
   }).join('')||emptyRow(18,'📋',"אין מכרזים","openM('tender',null)");
   const ta=D.tenders.reduce((s,t)=>s+(t.amount||0),0);
   const tsubmit=D.tenders.filter(t=>t.submitted==='כן').length;
@@ -3779,7 +3883,7 @@ function rDists(){
       const dpct=d.tgt?Math.round(((d.inc||0)/d.tgt)*100):0;
       const dpc=dpct>=100?'var(--teal)':dpct>=50?'#f4a261':'#e63946';
       const pctCell=d.tgt?`<div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(dpct,100)}%;background:${dpc}"></div></div><span style="font-size:10px;font-weight:600;color:${dpc}">${dpct}%</span></div>`:'–';
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${d.hd||'–'}</td><td style="font-size:10px;color:var(--blue);font-weight:600">${d.no||'–'}</td><td style="font-weight:600">${d.co||''}</td><td style="font-size:10px">${d.cl||'–'}</td><td style="font-size:10px">${d.it||'–'}</td><td>${d.so||'–'}</td><td style="font-size:10px">${d.ad||'–'}</td><td class="nb">${d.tgt?fmt(d.tgt):'–'}</td><td class="ng">${fmt(d.inc)}</td><td>${pctCell}</td><td class="nb">${fmt(d.eq)}</td><td style="font-size:10px;color:${d.mi?'#f4a261':'var(--text3)'}">${d.mi||'אין'}</td><td>${sB(d.st)}</td><td style="font-size:10px">${fmtDate(d.dt)}</td><td>${days}</td><td style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">${d.notes||'–'}</td><td style="white-space:nowrap">${emailBtn}<button class="btn btns" onclick="openM('dist','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('dists','${d.id}')">🗑</button></td></tr>`;
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${d.hd||'–'}</td><td style="font-size:10px;color:var(--blue);font-weight:600">${d.no||'–'}</td><td style="font-weight:600">${d.co||''}</td><td style="font-size:10px">${d.cl||'–'}</td><td style="font-size:10px">${d.it||'–'}</td><td>${d.so||'–'}</td><td style="font-size:10px">${d.ad||'–'}</td><td class="nb">${d.tgt?fmt(d.tgt):'–'}</td><td class="ng">${fmt(d.inc)}</td><td>${pctCell}</td><td class="nb">${fmt(d.eq)}</td><td style="font-size:10px;color:${d.mi?'#f4a261':'var(--text3)'}">${d.mi||'אין'}</td><td>${sB(d.st)}</td><td style="font-size:10px">${fmtDate(d.dt)}</td><td>${days}</td><td style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">${d.notes||'–'}</td><td style="white-space:nowrap">${(d.files&&d.files.length)?`<button class="btn btns" onclick="rowFilesMenu('dists','${d.id}',event)" title="${d.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${d.files.length>1?d.files.length:''}</button> `:''}${emailBtn}<button class="btn btns" onclick="openM('dist','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('dists','${d.id}')">🗑</button></td></tr>`;
     }).join('')||emptyRow(19,'🚀',"אין הפצות","openM('dist',null)");
     const ti=items.reduce((s,d)=>s+(d.inc||0),0),te=items.reduce((s,d)=>s+(d.eq||0),0),tt=items.reduce((s,d)=>s+(d.tgt||0),0);
     const perf=tt?Math.round(ti/tt*100):0;
@@ -3820,7 +3924,7 @@ function rSalary(){
     document.getElementById(tbId).innerHTML=items.map(s=>{
       const pct=s.tr?Math.round(((s.cl2||0)/s.tr)*100):0,pc=pct>=100?'var(--teal)':pct>=50?'#f4a261':'#e63946',p=pri(s,'sal');
       const chk=SEL[sk]&&SEL[sk].has(s.id)?'checked':'';
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td>${sB(s.st)}</td><td>${s.qt||1}</td><td style="font-size:10px">${s.pj||''}</td><td style="font-weight:600">${s.cl||''}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${s.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td>${sB(s.st)}</td><td>${s.qt||1}</td><td style="font-size:10px">${s.pj||''}</td><td style="font-weight:600">${s.cl||''}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${s.no||'–'}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
     }).join('')||emptyRow(12,'💰',"אין פרויקטים","openM('salary',null)");
     const tt=items.reduce((s,i)=>s+(i.tr||0),0),tc=items.reduce((s,i)=>s+(i.cl2||0),0),tp=items.reduce((s,i)=>s+(i.pv||0),0);
     const p2=tt?Math.round((tc/tt)*100):0;
@@ -3954,8 +4058,8 @@ function renderMeetingsMiniCal(){
     if((m.dt||'').startsWith(mPrefix)){const d=parseInt((m.dt||'').slice(8));(byDay[d]=byDay[d]||[]).push(m);}
   });
   const DAYS=['א','ב','ג','ד','ה','ו','ש'];
-  let cells='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:9px">';
-  DAYS.forEach(d=>cells+=`<div style="text-align:center;color:var(--text3);padding:2px;font-weight:700">${d}</div>`);
+  let cells='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;font-size:12px">';
+  DAYS.forEach(d=>cells+=`<div style="text-align:center;color:var(--text2);padding:4px 2px;font-weight:800;font-size:11px">${d}</div>`);
   for(let i=0;i<firstDay;i++) cells+='<div></div>';
   for(let d=1;d<=daysInMonth;d++){
     const dStr=`${mPrefix}-${String(d).padStart(2,'0')}`;
@@ -3964,23 +4068,23 @@ function renderMeetingsMiniCal(){
     const hasMtg=dayMtgs.length>0;
     const allHeld=hasMtg&&dayMtgs.every(m=>m.hl==='כן'||m.hl==='מבוטל');
     const anyMissed=hasMtg&&dStr<todayStr&&dayMtgs.some(m=>m.hl!=='כן'&&m.hl!=='מבוטל');
-    const bg=isT?'rgba(200,169,110,.25)':hasMtg?'rgba(6,214,160,.12)':'transparent';
-    const bd=isT?'1px solid rgba(200,169,110,.5)':hasMtg?'1px solid rgba(6,214,160,.3)':'1px solid transparent';
+    const bg=isT?'rgba(200,169,110,.3)':hasMtg?'rgba(6,214,160,.16)':'rgba(255,255,255,.02)';
+    const bd=isT?'1.5px solid rgba(200,169,110,.65)':hasMtg?'1px solid rgba(6,214,160,.4)':'1px solid rgba(255,255,255,.05)';
     const dotClr=anyMissed?'#e63946':allHeld?'#06d6a0':'#f4a261';
-    const dot=hasMtg?`<span style="display:block;font-size:8px;line-height:1;color:${dotClr};font-weight:800">${dayMtgs.length>1?dayMtgs.length:'•'}</span>`:'';
-    cells+=`<div onclick="showDayMeetings('${dStr}',event)" title="${hasMtg?dayMtgs.length+' פגישות – לחץ לצפייה':'לחץ לקביעת פגישה'}" style="text-align:center;padding:3px 1px;border-radius:4px;background:${bg};border:${bd};cursor:pointer;color:${isT?'var(--gold)':hasMtg?'var(--teal)':'var(--text2)'};font-weight:${isT||hasMtg?700:400}">${d}${dot}</div>`;
+    const dot=hasMtg?`<span style="display:block;font-size:10px;line-height:1.2;color:${dotClr};font-weight:800">${dayMtgs.length>1?dayMtgs.length+' פגישות':'●'}</span>`:'';
+    cells+=`<div onclick="showDayMeetings('${dStr}',event)" title="${hasMtg?dayMtgs.length+' פגישות – לחץ לצפייה':'לחץ לקביעת פגישה'}" style="text-align:center;padding:6px 2px;min-height:34px;border-radius:7px;background:${bg};border:${bd};cursor:pointer;color:${isT?'var(--gold)':hasMtg?'var(--teal)':'var(--text2)'};font-weight:${isT||hasMtg?800:500}">${d}${dot}</div>`;
   }
   cells+='</div>';
   const monthName=(MONTH_HE[mo]||'')+' '+y;
   const monthCnt=Object.values(byDay).reduce((s,a)=>s+a.length,0);
-  const navBtn=(lbl,fn,title)=>`<button onclick="${fn}" title="${title}" style="background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:2px 9px;cursor:pointer;font-family:inherit;font-size:11px;font-weight:700">${lbl}</button>`;
-  el.innerHTML=`<div style="background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:10px 14px">
-    <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+  const navBtn=(lbl,fn,title)=>`<button onclick="${fn}" title="${title}" style="background:rgba(255,255,255,.08);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:4px 13px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:800">${lbl}</button>`;
+  el.innerHTML=`<div style="background:rgba(255,255,255,.03);border:1px solid rgba(6,214,160,.25);border-radius:12px;padding:14px 16px">
+    <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       ${navBtn('‹','calShift(-1)','חודש קודם')}
-      <span style="min-width:96px;text-align:center">📅 ${monthName}</span>
+      <span style="min-width:110px;text-align:center;color:var(--gold)">📅 ${monthName}</span>
       ${navBtn('›','calShift(1)','חודש הבא')}
       ${navBtn('היום','calToday()','חזרה לחודש נוכחי')}
-      <span style="color:var(--text3);font-weight:400;font-size:10px">${monthCnt?monthCnt+' פגישות החודש · ':''}לחץ על יום לצפייה או קביעת פגישה</span>
+      <span style="color:var(--text2);font-weight:500;font-size:11px">${monthCnt?monthCnt+' פגישות החודש · ':''}לחץ על יום לצפייה או קביעת פגישה</span>
     </div>
     ${cells}
   </div>`;
@@ -4048,7 +4152,7 @@ function rMeetings(){
     const typeIco={פגישה:'🤝',שיחת_טלפון:'📞','שיחת טלפון':'📞',זום:'🖥',Teams:'🟦',אחר:'📌'}[m.mtype||'פגישה']||'🤝';
     const todayBadge=isToday?'<span class="badge bb" style="font-size:9px;margin-right:2px">היום!</span>':'';
     const clSafe=(m.cl||'').replace(/'/g,'&#39;');
-    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-meetings" ${chk} onchange="toggleSel('meetings','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${todayBadge}</td><td>${timeDisp}</td><td style="font-size:11px">${typeIco}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb2}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${m.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="showCalendarMenu('${m.id}',event)" title="הוסף ליומן / שלח הזמנה" style="border-color:#a78bfa;color:#a78bfa">📆</button> <button class="btn btns" onclick="openMeetingFor('${clSafe}')" title="קבע פגישה נוספת עם לקוח זה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns" onclick="openM('meeting','${m.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('meetings','${m.id}')">🗑</button></td></tr>`;
+    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-meetings" ${chk} onchange="toggleSel('meetings','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${todayBadge}</td><td>${timeDisp}</td><td style="font-size:11px">${typeIco}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb2}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${m.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openMeetingSummary('${m.id}')" title="סיכום פגישה אוטומטי" style="border-color:var(--gold);color:var(--gold)">📝</button> ${(m.files&&m.files.length)?`<button class="btn btns" onclick="rowFilesMenu('meetings','${m.id}',event)" title="${m.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${m.files.length>1?m.files.length:''}</button> `:''}<button class="btn btns" onclick="showCalendarMenu('${m.id}',event)" title="הוסף ליומן / שלח הזמנה" style="border-color:#a78bfa;color:#a78bfa">📆</button> <button class="btn btns" onclick="openMeetingFor('${clSafe}')" title="קבע פגישה נוספת עם לקוח זה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns" onclick="openM('meeting','${m.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('meetings','${m.id}')">🗑</button></td></tr>`;
   }).join('')||emptyRow(11,'🤝',"אין פגישות","openM('meeting',null)");
   document.getElementById('mft').innerHTML=`<span class="fi">סה"כ: <b>${D.meetings.length}</b></span><span class="fi">התקיימו: <b>${held}</b></span><span class="fi">לא: <b>${D.meetings.filter(m=>m.hl!=='כן').length}</b></span><span class="fi">יעד: <b style="color:${pct>=100?'var(--teal)':pct>=66?'#f4a261':'#e63946'}">${pct}%</b></span>`;
   updateSelBar('meetings');
@@ -4375,6 +4479,7 @@ function openClientModal(id){
   document.getElementById('cl-gen-notes').value=c.genNotes||'';
   Object.keys(ITEM_CFG).forEach(type=>populateItems(type,c[type]||[]));
   populatePotentialProducts(c.potential||[]);
+  attachLoad('client',id?c:null);
   renderClientDeals(id);
   renderClientMeetings(id);
   document.getElementById('mclient').classList.add('open');
@@ -4383,7 +4488,7 @@ function openClientModal(id){
 function saveClient(){
   const name=document.getElementById('cl-name').value.trim();
   if(!name){alert('יש להזין שם חברה');return;}
-  const row={name,cp:document.getElementById('cl-cp').value,contact:document.getElementById('cl-contact').value,phone:document.getElementById('cl-phone').value,email:document.getElementById('cl-email').value,address:document.getElementById('cl-address').value,status:document.getElementById('cl-status').value,genNotes:document.getElementById('cl-gen-notes').value};
+  const row={name,cp:document.getElementById('cl-cp').value,contact:document.getElementById('cl-contact').value,phone:document.getElementById('cl-phone').value,email:document.getElementById('cl-email').value,address:document.getElementById('cl-address').value,status:document.getElementById('cl-status').value,genNotes:document.getElementById('cl-gen-notes').value,files:_attPending['client']||[]};
   Object.keys(ITEM_CFG).forEach(type=>{row[type]=getItemData(type);});
   row.potential=getPotentialData();
   // any potential marked 'נסגר' moves into the client's purchased products
@@ -4457,6 +4562,7 @@ function rClients(){
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
           <span class="badge" style="background:${stCol}22;color:${stCol};border:1px solid ${stCol}44;font-size:9px">${c.status||''}</span>
           <div style="display:flex;gap:4px">
+            ${(c.files&&c.files.length)?`<button class="btn btns" onclick="event.stopPropagation();rowFilesMenu('clients','${c.id}',event)" title="${c.files.length} קבצים מצורפים" style="font-size:9px;border-color:#06d6a0;color:#06d6a0">📎${c.files.length>1?c.files.length:''}</button>`:''}
             ${emailBtn}
             <button class="btn btns btnd" onclick="event.stopPropagation();dbDelete('clients','${c.id}')" style="font-size:9px">🗑</button>
           </div>
@@ -5224,8 +5330,15 @@ function openM(type,id){
     // Show calendar & invite buttons only when editing an existing meeting
     const calBtn=document.getElementById('meet-cal-btn');
     const invBtn=document.getElementById('meet-invite-btn');
+    const sumBtn=document.getElementById('meet-sum-btn');
     if(calBtn)calBtn.style.display=isNew?'none':'';
     if(invBtn)invBtn.style.display=isNew?'none':'';
+    if(sumBtn)sumBtn.style.display=isNew?'none':'';
+  }
+  // טעינת קבצים מצורפים של הרשומה לעריכה
+  if(ATT_KINDS[type]){
+    const rec=id?(D[ATT_KINDS[type]]||[]).find(x=>x.id==id):null;
+    attachLoad(type,rec);
   }
   // רשימת השלמה של שמות לקוחות בטפסי עסקה/הפצה — שומר על שמות אחידים לסנכרון
   if(type==='deal'||type==='dist'){
@@ -5233,6 +5346,7 @@ function openM(type,id){
     if(col)col.innerHTML=D.clients.map(c=>`<option value="${(c.name||'').replace(/"/g,'&quot;')}">`).join('');
   }
   document.getElementById('m'+type).classList.add('open');
+  initDateHints(document.getElementById('m'+type));
   if(window.csResync) csResync(); // refresh custom dropdown labels with loaded values
 }
 function closeM(id){document.getElementById(id).classList.remove('open');EI=null;ET=null;}
@@ -5295,8 +5409,87 @@ function downloadDealQuote(id){
   if(!d||!d.quote){toast('⚠️ לעסקה זו אין הצעת מחיר מצורפת','warn');return;}
   downloadQuote(d.quote);
 }
+// ===== קבצים מצורפים לכל נושא (Word / PDF / Excel / תמונות ...) =====
+// כל רשומה יכולה לשאת מערך files: [{name,type,size,data}] — נשמר יחד עם הנתונים
+let _attPending={}; // קבצים בעריכה לפי סוג מודל: deal/meeting/tender/dist/client
+const ATT_KINDS={deal:'deals',meeting:'meetings',tender:'tenders',dist:'dists',salary:'salary',client:'clients'};
+function _fileIcon(name){
+  const ext=(name||'').split('.').pop().toLowerCase();
+  return ext==='pdf'?'📕':['doc','docx'].includes(ext)?'📝':['xls','xlsx','csv'].includes(ext)?'📊':['png','jpg','jpeg','gif','webp'].includes(ext)?'🖼️':['ppt','pptx'].includes(ext)?'📽️':'📄';
+}
+function attachAdd(kind,ev){
+  const files=Array.from(ev.target.files||[]);
+  if(!files.length)return;
+  if(!_attPending[kind])_attPending[kind]=[];
+  let pending=files.length;
+  files.forEach(f=>{
+    if(f.size>QUOTE_MAX){toast('⚠️ "'+f.name+'" גדול מדי (מקסימום 2MB)','warn');if(--pending===0)ev.target.value='';return;}
+    const reader=new FileReader();
+    reader.onload=e=>{
+      _attPending[kind].push({name:f.name,type:f.type||'',size:f.size,data:e.target.result});
+      attachRender(kind);
+      if(--pending===0){ev.target.value='';toast('📎 '+files.length+' קבצים צורפו (שמור לסיום)','ok');}
+    };
+    reader.onerror=()=>{toast('⚠️ שגיאה בקריאת '+f.name,'warn');if(--pending===0)ev.target.value='';};
+    reader.readAsDataURL(f);
+  });
+}
+function attachRender(kind){
+  const el=document.getElementById('att-list-'+kind);if(!el)return;
+  const files=_attPending[kind]||[];
+  el.innerHTML=files.length?files.map((f,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-top:4px">
+    <span>${_fileIcon(f.name)}</span>
+    <span style="font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(f.name||'').replace(/"/g,'&quot;')}">${f.name}</span>
+    <span style="font-size:9px;color:var(--text3)">${Math.round((f.size||0)/1024)}KB</span>
+    <button type="button" class="btn btns" onclick="attachDl('${kind}',${i})" style="font-size:9px;border-color:#4cc9f0;color:#4cc9f0">⬇</button>
+    <button type="button" class="btn btns btnd" onclick="attachRm('${kind}',${i})" style="font-size:9px">🗑</button>
+  </div>`).join(''):'<div style="font-size:10px;color:var(--text3);margin-top:4px">לא צורפו קבצים</div>';
+}
+function attachDl(kind,i){
+  const f=(_attPending[kind]||[])[i];if(!f||!f.data)return;
+  const a=document.createElement('a');a.href=f.data;a.download=f.name||'file';
+  document.body.appendChild(a);a.click();a.remove();
+}
+function attachRm(kind,i){
+  (_attPending[kind]||[]).splice(i,1);attachRender(kind);
+}
+function attachLoad(kind,rec){
+  _attPending[kind]=((rec&&rec.files)||[]).slice();
+  attachRender(kind);
+}
+// תפריט הורדת קבצים משורת טבלה / כרטיס
+function rowFilesMenu(table,id,e){
+  if(e)e.stopPropagation();
+  const prev=document.getElementById('row-files-popup');
+  if(prev){prev.remove();if(prev.dataset.k===table+id)return;}
+  const rec=(D[table]||[]).find(x=>x.id==id)||((D['archived'+table.charAt(0).toUpperCase()+table.slice(1)]||[]).find(x=>x.id==id));
+  const files=(rec&&rec.files)||[];
+  if(!files.length)return;
+  if(files.length===1){const f=files[0];const a=document.createElement('a');a.href=f.data;a.download=f.name||'file';document.body.appendChild(a);a.click();a.remove();return;}
+  const pop=document.createElement('div');
+  pop.id='row-files-popup';pop.dataset.k=table+id;
+  pop.style.cssText='position:fixed;background:var(--s2,#101525);border:1px solid var(--border);border-radius:10px;padding:6px;z-index:9999;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.6);direction:rtl';
+  pop.innerHTML=files.map((f,i)=>`<button onclick="(function(){const r=(D['${table}']||[]).find(x=>x.id=='${id}');const f=r&&r.files&&r.files[${i}];if(f){const a=document.createElement('a');a.href=f.data;a.download=f.name;document.body.appendChild(a);a.click();a.remove();}})();this.closest('#row-files-popup').remove()" style="display:block;width:100%;background:transparent;border:none;color:var(--text);padding:7px 10px;text-align:right;cursor:pointer;border-radius:7px;font-family:inherit;font-size:11px">${_fileIcon(f.name)} ${f.name} <span style="color:var(--text3);font-size:9px">(${Math.round((f.size||0)/1024)}KB)</span></button>`).join('');
+  const anchor=(e&&(e.currentTarget||e.target))||document.body;
+  const r2=anchor.getBoundingClientRect?anchor.getBoundingClientRect():{bottom:80,right:innerWidth/2};
+  pop.style.top=Math.min(r2.bottom+4,innerHeight-200)+'px';
+  pop.style.right=Math.max(6,innerWidth-r2.right)+'px';
+  document.body.appendChild(pop);
+  setTimeout(()=>{document.addEventListener('click',function cl(ev){if(!pop.contains(ev.target)){pop.remove();document.removeEventListener('click',cl);}});},80);
+}
+// בלוק צירוף קבצים אחיד לטפסים
+function attachBlockHtml(kind){
+  return `<div class="gf"><label>📎 קבצים מצורפים (Word / PDF / Excel / תמונה)</label>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <input type="file" id="att-inp-${kind}" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('${kind}',event)">
+      <button type="button" class="btn btns" onclick="document.getElementById('att-inp-${kind}').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
+      <span style="font-size:9px;color:var(--text3)">עד 2MB לקובץ</span>
+    </div>
+    <div id="att-list-${kind}"></div>
+  </div>`;
+}
 function saveDeal(){
-  const row={date:document.getElementById('dd').value,co:document.getElementById('dco').value,cp:document.getElementById('dcp').value,inf:document.getElementById('din').value,srv:document.getElementById('dsr').value,v:+document.getElementById('dv').value,mv:+document.getElementById('dmv').value,di:+document.getElementById('ddi').value,dn:+document.getElementById('ddn').value,ot:+document.getElementById('dot').value,otc:+document.getElementById('dotc').value,ct:document.getElementById('dct').value,ch:+document.getElementById('dch').value,st:document.getElementById('dst2').value,ty:document.getElementById('dty').value,ptype:document.getElementById('dptype').value,no:document.getElementById('dno').value,quote:pendingQuote||null};
+  const row={date:document.getElementById('dd').value,co:document.getElementById('dco').value,cp:document.getElementById('dcp').value,inf:document.getElementById('din').value,srv:document.getElementById('dsr').value,v:+document.getElementById('dv').value,mv:+document.getElementById('dmv').value,di:+document.getElementById('ddi').value,dn:+document.getElementById('ddn').value,ot:+document.getElementById('dot').value,otc:+document.getElementById('dotc').value,ct:document.getElementById('dct').value,ch:+document.getElementById('dch').value,st:document.getElementById('dst2').value,ty:document.getElementById('dty').value,ptype:document.getElementById('dptype').value,no:document.getElementById('dno').value,quote:pendingQuote||null,files:_attPending['deal']||[]};
   if(!row.co){alert('יש להזין שם חברה');return;}
   const _numFieldsDeal=['v','mv','di','dn','ot','otc'];
   for(const f of _numFieldsDeal){if(isNaN(row[f])||row[f]<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}}
@@ -5375,7 +5568,7 @@ function syncDealToDist(deal,silent){
   return true;
 }
 function saveTender(){
-  const row={name:document.getElementById('tn').value,proj:document.getElementById('tp').value,pub:document.getElementById('tpb').value,link:document.getElementById('tlk').value,quote:document.getElementById('tq').value,questions:document.getElementById('tqs').value,deadline:document.getElementById('tdl').value,rounds:+document.getElementById('tr').value,handler:document.getElementById('th').value,amount:+document.getElementById('tam').value,qty:+document.getElementById('tqt').value,submitted:document.getElementById('tsb').value,linked:document.getElementById('tln').value,docs:document.getElementById('tdc').value,notes:document.getElementById('tno').value};
+  const row={name:document.getElementById('tn').value,proj:document.getElementById('tp').value,pub:document.getElementById('tpb').value,link:document.getElementById('tlk').value,quote:document.getElementById('tq').value,questions:document.getElementById('tqs').value,deadline:document.getElementById('tdl').value,rounds:+document.getElementById('tr').value,handler:document.getElementById('th').value,amount:+document.getElementById('tam').value,qty:+document.getElementById('tqt').value,submitted:document.getElementById('tsb').value,linked:document.getElementById('tln').value,docs:document.getElementById('tdc').value,notes:document.getElementById('tno').value,files:_attPending['tender']||[]};
   if(!row.name){alert('יש להזין שם מכרז');return;}
   if(isNaN(row.rounds)||row.rounds<0||isNaN(row.amount)||row.amount<0||isNaN(row.qty)||row.qty<0){alert('ערכים מספריים לא יכולים להיות שליליים');return;}
   if(EI){dbUpdate('tenders',EI,row);}else{dbInsert('tenders',row);}
@@ -5399,7 +5592,7 @@ function syncDistToSalary(dist){
   return updated>0;
 }
 function saveDist(){
-  const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,hd:document.getElementById('dih').value,hp:document.getElementById('dihp').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,tgt:+document.getElementById('ditgt').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,ptype:document.getElementById('diptype').value,mi:document.getElementById('dimi').value};
+  const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,hd:document.getElementById('dih').value,hp:document.getElementById('dihp').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,tgt:+document.getElementById('ditgt').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,ptype:document.getElementById('diptype').value,mi:document.getElementById('dimi').value,files:_attPending['dist']||[]};
   if(!row.co){alert('יש להזין שם חברה');return;}
   if(isNaN(row.tgt)||row.tgt<0||isNaN(row.inc)||row.inc<0||isNaN(row.eq)||row.eq<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}
   let savedDist;
@@ -5409,14 +5602,14 @@ function saveDist(){
   closeM('mdist');rAll();
 }
 function saveSal(){
-  const row={pj:document.getElementById('spj').value,cl:document.getElementById('scl').value,qt:+document.getElementById('sqt').value,tr:+document.getElementById('str').value,cl2:+document.getElementById('scl2').value,pv:+document.getElementById('spv').value,st:document.getElementById('sst').value,ty:document.getElementById('sty').value,no:document.getElementById('sno').value};
+  const row={pj:document.getElementById('spj').value,cl:document.getElementById('scl').value,qt:+document.getElementById('sqt').value,tr:+document.getElementById('str').value,cl2:+document.getElementById('scl2').value,pv:+document.getElementById('spv').value,st:document.getElementById('sst').value,ty:document.getElementById('sty').value,no:document.getElementById('sno').value,files:_attPending['salary']||[]};
   if(!row.cl){alert('יש להזין שם לקוח');return;}
   if(isNaN(row.qt)||row.qt<0||isNaN(row.tr)||row.tr<0||isNaN(row.cl2)||row.cl2<0||isNaN(row.pv)||row.pv<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}
   if(EI){dbUpdate('salary',EI,row);}else{dbInsert('salary',row);}
   closeM('msalary');rAll();
 }
 function saveMeet(){
-  const row={dt:document.getElementById('mdt').value,time:document.getElementById('mtime').value,mtype:document.getElementById('mtype').value,cl:document.getElementById('mcl').value,nu:document.getElementById('mnu').value,hl:document.getElementById('mhl').value,no:document.getElementById('mno').value};
+  const row={dt:document.getElementById('mdt').value,time:document.getElementById('mtime').value,mtype:document.getElementById('mtype').value,cl:document.getElementById('mcl').value,nu:document.getElementById('mnu').value,hl:document.getElementById('mhl').value,no:document.getElementById('mno').value,files:_attPending['meeting']||[]};
   if(!row.cl){alert('יש להזין שם לקוח');return;}
   if(EI){dbUpdate('meetings',EI,row);}else{dbInsert('meetings',row);}
   closeM('mmeeting');rAll();
@@ -5520,11 +5713,11 @@ const IMP_MAP={
   deals:{'תאריך':'date','תאריך עסקה':'date','ת.עסקה':'date','date':'date','#':'num','שם חברה':'co','ח.פ':'cp','תשתית':'inf','שירות':'srv','שווי':'v','חודש נוכחי':'mv','הפצה':'di','חודש הבא':'dn','otc נסגר':'otc','otc':'ot','מול מי':'ct','סיכוי':'ch','סטטוס':'st','סוג':'ty','סוג מוצר':'ptype','הערות':'no'},
   tenders:{'שם מכרז':'name','מס פרויקט':'proj','פרסום':'pub','הצעה':'quote','שאלות':'questions','הגשה':'deadline','סבבים':'rounds','מטפל':'handler','סכום':'amount','כמות':'qty','הוגשה':'submitted','צימוד':'linked','מסמכים':'docs','הערות':'notes'},
   dists:{'מטפל':'hd','גורם מטפל':'hp','מס פרויקט':'no','שם חברה':'co','לקוח':'cl','it':'it','פתרון':'so','כתובת':'ad','הכנסה חודשית':'inc','יעד הכנסה':'tgt','יעד':'tgt','ציוד':'eq','חוסרים':'mi','סטטוס':'st','תאריך':'dt','תאריך הפצה':'dt','date':'dt','סוג':'ty','סוג מוצר':'ptype'},
-  salary:{'מס פרויקט':'pj','שם לקוח':'cl','כמות':'qt','יעד':'tr','סגירה':'cl2','יתרה':'pv','סטטוס':'st','סוג':'ty','הערות':'no'},
-  meetings:{'תאריך':'dt','תאריך פגישה':'dt','date':'dt','שם לקוח':'cl','מס פגישה':'nu','התקיימה':'hl','הערות':'no'},
-  clients:{'שם חברה':'name','ח.פ':'cp','איש קשר':'contact','טלפון':'phone','אימייל':'email','כתובת':'address','סטטוס':'status','הערות':'genNotes'}
+  salary:{'מס פרויקט':'pj','פרויקט':'pj','שם לקוח':'cl','לקוח':'cl','חברה':'cl','כמות':'qt','יעד':'tr','סגירה':'cl2','יתרה':'pv','סטטוס':'st','סוג':'ty','הערות':'no'},
+  meetings:{'תאריך':'dt','תאריך פגישה':'dt','date':'dt','שם לקוח':'cl','לקוח':'cl','חברה':'cl','שעה':'time','time':'time','סוג פגישה':'mtype','סוג':'mtype','מס פגישה':'nu','מס פרויקט':'nu','התקיימה':'hl','הערות':'no'},
+  clients:{'שם חברה':'name','חברה':'name','שם':'name','ח.פ':'cp','חפ':'cp','איש קשר':'contact','טלפון':'phone','נייד':'phone','אימייל':'email','מייל':'email','email':'email','כתובת':'address','סטטוס':'status','הערות':'genNotes'}
 };
-const IMP_NUM={deals:['v','mv','di','dn','ot','otc'],tenders:['amount','qty'],dists:['inc','tgt','eq'],salary:['qt','tr','cl2','pv'],meetings:['nu'],clients:[]};
+const IMP_NUM={deals:['v','mv','di','dn','ot','otc'],tenders:['amount','qty'],dists:['inc','tgt','eq'],salary:['qt','tr','cl2','pv'],meetings:[],clients:[]};
 // date fields per section — normalised to YYYY-MM-DD so month filtering works
 const IMP_DATE={deals:['date'],tenders:['pub','deadline','questions','quote'],dists:['dt'],salary:[],meetings:['dt'],clients:[]};
 function _pad2(n){return String(n).padStart(2,'0');}
@@ -5559,6 +5752,15 @@ function normalizeImportDate(v){
   return'';
 }
 
+// Excel time values arrive as a day-fraction (0.4375), a Date object, or text — normalise to HH:MM
+function normalizeImportTime(v){
+  if(v==null||v==='')return'';
+  if(v instanceof Date&&!isNaN(v))return _pad2(v.getUTCHours())+':'+_pad2(v.getUTCMinutes());
+  if(typeof v==='number'&&v>=0&&v<1){const t=Math.round(v*24*60);return _pad2(Math.floor(t/60))+':'+_pad2(t%60);}
+  const m=String(v).trim().match(/^(\d{1,2}):(\d{2})/);
+  if(m)return _pad2(m[1])+':'+m[2];
+  return'';
+}
 function importFromExcel(sec){
   const el=document.getElementById('imp-'+sec);
   el.value='';
@@ -5571,7 +5773,7 @@ function handleImport(ev,sec){
   reader.onload=function(e){
     try{
       if(!window.XLSX){toast('⚠️ ספריית Excel טרם נטענה – רענן ונסה שוב','warn');return;}
-      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const wb=XLSX.read(e.target.result,{type:'array'});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true});
       if(!data||data.length<2){toast('⚠️ הקובץ ריק או חסרות שורות נתונים','warn');return;}
@@ -5592,6 +5794,7 @@ function handleImport(ev,sec){
         const obj={};
         Object.entries(colMap).forEach(([i,key])=>{
           if(dateFlds.has(key)){obj[key]=normalizeImportDate(row[i]);return;}
+          if(sec==='meetings'&&key==='time'){obj[key]=normalizeImportTime(row[i]);return;}
           let v=String(row[i]??'').trim();
           if(key==='ty'){
             v=sec==='salary'?(v==='שירות'||v==='service'?'service':'equipment'):(v==='ארוך'||v==='long'?'long':'short');
@@ -5627,7 +5830,7 @@ function handleImport(ev,sec){
       toast(msg,added?'ok':'warn');
     }catch(err){console.error('Import error:',err);toast('⚠️ שגיאה בייבוא: '+err.message,'warn');}
   };
-  reader.readAsBinaryString(file);
+  reader.readAsArrayBuffer(file);
 }
 
 function exportExcel(section){
@@ -5801,6 +6004,127 @@ function sendWhatsAppMeetings(){
     });
   }
   waOpen(msg);
+}
+
+// ===== סיכום פגישה אוטומטי =====
+// בונה סיכום מקצועי ומובנה מכל המידע במערכת: פרטי הפגישה, כרטיס הלקוח,
+// עסקאות קשורות (כולל ארכיון), הפצות/פרויקטים, מוצרים בתהליך ופגישות קודמות.
+let _sumMeetingId=null;
+function buildMeetingSummary(m,projNo){
+  const c=findClientByName(m.cl);
+  const allDeals=[...D.deals,...(D.archivedDeals||[])].filter(d=>sameCo(d.co,m.cl));
+  const openDeals=allDeals.filter(d=>d.st!=='נסגר');
+  const closedDeals=allDeals.filter(d=>d.st==='נסגר');
+  const dists=D.dists.filter(d=>sameCo(d.co,m.cl));
+  const pastMtgs=[...D.meetings,...(D.archivedMeetings||[])]
+    .filter(x=>sameCo(x.cl,m.cl)&&x.id!==m.id&&x.hl==='כן'&&(x.dt||'')<(m.dt||''))
+    .sort((a,b)=>(b.dt||'').localeCompare(a.dt||''));
+  const typeLabel=_typeLabel(m.mtype||'פגישה');
+  const pn=projNo||m.nu||'';
+  const L=[];
+  L.push('סיכום '+typeLabel+' – '+(m.cl||'לקוח'));
+  L.push('═══════════════════════════════');
+  L.push('📅 תאריך: '+(m.dt?fmtDate(m.dt):'–')+(m.time?' | שעה: '+m.time:'')+' | סוג: '+typeLabel);
+  if(pn)L.push('🔢 מספר פרויקט / פגישה: '+pn);
+  L.push('👤 משתתפים: איתמר ונדן (HOT Business)'+(c&&c.contact?', '+c.contact+' ('+(m.cl||'')+')':(m.cl?', נציג '+m.cl:'')));
+  L.push('');
+  // ── רקע ──
+  L.push('■ רקע');
+  if(c){
+    L.push('• סטטוס לקוח: '+(c.status||'לקוח'));
+    const owned=Object.keys(ITEM_CFG).filter(t=>(c[t]||[]).length>0).map(t=>ITEM_CFG[t].label+((c[t].length>1)?' ×'+c[t].length:''));
+    if(owned.length)L.push('• שירותים קיימים אצל הלקוח: '+owned.join(', '));
+    const mrev=clientMonthlyRevenue(c).reduce((sm,x)=>sm+x.val,0);
+    if(mrev)L.push('• הכנסה חודשית מהלקוח: '+fmt(mrev));
+  }else{
+    L.push('• טרם קיים כרטיס לקוח במערכת — מומלץ לפתוח כרטיס.');
+  }
+  if(pastMtgs.length)L.push('• פגישות קודמות שהתקיימו: '+pastMtgs.length+' (אחרונה: '+fmtDate(pastMtgs[0].dt)+')');
+  if(closedDeals.length)L.push('• עסקאות שנסגרו בעבר: '+closedDeals.length+' בשווי מצטבר '+fmt(closedDeals.reduce((sm,d)=>sm+(d.v||0),0)));
+  L.push('');
+  // ── נושאים שנדונו ──
+  L.push('■ נושאים שנדונו');
+  if(openDeals.length){
+    openDeals.forEach(d=>{
+      L.push('• עסקה'+(d.num?' #'+d.num:'')+': '+(d.srv||'שירות')+' | שווי '+fmt(d.v)+' | סטטוס: '+(d.st||'')+(d.ch?' | סיכוי סגירה: '+Math.round((d.ch||0)*100)+'%':''));
+      if(d.no)L.push('  - הערה: '+d.no);
+    });
+  }
+  if(c&&(c.potential||[]).filter(x=>x.status!=='נסגר').length){
+    (c.potential||[]).filter(x=>x.status!=='נסגר').forEach(x=>{
+      L.push('• מוצר בתהליך: '+(x.productType||x.product||'מוצר')+(x.estimatedValue?' | שווי משוער '+fmt(x.estimatedValue):'')+(x.status?' | סטטוס: '+x.status:'')+(x.targetDate?' | יעד סגירה: '+fmtDate(x.targetDate):''));
+    });
+  }
+  dists.filter(d=>d.st!=='הושלם').forEach(d=>{
+    L.push('• פרויקט הפצה'+(d.no?' #'+d.no:'')+': '+(d.so||'')+' | סטטוס: '+(d.st||'')+(d.mi?' | חוסרים: '+d.mi:''));
+  });
+  if(!openDeals.length&&!dists.filter(d=>d.st!=='הושלם').length&&!(c&&(c.potential||[]).filter(x=>x.status!=='נסגר').length)){
+    L.push('• שיחת היכרות / התעדכנות כללית — אין עסקאות פתוחות במערכת.');
+  }
+  L.push('');
+  // ── עיקרי הדברים (מהערות הפגישה) ──
+  L.push('■ עיקרי הדברים');
+  if(m.no){String(m.no).split(/\n+/).map(x=>x.trim()).filter(Boolean).forEach(x=>L.push('• '+x));}
+  else L.push('• (השלם כאן את עיקרי הדברים שנדונו)');
+  L.push('');
+  // ── משימות להמשך ──
+  L.push('■ משימות להמשך');
+  let tasks=0;
+  openDeals.forEach(d=>{L.push('• מעקב אחר עסקה'+(d.num?' #'+d.num:'')+' ('+(d.srv||'')+') — סטטוס "'+(d.st||'')+'"');tasks++;});
+  dists.filter(d=>d.st!=='הושלם'&&d.mi).forEach(d=>{L.push('• השלמת חוסרים בפרויקט'+(d.no?' #'+d.no:'')+': '+d.mi);tasks++;});
+  if(c&&!c.email){L.push('• השלמת כתובת מייל בכרטיס הלקוח');tasks++;}
+  if(!tasks)L.push('• תיאום המשך מול הלקוח');
+  L.push('');
+  L.push('נכתב ביום '+fmtDate(nd())+' ע"י איתמר ונדן | HOT Business | Itamar.venden@hot.net.il');
+  return L.join('\n');
+}
+function openMeetingSummary(id){
+  const m=[...D.meetings,...(D.archivedMeetings||[])].find(x=>x.id==id);
+  if(!m){showToast('⚠️ פגישה לא נמצאה','warn');return;}
+  _sumMeetingId=id;
+  document.getElementById('sum-proj').value=m.nu||'';
+  document.getElementById('sum-text').value=m.summary||buildMeetingSummary(m);
+  document.getElementById('sum-title').textContent='📝 סיכום פגישה – '+(m.cl||'')+(m.dt?' ('+fmtDate(m.dt)+')':'');
+  document.getElementById('msummary').classList.add('open');
+}
+function regenSummary(){
+  const m=[...D.meetings,...(D.archivedMeetings||[])].find(x=>x.id==_sumMeetingId);
+  if(!m)return;
+  document.getElementById('sum-text').value=buildMeetingSummary(m,document.getElementById('sum-proj').value.trim());
+  showToast('🔄 הסיכום נוצר מחדש מנתוני המערכת','ok');
+}
+function saveSummaryToMeeting(){
+  const m=D.meetings.find(x=>x.id==_sumMeetingId);
+  const txt=document.getElementById('sum-text').value;
+  if(!m){showToast('⚠️ פגישה בארכיון — לא ניתן לשמור עליה, השתמש בהעתקה','warn');return;}
+  m.summary=txt;
+  const pn=document.getElementById('sum-proj').value.trim();
+  if(pn&&!m.nu)m.nu=pn;
+  // תמצית להערות הפגישה כדי שתופיע בטבלה
+  if(!m.no)m.no='📝 סיכום פגישה נשמר '+fmtDate(nd());
+  saveAll();rMeetings();
+  showToast('💾 הסיכום נשמר בפגישה (נפתח שוב דרך כפתור 📝)','ok');
+}
+function copySummary(){
+  const txt=document.getElementById('sum-text').value;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>showToast('📋 הסיכום הועתק ללוח','ok')).catch(()=>fallbackCopySummary(txt));
+  }else fallbackCopySummary(txt);
+}
+function fallbackCopySummary(txt){
+  const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');showToast('📋 הסיכום הועתק ללוח','ok');}catch(e){showToast('⚠️ העתקה נכשלה','warn');}
+  ta.remove();
+}
+function emailSummary(){
+  const m=[...D.meetings,...(D.archivedMeetings||[])].find(x=>x.id==_sumMeetingId);
+  if(!m)return;
+  const c=findClientByName(m.cl);
+  const txt=document.getElementById('sum-text').value;
+  const subject='HOT Business – סיכום '+_typeLabel(m.mtype||'פגישה')+(m.dt?' מתאריך '+fmtDate(m.dt):'')+(m.cl?' – '+m.cl:'');
+  openMail((c&&c.email)||'',subject,txt);
+  if(!(c&&c.email))showToast('📧 נפתח מייל — הוסף נמען (אין מייל בכרטיס הלקוח)','warn');
+  else showToast('📧 נפתח מייל עם הסיכום ל'+(c.name||''),'ok');
 }
 
 // ===== CALENDAR INTEGRATION =====
