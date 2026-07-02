@@ -194,8 +194,9 @@ body{font-family:'Heebo',sans-serif;background:#080c18;color:var(--text);font-si
 }
 .nsec{
   padding:12px 14px 4px;font-size:8px;font-weight:800;
-  color:rgba(200,169,110,.38);text-transform:uppercase;letter-spacing:1.2px;
+  color:rgba(200,169,110,.52);text-transform:uppercase;letter-spacing:1.2px;
 }
+.ni~.nsec{margin-top:6px;padding-top:12px;border-top:1px solid rgba(200,169,110,.1)}
 .ni{display:flex;align-items:center;gap:9px;padding:8px 16px;cursor:pointer;font-size:11.5px;color:var(--text3);border-right:2px solid transparent;transition:all .2s var(--expo);margin:1px 6px;border-radius:0 8px 8px 0}
 .ni:hover{background:rgba(200,169,110,.06);color:var(--text);transform:translateX(-3px)}
 .ni.active{
@@ -226,6 +227,16 @@ body{font-family:'Heebo',sans-serif;background:#080c18;color:var(--text);font-si
 #sec-workplan .shdr{--shdr-accent:#a78bfa}
 #sec-alerts .shdr{--shdr-accent:#e63946}
 #sec-export .shdr{--shdr-accent:#4cc9f0}
+/* sidebar nav active state — section-specific accent colors */
+#nv-deals.active{border-right-color:#4cc9f0!important;color:#4cc9f0!important;background:linear-gradient(90deg,rgba(76,201,240,.12),rgba(76,201,240,.03),transparent)!important}
+#nv-tenders.active{border-right-color:#f4a261!important;color:#f4a261!important;background:linear-gradient(90deg,rgba(244,162,97,.12),rgba(244,162,97,.03),transparent)!important}
+#nv-dists.active{border-right-color:#a78bfa!important;color:#a78bfa!important;background:linear-gradient(90deg,rgba(167,139,250,.12),rgba(167,139,250,.03),transparent)!important}
+#nv-salary.active{border-right-color:#06d6a0!important;color:#06d6a0!important;background:linear-gradient(90deg,rgba(6,214,160,.12),rgba(6,214,160,.03),transparent)!important}
+#nv-meetings.active{border-right-color:#06d6a0!important;color:#06d6a0!important;background:linear-gradient(90deg,rgba(6,214,160,.12),rgba(6,214,160,.03),transparent)!important}
+#nv-clients.active{border-right-color:#c8a96e!important;color:#c8a96e!important;background:linear-gradient(90deg,rgba(200,169,110,.14),rgba(200,169,110,.04),transparent)!important}
+#nv-workplan.active{border-right-color:#a78bfa!important;color:#a78bfa!important;background:linear-gradient(90deg,rgba(167,139,250,.12),rgba(167,139,250,.03),transparent)!important}
+#nv-alerts.active{border-right-color:#e63946!important;color:#e63946!important;background:linear-gradient(90deg,rgba(230,57,70,.12),rgba(230,57,70,.03),transparent)!important}
+#nv-export.active{border-right-color:#4cc9f0!important;color:#4cc9f0!important;background:linear-gradient(90deg,rgba(76,201,240,.12),rgba(76,201,240,.03),transparent)!important}
 .stit{
   font-family:'Playfair Display',serif;
   font-size:22px;font-weight:700;letter-spacing:-.2px;
@@ -261,8 +272,8 @@ body{font-family:'Heebo',sans-serif;background:#080c18;color:var(--text);font-si
 /* ─── GRID PANELS ─── */
 .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
 .dpanel{background:linear-gradient(145deg,rgba(38,55,96,.62),rgba(44,64,108,.62));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(200,169,110,.22);border-radius:14px;padding:18px;box-shadow:0 6px 24px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.05)}
-.dpanel h4{font-size:10px;font-weight:800;color:var(--text3);margin-bottom:14px;text-transform:uppercase;letter-spacing:.8px;position:relative;padding-right:10px}
-.dpanel h4::before{content:'';position:absolute;right:0;top:50%;transform:translateY(-50%);width:3px;height:65%;background:rgba(200,169,110,.45);border-radius:2px}
+.dpanel h4{font-size:10px;font-weight:800;color:var(--h4-color,var(--text3));margin-bottom:14px;text-transform:uppercase;letter-spacing:.8px;position:relative;padding-right:10px}
+.dpanel h4::before{content:'';position:absolute;right:0;top:50%;transform:translateY(-50%);width:3px;height:65%;background:var(--h4-accent,rgba(200,169,110,.45));border-radius:2px}
 
 /* ─── ALERT CARDS ─── */
 .agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
@@ -428,6 +439,13 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
   background:linear-gradient(135deg,var(--text) 40%,var(--gold));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
 }
+/* modal header accent borders per section */
+#mdeal .mhdr{border-bottom-color:rgba(76,201,240,.25)}
+#mtender .mhdr{border-bottom-color:rgba(244,162,97,.25)}
+#mdist .mhdr{border-bottom-color:rgba(167,139,250,.25)}
+#msalary .mhdr{border-bottom-color:rgba(6,214,160,.25)}
+#mmeeting .mhdr{border-bottom-color:rgba(6,214,160,.25)}
+#mclient .mhdr{border-bottom-color:rgba(200,169,110,.3)}
 .mcls{background:none;border:none;cursor:pointer;font-size:22px;color:var(--text3);line-height:1;transition:all .15s;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center}
 .mcls:hover{color:var(--red);background:rgba(230,57,70,.1)}
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -1233,9 +1251,9 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   <div id="dash-welcome"></div>
   <div class="krow" id="krow"></div>
   <div class="dgrid">
-    <div class="dpanel"><h4>📌 עדיפות פעולה</h4><div id="prilist" style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto"></div></div>
+    <div class="dpanel"><h4 style="--h4-accent:#e63946;--h4-color:#ff7a84">📌 עדיפות פעולה</h4><div id="prilist" style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto"></div></div>
     <div class="dpanel">
-      <h4>🎯 יעד פגישות חודשי</h4>
+      <h4 style="--h4-accent:#06d6a0;--h4-color:#06d6a0">🎯 יעד פגישות חודשי</h4>
       <div class="mcirc">
         <svg width="90" height="90"><circle cx="45" cy="45" r="36" fill="none" stroke="var(--border)" stroke-width="7"/><circle id="mcirc" cx="45" cy="45" r="36" fill="none" stroke="var(--teal)" stroke-width="7" stroke-dasharray="226" stroke-dashoffset="226" stroke-linecap="round"/></svg>
         <div class="mn"><span id="mnum">0/15</span><span>פגישות</span></div>
@@ -1244,15 +1262,15 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     </div>
   </div>
   <div class="dgrid">
-    <div class="dpanel" style="grid-column:1/-1"><h4>🔥 דחוף – לטיפול עכשיו</h4><div id="urgentlist" style="display:flex;flex-direction:column;gap:5px;max-height:260px;overflow-y:auto"></div></div>
+    <div class="dpanel" style="grid-column:1/-1"><h4 style="--h4-accent:#e63946;--h4-color:#ff7a84">🔥 דחוף – לטיפול עכשיו</h4><div id="urgentlist" style="display:flex;flex-direction:column;gap:5px;max-height:260px;overflow-y:auto"></div></div>
   </div>
   <div class="dgrid">
-    <div class="dpanel"><h4>📅 פגישות קרובות</h4><div id="upcoming-meetings" style="display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto"></div><button class="btn btnp btns" onclick="openM('meeting',null)" style="margin-top:8px;width:100%;font-size:11px">+ פגישה חדשה</button></div>
-    <div class="dpanel"><h4>⚡ פעולות מהירות</h4><div id="quick-actions-panel" style="display:flex;flex-direction:column;gap:6px"></div></div>
+    <div class="dpanel"><h4 style="--h4-accent:#06d6a0;--h4-color:#06d6a0">📅 פגישות קרובות</h4><div id="upcoming-meetings" style="display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto"></div><button class="btn btnp btns" onclick="openM('meeting',null)" style="margin-top:8px;width:100%;font-size:11px">+ פגישה חדשה</button></div>
+    <div class="dpanel"><h4 style="--h4-accent:#fbbf24;--h4-color:#fbbf24">⚡ פעולות מהירות</h4><div id="quick-actions-panel" style="display:flex;flex-direction:column;gap:6px"></div></div>
   </div>
   <div class="dgrid">
-    <div class="dpanel"><h4>💼 סטטוס עסקאות</h4><div id="dspanel" style="display:flex;flex-direction:column;gap:6px"></div></div>
-    <div class="dpanel"><h4>📈 מדדים מהירים</h4><div id="qspanel" style="display:flex;flex-direction:column;gap:6px"></div></div>
+    <div class="dpanel"><h4 style="--h4-accent:#4cc9f0;--h4-color:#4cc9f0">💼 סטטוס עסקאות</h4><div id="dspanel" style="display:flex;flex-direction:column;gap:6px"></div></div>
+    <div class="dpanel"><h4 style="--h4-accent:#f4a261;--h4-color:#f4a261">📈 מדדים מהירים</h4><div id="qspanel" style="display:flex;flex-direction:column;gap:6px"></div></div>
   </div>
 </div>
 
@@ -4227,7 +4245,7 @@ function rClients(){
     const cMtgs=D.meetings.filter(m=>(m.cl||'').trim()===(c.name||'').trim());
     const nextMtg=cMtgs.filter(m=>m.dt>=todayStrC&&m.hl!=='מבוטל').sort((a,b)=>(a.dt+(a.time||''))<(b.dt+(b.time||''))?-1:1)[0];
     const lastMtg=cMtgs.filter(m=>m.hl==='כן').sort((a,b)=>(a.dt)<(b.dt)?1:-1)[0];
-    return`<div class="client-card" onclick="openClientModal('${c.id}')">
+    return`<div class="client-card" style="border-right:3px solid ${stCol}" onclick="openClientModal('${c.id}')">
       <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:8px">
         <div>
           <div style="font-size:13px;font-weight:700">${c.name||''}</div>
