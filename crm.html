@@ -3062,7 +3062,8 @@ function globalSearch(q){
   D.tenders.forEach(t=>{ if(hit(t.name,t.proj,t.handler)) push('📋',t.name||'(ללא שם)','מכרז','tender',t.id); });
   D.meetings.forEach(m=>{ if(hit(m.cl,m.no)) push('🤝',m.cl||'(ללא שם)','פגישה','meeting',m.id); });
   if(!_gsRes.length){ box.innerHTML='<div class="gsr-empty">לא נמצאו תוצאות</div>'; box.classList.add('show'); return; }
-  box.innerHTML=_gsRes.map((r,i)=>`<div class="gsr" onclick="gsGo(${i})"><span class="gsr-ic">${r.icon}</span><span class="gsr-lb">${r.label}</span><span class="gsr-sub">${r.sub}</span></div>`).join('');
+  const gsClr={deal:'#4cc9f0',client:'#c8a96e',dist:'#a78bfa',salary:'#06d6a0',tender:'#f4a261',meeting:'#06d6a0'};
+  box.innerHTML=_gsRes.map((r,i)=>{const c=gsClr[r.type]||'var(--gold)';return`<div class="gsr" onclick="gsGo(${i})" style="border-right:2px solid ${c}22"><span class="gsr-ic" style="background:${c}15;border-radius:6px;padding:2px 4px">${r.icon}</span><span class="gsr-lb">${r.label}</span><span class="gsr-sub" style="color:${c}">${r.sub}</span></div>`;}).join('');
   box.classList.add('show');
 }
 function gsGo(i){
