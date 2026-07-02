@@ -208,8 +208,23 @@ body{font-family:'Heebo',sans-serif;background:#080c18;color:var(--text);font-si
 }
 .sec{display:none}.sec.active{display:block;height:100%;overflow-y:auto;overflow-x:hidden;padding:20px;box-sizing:border-box;-webkit-overflow-scrolling:touch}
 .shdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;
-  padding-bottom:14px;border-bottom:1px solid rgba(200,169,110,.08);
+  padding:0 0 14px 0;border-bottom:1px solid rgba(200,169,110,.08);
+  position:relative;
 }
+.shdr::before{content:'';position:absolute;bottom:-1px;right:0;width:60px;height:2px;
+  background:var(--shdr-accent,var(--gold));border-radius:2px;opacity:.7;
+  filter:blur(1px);
+}
+/* section accent colors */
+#sec-deals .shdr{--shdr-accent:#4cc9f0}
+#sec-tenders .shdr{--shdr-accent:#f4a261}
+#sec-dists .shdr{--shdr-accent:#a78bfa}
+#sec-salary .shdr{--shdr-accent:#06d6a0}
+#sec-meetings .shdr{--shdr-accent:#06d6a0}
+#sec-clients .shdr{--shdr-accent:#c8a96e}
+#sec-workplan .shdr{--shdr-accent:#a78bfa}
+#sec-alerts .shdr{--shdr-accent:#e63946}
+#sec-export .shdr{--shdr-accent:#4cc9f0}
 .stit{
   font-family:'Playfair Display',serif;
   font-size:22px;font-weight:700;letter-spacing:-.2px;
@@ -277,7 +292,7 @@ th{position:sticky;top:0;z-index:2;padding:9px 12px;text-align:right;font-weight
 td{padding:8px 12px;border-bottom:1px solid rgba(28,38,64,.4);color:var(--text);vertical-align:middle;white-space:nowrap;transition:background .12s}
 tr:nth-child(even) td{background:rgba(255,255,255,.012)}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:rgba(230,57,70,.04)!important}
+tr:hover td{background:rgba(200,169,110,.05)!important}
 .tft{background:linear-gradient(0deg,rgba(7,9,16,.9),rgba(10,13,22,.8));padding:9px 16px;display:flex;gap:20px;flex-wrap:wrap;border-top:1px solid var(--border)}
 .cb-row{display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(230,57,70,.08);border-top:1px solid rgba(230,57,70,.2);position:sticky;bottom:0;z-index:5;backdrop-filter:blur(8px)}
 .cb-row button{padding:5px 13px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;font-family:'Heebo',sans-serif}
@@ -1601,7 +1616,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
 <!-- WORKPLAN -->
 <div class="sec" id="sec-workplan">
   <div class="shdr">
-    <div class="stit">🎯 תהליך עבודה לקוחות – מוצרים פוטנציאליים</div>
+    <div class="stit">🎯 מוצרים פוטנציאליים</div>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <input type="text" class="srch" placeholder="חיפוש לקוח / מוצר..." oninput="filt(event,'wptb')">
       <select id="wp-pri-filter" onchange="rWorkPlan()" style="min-width:110px;font-size:11px">
@@ -1618,6 +1633,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
         <option value="ממתין לאישור">ממתין לאישור</option>
         <option value="נסגר">נסגר</option>
       </select>
+      <button class="btn" onclick="nav('clients')" style="background:rgba(200,169,110,.12);color:var(--gold);border-color:rgba(200,169,110,.3)" title="עבור לכרטיסי לקוח להוספת מוצרים">🏢 לקוחות</button>
       <button class="btn" onclick="exportExcel('workplan')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
     </div>
   </div>
