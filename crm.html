@@ -781,6 +781,12 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
   background:linear-gradient(170deg,rgba(13,17,32,.98),rgba(7,10,20,.99));
   border-color:rgba(200,169,110,.1);
   box-shadow:0 10px 48px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.04);
+  transition:box-shadow .25s,border-color .25s,transform .2s;
+}
+.tw[style*="cursor:pointer"]:hover{
+  box-shadow:0 16px 56px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.07);
+  border-color:rgba(200,169,110,.2);
+  transform:translateY(-3px);
 }
 
 /* ── Table rows: gold hover instead of harsh red ── */
@@ -1284,7 +1290,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <div class="tab" onclick="swTab(this,'deals-tabs','lt','st','sumt','archivt');rDealsArchive()">📦 ארכיון</div>
   </div>
   <div id="lt">
-    <div class="tw"><div class="thdr">📋 עסקאות טווח ארוך</div>
+    <div class="tw"><div class="thdr" style="border-right:3px solid #4cc9f0">📋 עסקאות טווח ארוך</div>
     <div class="tscroll"><table><thead><tr>
       <th class="cb-th"><input type="checkbox" id="chk-all-deals-long" onchange="toggleAll('deals-long',this.checked)"></th>
       <th>⚡</th><th>תאריך</th><th>#</th><th>שם חברה</th><th>תשתית</th><th>שירות</th>
@@ -1299,7 +1305,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     </div></div>
   </div>
   <div id="st" style="display:none">
-    <div class="tw"><div class="thdr">⚡ עסקאות טווח קצר</div>
+    <div class="tw"><div class="thdr" style="border-right:3px solid #4cc9f0">⚡ עסקאות טווח קצר</div>
     <div class="tscroll"><table><thead><tr>
       <th class="cb-th"><input type="checkbox" id="chk-all-deals-short" onchange="toggleAll('deals-short',this.checked)"></th>
       <th>⚡</th><th>תאריך</th><th>#</th><th>שם חברה</th><th>תשתית</th><th>שירות</th>
@@ -1335,7 +1341,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <div class="tab" onclick="swTab(this,'tenders-tabs','tent','archivtent');rTendersArchive()">📦 ארכיון</div>
   </div>
   <div id="tent">
-    <div class="tw"><div class="tscroll"><table><thead><tr>
+    <div class="tw"><div class="thdr" style="border-right:3px solid #f4a261">📋 מכרזים פעילים <span id="tender-thdr-info" style="font-weight:400;font-size:10px;color:var(--text2)"></span></div><div class="tscroll"><table><thead><tr>
       <th class="cb-th"><input type="checkbox" id="chk-all-tenders" onchange="toggleAll('tenders',this.checked)"></th>
       <th>⚡</th><th>הוגשה?</th><th>כמות</th><th>פרסום</th><th>שם מכרז</th><th>מס׳ פרויקט</th>
       <th>קישור</th><th>הצעה</th><th>ימים לשאלות</th><th>סבב</th><th>הגשה</th>
@@ -1372,7 +1378,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <div class="tab" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDistsArchive()">📦 ארכיון</div>
   </div>
   <div id="ldt">
-    <div class="tw"><div class="thdr">📦 מרכזים / ארוך טווח</div>
+    <div class="tw"><div class="thdr" style="border-right:3px solid #a78bfa">📦 מרכזים / ארוך טווח</div>
     <div class="tscroll"><table><thead><tr>
       <th class="cb-th"><input type="checkbox" id="chk-all-dists-long" onchange="toggleAll('dists-long',this.checked)"></th>
       <th>⚡</th><th>מטפל</th><th>מס׳ פרויקט</th><th>שם חברה</th><th>לקוח</th><th>IT</th>
@@ -1386,7 +1392,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     </div></div>
   </div>
   <div id="sdt" style="display:none">
-    <div class="tw"><div class="thdr">⚡ הפצות – קצר טווח</div>
+    <div class="tw"><div class="thdr" style="border-right:3px solid #a78bfa">⚡ הפצות – קצר טווח</div>
     <div class="tscroll"><table><thead><tr>
       <th class="cb-th"><input type="checkbox" id="chk-all-dists-short" onchange="toggleAll('dists-short',this.checked)"></th>
       <th>⚡</th><th>מטפל</th><th>מס׳ פרויקט</th><th>שם חברה</th><th>לקוח</th><th>IT</th>
@@ -1423,7 +1429,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <div class="tab" onclick="swTab(this,'salary-tabs','ssvc','seq','ssum','archivsal');rSalaryArchive()">📦 ארכיון</div>
   </div>
   <div id="ssvc">
-    <div class="tw"><div class="thdr">🔧 שירות</div>
+    <div class="tw"><div class="thdr" style="border-right:3px solid #06d6a0">🔧 שירות</div>
     <div class="tscroll"><table><thead><tr>
       <th class="cb-th"><input type="checkbox" id="chk-all-salary-service" onchange="toggleAll('salary-service',this.checked)"></th>
       <th>⚡</th><th>סטטוס</th><th>כמות</th><th>מס׳ פרויקט</th><th>שם לקוח</th>
@@ -1437,7 +1443,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     </div></div>
   </div>
   <div id="seq" style="display:none">
-    <div class="tw"><div class="thdr">📦 ציוד (OTC)</div>
+    <div class="tw"><div class="thdr" style="border-right:3px solid #4cc9f0">📦 ציוד (OTC)</div>
     <div class="tscroll"><table><thead><tr>
       <th class="cb-th"><input type="checkbox" id="chk-all-salary-equip" onchange="toggleAll('salary-equip',this.checked)"></th>
       <th>⚡</th><th>סטטוס</th><th>כמות</th><th>מס׳ פרויקט</th><th>שם לקוח</th>
@@ -1475,7 +1481,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   </div>
   <div id="mtent">
     <div class="krow" id="mkrow"></div>
-    <div class="tw"><div class="thdr">📅 פגישות – יעד 15/חודש</div>
+    <div class="tw"><div class="thdr" style="border-right:3px solid #06d6a0">📅 פגישות – יעד 15/חודש</div>
     <div class="tscroll"><table><thead><tr>
       <th class="cb-th"><input type="checkbox" id="chk-all-meetings" onchange="toggleAll('meetings',this.checked)"></th>
       <th>#</th><th>תאריך</th><th>שעה</th><th>סוג</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th><th style="min-width:170px">פעולות</th>
@@ -1508,19 +1514,23 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
 <!-- EXPORT -->
 <div class="sec" id="sec-export">
   <div class="shdr"><div class="stit">📥 ייצוא וגיבוי</div></div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:20px">
-    <div class="tw" style="cursor:pointer" onclick="exportExcel('deals')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💼</div><div style="font-weight:700;margin-bottom:4px">עסקאות</div><div style="font-size:11px;color:var(--text2)" id="exp-deals-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="exportExcel('tenders')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📋</div><div style="font-weight:700;margin-bottom:4px">מכרזים</div><div style="font-size:11px;color:var(--text2)" id="exp-tenders-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="exportExcel('dists')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🚀</div><div style="font-weight:700;margin-bottom:4px">הפצות</div><div style="font-size:11px;color:var(--text2)" id="exp-dists-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="exportExcel('salary')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💰</div><div style="font-weight:700;margin-bottom:4px">פרויקטי שכר</div><div style="font-size:11px;color:var(--text2)" id="exp-salary-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="exportExcel('meetings')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🤝</div><div style="font-weight:700;margin-bottom:4px">פגישות</div><div style="font-size:11px;color:var(--text2)" id="exp-meetings-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="exportExcel('clients')"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🏢</div><div style="font-weight:700;margin-bottom:4px">כרטיסי לקוח</div><div style="font-size:11px;color:var(--text2)" id="exp-clients-count">0 לקוחות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="exportAll()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📊</div><div style="font-weight:700;margin-bottom:4px">כל הנתונים</div><div style="font-size:11px;color:var(--text2)">כל הנושאים</div><div style="margin-top:10px;background:#e63946;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא הכל</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="backupData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💾</div><div style="font-weight:700;margin-bottom:4px">גיבוי מלא</div><div style="font-size:11px;color:var(--text2)">קובץ JSON לשחזור</div><div style="margin-top:10px;background:#0078d4;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">💾 הורד גיבוי</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="clipboardBackup()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📋</div><div style="font-weight:700;margin-bottom:4px">העתק לגיבוי</div><div style="font-size:11px;color:var(--text2)">העתק נתונים ללוח</div><div style="margin-top:10px;background:#f4a261;color:#000;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📋 העתק ללוח</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="restoreData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📂</div><div style="font-weight:700;margin-bottom:4px">שחזור נתונים</div><div style="font-size:11px;color:var(--text2)">מקובץ JSON</div><div style="margin-top:10px;background:#7b5ea7;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📂 שחזר מגיבוי</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="openAutoBackups()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🛡️</div><div style="font-weight:700;margin-bottom:4px">גיבויים אוטומטיים</div><div style="font-size:11px;color:var(--text2)">300 גיבויים + 7 ימים אחורה · שחזור בקליק</div><div style="margin-top:10px;background:rgba(6,214,160,.15);color:#06d6a0;border:1px solid rgba(6,214,160,.3);padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">🛡️ צפה ושחזר</div></div></div>
-    <div class="tw" style="cursor:pointer;position:relative" onclick="openSyncModal()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">☁️</div><div style="font-weight:700;margin-bottom:4px">סנכרון ענן</div><div style="font-size:11px;color:var(--text2)" id="fb-tile-status">לא מוגדר</div><div style="margin-top:10px;background:rgba(76,201,240,.15);color:#4cc9f0;border:1px solid rgba(76,201,240,.3);padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">☁️ הגדרת סנכרון</div></div></div>
+  <div style="font-size:9px;font-weight:800;color:rgba(200,169,110,.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding:0 2px">📤 ייצוא נתונים</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px">
+    <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0" onclick="exportExcel('deals')"><div style="padding:18px 20px;text-align:center"><div style="font-size:26px;margin-bottom:6px;background:rgba(76,201,240,.1);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">💼</div><div style="font-weight:700;margin-bottom:3px">עסקאות</div><div style="font-size:11px;color:var(--text2)" id="exp-deals-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #f4a261" onclick="exportExcel('tenders')"><div style="padding:18px 20px;text-align:center"><div style="font-size:26px;margin-bottom:6px;background:rgba(244,162,97,.1);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">📋</div><div style="font-weight:700;margin-bottom:3px">מכרזים</div><div style="font-size:11px;color:var(--text2)" id="exp-tenders-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #a78bfa" onclick="exportExcel('dists')"><div style="padding:18px 20px;text-align:center"><div style="font-size:26px;margin-bottom:6px;background:rgba(167,139,250,.1);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">🚀</div><div style="font-weight:700;margin-bottom:3px">הפצות</div><div style="font-size:11px;color:var(--text2)" id="exp-dists-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #c8a96e" onclick="exportExcel('salary')"><div style="padding:18px 20px;text-align:center"><div style="font-size:26px;margin-bottom:6px;background:rgba(200,169,110,.1);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">💰</div><div style="font-weight:700;margin-bottom:3px">פרויקטי שכר</div><div style="font-size:11px;color:var(--text2)" id="exp-salary-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="exportExcel('meetings')"><div style="padding:18px 20px;text-align:center"><div style="font-size:26px;margin-bottom:6px;background:rgba(6,214,160,.1);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">🤝</div><div style="font-weight:700;margin-bottom:3px">פגישות</div><div style="font-size:11px;color:var(--text2)" id="exp-meetings-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #c8a96e" onclick="exportExcel('clients')"><div style="padding:18px 20px;text-align:center"><div style="font-size:26px;margin-bottom:6px;background:rgba(200,169,110,.1);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">🏢</div><div style="font-weight:700;margin-bottom:3px">כרטיסי לקוח</div><div style="font-size:11px;color:var(--text2)" id="exp-clients-count">0 לקוחות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #e63946" onclick="exportAll()"><div style="padding:18px 20px;text-align:center"><div style="font-size:26px;margin-bottom:6px;background:rgba(230,57,70,.1);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">📊</div><div style="font-weight:700;margin-bottom:3px">כל הנתונים</div><div style="font-size:11px;color:var(--text2)">כל הנושאים</div><div style="margin-top:10px;background:#e63946;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא הכל</div></div></div>
+  </div>
+  <div style="font-size:9px;font-weight:800;color:rgba(200,169,110,.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding:0 2px">🛡️ גיבוי ושחזור</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px">
+    <div class="tw" style="cursor:pointer;border-top:3px solid #0078d4" onclick="backupData()"><div style="padding:18px 20px;text-align:center"><div style="font-size:26px;margin-bottom:6px;background:rgba(0,120,212,.1);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">💾</div><div style="font-weight:700;margin-bottom:3px">גיבוי מלא</div><div style="font-size:11px;color:var(--text2)">קובץ JSON לשחזור</div><div style="margin-top:10px;background:#0078d4;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">💾 הורד גיבוי</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #f4a261" onclick="clipboardBackup()"><div style="padding:18px 20px;text-align:center"><div style="font-size:26px;margin-bottom:6px;background:rgba(244,162,97,.1);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">📋</div><div style="font-weight:700;margin-bottom:3px">העתק לגיבוי</div><div style="font-size:11px;color:var(--text2)">העתק נתונים ללוח</div><div style="margin-top:10px;background:#f4a261;color:#000;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📋 העתק ללוח</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #7b5ea7" onclick="restoreData()"><div style="padding:18px 20px;text-align:center"><div style="font-size:26px;margin-bottom:6px;background:rgba(123,94,167,.1);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">📂</div><div style="font-weight:700;margin-bottom:3px">שחזור נתונים</div><div style="font-size:11px;color:var(--text2)">מקובץ JSON</div><div style="margin-top:10px;background:#7b5ea7;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📂 שחזר מגיבוי</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="openAutoBackups()"><div style="padding:18px 20px;text-align:center"><div style="font-size:26px;margin-bottom:6px;background:rgba(6,214,160,.1);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">🛡️</div><div style="font-weight:700;margin-bottom:3px">גיבויים אוטומטיים</div><div style="font-size:11px;color:var(--text2)">300 גיבויים + 7 ימים אחורה · שחזור בקליק</div><div style="margin-top:10px;background:rgba(6,214,160,.15);color:#06d6a0;border:1px solid rgba(6,214,160,.3);padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">🛡️ צפה ושחזר</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0;position:relative" onclick="openSyncModal()"><div style="padding:18px 20px;text-align:center"><div style="font-size:26px;margin-bottom:6px;background:rgba(76,201,240,.1);border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px">☁️</div><div style="font-weight:700;margin-bottom:3px">סנכרון ענן</div><div style="font-size:11px;color:var(--text2)" id="fb-tile-status">לא מוגדר</div><div style="margin-top:10px;background:rgba(76,201,240,.15);color:#4cc9f0;border:1px solid rgba(76,201,240,.3);padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">☁️ הגדרת סנכרון</div></div></div>
   </div>
 </div>
 
@@ -1641,6 +1651,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   </div>
   <div class="krow" id="wpkrow"></div>
   <div class="tw">
+    <div class="thdr" style="border-right:3px solid #a78bfa">🎯 פיפליין מוצרים <span id="wp-thdr-info" style="font-weight:400;font-size:10px;color:var(--text2)"></span></div>
     <div class="tscroll"><table><thead><tr>
       <th>לקוח</th><th>סוג מוצר</th><th>שם / פרטים</th><th>שווי משוער ₪</th>
       <th>עדיפות</th><th>יעד סגירה</th><th>ימים</th><th>סטטוס</th><th>הערות / פעולה הבאה</th><th>פעולות</th>
@@ -3306,11 +3317,11 @@ function rDash(){
     <div class="kc p"><div class="lb">מכרזים</div><div class="vl">${D.tenders.length}</div></div>
     <div class="kc g"><div class="lb">פגישות</div><div class="vl">${held}/${MEETING_GOAL}</div><div class="sb">${pct}%</div></div>`;
   const pi=[];
-  D.deals.filter(d=>d.st!=='נסגר').forEach(d=>{const p=pri(d,'deal');if(p==='r'||p==='o')pi.push({p,t:d.co,s:d.srv||''});});
-  D.tenders.forEach(t=>{const p=pri(t,'ten');if(p==='r'||p==='o')pi.push({p,t:t.name,s:`מועד: ${fmtDate(t.deadline)}`});});
-  D.dists.filter(d=>d.st!=='הושלם').forEach(d=>{const p=pri(d,'dist');if(p==='r')pi.push({p,t:d.co,s:d.st});});
-  pi.sort((a,b)=>a.p==='r'?-1:1);
-  document.getElementById('prilist').innerHTML=pi.length?pi.slice(0,8).map(i=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border)">${pB(i.p)}<div><div style="font-size:11px;font-weight:600">${i.t}</div><div style="font-size:10px;color:var(--text2)">${i.s}</div></div></div>`).join(''):'<div style="font-size:11px;color:var(--text2)">✅ אין פריטים קריטיים</div>';
+  D.deals.filter(d=>d.st!=='נסגר').forEach(d=>{const p=pri(d,'deal');if(p==='r'||p==='o')pi.push({p,t:d.co,s:d.srv||'',nav:'deals'});});
+  D.tenders.forEach(t=>{const p=pri(t,'ten');if(p==='r'||p==='o')pi.push({p,t:t.name,s:`מועד: ${fmtDate(t.deadline)}`,nav:'tenders'});});
+  D.dists.filter(d=>d.st!=='הושלם').forEach(d=>{const p=pri(d,'dist');if(p==='r')pi.push({p,t:d.co,s:d.st,nav:'dists'});});
+  pi.sort((a,b)=>a.p==='r'?-1:b.p==='r'?1:0);
+  document.getElementById('prilist').innerHTML=pi.length?pi.slice(0,8).map(i=>`<div onclick="nav('${i.nav}')" style="display:flex;align-items:center;gap:7px;padding:6px 4px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;border-radius:4px" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">${pB(i.p)}<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.t}</div><div style="font-size:10px;color:var(--text2)">${i.s}</div></div><span style="font-size:10px;color:var(--text3);flex-shrink:0">←</span></div>`).join(''):'<div style="font-size:11px;color:var(--teal);padding:6px 0">✅ אין פריטים קריטיים</div>';
   // 🔥 urgent list — date-driven alerts (crit first), clickable to client / alerts
   const uEl=document.getElementById('urgentlist');
   if(uEl){
@@ -3332,17 +3343,20 @@ function rDash(){
   document.getElementById('mnum').innerHTML=`${held}<br><span>מתוך ${MEETING_GOAL}</span>`;
   document.getElementById('mpct').textContent=pct+'%';
   const ld=D.deals.filter(d=>d.ty==='long'),sd=D.deals.filter(d=>d.ty==='short'),tdist=D.deals.reduce((s,d)=>s+(d.di||0),0);
-  document.getElementById('dspanel').innerHTML=`
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">ארוך טווח</span><b>${ld.length} עסקאות</b></div>
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">קצר טווח</span><b>${sd.length} עסקאות</b></div>
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">הפצות בפועל</span><b class="ng">${fmt(tdist)}</b></div>
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">לקוחות</span><b>${D.clients.length}</b></div>`;
+  const dsRow=(lbl,val,col,navKey)=>`<div onclick="nav('${navKey}')" style="display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;border-radius:4px;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''"><span style="color:var(--text2)">${lbl}</span><b style="color:${col}">${val}</b></div>`;
+  const ldCls=ld.filter(d=>d.st==='נסגר').length,sdCls=sd.filter(d=>d.st==='נסגר').length;
+  document.getElementById('dspanel').innerHTML=
+    dsRow('💼 ארוך טווח',`${ld.length} עסקאות${ldCls?' · '+ldCls+' נסגרו':''}` ,'#4cc9f0','deals')+
+    dsRow('⚡ קצר טווח',`${sd.length} עסקאות${sdCls?' · '+sdCls+' נסגרו':''}` ,'#06d6a0','deals')+
+    dsRow('🚀 הפצות',''+D.dists.length+' הפצות','#a78bfa','dists')+
+    dsRow('🏢 לקוחות',''+D.clients.length,'var(--gold)','clients');
   const sc=D.salary.filter(s=>s.st==='סגור').reduce((s,i)=>s+(i.cl2||0),0),so=D.salary.filter(s=>s.st!=='סגור').reduce((s,i)=>s+(i.tr||0),0);
-  document.getElementById('qspanel').innerHTML=`
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">שכר נסגר</span><b class="ng">${fmt(sc)}</b></div>
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">שכר ממתין</span><b class="ny">${fmt(so)}</b></div>
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">מכרזים פעילים</span><b class="nb">${D.tenders.filter(t=>t.submitted!=='כן').length}</b></div>
-    <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:var(--text2)">הוגשו</span><b class="ng">${D.tenders.filter(t=>t.submitted==='כן').length}</b></div>`;
+  const qsRow=(lbl,val,col,navKey)=>`<div onclick="nav('${navKey}')" style="display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;border-radius:4px;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''"><span style="color:var(--text2)">${lbl}</span><b style="color:${col}">${val}</b></div>`;
+  document.getElementById('qspanel').innerHTML=
+    qsRow('💰 שכר נסגר',fmt(sc),'var(--teal)','salary')+
+    qsRow('💰 שכר ממתין',fmt(so),'#f4a261','salary')+
+    qsRow('📋 מכרזים פעילים',''+D.tenders.filter(t=>t.submitted!=='כן').length,'#f4a261','tenders')+
+    qsRow('📋 הוגשו',''+D.tenders.filter(t=>t.submitted==='כן').length,'var(--teal)','tenders');
   renderUpcomingMeetings();
   renderQuickActions();
 }
@@ -3485,7 +3499,7 @@ function rDealSum(){
     </div>
   </div>`;
   document.getElementById('dsk').innerHTML=`<div class="kc"><div class="lb">שווי ארוך</div><div class="vl">₪${Math.round(sm(l,'v')/1000)}K</div></div><div class="kc y"><div class="lb">שווי קצר</div><div class="vl">₪${Math.round(sm(s,'v')/1000)}K</div></div><div class="kc g"><div class="lb">סה"כ</div><div class="vl">₪${Math.round((sm(l,'v')+sm(s,'v'))/1000)}K</div></div><div class="kc g"><div class="lb">הפצות ארוך</div><div class="vl">₪${Math.round(sm(l,'di')/1000)}K</div></div><div class="kc y"><div class="lb">הפצות קצר</div><div class="vl">₪${Math.round(sm(s,'di')/1000)}K</div></div><div class="kc p"><div class="lb">OTC כולל</div><div class="vl">₪${Math.round((sm(l,'otc')+sm(s,'otc'))/1000)}K</div></div>`;
-  document.getElementById('dst').innerHTML=`<div class="thdr">סיכום עסקאות</div><div class="tscroll"><table><thead><tr style="background:var(--s1)"><th>קטגוריה</th><th>כמות</th><th>שווי</th><th>הפצות</th><th>OTC</th></tr></thead><tbody><tr><td style="font-weight:600">טווח ארוך</td><td>${l.length}</td><td>${fmt(sm(l,'v'))}</td><td>${fmt(sm(l,'di'))}</td><td>${fmt(sm(l,'otc'))}</td></tr><tr><td style="font-weight:600">טווח קצר</td><td>${s.length}</td><td>${fmt(sm(s,'v'))}</td><td>${fmt(sm(s,'di'))}</td><td>${fmt(sm(s,'otc'))}</td></tr><tr style="background:var(--s3);font-weight:700"><td>סה"כ</td><td>${D.deals.length}</td><td>${fmt(sm(l,'v')+sm(s,'v'))}</td><td>${fmt(sm(l,'di')+sm(s,'di'))}</td><td>${fmt(sm(l,'otc')+sm(s,'otc'))}</td></tr></tbody></table></div>`;
+  document.getElementById('dst').innerHTML=`<div class="thdr" style="border-right:3px solid #4cc9f0">סיכום עסקאות</div><div class="tscroll"><table><thead><tr style="background:var(--s1)"><th>קטגוריה</th><th>כמות</th><th>שווי</th><th>הפצות</th><th>OTC</th></tr></thead><tbody><tr><td style="font-weight:600">טווח ארוך</td><td>${l.length}</td><td>${fmt(sm(l,'v'))}</td><td>${fmt(sm(l,'di'))}</td><td>${fmt(sm(l,'otc'))}</td></tr><tr><td style="font-weight:600">טווח קצר</td><td>${s.length}</td><td>${fmt(sm(s,'v'))}</td><td>${fmt(sm(s,'di'))}</td><td>${fmt(sm(s,'otc'))}</td></tr><tr style="background:var(--s3);font-weight:700"><td>סה"כ</td><td>${D.deals.length}</td><td>${fmt(sm(l,'v')+sm(s,'v'))}</td><td>${fmt(sm(l,'di')+sm(s,'di'))}</td><td>${fmt(sm(l,'otc')+sm(s,'otc'))}</td></tr></tbody></table></div>`;
 }
 
 function rDealsArchive(){
@@ -3593,7 +3607,11 @@ function rTenders(){
     return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-tenders" ${chk} onchange="toggleSel('tenders','${tn.id}')"></td><td>${pB(p)}</td><td>${sb2}</td><td>${tn.qty||1}</td><td style="font-size:10px">${fmtDate(tn.pub)}</td><td style="font-weight:600;min-width:120px">${tn.name||''}</td><td style="font-size:10px">${tn.proj||'–'}</td><td>${tn.link?`<a href="${tn.link}" target="_blank" style="color:#4cc9f0;font-size:10px">🔗</a>`:'–'}</td><td style="font-size:10px">${fmtDate(tn.quote)}</td><td>${qd}</td><td>${tn.rounds||'–'}</td><td style="font-weight:600;color:#e63946;font-size:10px">${fmtDate(tn.deadline)}</td><td style="font-size:10px">${tn.handler||'–'}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.docs||'–'}</td><td>${lb}</td><td class="nb">${fmt(tn.amount)}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.notes||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('tender','${tn.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tenders','${tn.id}')">🗑</button></td></tr>`;
   }).join('')||emptyRow(18,'📋',"אין מכרזים","openM('tender',null)");
   const ta=D.tenders.reduce((s,t)=>s+(t.amount||0),0);
-  document.getElementById('tft').innerHTML=`<span class="fi">מכרזים: <b>${D.tenders.length}</b></span><span class="fi">הוגשו: <b>${D.tenders.filter(t=>t.submitted==='כן').length}</b></span><span class="fi">ממתינים: <b>${D.tenders.filter(t=>t.submitted!=='כן').length}</b></span><span class="fi">שווי: <b>${fmt(ta)}</b></span>`;
+  const tsubmit=D.tenders.filter(t=>t.submitted==='כן').length;
+  const tpend=D.tenders.filter(t=>t.submitted!=='כן').length;
+  const thdrInfo=document.getElementById('tender-thdr-info');
+  if(thdrInfo)thdrInfo.innerHTML=`· ${D.tenders.length} סה"כ | <span style="color:#06d6a0">${tsubmit} הוגשו</span> | <span style="color:#f4a261">${tpend} ממתינים</span>`;
+  document.getElementById('tft').innerHTML=`<span class="fi">מכרזים: <b>${D.tenders.length}</b></span><span class="fi">הוגשו: <b>${tsubmit}</b></span><span class="fi">ממתינים: <b>${tpend}</b></span><span class="fi">שווי: <b>${fmt(ta)}</b></span>`;
   updateSelBar('tenders');
 }
 
@@ -4919,6 +4937,8 @@ function rWorkPlan(){
     wpHtml+=g.items.map(rowHtml).join('');
   });
   if(tbEl)tbEl.innerHTML=wpHtml||'<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text2)">אין מוצרים פוטנציאליים – פתח כרטיס לקוח והוסף, או סגור עסקה כדי לקבל הצעות אוטומטיות</td></tr>';
+  const wpTh=document.getElementById('wp-thdr-info');
+  if(wpTh)wpTh.innerHTML=all.length?`· <span style="color:#a78bfa">${groupArr.length} לקוחות</span> · <span style="color:var(--text2)">${all.length} פעילויות</span> · <span style="color:var(--gold)">₪${Math.round(totalVal/1000)}K פוטנציאל</span>`:'';
   const ftEl=document.getElementById('wpft');
   if(ftEl)ftEl.innerHTML=`<span class="fi">מוצרים: <b>${all.length}</b></span><span class="fi">שווי פוטנציאלי: <b class="ny">${fmt(totalVal)}</b></span><span class="fi">עדיפות גבוהה: <b style="color:#e63946">${high}</b></span><span class="fi">בתהליך: <b class="nb">${inProg}</b></span><span class="fi">יעד החודש: <b style="color:var(--blue)">${thisMonth}</b></span><span class="fi">נסגרו: <b class="ng">${closed}</b></span>`;
 }
