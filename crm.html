@@ -1001,6 +1001,10 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 .qa-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;transition:transform .2s var(--expo),box-shadow .2s,border-color .2s}
 .qa-item:hover{transform:scale(1.02) translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.35)}
 
+/* ── Meeting mini-calendar day cells ── */
+.mcal-day{text-align:center;padding:3px 1px;border-radius:4px;cursor:pointer;transition:transform .12s,filter .12s}
+.mcal-day:hover{transform:scale(1.2);filter:brightness(1.35)}
+
 /* ── Section-specific input focus color ── */
 #sec-deals input:focus,#sec-deals select:focus,#sec-deals textarea:focus,#sec-export input:focus,#sec-export select:focus{border-color:rgba(76,201,240,.6)!important;box-shadow:0 0 0 3px rgba(76,201,240,.1),inset 0 1px 0 rgba(255,255,255,.06)!important}
 #sec-tenders input:focus,#sec-tenders select:focus,#sec-tenders textarea:focus{border-color:rgba(244,162,97,.6)!important;box-shadow:0 0 0 3px rgba(244,162,97,.1),inset 0 1px 0 rgba(255,255,255,.06)!important}
@@ -3970,7 +3974,7 @@ function renderMeetingsMiniCal(){
     const bg=isT?'rgba(200,169,110,.25)':hasMtg?'rgba(6,214,160,.12)':'transparent';
     const bd=isT?'1px solid rgba(200,169,110,.5)':hasMtg?'1px solid rgba(6,214,160,.3)':'1px solid transparent';
     const dot=wasHeld?'<span style="display:block;width:4px;height:4px;border-radius:50%;background:#06d6a0;margin:0 auto;margin-top:-1px"></span>':hasMtg?'<span style="display:block;width:4px;height:4px;border-radius:50%;background:#f4a261;margin:0 auto;margin-top:-1px"></span>':'';
-    cells+=`<div onclick="openMeetingFor('');document.getElementById('mdt').value='${dStr}'" style="text-align:center;padding:3px 1px;border-radius:4px;background:${bg};border:${bd};cursor:pointer;color:${isT?'var(--gold)':hasMtg?'var(--teal)':'var(--text2)'};font-weight:${isT||hasMtg?700:400}">${d}${dot}</div>`;
+    cells+=`<div onclick="openMeetingFor('');document.getElementById('mdt').value='${dStr}'" class="mcal-day" style="background:${bg};border:${bd};color:${isT?'var(--gold)':hasMtg?'var(--teal)':'var(--text2)'};font-weight:${isT||hasMtg?700:400}">${d}${dot}</div>`;
   }
   cells+='</div>';
   const monthName=(MONTH_HE[mo]||'')+' '+y;
@@ -5935,7 +5939,7 @@ function restoreData(){
 
 // ===== AUTOMATIC BACKUP (IndexedDB rolling snapshots + daily file) =====
 const IDB_NAME='cem_hot_backups', IDB_STORE='snapshots', IDB_KEEP=300;
-const IDB_DAILY_STORE='daily_snapshots', IDB_DAILY_KEEP=7; // one per day, 7 days back
+const IDB_DAILY_STORE='daily_snapshots', IDB_DAILY_KEEP=14; // one per day, 14 days back
 const IDB_GOLD_KEY='cem_gold_backup'; // never overwritten by empty data
 function idbOpen(){
   return new Promise((res,rej)=>{
@@ -6130,7 +6134,7 @@ async function openAutoBackups(){
 
   // === DAILY BACKUPS SECTION — up to 7 days ===
   if(dailyList.length){
-    html+=`<div style="padding:8px 12px;font-size:11px;font-weight:800;color:#a78bfa;background:rgba(167,139,250,.09);border-bottom:1px solid var(--border)">📆 גיבויים יומיים — ${dailyList.length} ימים אחרונים</div>`;
+    html+=`<div style="padding:8px 12px;font-size:11px;font-weight:800;color:#a78bfa;background:rgba(167,139,250,.09);border-bottom:1px solid var(--border)">📆 גיבויים יומיים — ${dailyList.length} מתוך ${IDB_DAILY_KEEP} ימים אחרונים</div>`;
     html+=dailyList.map(s=>{
       let d={};try{d=JSON.parse(s.data);}catch(e){}
       const ttl=(d.deals||[]).length+(d.clients||[]).length+(d.meetings||[]).length+(d.dists||[]).length+(d.tenders||[]).length+(d.salary||[]).length;
