@@ -922,13 +922,37 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   backdrop-filter:blur(10px);
   box-shadow:0 6px 24px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.04);
 }
+/* top accent stripe per type */
+.ac::after{content:'';position:absolute;top:0;right:0;left:0;height:2px;border-radius:14px 14px 0 0}
+.ac.crit::after{background:linear-gradient(90deg,var(--red) 0%,rgba(230,57,70,0) 100%)}
+.ac.warn::after{background:linear-gradient(90deg,#f4a261 0%,rgba(244,162,97,0) 100%)}
+.ac.info::after{background:linear-gradient(90deg,var(--blue) 0%,rgba(76,201,240,0) 100%)}
 
 /* ── KPI card label: slightly elevated ── */
 .kc .lb{letter-spacing:.5px}
 .kc .vl{letter-spacing:-.8px}
+/* color-matched hover glow per KPI variant */
+.kc.g:hover{box-shadow:0 16px 48px rgba(0,0,0,.55),0 0 32px rgba(6,214,160,.12)}
+.kc.r:hover{box-shadow:0 16px 48px rgba(0,0,0,.55),0 0 32px rgba(230,57,70,.12)}
+.kc.y:hover{box-shadow:0 16px 48px rgba(0,0,0,.55),0 0 32px rgba(244,162,97,.12)}
+.kc.p:hover{box-shadow:0 16px 48px rgba(0,0,0,.55),0 0 32px rgba(139,92,246,.12)}
 
 /* ── Fancy badge borders ── */
 .badge{backdrop-filter:blur(6px);letter-spacing:.4px}
+
+/* ── Urgent list rows ── */
+.urg-row{display:flex;align-items:center;gap:9px;padding:7px 4px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s,padding-right .15s;border-radius:4px}
+.urg-row:hover{background:rgba(255,255,255,.04);padding-right:8px}
+
+/* ── Dashboard panel h4 accent glow ── */
+.dpanel h4::before{box-shadow:0 0 10px var(--h4-accent,rgba(200,169,110,.3))}
+
+/* ── Thin gold scrollbars ── */
+*{scrollbar-width:thin;scrollbar-color:rgba(200,169,110,.2) transparent}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(200,169,110,.22);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:rgba(200,169,110,.4)}
 
 /* ── Mobile FAB ── */
 #mob-fab-btn{
@@ -3415,7 +3439,7 @@ function rDash(){
       const c=x.co?D.clients.find(cl=>cl.name===x.co):null;
       const act=c?`openClientModal('${c.id}')`:`nav('alerts')`;
       const dot=x.type==='crit'?'#e63946':x.type==='warn'?'#f4a261':'#4cc9f0';
-      return`<div onclick="${act}" style="display:flex;align-items:center;gap:9px;padding:7px 4px;border-bottom:1px solid var(--border);cursor:pointer">
+      return`<div onclick="${act}" class="urg-row">
         <span style="width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0;box-shadow:0 0 8px ${dot}"></span>
         <div style="min-width:0"><div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${x.h}</div><div style="font-size:10px;color:var(--text2)">${x.s}</div></div>
         ${c?'<span style="margin-right:auto;font-size:10px;color:#4cc9f0;flex-shrink:0">📧 לקוח →</span>':''}
