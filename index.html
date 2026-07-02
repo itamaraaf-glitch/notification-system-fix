@@ -1010,6 +1010,10 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 .exp-tile-ico{border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:26px;transition:transform .25s var(--expo)}
 .tw:hover .exp-tile-ico{transform:scale(1.14) translateY(-2px)}
 
+/* ── Month summary mini stat cards ── */
+.stat-mini{border-radius:8px;padding:7px 11px;transition:transform .18s var(--expo),box-shadow .18s}
+.stat-mini:hover{transform:scale(1.04);box-shadow:0 6px 22px rgba(0,0,0,.4)}
+
 /* ── Section-specific input focus color ── */
 #sec-deals input:focus,#sec-deals select:focus,#sec-deals textarea:focus,#sec-export input:focus,#sec-export select:focus{border-color:rgba(76,201,240,.6)!important;box-shadow:0 0 0 3px rgba(76,201,240,.1),inset 0 1px 0 rgba(255,255,255,.06)!important}
 #sec-tenders input:focus,#sec-tenders select:focus,#sec-tenders textarea:focus{border-color:rgba(244,162,97,.6)!important;box-shadow:0 0 0 3px rgba(244,162,97,.1),inset 0 1px 0 rgba(255,255,255,.06)!important}
@@ -3559,23 +3563,23 @@ function rDeals(){
         <button class="btn btns" onclick="manualRunCycle()" style="margin-right:auto;background:rgba(76,201,240,.12);border-color:rgba(76,201,240,.3);color:var(--blue)">📦 סגור חודש</button>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">
-        <div style="background:rgba(6,214,160,.07);border:1px solid rgba(6,214,160,.15);border-radius:8px;padding:7px 11px">
+        <div class="stat-mini" style="background:rgba(6,214,160,.07);border:1px solid rgba(6,214,160,.15)">
           <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">חדשות החודש</div>
           <div style="font-size:20px;font-weight:900;color:var(--teal)">${allNewThis.length}</div>
         </div>
-        <div style="background:rgba(244,162,97,.07);border:1px solid rgba(244,162,97,.18);border-radius:8px;padding:7px 11px">
+        <div class="stat-mini" style="background:rgba(244,162,97,.07);border:1px solid rgba(244,162,97,.18)">
           <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">עוברות ↩</div>
           <div style="font-size:20px;font-weight:900;color:#f4a261">${allCarry.length}</div>
         </div>
-        <div style="background:rgba(76,201,240,.07);border:1px solid rgba(76,201,240,.15);border-radius:8px;padding:7px 11px">
+        <div class="stat-mini" style="background:rgba(76,201,240,.07);border:1px solid rgba(76,201,240,.15)">
           <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">נסגרו החודש ✅</div>
           <div style="font-size:20px;font-weight:900;color:var(--blue)">${allClosedThis.length}</div>
         </div>
-        ${allPendingArch.length?`<div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.15);border-radius:8px;padding:7px 11px">
+        ${allPendingArch.length?`<div class="stat-mini" style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.15)">
           <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">ממתינות לארכיון 📦</div>
           <div style="font-size:20px;font-weight:900;color:var(--purple)">${allPendingArch.length}</div>
         </div>`:''}
-        ${arch?`<div style="background:rgba(74,82,110,.06);border:1px solid var(--border);border-radius:8px;padding:7px 11px">
+        ${arch?`<div class="stat-mini" style="background:rgba(74,82,110,.06);border:1px solid var(--border)">
           <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">בארכיון 📦</div>
           <div style="font-size:20px;font-weight:900;color:var(--text3)">${arch}</div>
         </div>`:''}
