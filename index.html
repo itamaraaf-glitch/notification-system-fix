@@ -365,7 +365,8 @@ tr.mdiv-carry>td{background:rgba(244,162,97,.08);color:#f4a261;border-color:rgba
 tr.mdiv-new>td{background:rgba(6,214,160,.07);color:var(--teal);border-color:rgba(6,214,160,.18)}
 tr.mdiv-closed>td{background:rgba(76,201,240,.07);color:var(--blue);border-color:rgba(76,201,240,.18)}
 tr.mdiv-pending>td{background:rgba(139,92,246,.06);color:var(--purple);border-color:rgba(139,92,246,.15)}
-tr.mdiv-client>td{background:rgba(200,169,110,.10);color:var(--gold);border-color:rgba(200,169,110,.25);font-size:12px;cursor:pointer}
+tr.mdiv-client>td{background:rgba(200,169,110,.10);color:var(--gold);border-color:rgba(200,169,110,.25);font-size:12px;cursor:pointer;transition:background .15s,filter .15s}
+tr.mdiv-client:hover>td{background:rgba(200,169,110,.18);filter:brightness(1.08)}
 tr.mdiv>td:first-child{border-right:3px solid currentColor}
 .month-pulse{animation:glowBorder 2s ease infinite}
 
@@ -1022,6 +1023,25 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 /* ── Upcoming meetings row ── */
 .meet-row{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:8px;cursor:pointer;transition:filter .15s,box-shadow .15s}
 .meet-row:hover{filter:brightness(1.12);box-shadow:0 3px 12px rgba(0,0,0,.3)}
+
+/* ── Client modal mini-rows (deals & meetings inside client card) ── */
+.cmod-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;flex-wrap:wrap;margin-bottom:5px;transition:background .15s}
+.cmod-row:hover{background:rgba(255,255,255,.04)!important}
+
+/* ── Item-row header (form sub-item number + delete btn) ── */
+.item-row-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+
+/* ── Dashboard welcome card mini stat tiles ── */
+.dash-stat{text-align:center;border-radius:12px;padding:10px 16px;transition:transform .18s var(--expo),box-shadow .18s,filter .15s}
+.dash-stat:hover{transform:scale(1.06) translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.4);filter:brightness(1.08)}
+
+/* ── Next meeting chip (in client card + deals table) ── */
+.next-mtg-chip{display:inline-flex;align-items:center;gap:5px;font-size:10px;padding:3px 7px;background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.2);border-radius:6px;white-space:nowrap;transition:background .15s}
+.next-mtg-chip:hover{background:rgba(6,214,160,.14)}
+
+/* ── Potential deals active chip in client card ── */
+.pot-chip{font-size:10px;color:#7b5ea7;padding:3px 8px;background:rgba(123,94,167,.1);border-radius:6px;border:1px solid rgba(123,94,167,.3);margin-bottom:4px;transition:background .15s}
+.pot-chip:hover{background:rgba(123,94,167,.18)}
 
 /* ── Section-specific input focus color ── */
 #sec-deals input:focus,#sec-deals select:focus,#sec-deals textarea:focus,#sec-export input:focus,#sec-export select:focus{border-color:rgba(76,201,240,.6)!important;box-shadow:0 0 0 3px rgba(76,201,240,.1),inset 0 1px 0 rgba(255,255,255,.06)!important}
@@ -3467,15 +3487,15 @@ function rDash(){
         <div style="font-size:10px;color:var(--text3);margin-top:6px" id="dash-backup-status">🛡️ טוען מצב גיבוי...</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <div style="text-align:center;background:rgba(76,201,240,.06);border:1px solid rgba(76,201,240,.15);border-radius:12px;padding:10px 16px">
+        <div class="dash-stat" style="background:rgba(76,201,240,.06);border:1px solid rgba(76,201,240,.15)">
           <div style="font-size:20px;font-weight:900;color:var(--blue)">${D.deals.length}</div>
           <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">עסקאות</div>
         </div>
-        <div style="text-align:center;background:rgba(6,214,160,.06);border:1px solid rgba(6,214,160,.15);border-radius:12px;padding:10px 16px">
+        <div class="dash-stat" style="background:rgba(6,214,160,.06);border:1px solid rgba(6,214,160,.15)">
           <div style="font-size:20px;font-weight:900;color:var(--teal)">${held}</div>
           <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">פגישות</div>
         </div>
-        <div style="text-align:center;background:${critCount>0?'rgba(230,57,70,.08)':'rgba(255,255,255,.03)'};border:1px solid ${critCount>0?'rgba(230,57,70,.25)':'var(--border)'};border-radius:12px;padding:10px 16px">
+        <div class="dash-stat" style="background:${critCount>0?'rgba(230,57,70,.08)':'rgba(255,255,255,.03)'};border:1px solid ${critCount>0?'rgba(230,57,70,.25)':'var(--border)'}">
           <div style="font-size:20px;font-weight:900;color:${critCount>0?'var(--red2)':'var(--text3)'}">${al.length}</div>
           <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">התראות</div>
         </div>
@@ -3615,7 +3635,7 @@ function rDeals(){
       // Check for upcoming meeting with this company
       const curDateStr=nd();
       const upcomingForDeal=D.meetings.find(m=>(m.cl||'').trim()===(d.co||'').trim()&&m.dt>=curDateStr&&m.hl!=='מבוטל');
-      const mtgChip=upcomingForDeal?`<span title="פגישה ב-${fmtDate(upcomingForDeal.dt)}${upcomingForDeal.time?' '+upcomingForDeal.time:''}" style="font-size:9px;padding:1px 5px;border-radius:8px;background:rgba(6,214,160,.15);color:#06d6a0;border:1px solid rgba(6,214,160,.3);white-space:nowrap;cursor:default">📅${upcomingForDeal.dt===curDateStr?' היום':' '+fmtDate(upcomingForDeal.dt)}</span> `:'';
+      const mtgChip=upcomingForDeal?`<span class="next-mtg-chip" title="פגישה ב-${fmtDate(upcomingForDeal.dt)}${upcomingForDeal.time?' '+upcomingForDeal.time:''}" style="font-size:9px;padding:1px 5px;cursor:default">📅${upcomingForDeal.dt===curDateStr?' היום':' '+fmtDate(upcomingForDeal.dt)}</span> `:'';
       return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(d.date)}</td><td style="color:var(--text2)">${d.num||'–'}</td><td style="font-weight:600">${d.co||''}${mtgChip?'<br>'+mtgChip:''}</td><td>${ib}</td><td>${d.srv||''}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${d.ct||'–'}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${d.no||'–'}</td><td style="white-space:nowrap">${schedBtn}${deBtn}${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד הצעת מחיר: ${d.quote.name||''}" style="border-color:#4cc9f0;color:#4cc9f0">📎</button> `:''}<button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
     };
     const div=(cls,icon,lbl,n)=>`<tr class="mdiv ${cls}"><td colspan="18">${icon} ${lbl} <span style="font-weight:400;opacity:.8">(${n})</span></td></tr>`;
@@ -4077,7 +4097,7 @@ function addItem(type,data={}){
   const div=document.createElement('div');
   div.className='item-row';
   div.style.cssText=`border-right:3px solid ${cfg.color};`;
-  div.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:10px;font-weight:700;color:${cfg.color}">#${idx+1}</span><button type="button" onclick="this.closest('.item-row').remove()" style="background:none;border:none;color:#e63946;cursor:pointer;font-size:16px;line-height:1">✕</button></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px">${fieldsHtml}</div>`;
+  div.innerHTML=`<div class="item-row-hdr"><span style="font-size:10px;font-weight:700;color:${cfg.color}">#${idx+1}</span><button type="button" onclick="this.closest('.item-row').remove()" style="background:none;border:none;color:#e63946;cursor:pointer;font-size:16px;line-height:1">✕</button></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px">${fieldsHtml}</div>`;
   cont.appendChild(div);
 }
 
@@ -4111,7 +4131,7 @@ function addPotentialProduct(data={}){
   const priOpts=['גבוהה','בינונית','נמוכה'].map(p=>`<option ${(data.priority===p||((!data.priority)&&p==='בינונית'))?'selected':''}>${p}</option>`).join('');
   const div=document.createElement('div');
   div.className='item-row';div.style.cssText='border-right:3px solid #7b5ea7;';
-  div.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:10px;font-weight:700;color:#7b5ea7">#${idx+1}</span><button type="button" onclick="this.closest('.item-row').remove()" style="background:none;border:none;color:#e63946;cursor:pointer;font-size:16px;line-height:1">✕</button></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px"><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">סוג מוצר</label><select data-key="productType">${typeOpts}</select></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">שם / פרטים</label><input type="text" data-key="product" value="${(data.product||'').replace(/"/g,'&quot;')}" placeholder="תיאור המוצר"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">שווי משוער ₪</label><input type="number" data-key="estimatedValue" value="${data.estimatedValue||''}"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">עדיפות</label><select data-key="priority">${priOpts}</select></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">יעד סגירה</label><input type="date" data-key="targetDate" value="${data.targetDate||''}"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">סטטוס</label><select data-key="status">${stOpts}</select></div><div style="grid-column:1/-1;display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">הערות / פעולה הבאה</label><input type="text" data-key="notes" value="${(data.notes||'').replace(/"/g,'&quot;')}" placeholder="מה הפעולה הבאה?"></div></div>`;
+  div.innerHTML=`<div class="item-row-hdr"><span style="font-size:10px;font-weight:700;color:#7b5ea7">#${idx+1}</span><button type="button" onclick="this.closest('.item-row').remove()" style="background:none;border:none;color:#e63946;cursor:pointer;font-size:16px;line-height:1">✕</button></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px"><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">סוג מוצר</label><select data-key="productType">${typeOpts}</select></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">שם / פרטים</label><input type="text" data-key="product" value="${(data.product||'').replace(/"/g,'&quot;')}" placeholder="תיאור המוצר"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">שווי משוער ₪</label><input type="number" data-key="estimatedValue" value="${data.estimatedValue||''}"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">עדיפות</label><select data-key="priority">${priOpts}</select></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">יעד סגירה</label><input type="date" data-key="targetDate" value="${data.targetDate||''}"></div><div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">סטטוס</label><select data-key="status">${stOpts}</select></div><div style="grid-column:1/-1;display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">הערות / פעולה הבאה</label><input type="text" data-key="notes" value="${(data.notes||'').replace(/"/g,'&quot;')}" placeholder="מה הפעולה הבאה?"></div></div>`;
   cont.appendChild(div);
 }
 
@@ -4178,7 +4198,7 @@ function renderClientDeals(id){
     return;
   }
   const stColor=s=>s==='נסגר'?'var(--teal)':s==='בעיה'?'#e63946':s==='ממתין לתשובה'?'#f4a261':'var(--text2)';
-  const rows=deals.map(d=>`<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);margin-bottom:5px;flex-wrap:wrap">
+  const rows=deals.map(d=>`<div class="cmod-row" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07)">
     <span style="font-size:10px;color:var(--text2);min-width:62px;white-space:nowrap">${fmtDate(d.date)}</span>
     <span style="font-size:10px;color:var(--text3);min-width:44px">${d.num||'–'}</span>
     <span style="font-size:10px;flex:1;min-width:80px">${d.srv||'–'}</span>
@@ -4238,7 +4258,7 @@ function renderClientMeetings(id){
     const isToday=m.dt===todayStr;
     const hlBadge=m.hl==='כן'?'<span style="font-size:9px;color:#06d6a0">✓ התקיימה</span>':m.hl==='מבוטל'?'<span style="font-size:9px;color:#e63946">✕ מבוטל</span>':'<span style="font-size:9px;color:#f4a261">⏳ ממתין</span>';
     const todayMark=isToday?'<span style="font-size:9px;font-weight:700;color:#4cc9f0;margin-right:3px">היום!</span>':'';
-    return`<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:8px;background:${isToday?'rgba(6,214,160,.07)':'rgba(255,255,255,.03)'};border:1px solid ${isToday?'rgba(6,214,160,.2)':'rgba(255,255,255,.07)'};margin-bottom:4px;flex-wrap:wrap">
+    return`<div class="cmod-row" style="padding:5px 8px;background:${isToday?'rgba(6,214,160,.07)':'rgba(255,255,255,.03)'};border:1px solid ${isToday?'rgba(6,214,160,.2)':'rgba(255,255,255,.07)'};margin-bottom:4px">
       <span style="font-size:14px">${ico}</span>
       <span style="font-size:10px;color:var(--text2);white-space:nowrap">${fmtDate(m.dt)}</span>
       ${m.time?`<span style="font-size:10px;color:var(--gold)">${m.time}</span>`:''}
@@ -4442,9 +4462,9 @@ function rClients(){
         <div style="font-size:9px;font-weight:800;color:var(--text3);letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase">⬜ לא קיים</div>
         <div style="display:flex;flex-wrap:wrap;gap:3px">${missingHtml||'<span style="font-size:9px;color:var(--text3)">–</span>'}</div>
       </div>
-      ${potActive.length?`<div style="font-size:10px;color:#7b5ea7;padding:3px 8px;background:rgba(123,94,167,.1);border-radius:6px;border:1px solid rgba(123,94,167,.3);margin-bottom:4px">🎯 ${potActive.length} בתהליך עבודה לקוחות${potVal?` · ${fmt(potVal)}`:''}</div>`:''}
+      ${potActive.length?`<div class="pot-chip">🎯 ${potActive.length} בתהליך עבודה לקוחות${potVal?` · ${fmt(potVal)}`:''}</div>`:''}
       ${warns.length?`<div class="exp-warn">⚠ ${warns.slice(0,2).join(' | ')}</div>`:''}
-      ${nextMtg?`<div style="display:flex;align-items:center;gap:5px;font-size:10px;padding:3px 7px;background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.2);border-radius:6px;margin-top:4px">
+      ${nextMtg?`<div class="next-mtg-chip" style="margin-top:4px">
         <span>📅</span><span style="color:#06d6a0;font-weight:700">${nextMtg.dt===todayStrC?'פגישה היום!':'פגישה ב-'+fmtDate(nextMtg.dt)}</span>${nextMtg.time?`<span style="color:var(--text3)">${nextMtg.time}</span>`:''}
       </div>`:''}
       ${!nextMtg&&lastMtg?`<div style="font-size:9px;color:var(--text3);margin-top:4px">🤝 פגישה אחרונה: ${fmtDate(lastMtg.dt)}</div>`:''}
