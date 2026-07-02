@@ -2033,6 +2033,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="g"><label>תאריך</label><input type="date" id="mdt"></div>
     <div class="g"><label>שעה</label><input type="time" id="mtime"></div>
     <div class="g"><label>סוג פגישה</label><select id="mtype"><option value="פגישה">🤝 פגישה</option><option value="שיחת טלפון">📞 שיחת טלפון</option><option value="זום">🖥 זום</option><option value="Teams">🟦 Teams</option><option value="אחר">📌 אחר</option></select></div>
+    <div class="gf"><label>🎯 נושאים לפגישה (מכירה / דיון) — לחץ לבחירה</label><div id="meet-topics" style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 0"></div></div>
     <div class="g"><label>שם לקוח</label><input type="text" id="mcl" list="mcl-list" autocomplete="off"><datalist id="mcl-list"></datalist><datalist id="co-list"></datalist></div>
     <div class="g"><label>מס׳ פגישה / פרויקט</label><input type="text" id="mnu"></div>
     <div class="g"><label>התקיימה?</label><select id="mhl"><option value="לא">לא</option><option value="כן">כן</option><option value="מבוטל">מבוטל</option></select></div>
@@ -2058,11 +2059,15 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 <!-- MEETING SUMMARY MODAL -->
 <div class="mw" id="msummary"><div class="modal" style="max-width:640px">
   <div class="mhdr"><h3 id="sum-title">📝 סיכום פגישה</h3><button class="mcls" onclick="closeM('msummary')">✕</button></div>
+  <div style="display:flex;gap:4px;margin-bottom:10px;background:rgba(255,255,255,.04);border-radius:10px;padding:3px">
+    <button id="sum-mode-client" onclick="setSummaryMode('client')" style="flex:1;padding:8px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;background:#06d6a0;color:#000;transition:.2s">🤝 סיכום ללקוח</button>
+    <button id="sum-mode-internal" onclick="setSummaryMode('internal')" style="flex:1;padding:8px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;background:transparent;color:var(--text2);transition:.2s">🏢 סיכום פנימי</button>
+  </div>
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
     <label style="font-size:10px;font-weight:800;color:var(--text3)">🔢 מספר פרויקט</label>
     <input type="text" id="sum-proj" placeholder="לא חובה" style="width:120px">
     <button class="btn btns" onclick="regenSummary()" style="border-color:#a78bfa;color:#a78bfa" title="בנה מחדש את הסיכום מנתוני המערכת">🔄 צור מחדש</button>
-    <span style="font-size:9px;color:var(--text3)">הסיכום נבנה אוטומטית מכל נתוני הלקוח — ניתן לערוך לפני שליחה</span>
+    <span style="font-size:9px;color:var(--text3)">סיכום ללקוח = בלי מידע פנימי · נבנה לפי הנושאים שנבחרו בפגישה · ניתן לערוך</span>
   </div>
   <textarea id="sum-text" rows="18" style="width:100%;font-size:12px;line-height:1.7;direction:rtl"></textarea>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">
@@ -4430,6 +4435,28 @@ function renderClientDeals(id){
   sec.innerHTML=`<div class="msec" style="border:1px solid rgba(76,201,240,.25)"><div class="msec-hdr"><span style="color:#4cc9f0">💼 עסקאות קשורות (${all.length})</span>${newDealBtn}</div>${summary}${rows}</div>`;
 }
 
+// ===== נושאי פגישה (קטגוריות מוצר לבחירה בטופס הפגישה) =====
+function renderMeetingTopics(selected){
+  const cont=document.getElementById('meet-topics');if(!cont)return;
+  const sel=new Set(selected||[]);
+  cont.innerHTML=Object.entries(ITEM_CFG).map(([k,cfg])=>{
+    const on=sel.has(k);
+    return`<button type="button" class="mtopic-chip" data-topic="${k}" data-on="${on?'1':'0'}" onclick="toggleMeetTopic(this)" style="font-size:11px;padding:5px 11px;border-radius:20px;font-family:inherit;cursor:pointer;font-weight:700;transition:all .15s;background:${on?cfg.color+'2b':'rgba(255,255,255,.04)'};color:${on?cfg.color:'var(--text3)'};border:1.5px solid ${on?cfg.color:'rgba(255,255,255,.12)'}">${cfg.label}${on?' ✓':''}</button>`;
+  }).join('');
+}
+function toggleMeetTopic(btn){
+  const k=btn.dataset.topic;const cfg=ITEM_CFG[k];if(!cfg)return;
+  const on=btn.dataset.on!=='1';
+  btn.dataset.on=on?'1':'0';
+  btn.style.background=on?cfg.color+'2b':'rgba(255,255,255,.04)';
+  btn.style.color=on?cfg.color:'var(--text3)';
+  btn.style.border='1.5px solid '+(on?cfg.color:'rgba(255,255,255,.12)');
+  btn.textContent=cfg.label+(on?' ✓':'');
+}
+function getMeetingTopics(){
+  return Array.from(document.querySelectorAll('#meet-topics .mtopic-chip[data-on="1"]')).map(b=>b.dataset.topic);
+}
+
 // ===== MEETING QUICK ACTIONS =====
 function toggleMeetingHeld(id){
   const m=D.meetings.find(x=>x.id==id);if(!m)return;
@@ -5432,6 +5459,7 @@ function openM(type,id){
     document.getElementById('mnu').value=m.nu||'';
     document.getElementById('mhl').value=m.hl||'לא';
     document.getElementById('mno').value=m.no||'';
+    renderMeetingTopics(m.topics||[]);
     // Populate client name datalist
     const dl=document.getElementById('mcl-list');
     if(dl){dl.innerHTML=D.clients.map(c=>`<option value="${(c.name||'').replace(/"/g,'&quot;')}">`).join('');}
@@ -5717,7 +5745,7 @@ function saveSal(){
   closeM('msalary');rAll();
 }
 function saveMeet(){
-  const row={dt:document.getElementById('mdt').value,time:document.getElementById('mtime').value,mtype:document.getElementById('mtype').value,cl:document.getElementById('mcl').value,nu:document.getElementById('mnu').value,hl:document.getElementById('mhl').value,no:document.getElementById('mno').value,files:_attPending['meeting']||[]};
+  const row={dt:document.getElementById('mdt').value,time:document.getElementById('mtime').value,mtype:document.getElementById('mtype').value,cl:document.getElementById('mcl').value,nu:document.getElementById('mnu').value,hl:document.getElementById('mhl').value,no:document.getElementById('mno').value,topics:getMeetingTopics(),files:_attPending['meeting']||[]};
   if(!row.cl){alert('יש להזין שם לקוח');return;}
   if(EI){dbUpdate('meetings',EI,row);}else{dbInsert('meetings',row);}
   closeM('mmeeting');rAll();
@@ -6118,7 +6146,13 @@ function sendWhatsAppMeetings(){
 // בונה סיכום מקצועי ומובנה מכל המידע במערכת: פרטי הפגישה, כרטיס הלקוח,
 // עסקאות קשורות (כולל ארכיון), הפצות/פרויקטים, מוצרים בתהליך ופגישות קודמות.
 let _sumMeetingId=null;
-function buildMeetingSummary(m,projNo){
+let _sumMode='client'; // 'client' = סיכום ללקוח (בלי מידע פנימי) | 'internal' = סיכום פנימי מלא
+// תיאור פריט קיים בכרטיס הלקוח, לפי הקטגוריה
+function _itemDesc(it){
+  return it.speed||it.model||it.solution||it.plan||it.name||it.unit||it.lineType||'';
+}
+function buildMeetingSummary(m,projNo,mode){
+  mode=mode||_sumMode||'client';
   const c=findClientByName(m.cl);
   const allDeals=[...D.deals,...(D.archivedDeals||[])].filter(d=>sameCo(d.co,m.cl));
   const openDeals=allDeals.filter(d=>d.st!=='נסגר');
@@ -6129,77 +6163,149 @@ function buildMeetingSummary(m,projNo){
     .sort((a,b)=>(b.dt||'').localeCompare(a.dt||''));
   const typeLabel=_typeLabel(m.mtype||'פגישה');
   const pn=projNo||m.nu||'';
+  // הנושאים: מה שנבחר בפגישה; אם לא נבחר — נגזר אוטומטית מהעסקאות הפתוחות
+  const topicKeys=(m.topics&&m.topics.length)?m.topics:[...new Set(openDeals.map(d=>mapDealToItemType(d)))];
   const L=[];
-  L.push('סיכום '+typeLabel+' – '+(m.cl||'לקוח'));
-  L.push('═══════════════════════════════');
-  L.push('📅 תאריך: '+(m.dt?fmtDate(m.dt):'–')+(m.time?' | שעה: '+m.time:'')+' | סוג: '+typeLabel);
-  if(pn)L.push('🔢 מספר פרויקט / פגישה: '+pn);
-  L.push('👤 משתתפים: איתמר ונדן (HOT Business)'+(c&&c.contact?', '+c.contact+' ('+(m.cl||'')+')':(m.cl?', נציג '+m.cl:'')));
-  L.push('');
-  // ── רקע ──
-  L.push('■ רקע');
-  if(c){
-    L.push('• סטטוס לקוח: '+(c.status||'לקוח'));
-    const owned=Object.keys(ITEM_CFG).filter(t=>(c[t]||[]).length>0).map(t=>ITEM_CFG[t].label+((c[t].length>1)?' ×'+c[t].length:''));
-    if(owned.length)L.push('• שירותים קיימים אצל הלקוח: '+owned.join(', '));
-    const mrev=clientMonthlyRevenue(c).reduce((sm,x)=>sm+x.val,0);
-    if(mrev)L.push('• הכנסה חודשית מהלקוח: '+fmt(mrev));
+
+  // ── בלוק פירוט לנושא: מותאם לקהל (לקוח / פנימי) ──
+  const pushTopic=(k)=>{
+    const cfg=ITEM_CFG[k];if(!cfg)return;
+    L.push('■ '+cfg.label);
+    let any=false;
+    // מה קיים כיום אצל הלקוח בקטגוריה זו
+    if(c&&(c[k]||[]).length){
+      (c[k]||[]).forEach(it=>{
+        const d2=_itemDesc(it);
+        L.push('• קיים כיום: '+(d2||cfg.label.replace(/^\S+\s*/,''))+(it.expiry?' | בתוקף עד '+fmtDate(it.expiry):''));
+        any=true;
+      });
+    }
+    // הצעות פתוחות בקטגוריה זו
+    openDeals.filter(d=>mapDealToItemType(d)===k).forEach(d=>{
+      if(mode==='client'){
+        L.push('• הצעתנו'+(d.num?' (הצעה מס׳ '+d.num+')':'')+': '+(d.srv||cfg.label.replace(/^\S+\s*/,''))+(d.v?' | '+fmt(d.v):''));
+      }else{
+        L.push('• עסקה'+(d.num?' #'+d.num:'')+': '+(d.srv||'')+' | '+fmt(d.v)+' | סטטוס: '+(d.st||'')+(d.ch?' | סיכוי: '+Math.round((d.ch||0)*100)+'%':'')+(d.ct?' | מול: '+d.ct:''));
+      }
+      any=true;
+    });
+    // מוצרים בתהליך (workplan) בקטגוריה זו
+    if(c){(c.potential||[]).filter(x=>x.status!=='נסגר'&&(POT_TYPE_MAP[x.productType]===k||x.productType===cfg.label)).forEach(x=>{
+      if(mode==='client'){
+        L.push('• בהמשך לשיחתנו נקדם עבורכם: '+(x.product||x.productType||cfg.label.replace(/^\S+\s*/,''))+(x.targetDate?' | יעד: '+fmtDate(x.targetDate):''));
+      }else{
+        L.push('• בתהליך עבודה: '+(x.productType||x.product||'')+(x.estimatedValue?' | שווי משוער '+fmt(x.estimatedValue):'')+(x.status?' | '+x.status:''));
+      }
+      any=true;
+    });}
+    // פרויקטים בביצוע בקטגוריה זו (פנימי בלבד — חוסרים זה לא ללקוח)
+    if(mode==='internal'){
+      dists.filter(d=>d.st!=='הושלם'&&((d.ptype&&d.ptype===k)||(!d.ptype&&k==='lines'))).forEach(d=>{
+        L.push('• פרויקט'+(d.no?' #'+d.no:'')+': '+(d.so||'')+' | '+(d.st||'')+(d.mi?' | חוסרים: '+d.mi:''));
+        any=true;
+      });
+    }
+    if(!any)L.push('• נדון בנושא במהלך ה'+typeLabel+' — נחזור אליכם עם הצעה מסודרת.');
+    L.push('');
+  };
+
+  if(mode==='client'){
+    // ═══ סיכום ללקוח — רק מה שרלוונטי ללקוח, בלי מידע פנימי ═══
+    const greet=(c&&c.contact)?c.contact:(m.cl||'לקוח יקר');
+    L.push('סיכום '+typeLabel+' – '+(m.cl||''));
+    L.push('═══════════════════════════════');
+    L.push('📅 תאריך: '+(m.dt?fmtDate(m.dt):'–')+(m.time?' | שעה: '+m.time:''));
+    if(pn)L.push('🔢 מספר פרויקט: '+pn);
+    L.push('');
+    L.push('שלום '+greet+',');
+    L.push('');
+    L.push('תודה על זמנכם ב'+typeLabel+(m.dt?' שהתקיימה ב-'+fmtDate(m.dt):'')+'. להלן סיכום הנושאים שעלו:');
+    L.push('');
+    if(topicKeys.length){topicKeys.forEach(pushTopic);}
+    // עיקרי הדברים מההערות
+    if(m.no){
+      L.push('■ עיקרי הדברים');
+      String(m.no).split(/\n+/).map(x=>x.trim()).filter(Boolean).forEach(x=>L.push('• '+x));
+      L.push('');
+    }
+    // המשך תהליך — ניסוח ללקוח
+    L.push('■ המשך תהליך');
+    let steps=0;
+    openDeals.forEach(d=>{L.push('• נעדכן אתכם בנוגע ל'+(d.srv||'הצעה')+(d.num?' (הצעה מס׳ '+d.num+')':'')+'.');steps++;});
+    topicKeys.forEach(k=>{
+      const cfg=ITEM_CFG[k];if(!cfg)return;
+      const hasDeal=openDeals.some(d=>mapDealToItemType(d)===k);
+      if(!hasDeal){L.push('• נגבש עבורכם הצעה בנושא '+cfg.label.replace(/^\S+\s*/,'')+'.');steps++;}
+    });
+    if(!steps)L.push('• נשמור על קשר ונתאם את הצעד הבא בהתאם לצרכים שלכם.');
+    L.push('');
+    L.push('אנו זמינים לכל שאלה ונשמח לעמוד לרשותכם.');
+    L.push('');
+    L.push('בברכה,');
+    L.push('איתמר ונדן | HOT Business | Itamar.venden@hot.net.il');
   }else{
-    L.push('• טרם קיים כרטיס לקוח במערכת — מומלץ לפתוח כרטיס.');
+    // ═══ סיכום פנימי — כל המידע ═══
+    L.push('סיכום '+typeLabel+' (פנימי) – '+(m.cl||'לקוח'));
+    L.push('═══════════════════════════════');
+    L.push('📅 תאריך: '+(m.dt?fmtDate(m.dt):'–')+(m.time?' | שעה: '+m.time:'')+' | סוג: '+typeLabel);
+    if(pn)L.push('🔢 מספר פרויקט / פגישה: '+pn);
+    L.push('👤 משתתפים: איתמר ונדן (HOT Business)'+(c&&c.contact?', '+c.contact+' ('+(m.cl||'')+')':(m.cl?', נציג '+m.cl:'')));
+    L.push('');
+    L.push('■ רקע');
+    if(c){
+      L.push('• סטטוס לקוח: '+(c.status||'לקוח'));
+      const owned=Object.keys(ITEM_CFG).filter(t=>(c[t]||[]).length>0).map(t=>ITEM_CFG[t].label+((c[t].length>1)?' ×'+c[t].length:''));
+      if(owned.length)L.push('• שירותים קיימים: '+owned.join(', '));
+      const mrev=clientMonthlyRevenue(c).reduce((sm,x)=>sm+x.val,0);
+      if(mrev)L.push('• הכנסה חודשית מהלקוח: '+fmt(mrev));
+    }else{
+      L.push('• טרם קיים כרטיס לקוח במערכת — מומלץ לפתוח כרטיס.');
+    }
+    if(pastMtgs.length)L.push('• פגישות קודמות: '+pastMtgs.length+' (אחרונה: '+fmtDate(pastMtgs[0].dt)+')');
+    if(closedDeals.length)L.push('• עסקאות שנסגרו בעבר: '+closedDeals.length+' בשווי '+fmt(closedDeals.reduce((sm,d)=>sm+(d.v||0),0)));
+    L.push('');
+    if(topicKeys.length){topicKeys.forEach(pushTopic);}
+    else{L.push('■ נושאים שנדונו');L.push('• שיחת היכרות / התעדכנות כללית — אין עסקאות פתוחות במערכת.');L.push('');}
+    L.push('■ עיקרי הדברים');
+    if(m.no){String(m.no).split(/\n+/).map(x=>x.trim()).filter(Boolean).forEach(x=>L.push('• '+x));}
+    else L.push('• (השלם כאן את עיקרי הדברים שנדונו)');
+    L.push('');
+    L.push('■ משימות להמשך');
+    let tasks=0;
+    openDeals.forEach(d=>{L.push('• מעקב אחר עסקה'+(d.num?' #'+d.num:'')+' ('+(d.srv||'')+') — סטטוס "'+(d.st||'')+'"');tasks++;});
+    dists.filter(d=>d.st!=='הושלם'&&d.mi).forEach(d=>{L.push('• השלמת חוסרים בפרויקט'+(d.no?' #'+d.no:'')+': '+d.mi);tasks++;});
+    if(c&&!c.email){L.push('• השלמת כתובת מייל בכרטיס הלקוח');tasks++;}
+    if(!tasks)L.push('• תיאום המשך מול הלקוח');
+    L.push('');
+    L.push('נכתב ביום '+fmtDate(nd())+' ע"י איתמר ונדן | HOT Business | Itamar.venden@hot.net.il');
   }
-  if(pastMtgs.length)L.push('• פגישות קודמות שהתקיימו: '+pastMtgs.length+' (אחרונה: '+fmtDate(pastMtgs[0].dt)+')');
-  if(closedDeals.length)L.push('• עסקאות שנסגרו בעבר: '+closedDeals.length+' בשווי מצטבר '+fmt(closedDeals.reduce((sm,d)=>sm+(d.v||0),0)));
-  L.push('');
-  // ── נושאים שנדונו ──
-  L.push('■ נושאים שנדונו');
-  if(openDeals.length){
-    openDeals.forEach(d=>{
-      L.push('• עסקה'+(d.num?' #'+d.num:'')+': '+(d.srv||'שירות')+' | שווי '+fmt(d.v)+' | סטטוס: '+(d.st||'')+(d.ch?' | סיכוי סגירה: '+Math.round((d.ch||0)*100)+'%':''));
-      if(d.no)L.push('  - הערה: '+d.no);
-    });
-  }
-  if(c&&(c.potential||[]).filter(x=>x.status!=='נסגר').length){
-    (c.potential||[]).filter(x=>x.status!=='נסגר').forEach(x=>{
-      L.push('• מוצר בתהליך: '+(x.productType||x.product||'מוצר')+(x.estimatedValue?' | שווי משוער '+fmt(x.estimatedValue):'')+(x.status?' | סטטוס: '+x.status:'')+(x.targetDate?' | יעד סגירה: '+fmtDate(x.targetDate):''));
-    });
-  }
-  dists.filter(d=>d.st!=='הושלם').forEach(d=>{
-    L.push('• פרויקט הפצה'+(d.no?' #'+d.no:'')+': '+(d.so||'')+' | סטטוס: '+(d.st||'')+(d.mi?' | חוסרים: '+d.mi:''));
-  });
-  if(!openDeals.length&&!dists.filter(d=>d.st!=='הושלם').length&&!(c&&(c.potential||[]).filter(x=>x.status!=='נסגר').length)){
-    L.push('• שיחת היכרות / התעדכנות כללית — אין עסקאות פתוחות במערכת.');
-  }
-  L.push('');
-  // ── עיקרי הדברים (מהערות הפגישה) ──
-  L.push('■ עיקרי הדברים');
-  if(m.no){String(m.no).split(/\n+/).map(x=>x.trim()).filter(Boolean).forEach(x=>L.push('• '+x));}
-  else L.push('• (השלם כאן את עיקרי הדברים שנדונו)');
-  L.push('');
-  // ── משימות להמשך ──
-  L.push('■ משימות להמשך');
-  let tasks=0;
-  openDeals.forEach(d=>{L.push('• מעקב אחר עסקה'+(d.num?' #'+d.num:'')+' ('+(d.srv||'')+') — סטטוס "'+(d.st||'')+'"');tasks++;});
-  dists.filter(d=>d.st!=='הושלם'&&d.mi).forEach(d=>{L.push('• השלמת חוסרים בפרויקט'+(d.no?' #'+d.no:'')+': '+d.mi);tasks++;});
-  if(c&&!c.email){L.push('• השלמת כתובת מייל בכרטיס הלקוח');tasks++;}
-  if(!tasks)L.push('• תיאום המשך מול הלקוח');
-  L.push('');
-  L.push('נכתב ביום '+fmtDate(nd())+' ע"י איתמר ונדן | HOT Business | Itamar.venden@hot.net.il');
   return L.join('\n');
+}
+function setSummaryMode(mode){
+  _sumMode=mode;
+  const cb=document.getElementById('sum-mode-client'),ib=document.getElementById('sum-mode-internal');
+  if(cb){cb.style.background=mode==='client'?'#06d6a0':'transparent';cb.style.color=mode==='client'?'#000':'var(--text2)';}
+  if(ib){ib.style.background=mode==='internal'?'#a78bfa':'transparent';ib.style.color=mode==='internal'?'#000':'var(--text2)';}
+  regenSummary();
 }
 function openMeetingSummary(id){
   const m=[...D.meetings,...(D.archivedMeetings||[])].find(x=>x.id==id);
   if(!m){showToast('⚠️ פגישה לא נמצאה','warn');return;}
   _sumMeetingId=id;
+  _sumMode='client';
   document.getElementById('sum-proj').value=m.nu||'';
-  document.getElementById('sum-text').value=m.summary||buildMeetingSummary(m);
+  document.getElementById('sum-text').value=m.summary||buildMeetingSummary(m,'','client');
   document.getElementById('sum-title').textContent='📝 סיכום פגישה – '+(m.cl||'')+(m.dt?' ('+fmtDate(m.dt)+')':'');
+  const cb=document.getElementById('sum-mode-client'),ib=document.getElementById('sum-mode-internal');
+  if(cb){cb.style.background='#06d6a0';cb.style.color='#000';}
+  if(ib){ib.style.background='transparent';ib.style.color='var(--text2)';}
   document.getElementById('msummary').classList.add('open');
 }
 function regenSummary(){
   const m=[...D.meetings,...(D.archivedMeetings||[])].find(x=>x.id==_sumMeetingId);
   if(!m)return;
-  document.getElementById('sum-text').value=buildMeetingSummary(m,document.getElementById('sum-proj').value.trim());
-  showToast('🔄 הסיכום נוצר מחדש מנתוני המערכת','ok');
+  document.getElementById('sum-text').value=buildMeetingSummary(m,document.getElementById('sum-proj').value.trim(),_sumMode);
+  showToast(_sumMode==='client'?'🤝 נוצר סיכום ללקוח — בלי מידע פנימי':'🏢 נוצר סיכום פנימי מלא','ok');
 }
 function saveSummaryToMeeting(){
   const m=D.meetings.find(x=>x.id==_sumMeetingId);
