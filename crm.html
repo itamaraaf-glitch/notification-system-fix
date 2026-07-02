@@ -498,7 +498,8 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
 .fg .g{display:flex;flex-direction:column;gap:4px}
 .fg .g label,.fg .gf label{font-size:9px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.7px}
 .fg .gf{grid-column:1/-1;display:flex;flex-direction:column;gap:4px}
-.msec{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;backdrop-filter:blur(4px)}
+.msec{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;backdrop-filter:blur(4px);transition:border-color .18s,background .18s}
+.msec:hover{border-color:rgba(200,169,110,.18);background:rgba(255,255,255,.04)}
 .msec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .msec-hdr span{font-size:11px;font-weight:800}
 
@@ -1042,6 +1043,9 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 /* ── Potential deals active chip in client card ── */
 .pot-chip{font-size:10px;color:#7b5ea7;padding:3px 8px;background:rgba(123,94,167,.1);border-radius:6px;border:1px solid rgba(123,94,167,.3);margin-bottom:4px;transition:background .15s}
 .pot-chip:hover{background:rgba(123,94,167,.18)}
+
+/* ── Sidebar nav count badges (today meetings, crit alerts) ── */
+.nav-badge{display:inline-block;border-radius:10px;padding:0 5px;font-size:9px;font-weight:800;margin-right:4px;min-width:16px;text-align:center;line-height:15px;vertical-align:middle}
 
 /* ── Section-specific input focus color ── */
 #sec-deals input:focus,#sec-deals select:focus,#sec-deals textarea:focus,#sec-export input:focus,#sec-export select:focus{border-color:rgba(76,201,240,.6)!important;box-shadow:0 0 0 3px rgba(76,201,240,.1),inset 0 1px 0 rgba(255,255,255,.06)!important}
@@ -3216,7 +3220,7 @@ function updateNavBadges(){
     const mtgNav=document.getElementById('nv-meetings');
     if(mtgNav){
       let badge=mtgNav.querySelector('.nav-badge');
-      if(!badge){badge=document.createElement('span');badge.className='nav-badge';badge.style.cssText='display:inline-block;background:#06d6a0;color:#000;border-radius:10px;padding:0 5px;font-size:9px;font-weight:800;margin-right:4px;min-width:16px;text-align:center;line-height:15px;vertical-align:middle';mtgNav.querySelector('span:last-child').appendChild(badge);}
+      if(!badge){badge=document.createElement('span');badge.className='nav-badge';badge.style.cssText='background:#06d6a0;color:#000';mtgNav.querySelector('span:last-child').appendChild(badge);}
       badge.textContent=todayCnt||'';
       badge.style.display=todayCnt?'inline-block':'none';
     }
@@ -3225,7 +3229,7 @@ function updateNavBadges(){
     const alNav=document.getElementById('nv-alerts');
     if(alNav){
       let alBadge=alNav.querySelector('.nav-badge');
-      if(!alBadge){alBadge=document.createElement('span');alBadge.className='nav-badge';alBadge.style.cssText='display:inline-block;background:#e63946;color:#fff;border-radius:10px;padding:0 5px;font-size:9px;font-weight:800;margin-right:4px;min-width:16px;text-align:center;line-height:15px;vertical-align:middle';alNav.querySelector('span:last-child').appendChild(alBadge);}
+      if(!alBadge){alBadge=document.createElement('span');alBadge.className='nav-badge';alBadge.style.cssText='background:#e63946;color:#fff';alNav.querySelector('span:last-child').appendChild(alBadge);}
       alBadge.textContent=critCnt||'';
       alBadge.style.display=critCnt?'inline-block':'none';
     }
