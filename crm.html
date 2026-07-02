@@ -165,6 +165,8 @@ body{font-family:'Heebo',sans-serif;background:#080c18;color:var(--text);font-si
 .abtn:hover{transform:scale(1.12);box-shadow:0 8px 24px rgba(230,57,70,.65)}.abtn:active{transform:scale(.93)}
 .lout{background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;color:var(--text3);font-family:'Heebo',sans-serif;transition:all .2s;backdrop-filter:blur(4px)}
 .lout:hover{background:rgba(255,255,255,.08);color:var(--text);border-color:var(--border2)}
+.bk-item{display:block;width:100%;text-align:right;padding:7px 10px;border:none;background:none;cursor:pointer;font-family:'Heebo',sans-serif;font-size:12px;border-radius:8px;transition:background .15s;color:var(--text)}
+.bk-item:hover{background:rgba(200,169,110,.08)}
 .save-ind{font-size:11px;color:var(--teal);display:none;background:var(--tealdim);border:1px solid rgba(6,214,160,.3);border-radius:20px;padding:4px 12px}
 .save-ind.show{display:flex;align-items:center;gap:5px;animation:fadeIn .3s}
 .toast{position:fixed;bottom:24px;left:24px;z-index:9999;padding:11px 18px;border-radius:12px;font-size:12px;font-weight:700;font-family:'Heebo',sans-serif;backdrop-filter:blur(12px);max-width:340px;box-shadow:0 10px 32px rgba(0,0,0,.5);animation:slideIn .3s ease;white-space:pre-line;line-height:1.5;transition:opacity .4s}
@@ -929,19 +931,19 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
 }
 
 /* Lithos hero heading (inside #login) */
-#hero-heading{position:absolute;top:14%;left:0;right:0;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 20px;pointer-events:none;z-index:50;direction:ltr}
-#hero-heading h1{color:#fff;line-height:.95;letter-spacing:-.02em}
-#hero-h1-line1{display:block;font-family:'Playfair Display',serif;font-style:italic;font-weight:400;font-size:clamp(1.6rem,5vw,3rem);letter-spacing:-.05em}
-#hero-h1-line2{display:block;font-family:'Inter',sans-serif;font-weight:400;font-size:clamp(1.6rem,5vw,3rem);letter-spacing:-.08em;margin-top:-4px}
+#hero-heading{position:absolute;top:14%;left:0;right:0;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 20px;pointer-events:none;z-index:50;direction:rtl}
+#hero-heading h1{color:#fff;line-height:1.1;letter-spacing:-.01em}
+#hero-h1-line1{display:block;font-family:'Heebo',sans-serif;font-style:normal;font-weight:800;font-size:clamp(1.6rem,5vw,3rem);letter-spacing:-.02em}
+#hero-h1-line2{display:block;font-family:'Heebo',sans-serif;font-weight:300;font-size:clamp(1.4rem,4.2vw,2.6rem);letter-spacing:-.01em;margin-top:4px}
 
 /* Lithos bottom text blocks (inside #login) */
-#hero-bottom-left{display:none;position:absolute;bottom:56px;left:40px;max-width:260px;z-index:50;direction:ltr;pointer-events:none}
-#hero-bottom-left p{font-size:13px;color:rgba(255,255,255,.78);line-height:1.65;font-family:'Inter',sans-serif}
-#hero-bottom-right{position:absolute;bottom:40px;left:20px;right:20px;display:flex;flex-direction:column;align-items:flex-start;gap:16px;z-index:50;direction:ltr}
-#hero-bottom-right p{font-size:12px;color:rgba(255,255,255,.78);line-height:1.65;font-family:'Inter',sans-serif}
-#hero-cta{background:#e8702a;color:#fff;font-size:14px;font-weight:500;font-family:'Inter',sans-serif;padding:12px 28px;border-radius:9999px;border:none;cursor:pointer;transition:background .18s,transform .15s,box-shadow .18s;white-space:nowrap}
-#hero-cta:hover{background:#d2611f;transform:scale(1.03);box-shadow:0 8px 24px rgba(232,112,42,.3)}
-#hero-cta:active{transform:scale(.95)}
+#hero-bottom-left{display:none;position:absolute;bottom:56px;left:40px;max-width:260px;z-index:50;direction:rtl;pointer-events:none}
+#hero-bottom-left p{font-size:13px;color:rgba(255,255,255,.75);line-height:1.65;font-family:'Heebo',sans-serif}
+#hero-bottom-right{position:absolute;bottom:40px;left:20px;right:20px;display:flex;flex-direction:column;align-items:flex-end;gap:14px;z-index:50;direction:rtl}
+#hero-bottom-right p{font-size:12px;color:rgba(255,255,255,.75);line-height:1.65;font-family:'Heebo',sans-serif}
+#hero-cta{background:linear-gradient(135deg,var(--gold),#9a7035);color:#050508;font-size:14px;font-weight:800;font-family:'Heebo',sans-serif;padding:12px 28px;border-radius:9999px;border:none;cursor:pointer;transition:all .2s;white-space:nowrap;box-shadow:0 6px 24px rgba(200,169,110,.4);letter-spacing:.2px}
+#hero-cta:hover{transform:scale(1.04);box-shadow:0 10px 32px rgba(200,169,110,.55)}
+#hero-cta:active{transform:scale(.96)}
 @media(min-width:640px){
   #hero-bottom-left{display:block}
   #hero-bottom-right{left:auto;right:40px;max-width:260px;bottom:96px}
@@ -1096,11 +1098,11 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <button id="lithos-nav-signup">כניסה</button>
   </nav>
 
-  <!-- Lithos hero heading -->
+  <!-- Hero heading -->
   <div id="hero-heading">
     <h1>
-      <span id="hero-h1-line1" class="hero-anim hero-reveal" style="animation-delay:.25s">Layers hold</span>
-      <span id="hero-h1-line2" class="hero-anim hero-reveal" style="animation-delay:.42s">tales of time</span>
+      <span id="hero-h1-line1" class="hero-anim hero-reveal" style="animation-delay:.25s">ניהול עסקים</span>
+      <span id="hero-h1-line2" class="hero-anim hero-reveal" style="animation-delay:.42s">בשליטה מלאה</span>
     </h1>
   </div>
 
@@ -1123,15 +1125,15 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <div class="lcard-glare"></div>
   </div>
 
-  <!-- Lithos bottom-left decorative text -->
+  <!-- Bottom-left decorative text -->
   <div id="hero-bottom-left" class="hero-anim hero-fade" style="animation-delay:.7s">
-    <p>Every layer of sediment records a chapter of our planet, from ancient seabeds to drifting ash, layered across millions of years beneath us.</p>
+    <p>מערכת CRM מתקדמת לניהול עסקאות, מכרזים, הפצות, שכר ולקוחות — הכל במקום אחד, מאובטח ומגובה אוטומטית.</p>
   </div>
 
-  <!-- Lithos bottom-right CTA block -->
+  <!-- Bottom-right CTA block -->
   <div id="hero-bottom-right" class="hero-anim hero-fade" style="animation-delay:.85s">
-    <p>Our interactive maps let you peel back the crust to trace how stones, fossils, and deep time combine to shape the ground beneath your feet.</p>
-    <button id="hero-cta" onclick="document.getElementById('lu')&&document.getElementById('lu').focus()">Start Digging</button>
+    <p>גיבוי אוטומטי כל 2 דקות, 7 ימים אחורה, וסנכרון ענן בין מכשירים — הנתונים שלך תמיד מוגנים.</p>
+    <button id="hero-cta" onclick="document.getElementById('lu')&&document.getElementById('lu').focus()">כניסה למערכת ←</button>
   </div>
 
 </div>
@@ -1159,12 +1161,21 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <span class="save-ind" id="saveind">✦ נשמר</span>
     <button class="btn mob-hide" onclick="saveAll()" style="background:var(--tealdim);color:var(--teal);border:1px solid rgba(6,214,160,.4);font-size:11px;padding:4px 12px;border-radius:20px">💾 שמור</button>
     <button class="btn mob-hide" id="undo-btn" onclick="undoLast()" title="בטל את המחיקה האחרונה" style="display:none;background:rgba(244,162,97,.14);color:#f4a261;border:1px solid rgba(244,162,97,.45);font-size:11px;padding:4px 12px;border-radius:20px">↩ בטל מחיקה</button>
-    <button class="btn mob-hide" onclick="openAutoBackups()" title="שחזר נתונים מגיבוי אוטומטי" style="background:rgba(6,214,160,.1);color:#06d6a0;border:1px solid rgba(6,214,160,.35);font-size:11px;padding:4px 12px;border-radius:20px">🛡️ שחזר</button>
-    <button class="btn mob-hide" onclick="restoreGoldBackup()" title="גיבוי זהב — המצב האחרון עם נתונים" style="background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.4);font-size:11px;padding:4px 12px;border-radius:20px">⭐ גיבוי זהב</button>
-    <button class="btn mob-hide" onclick="openSendToMobile()" title="שלח נתונים למובייל" style="background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.4);font-size:11px;padding:4px 12px;border-radius:20px">📱 מובייל</button>
+    <div style="position:relative" id="bk-dd-wrap" class="mob-hide">
+      <button onclick="toggleBkMenu()" title="גיבוי ושחזור" style="background:rgba(6,214,160,.1);color:#06d6a0;border:1px solid rgba(6,214,160,.35);font-size:11px;padding:4px 12px;border-radius:20px;cursor:pointer;font-family:'Heebo',sans-serif;display:flex;align-items:center;gap:4px">🛡️ גיבוי <span style="font-size:9px;opacity:.7">▾</span></button>
+      <div id="bk-dd" style="display:none;position:absolute;top:38px;left:0;background:linear-gradient(145deg,#0b0e1c,#090c16);border:1px solid rgba(200,169,110,.28);border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,.72),0 0 0 1px rgba(255,255,255,.03);z-index:2000;min-width:220px;padding:5px">
+        <div style="font-size:9px;font-weight:800;color:rgba(200,169,110,.5);padding:5px 10px 3px;text-transform:uppercase;letter-spacing:.8px">שחזור</div>
+        <button onclick="openAutoBackups();toggleBkMenu()" class="bk-item" style="color:#06d6a0">🛡️ גיבויים אוטומטיים</button>
+        <button onclick="restoreGoldBackup();toggleBkMenu()" class="bk-item" style="color:#fbbf24">⭐ גיבוי זהב</button>
+        <button onclick="restoreData();toggleBkMenu()" class="bk-item">📂 שחזור מקובץ JSON</button>
+        <div style="border-top:1px solid rgba(255,255,255,.06);margin:4px 0"></div>
+        <div style="font-size:9px;font-weight:800;color:rgba(200,169,110,.5);padding:5px 10px 3px;text-transform:uppercase;letter-spacing:.8px">גיבוי</div>
+        <button onclick="backupData();toggleBkMenu()" class="bk-item">💾 הורד גיבוי JSON</button>
+        <div style="border-top:1px solid rgba(255,255,255,.06);margin:4px 0"></div>
+        <button onclick="openSendToMobile();toggleBkMenu()" class="bk-item" style="color:#a78bfa">📱 שלח למובייל</button>
+      </div>
+    </div>
     <button class="abtn" onclick="nav('alerts')">⚠ <span id="acnt">0</span></button>
-    <button class="btn btnbk mob-hide" onclick="backupData()" title="גיבוי">💾 גיבוי</button>
-    <button class="btn mob-hide" onclick="restoreData()" title="שחזור">📂</button>
     <button class="lout" onclick="doLogout()">יציאה</button>
   </div>
 </div>
@@ -1496,15 +1507,15 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <div class="tw" style="cursor:pointer" onclick="backupData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">💾</div><div style="font-weight:700;margin-bottom:4px">גיבוי מלא</div><div style="font-size:11px;color:var(--text2)">קובץ JSON לשחזור</div><div style="margin-top:10px;background:#0078d4;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">💾 הורד גיבוי</div></div></div>
     <div class="tw" style="cursor:pointer" onclick="clipboardBackup()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📋</div><div style="font-weight:700;margin-bottom:4px">העתק לגיבוי</div><div style="font-size:11px;color:var(--text2)">העתק נתונים ללוח</div><div style="margin-top:10px;background:#f4a261;color:#000;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📋 העתק ללוח</div></div></div>
     <div class="tw" style="cursor:pointer" onclick="restoreData()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">📂</div><div style="font-weight:700;margin-bottom:4px">שחזור נתונים</div><div style="font-size:11px;color:var(--text2)">מקובץ JSON</div><div style="margin-top:10px;background:#7b5ea7;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📂 שחזר מגיבוי</div></div></div>
-    <div class="tw" style="cursor:pointer" onclick="openAutoBackups()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🛡️</div><div style="font-weight:700;margin-bottom:4px">גיבויים אוטומטיים</div><div style="font-size:11px;color:var(--text2)">30 גיבויים אחרונים · שחזור בקליק</div><div style="margin-top:10px;background:#06d6a0;color:#000;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">🛡️ צפה ושחזר</div></div></div>
-    <div class="tw" style="cursor:pointer;position:relative" onclick="openSyncModal()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">☁️</div><div style="font-weight:700;margin-bottom:4px">סנכרון ענן</div><div style="font-size:11px;color:var(--text2)" id="fb-tile-status">לא מוגדר</div><div style="margin-top:10px;background:#4cc9f0;color:#000;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">☁️ הגדרת סנכרון</div></div></div>
+    <div class="tw" style="cursor:pointer" onclick="openAutoBackups()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">🛡️</div><div style="font-weight:700;margin-bottom:4px">גיבויים אוטומטיים</div><div style="font-size:11px;color:var(--text2)">300 גיבויים + 7 ימים אחורה · שחזור בקליק</div><div style="margin-top:10px;background:rgba(6,214,160,.15);color:#06d6a0;border:1px solid rgba(6,214,160,.3);padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">🛡️ צפה ושחזר</div></div></div>
+    <div class="tw" style="cursor:pointer;position:relative" onclick="openSyncModal()"><div style="padding:20px;text-align:center"><div style="font-size:32px;margin-bottom:6px">☁️</div><div style="font-weight:700;margin-bottom:4px">סנכרון ענן</div><div style="font-size:11px;color:var(--text2)" id="fb-tile-status">לא מוגדר</div><div style="margin-top:10px;background:rgba(76,201,240,.15);color:#4cc9f0;border:1px solid rgba(76,201,240,.3);padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">☁️ הגדרת סנכרון</div></div></div>
   </div>
 </div>
 
 <!-- AUTO-BACKUPS MODAL -->
 <div class="mw" id="mbackups"><div class="modal">
   <div class="mhdr"><h3>🛡️ גיבויים אוטומטיים</h3><button class="mcls" onclick="closeM('mbackups')">✕</button></div>
-  <div style="font-size:11px;color:var(--text2);margin-bottom:10px">המערכת שומרת גיבוי מלא אוטומטית ברקע. בחר נקודת זמן לשחזור:</div>
+  <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">גיבוי אוטומטי כל 2 דקות (<b style="color:var(--teal)">עד 300 גיבויים</b>) + <b style="color:#a78bfa">גיבוי יומי ל-7 ימים אחרונים</b>. בחר נקודת זמן לשחזור:</div>
   <div id="bk-list" style="max-height:50vh;overflow-y:auto"></div>
 </div></div>
 
@@ -3233,6 +3244,7 @@ function rDash(){
         <div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.7px;text-transform:uppercase;margin-bottom:5px">${today}</div>
         <div style="font-size:21px;font-weight:800;letter-spacing:-.2px;background:linear-gradient(135deg,var(--text) 30%,var(--gold2) 70%,var(--gold3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:5px">${greetWord}, ${firstName} ✦</div>
         <div style="font-size:11px">${statusLine}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:6px" id="dash-backup-status">🛡️ טוען מצב גיבוי...</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <div style="text-align:center;background:rgba(76,201,240,.06);border:1px solid rgba(76,201,240,.15);border-radius:12px;padding:10px 16px">
@@ -3249,6 +3261,18 @@ function rDash(){
         </div>
       </div>
     </div>`;
+  // Update backup status asynchronously
+  idbList().then(bkList=>{
+    const el=document.getElementById('dash-backup-status');
+    if(!el)return;
+    if(!bkList||!bkList.length){el.innerHTML='🛡️ אין גיבויים שמורים עדיין';return;}
+    const last=bkList[bkList.length-1];
+    const ageMins=Math.round((Date.now()-last.ts)/60000);
+    const ageStr=ageMins<2?'עכשיו':ageMins<60?`לפני ${ageMins} דקות`:ageMins<120?'לפני שעה':ageMins<1440?`לפני ${Math.round(ageMins/60)} שעות`:`לפני ${Math.round(ageMins/1440)} ימים`;
+    const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+    let cnt=0;try{const d=JSON.parse(last.data);cnt=mainCols.reduce((s,c)=>s+(d[c]||[]).length,0);}catch(e){}
+    el.innerHTML=`🛡️ גיבוי אחרון: <b style="color:var(--teal)">${ageStr}</b> · ${cnt} רשומות · ${bkList.length} גיבויים שמורים`;
+  }).catch(()=>{});
   }
   document.getElementById('krow').innerHTML=`
     <div class="kc r"><div class="lb">התראות</div><div class="vl">${al.length}</div><div class="sb">דורשות טיפול</div></div>
@@ -5796,6 +5820,18 @@ async function idbBackup(jsonStr){
   }catch(e){console.warn('auto-backup (idb) failed:',e);}
 }
 // Restore gold backup — the last known non-empty state
+function toggleBkMenu(){
+  const dd=document.getElementById('bk-dd');
+  if(!dd)return;
+  const open=dd.style.display!=='none';
+  dd.style.display=open?'none':'block';
+  if(!open){
+    setTimeout(()=>{
+      function hdl(e){if(!document.getElementById('bk-dd-wrap')?.contains(e.target)){dd.style.display='none';document.removeEventListener('click',hdl);}}
+      document.addEventListener('click',hdl);
+    },10);
+  }
+}
 async function restoreGoldBackup(){
   try{
     const g=localStorage.getItem(IDB_GOLD_KEY);
@@ -6030,43 +6066,47 @@ async function checkEmptyAndRecovery(){
   try{
     const mainCols=['deals','tenders','dists','salary','meetings','clients'];
     const totalNow=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
-    if(totalNow>0)return; // has data – no need
-    const list=await idbList();
-    if(!list||!list.length)return;
-    // Find backup with most records
+    if(totalNow>0)return;
+    const [list,dailyList]=await Promise.all([idbList(),idbDailyList()]);
+    const hasAny=(list&&list.length)||(dailyList&&dailyList.length);
+    if(!hasAny)return;
+    // Find best rolling backup
     let bestSnap=null,bestCount=0;
-    list.forEach(s=>{
+    (list||[]).forEach(s=>{
       try{const d=JSON.parse(s.data);const cnt=mainCols.reduce((sum,c)=>sum+(d[c]||[]).length,0);if(cnt>bestCount){bestCount=cnt;bestSnap=s;}}catch(e){}
     });
-    if(!bestSnap||bestCount===0)return;
-    // Find closest to 18:00 today
+    // Find closest to 18:00 today (rolling)
     const todayStr=nd();
     const target18=new Date(todayStr+'T18:00:00').getTime();
     const todayMid=new Date(todayStr+'T00:00:00').getTime();
-    const todayList=list.filter(s=>s.ts>=todayMid);
+    const todayList=(list||[]).filter(s=>s.ts>=todayMid);
     let snap18=null,diff18=Infinity,cnt18=0;
     todayList.forEach(s=>{
       try{const d=JSON.parse(s.data);const cnt=mainCols.reduce((sum,c)=>sum+(d[c]||[]).length,0);const diff=Math.abs(s.ts-target18);if(diff<diff18){diff18=diff;snap18=s;cnt18=cnt;}}catch(e){}
     });
+    // Find best daily backup
+    let bestDaily=null,bestDailyCnt=0;
+    (dailyList||[]).forEach(s=>{
+      try{const d=JSON.parse(s.data);const cnt=mainCols.reduce((sum,c)=>sum+(d[c]||[]).length,0);if(cnt>bestDailyCnt){bestDailyCnt=cnt;bestDaily=s;}}catch(e){}
+    });
     const timeLbl=s=>new Date(s.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
-    const dateLbl=s=>new Date(s.ts).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'});
-    // Show emergency banner at top of dashboard
     const dash=document.getElementById('sec-dashboard');
     if(!dash||document.getElementById('emergency-recovery-bar'))return;
     const eb=document.createElement('div');
     eb.id='emergency-recovery-bar';
-    eb.style.cssText='background:rgba(239,68,68,.13);border:2px solid rgba(239,68,68,.5);border-radius:14px;padding:16px 20px;margin:0 0 16px;direction:rtl;';
-    eb.innerHTML=`<div style="font-size:15px;font-weight:800;color:#f87171;margin-bottom:8px">🚨 המערכת ריקה — נמצאו ${list.length} גיבויים לשחזור!</div>`
-      +`<div style="font-size:12px;color:var(--text2);margin-bottom:12px">הנתונים שמרת היום קיימים בגיבויים האוטומטיים. לחץ על גיבוי מהיר:</div>`
-      +`<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">`
-      +(snap18&&cnt18>0?`<button class="btn" onclick="restoreFromIdb(${snap18.ts})" style="background:rgba(251,191,36,.2);border-color:#fbbf24;color:#fbbf24;font-size:12px;padding:8px 18px;font-weight:700">⭐ שחזר גיבוי 18:00 (${timeLbl(snap18)}, ${cnt18} רשומות)</button>`:'')
-      +`<button class="btn" onclick="restoreFromIdb(${bestSnap.ts})" style="background:rgba(239,68,68,.18);border-color:#f87171;color:#f87171;font-size:12px;padding:8px 18px;font-weight:700">🔄 גיבוי הכי גדול (${timeLbl(bestSnap)}, ${bestCount} רשומות)</button>`
-      +`<button class="btn" onclick="openAutoBackups()" style="font-size:12px;padding:8px 16px">📋 כל הגיבויים (${list.length})</button>`
-      +`<button class="btn" onclick="dumpAllBackups()" style="background:rgba(96,165,250,.1);border-color:#60a5fa;color:#60a5fa;font-size:12px;padding:8px 16px">💾 הורד את כולם</button>`
+    eb.style.cssText='background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(239,68,68,.05));border:2px solid rgba(239,68,68,.45);border-radius:14px;padding:16px 20px;margin:0 0 16px;direction:rtl;';
+    const totalBackups=(list?list.length:0)+(dailyList?dailyList.length:0);
+    eb.innerHTML=`<div style="font-size:15px;font-weight:800;color:#f87171;margin-bottom:6px">🚨 המערכת ריקה — נמצאו ${totalBackups} גיבויים לשחזור!</div>`
+      +`<div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">הנתונים שמרת קיימים בגיבויים האוטומטיים. לחץ על אחת האפשרויות:</div>`
+      +`<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">`
+      +(bestDaily&&bestDailyCnt>0?`<button class="btn" onclick="restoreFromDailyIdb('${bestDaily.day}')" style="background:rgba(167,139,250,.18);border-color:#a78bfa;color:#a78bfa;font-size:12px;padding:8px 18px;font-weight:700">📆 גיבוי יומי ${bestDaily.day} (${bestDailyCnt} רשומות)</button>`:'')
+      +(snap18&&cnt18>0?`<button class="btn" onclick="restoreFromIdb(${snap18.ts})" style="background:rgba(251,191,36,.18);border-color:#fbbf24;color:#fbbf24;font-size:12px;padding:8px 18px;font-weight:700">⭐ גיבוי 18:00 (${timeLbl(snap18)}, ${cnt18} רשומות)</button>`:'')
+      +(bestSnap&&bestCount>0?`<button class="btn" onclick="restoreFromIdb(${bestSnap.ts})" style="background:rgba(239,68,68,.16);border-color:#f87171;color:#f87171;font-size:12px;padding:8px 18px;font-weight:700">🔄 גיבוי הכי גדול (${timeLbl(bestSnap)}, ${bestCount} רשומות)</button>`:'')
+      +`<button class="btn" onclick="openAutoBackups()" style="font-size:12px;padding:8px 16px;color:#06d6a0;border-color:rgba(6,214,160,.4)">🛡️ כל הגיבויים (${totalBackups})</button>`
+      +`<button class="btn" onclick="dumpAllBackups()" style="background:rgba(96,165,250,.08);border-color:#60a5fa;color:#60a5fa;font-size:12px;padding:8px 14px">💾 הורד הכל</button>`
       +`</div>`;
     dash.insertAdjacentElement('afterbegin',eb);
-    // Also show a persistent toast
-    showToast('🚨 המערכת ריקה! לחץ על הכפתור הצהוב בלוח הבקרה לשחזור','warn');
+    showToast('🚨 המערכת ריקה! לחץ על הכפתור בלוח הבקרה לשחזור','warn');
   }catch(e){console.warn('checkEmptyAndRecovery:',e);}
 }
 // periodic snapshot every 2 minutes while the app is open
