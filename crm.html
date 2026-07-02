@@ -977,6 +977,18 @@ tr:hover td{background:rgba(255,255,255,.038)!important}
 .bk-snap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);transition:background .15s;cursor:default}
 .bk-snap:hover{background:rgba(255,255,255,.05)!important}
 
+/* ── Table progress bar shimmer ── */
+.pf{position:relative;overflow:hidden}
+.pf::after{content:'';position:absolute;top:0;bottom:0;width:50%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);animation:barShine 2.8s linear infinite}
+
+/* ── Dashboard stat row / priority list row ── */
+.ds-row{display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;border-radius:4px;transition:background .15s}
+.ds-row:hover{background:rgba(255,255,255,.04)}
+
+/* ── Calendar / context menu popup buttons ── */
+.cal-menu-btn{display:block;width:100%;background:transparent;border:none;color:var(--text);padding:8px 12px;text-align:right;cursor:pointer;border-radius:8px;font-family:'Heebo',sans-serif;font-size:12px;transition:background .15s}
+.cal-menu-btn:hover{background:rgba(255,255,255,.07)}
+
 /* ── Mobile FAB ── */
 #mob-fab-btn{
   position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));left:16px;
@@ -3452,7 +3464,7 @@ function rDash(){
   D.tenders.forEach(t=>{const p=pri(t,'ten');if(p==='r'||p==='o')pi.push({p,t:t.name,s:`מועד: ${fmtDate(t.deadline)}`,nav:'tenders'});});
   D.dists.filter(d=>d.st!=='הושלם').forEach(d=>{const p=pri(d,'dist');if(p==='r')pi.push({p,t:d.co,s:d.st,nav:'dists'});});
   pi.sort((a,b)=>a.p==='r'?-1:b.p==='r'?1:0);
-  document.getElementById('prilist').innerHTML=pi.length?pi.slice(0,8).map(i=>`<div onclick="nav('${i.nav}')" style="display:flex;align-items:center;gap:7px;padding:6px 4px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;border-radius:4px" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">${pB(i.p)}<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.t}</div><div style="font-size:10px;color:var(--text2)">${i.s}</div></div><span style="font-size:10px;color:var(--text3);flex-shrink:0">←</span></div>`).join(''):'<div style="font-size:11px;color:var(--teal);padding:6px 0">✅ אין פריטים קריטיים</div>';
+  document.getElementById('prilist').innerHTML=pi.length?pi.slice(0,8).map(i=>`<div onclick="nav('${i.nav}')" class="urg-row">${pB(i.p)}<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.t}</div><div style="font-size:10px;color:var(--text2)">${i.s}</div></div><span style="font-size:10px;color:var(--text3);flex-shrink:0">←</span></div>`).join(''):'<div style="font-size:11px;color:var(--teal);padding:6px 0">✅ אין פריטים קריטיים</div>';
   // 🔥 urgent list — date-driven alerts (crit first), clickable to client / alerts
   const uEl=document.getElementById('urgentlist');
   if(uEl){
@@ -3474,7 +3486,7 @@ function rDash(){
   document.getElementById('mnum').innerHTML=`${held}<br><span>מתוך ${MEETING_GOAL}</span>`;
   document.getElementById('mpct').textContent=pct+'%';
   const ld=D.deals.filter(d=>d.ty==='long'),sd=D.deals.filter(d=>d.ty==='short'),tdist=D.deals.reduce((s,d)=>s+(d.di||0),0);
-  const dsRow=(lbl,val,col,navKey)=>`<div onclick="nav('${navKey}')" style="display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;border-radius:4px;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''"><span style="color:var(--text2)">${lbl}</span><b style="color:${col}">${val}</b></div>`;
+  const dsRow=(lbl,val,col,navKey)=>`<div onclick="nav('${navKey}')" class="ds-row"><span style="color:var(--text2)">${lbl}</span><b style="color:${col}">${val}</b></div>`;
   const ldCls=ld.filter(d=>d.st==='נסגר').length,sdCls=sd.filter(d=>d.st==='נסגר').length;
   document.getElementById('dspanel').innerHTML=
     dsRow('💼 ארוך טווח',`${ld.length} עסקאות${ldCls?' · '+ldCls+' נסגרו':''}` ,'#4cc9f0','deals')+
@@ -3482,7 +3494,7 @@ function rDash(){
     dsRow('🚀 הפצות',''+D.dists.length+' הפצות','#a78bfa','dists')+
     dsRow('🏢 לקוחות',''+D.clients.length,'var(--gold)','clients');
   const sc=D.salary.filter(s=>s.st==='סגור').reduce((s,i)=>s+(i.cl2||0),0),so=D.salary.filter(s=>s.st!=='סגור').reduce((s,i)=>s+(i.tr||0),0);
-  const qsRow=(lbl,val,col,navKey)=>`<div onclick="nav('${navKey}')" style="display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer;border-radius:4px;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''"><span style="color:var(--text2)">${lbl}</span><b style="color:${col}">${val}</b></div>`;
+  const qsRow=(lbl,val,col,navKey)=>`<div onclick="nav('${navKey}')" class="ds-row"><span style="color:var(--text2)">${lbl}</span><b style="color:${col}">${val}</b></div>`;
   document.getElementById('qspanel').innerHTML=
     qsRow('💰 שכר נסגר',fmt(sc),'var(--teal)','salary')+
     qsRow('💰 שכר ממתין',fmt(so),'#f4a261','salary')+
@@ -5804,7 +5816,7 @@ function showCalendarMenu(id,e){
   const menu=document.createElement('div');
   menu.id='cal-menu-popup';menu.dataset.mid=String(id);
   menu.style.cssText='position:fixed;background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:6px;z-index:9999;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.6);direction:rtl;';
-  const btn=(icon,label,fn)=>{const b=document.createElement('button');b.style.cssText='display:block;width:100%;background:transparent;border:none;color:var(--text);padding:8px 12px;text-align:right;cursor:pointer;border-radius:8px;font-family:inherit;font-size:12px;';b.innerHTML=icon+' '+label;b.onmouseover=()=>b.style.background='rgba(255,255,255,.07)';b.onmouseout=()=>b.style.background='transparent';b.onclick=()=>{menu.remove();fn();};return b;};
+  const btn=(icon,label,fn)=>{const b=document.createElement('button');b.className='cal-menu-btn';b.innerHTML=icon+' '+label;b.onclick=()=>{menu.remove();fn();};return b;};
   const hdr=document.createElement('div');hdr.style.cssText='font-size:10px;color:var(--text3);padding:4px 10px 2px;font-weight:700';hdr.textContent='הוסף פגישה ליומן';menu.appendChild(hdr);
   menu.appendChild(btn('📅','ICS – Apple / Outlook / כל יומן',()=>addToCalendar(id)));
   menu.appendChild(btn('🔵','Google Calendar',()=>addToGoogleCalendar(id)));
