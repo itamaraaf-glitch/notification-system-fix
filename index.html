@@ -6147,6 +6147,31 @@ function sendWhatsAppMeetings(){
 // עסקאות קשורות (כולל ארכיון), הפצות/פרויקטים, מוצרים בתהליך ופגישות קודמות.
 let _sumMeetingId=null;
 let _sumMode='client'; // 'client' = סיכום ללקוח (בלי מידע פנימי) | 'internal' = סיכום פנימי מלא
+// זיהוי נושא לכל שורת הערות — כדי שהפירוט שהוקלד ישובץ מתחת לכותרת הנכונה
+const TOPIC_KEYWORDS={
+  lines:['קו','קווים','תקשורת','מגה','מג','אינטרנט','סיב','תמסורת','fiber','ptp','מטרו','rf','ip'],
+  forti:['forti','fortigate','פורטי','פורטיגייט','firewall','פיירוול','fg','fw','utm'],
+  cisco:['cisco','סיסקו'],
+  hp:['aruba','ארובה','hp'],
+  juniper:['juniper','גוניפר'],
+  cybiz:['cybiz','אבטחה','ciso','soc','duo','סייבר','edr','אבטחת'],
+  starlink:['סטארלינק','starlink','לוויין','לווין'],
+  pbx:['מרכזיה','מרכזייה','טלפוניה','שלוחות','שלוחה','voip','טלפון','yealink'],
+  ms365:['365','office','תיבות','תיבה','אופיס','exchange','sharepoint','onedrive','מייל'],
+  helpdesk:['helpdesk','הלפדסק','תמיכה'],
+  servers:['שרת','שרתים','server','vmware','esxi','dell','אחסון'],
+};
+function matchNoteTopic(line,preferred){
+  const l=String(line||'').toLowerCase();
+  const tokens=l.split(/[^a-z0-9\u0590-\u05FF]+/).filter(Boolean);
+  const hit=k=>{
+    const kws=TOPIC_KEYWORDS[k]||[];
+    return kws.some(w=>tokens.includes(w)||(w.length>=4&&tokens.some(t=>t.includes(w))));
+  };
+  for(const k of (preferred||[]))if(TOPIC_KEYWORDS[k]&&hit(k))return k;
+  for(const k of Object.keys(TOPIC_KEYWORDS))if(hit(k))return k;
+  return null;
+}
 // תיאור פריט קיים בכרטיס הלקוח, לפי הקטגוריה
 function _itemDesc(it){
   return it.speed||it.model||it.solution||it.plan||it.name||it.unit||it.lineType||'';
@@ -6164,7 +6189,15 @@ function buildMeetingSummary(m,projNo,mode){
   const typeLabel=_typeLabel(m.mtype||'פגישה');
   const pn=projNo||m.nu||'';
   // הנושאים: מה שנבחר בפגישה; אם לא נבחר — נגזר אוטומטית מהעסקאות הפתוחות
-  const topicKeys=(m.topics&&m.topics.length)?m.topics:[...new Set(openDeals.map(d=>mapDealToItemType(d)))];
+  let topicKeys=(m.topics&&m.topics.length)?m.topics.slice():[...new Set(openDeals.map(d=>mapDealToItemType(d)))];
+  // שורות ההערות משובצות מתחת לכותרת הנושא המתאימה; מה שלא זוהה נשאר ב"עיקרי הדברים"
+  const noteLines=m.no?String(m.no).split(/\n+/).map(x=>x.trim()).filter(Boolean):[];
+  const noteBy={};const noteRest=[];
+  noteLines.forEach(l=>{
+    const k=matchNoteTopic(l,topicKeys);
+    if(k){(noteBy[k]=noteBy[k]||[]).push(l);}else noteRest.push(l);
+  });
+  Object.keys(noteBy).forEach(k=>{if(!topicKeys.includes(k))topicKeys.push(k);});
   const L=[];
 
   // ── בלוק פירוט לנושא: מותאם לקהל (לקוח / פנימי) ──
@@ -6172,6 +6205,8 @@ function buildMeetingSummary(m,projNo,mode){
     const cfg=ITEM_CFG[k];if(!cfg)return;
     L.push('■ '+cfg.label);
     let any=false;
+    // מה שהוקלד בהערות הפגישה על הנושא הזה — הפירוט המרכזי
+    (noteBy[k]||[]).forEach(l=>{L.push('• '+(mode==='client'?'סוכם: ':'')+l);any=true;});
     // מה קיים כיום אצל הלקוח בקטגוריה זו
     if(c&&(c[k]||[]).length){
       (c[k]||[]).forEach(it=>{
@@ -6222,10 +6257,10 @@ function buildMeetingSummary(m,projNo,mode){
     L.push('תודה על זמנכם ב'+typeLabel+(m.dt?' שהתקיימה ב-'+fmtDate(m.dt):'')+'. להלן סיכום הנושאים שעלו:');
     L.push('');
     if(topicKeys.length){topicKeys.forEach(pushTopic);}
-    // עיקרי הדברים מההערות
-    if(m.no){
+    // עיקרי הדברים — רק שורות שלא שויכו לנושא ספציפי
+    if(noteRest.length){
       L.push('■ עיקרי הדברים');
-      String(m.no).split(/\n+/).map(x=>x.trim()).filter(Boolean).forEach(x=>L.push('• '+x));
+      noteRest.forEach(x=>L.push('• '+x));
       L.push('');
     }
     // המשך תהליך — ניסוח ללקוח
@@ -6266,10 +6301,12 @@ function buildMeetingSummary(m,projNo,mode){
     L.push('');
     if(topicKeys.length){topicKeys.forEach(pushTopic);}
     else{L.push('■ נושאים שנדונו');L.push('• שיחת היכרות / התעדכנות כללית — אין עסקאות פתוחות במערכת.');L.push('');}
-    L.push('■ עיקרי הדברים');
-    if(m.no){String(m.no).split(/\n+/).map(x=>x.trim()).filter(Boolean).forEach(x=>L.push('• '+x));}
-    else L.push('• (השלם כאן את עיקרי הדברים שנדונו)');
-    L.push('');
+    if(noteRest.length||!noteLines.length){
+      L.push('■ עיקרי הדברים');
+      if(noteRest.length)noteRest.forEach(x=>L.push('• '+x));
+      else L.push('• (השלם כאן את עיקרי הדברים שנדונו)');
+      L.push('');
+    }
     L.push('■ משימות להמשך');
     let tasks=0;
     openDeals.forEach(d=>{L.push('• מעקב אחר עסקה'+(d.num?' #'+d.num:'')+' ('+(d.srv||'')+') — סטטוס "'+(d.st||'')+'"');tasks++;});
