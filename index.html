@@ -1047,6 +1047,14 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 /* ── Sidebar nav count badges (today meetings, crit alerts) ── */
 .nav-badge{display:inline-block;border-radius:10px;padding:0 5px;font-size:9px;font-weight:800;margin-right:4px;min-width:16px;text-align:center;line-height:15px;vertical-align:middle}
 
+/* ── Export / backup tile action label-button ── */
+.exp-tile-btn{display:block;margin-top:10px;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600;transition:filter .15s,transform .12s}
+.tw:hover .exp-tile-btn{filter:brightness(1.12);transform:scale(1.03)}
+
+/* ── Section header Excel export / import action buttons ── */
+.btn-excel{background:#1d6f42!important;color:#fff!important;border-color:#1d6f42!important}
+.btn-import{background:#0078d4!important;color:#fff!important;border-color:#0078d4!important}
+
 /* ── Section-specific input focus color ── */
 #sec-deals input:focus,#sec-deals select:focus,#sec-deals textarea:focus,#sec-export input:focus,#sec-export select:focus{border-color:rgba(76,201,240,.6)!important;box-shadow:0 0 0 3px rgba(76,201,240,.1),inset 0 1px 0 rgba(255,255,255,.06)!important}
 #sec-tenders input:focus,#sec-tenders select:focus,#sec-tenders textarea:focus{border-color:rgba(244,162,97,.6)!important;box-shadow:0 0 0 3px rgba(244,162,97,.1),inset 0 1px 0 rgba(255,255,255,.06)!important}
@@ -1483,8 +1491,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ltb','stb')">
       <button class="btn btnp" onclick="openM('deal',null)">+ עסקה חדשה</button>
-      <button class="btn" onclick="exportExcel('deals')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
-      <button class="btn" onclick="importFromExcel('deals')" style="background:#0078d4;color:#fff;border-color:#0078d4" title="ייבוא מ-Excel">📤 ייבוא</button>
+      <button class="btn btn-excel" onclick="exportExcel('deals')">📥 Excel</button>
+      <button class="btn btn-import" onclick="importFromExcel('deals')" title="ייבוא מ-Excel">📤 ייבוא</button>
       <button class="btn btnwp" onclick="sendWhatsAppDeals()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('deals')" title="מחק את כל העסקאות">🗑 מחק הכל</button>
     </div>
@@ -1538,8 +1546,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div style="display:flex;gap:6px;align-items:center">
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ttb')">
       <button class="btn btnp" onclick="openM('tender',null)">+ מכרז חדש</button>
-      <button class="btn" onclick="exportExcel('tenders')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
-      <button class="btn" onclick="importFromExcel('tenders')" style="background:#0078d4;color:#fff;border-color:#0078d4" title="ייבוא מ-Excel">📤 ייבוא</button>
+      <button class="btn btn-excel" onclick="exportExcel('tenders')">📥 Excel</button>
+      <button class="btn btn-import" onclick="importFromExcel('tenders')" title="ייבוא מ-Excel">📤 ייבוא</button>
       <button class="btn btnwp" onclick="sendWhatsAppTenders()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('tenders')" title="מחק את כל המכרזים">🗑 מחק הכל</button>
     </div>
@@ -1572,8 +1580,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div style="display:flex;gap:6px;align-items:center">
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ldtb','sdtb')">
       <button class="btn btnp" onclick="openM('dist',null)">+ הפצה חדשה</button>
-      <button class="btn" onclick="exportExcel('dists')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
-      <button class="btn" onclick="importFromExcel('dists')" style="background:#0078d4;color:#fff;border-color:#0078d4" title="ייבוא מ-Excel">📤 ייבוא</button>
+      <button class="btn btn-excel" onclick="exportExcel('dists')">📥 Excel</button>
+      <button class="btn btn-import" onclick="importFromExcel('dists')" title="ייבוא מ-Excel">📤 ייבוא</button>
       <button class="btn btnwp" onclick="sendWhatsAppDists()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('dists')" title="מחק את כל ההפצות">🗑 מחק הכל</button>
     </div>
@@ -1623,8 +1631,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div style="display:flex;gap:6px;align-items:center">
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'svctb','eqtb')">
       <button class="btn btnp" onclick="openM('salary',null)">+ פרויקט לשכר</button>
-      <button class="btn" onclick="exportExcel('salary')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
-      <button class="btn" onclick="importFromExcel('salary')" style="background:#0078d4;color:#fff;border-color:#0078d4" title="ייבוא מ-Excel">📤 ייבוא</button>
+      <button class="btn btn-excel" onclick="exportExcel('salary')">📥 Excel</button>
+      <button class="btn btn-import" onclick="importFromExcel('salary')" title="ייבוא מ-Excel">📤 ייבוא</button>
       <button class="btn btnwp" onclick="sendWhatsAppSalary()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('salary')" title="מחק את כל פרויקטי השכר">🗑 מחק הכל</button>
     </div>
@@ -1675,8 +1683,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'mtb')">
       <button class="btn btnp" onclick="openM('meeting',null)">+ פגישה חדשה</button>
-      <button class="btn" onclick="exportExcel('meetings')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
-      <button class="btn" onclick="importFromExcel('meetings')" style="background:#0078d4;color:#fff;border-color:#0078d4" title="ייבוא מ-Excel">📤 ייבוא</button>
+      <button class="btn btn-excel" onclick="exportExcel('meetings')">📥 Excel</button>
+      <button class="btn btn-import" onclick="importFromExcel('meetings')" title="ייבוא מ-Excel">📤 ייבוא</button>
       <button class="btn btnwp" onclick="sendWhatsAppMeetings()">📱 WA</button>
       <button class="btn" onclick="exportMeetingsCalendar()" style="background:rgba(167,139,250,.15);color:#a78bfa;border-color:rgba(167,139,250,.4)" title="ייצוא כל הפגישות הקרובות ליומן">📆 יומן</button>
       <button class="btn btnd" onclick="deleteAll('meetings')" title="מחק את כל הפגישות">🗑 מחק הכל</button>
@@ -1712,8 +1720,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <input type="text" class="srch" id="client-search" placeholder="חיפוש לקוח..." oninput="filterClients()">
       <button class="btn btnp" onclick="openClientModal(null)">+ לקוח חדש</button>
       <button class="btn" onclick="manualSyncDeals()" style="background:#7b5ea7;color:#fff;border-color:#7b5ea7" title="סנכרן עסקאות סגורות לכרטיסי לקוח">🔄 סנכרן עסקאות</button>
-      <button class="btn" onclick="exportExcel('clients')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
-      <button class="btn" onclick="importFromExcel('clients')" style="background:#0078d4;color:#fff;border-color:#0078d4" title="ייבוא מ-Excel">📤 ייבוא</button>
+      <button class="btn btn-excel" onclick="exportExcel('clients')">📥 Excel</button>
+      <button class="btn btn-import" onclick="importFromExcel('clients')" title="ייבוא מ-Excel">📤 ייבוא</button>
     </div>
   </div>
   <div id="clients-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px"></div>
@@ -1724,21 +1732,21 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   <div class="shdr"><div class="stit">📥 ייצוא וגיבוי</div></div>
   <div style="font-size:9px;font-weight:800;color:rgba(200,169,110,.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding:0 2px">📤 ייצוא נתונים</div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px">
-    <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0" onclick="exportExcel('deals')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(76,201,240,.1)">💼</div><div style="font-weight:700;margin-bottom:3px">עסקאות</div><div style="font-size:11px;color:var(--text2)" id="exp-deals-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #f4a261" onclick="exportExcel('tenders')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(244,162,97,.1)">📋</div><div style="font-weight:700;margin-bottom:3px">מכרזים</div><div style="font-size:11px;color:var(--text2)" id="exp-tenders-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #a78bfa" onclick="exportExcel('dists')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(167,139,250,.1)">🚀</div><div style="font-weight:700;margin-bottom:3px">הפצות</div><div style="font-size:11px;color:var(--text2)" id="exp-dists-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #c8a96e" onclick="exportExcel('salary')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(200,169,110,.1)">💰</div><div style="font-weight:700;margin-bottom:3px">פרויקטי שכר</div><div style="font-size:11px;color:var(--text2)" id="exp-salary-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="exportExcel('meetings')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(6,214,160,.1)">🤝</div><div style="font-weight:700;margin-bottom:3px">פגישות</div><div style="font-size:11px;color:var(--text2)" id="exp-meetings-count">0 רשומות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #c8a96e" onclick="exportExcel('clients')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(200,169,110,.1)">🏢</div><div style="font-weight:700;margin-bottom:3px">כרטיסי לקוח</div><div style="font-size:11px;color:var(--text2)" id="exp-clients-count">0 לקוחות</div><div style="margin-top:10px;background:#1d6f42;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #e63946" onclick="exportAll()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(230,57,70,.1)">📊</div><div style="font-weight:700;margin-bottom:3px">כל הנתונים</div><div style="font-size:11px;color:var(--text2)">כל הנושאים</div><div style="margin-top:10px;background:#e63946;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📥 ייצוא הכל</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0" onclick="exportExcel('deals')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(76,201,240,.1)">💼</div><div style="font-weight:700;margin-bottom:3px">עסקאות</div><div style="font-size:11px;color:var(--text2)" id="exp-deals-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #f4a261" onclick="exportExcel('tenders')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(244,162,97,.1)">📋</div><div style="font-weight:700;margin-bottom:3px">מכרזים</div><div style="font-size:11px;color:var(--text2)" id="exp-tenders-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #a78bfa" onclick="exportExcel('dists')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(167,139,250,.1)">🚀</div><div style="font-weight:700;margin-bottom:3px">הפצות</div><div style="font-size:11px;color:var(--text2)" id="exp-dists-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #c8a96e" onclick="exportExcel('salary')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(200,169,110,.1)">💰</div><div style="font-weight:700;margin-bottom:3px">פרויקטי שכר</div><div style="font-size:11px;color:var(--text2)" id="exp-salary-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="exportExcel('meetings')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(6,214,160,.1)">🤝</div><div style="font-weight:700;margin-bottom:3px">פגישות</div><div style="font-size:11px;color:var(--text2)" id="exp-meetings-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #c8a96e" onclick="exportExcel('clients')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(200,169,110,.1)">🏢</div><div style="font-weight:700;margin-bottom:3px">כרטיסי לקוח</div><div style="font-size:11px;color:var(--text2)" id="exp-clients-count">0 לקוחות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #e63946" onclick="exportAll()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(230,57,70,.1)">📊</div><div style="font-weight:700;margin-bottom:3px">כל הנתונים</div><div style="font-size:11px;color:var(--text2)">כל הנושאים</div><div class="exp-tile-btn" style="background:#e63946;color:#fff">📥 ייצוא הכל</div></div></div>
   </div>
   <div style="font-size:9px;font-weight:800;color:rgba(200,169,110,.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding:0 2px">🛡️ גיבוי ושחזור</div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px">
-    <div class="tw" style="cursor:pointer;border-top:3px solid #0078d4" onclick="backupData()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(0,120,212,.1)">💾</div><div style="font-weight:700;margin-bottom:3px">גיבוי מלא</div><div style="font-size:11px;color:var(--text2)">קובץ JSON לשחזור</div><div style="margin-top:10px;background:#0078d4;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">💾 הורד גיבוי</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #f4a261" onclick="clipboardBackup()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(244,162,97,.1)">📋</div><div style="font-weight:700;margin-bottom:3px">העתק לגיבוי</div><div style="font-size:11px;color:var(--text2)">העתק נתונים ללוח</div><div style="margin-top:10px;background:#f4a261;color:#000;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📋 העתק ללוח</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #7b5ea7" onclick="restoreData()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(123,94,167,.1)">📂</div><div style="font-weight:700;margin-bottom:3px">שחזור נתונים</div><div style="font-size:11px;color:var(--text2)">מקובץ JSON</div><div style="margin-top:10px;background:#7b5ea7;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">📂 שחזר מגיבוי</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="openAutoBackups()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(6,214,160,.1)">🛡️</div><div style="font-weight:700;margin-bottom:3px">גיבויים אוטומטיים</div><div style="font-size:11px;color:var(--text2)">300 גיבויים + 14 ימים אחורה · שחזור בקליק</div><div style="margin-top:10px;background:rgba(6,214,160,.15);color:#06d6a0;border:1px solid rgba(6,214,160,.3);padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">🛡️ צפה ושחזר</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0;position:relative" onclick="openSyncModal()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(76,201,240,.1)">☁️</div><div style="font-weight:700;margin-bottom:3px">סנכרון ענן</div><div style="font-size:11px;color:var(--text2)" id="fb-tile-status">לא מוגדר</div><div style="margin-top:10px;background:rgba(76,201,240,.15);color:#4cc9f0;border:1px solid rgba(76,201,240,.3);padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600">☁️ הגדרת סנכרון</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #0078d4" onclick="backupData()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(0,120,212,.1)">💾</div><div style="font-weight:700;margin-bottom:3px">גיבוי מלא</div><div style="font-size:11px;color:var(--text2)">קובץ JSON לשחזור</div><div class="exp-tile-btn" style="background:#0078d4;color:#fff">💾 הורד גיבוי</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #f4a261" onclick="clipboardBackup()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(244,162,97,.1)">📋</div><div style="font-weight:700;margin-bottom:3px">העתק לגיבוי</div><div style="font-size:11px;color:var(--text2)">העתק נתונים ללוח</div><div class="exp-tile-btn" style="background:#f4a261;color:#000">📋 העתק ללוח</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #7b5ea7" onclick="restoreData()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(123,94,167,.1)">📂</div><div style="font-weight:700;margin-bottom:3px">שחזור נתונים</div><div style="font-size:11px;color:var(--text2)">מקובץ JSON</div><div class="exp-tile-btn" style="background:#7b5ea7;color:#fff">📂 שחזר מגיבוי</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="openAutoBackups()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(6,214,160,.1)">🛡️</div><div style="font-weight:700;margin-bottom:3px">גיבויים אוטומטיים</div><div style="font-size:11px;color:var(--text2)">300 גיבויים + 14 ימים אחורה · שחזור בקליק</div><div class="exp-tile-btn" style="background:rgba(6,214,160,.15);color:#06d6a0;border:1px solid rgba(6,214,160,.3)">🛡️ צפה ושחזר</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0;position:relative" onclick="openSyncModal()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(76,201,240,.1)">☁️</div><div style="font-weight:700;margin-bottom:3px">סנכרון ענן</div><div style="font-size:11px;color:var(--text2)" id="fb-tile-status">לא מוגדר</div><div class="exp-tile-btn" style="background:rgba(76,201,240,.15);color:#4cc9f0;border:1px solid rgba(76,201,240,.3)">☁️ הגדרת סנכרון</div></div></div>
   </div>
 </div>
 
@@ -1854,7 +1862,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
         <option value="נסגר">נסגר</option>
       </select>
       <button class="btn" onclick="nav('clients')" style="background:rgba(200,169,110,.12);color:var(--gold);border-color:rgba(200,169,110,.3)" title="עבור לכרטיסי לקוח להוספת מוצרים">🏢 לקוחות</button>
-      <button class="btn" onclick="exportExcel('workplan')" style="background:#1d6f42;color:#fff;border-color:#1d6f42">📥 Excel</button>
+      <button class="btn btn-excel" onclick="exportExcel('workplan')">📥 Excel</button>
     </div>
   </div>
   <div class="krow" id="wpkrow"></div>
