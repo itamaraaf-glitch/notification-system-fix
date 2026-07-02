@@ -1255,7 +1255,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
   <div class="shdr">
     <div class="stit">⚠️ התראות פעילות</div>
     <div style="display:flex;gap:8px;align-items:center">
-      <span style="font-size:11px;color:#3a4468" id="alerts-count"></span>
+      <span style="font-size:11px;color:var(--text2)" id="alerts-count"></span>
       <button class="btn btnwp" onclick="sendWhatsApp()">📱 WhatsApp</button>
     </div>
   </div>
@@ -3084,7 +3084,9 @@ function getAlerts(){
 }
 function rAlerts(){
   const a=getAlerts();
-  const cnt=document.getElementById('alerts-count');if(cnt)cnt.textContent=a.length+' התראות';
+  const critN=a.filter(x=>x.type==='crit').length,warnN=a.filter(x=>x.type==='warn').length;
+  const cnt=document.getElementById('alerts-count');
+  if(cnt)cnt.innerHTML=a.length===0?'<span style="color:var(--teal)">✅ הכל תקין</span>':[critN?`<span style="color:#e63946;font-weight:700">${critN} קריטי</span>`:'',warnN?`<span style="color:#f4a261">${warnN} אזהרה</span>`:'',`<span style="color:var(--text3)">${a.length} סה"כ</span>`].filter(Boolean).join(' · ');
   document.getElementById('alcont').innerHTML=a.length?a.map((x,i)=>{
     let mailBtn='';
     if(x.co){
