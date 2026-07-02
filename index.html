@@ -233,15 +233,15 @@ body{font-family:'Heebo',sans-serif;background:#080c18;color:var(--text);font-si
 #nsec-clients{color:rgba(6,214,160,.5)}
 #nsec-tools{color:rgba(76,201,240,.45)}
 /* sidebar nav active state — section-specific accent colors */
-#nv-deals.active{border-right-color:#4cc9f0!important;color:#4cc9f0!important;background:linear-gradient(90deg,rgba(76,201,240,.12),rgba(76,201,240,.03),transparent)!important}
-#nv-tenders.active{border-right-color:#f4a261!important;color:#f4a261!important;background:linear-gradient(90deg,rgba(244,162,97,.12),rgba(244,162,97,.03),transparent)!important}
-#nv-dists.active{border-right-color:#a78bfa!important;color:#a78bfa!important;background:linear-gradient(90deg,rgba(167,139,250,.12),rgba(167,139,250,.03),transparent)!important}
-#nv-salary.active{border-right-color:#06d6a0!important;color:#06d6a0!important;background:linear-gradient(90deg,rgba(6,214,160,.12),rgba(6,214,160,.03),transparent)!important}
-#nv-meetings.active{border-right-color:#06d6a0!important;color:#06d6a0!important;background:linear-gradient(90deg,rgba(6,214,160,.12),rgba(6,214,160,.03),transparent)!important}
-#nv-clients.active{border-right-color:#c8a96e!important;color:#c8a96e!important;background:linear-gradient(90deg,rgba(200,169,110,.14),rgba(200,169,110,.04),transparent)!important}
-#nv-workplan.active{border-right-color:#a78bfa!important;color:#a78bfa!important;background:linear-gradient(90deg,rgba(167,139,250,.12),rgba(167,139,250,.03),transparent)!important}
-#nv-alerts.active{border-right-color:#e63946!important;color:#e63946!important;background:linear-gradient(90deg,rgba(230,57,70,.12),rgba(230,57,70,.03),transparent)!important}
-#nv-export.active{border-right-color:#4cc9f0!important;color:#4cc9f0!important;background:linear-gradient(90deg,rgba(76,201,240,.12),rgba(76,201,240,.03),transparent)!important}
+#nv-deals.active{border-right-color:#4cc9f0!important;color:#4cc9f0!important;background:linear-gradient(90deg,rgba(76,201,240,.12),rgba(76,201,240,.03),transparent)!important;box-shadow:inset -3px 0 8px rgba(76,201,240,.15),inset 0 1px 0 rgba(255,255,255,.04)!important}
+#nv-tenders.active{border-right-color:#f4a261!important;color:#f4a261!important;background:linear-gradient(90deg,rgba(244,162,97,.12),rgba(244,162,97,.03),transparent)!important;box-shadow:inset -3px 0 8px rgba(244,162,97,.15),inset 0 1px 0 rgba(255,255,255,.04)!important}
+#nv-dists.active{border-right-color:#a78bfa!important;color:#a78bfa!important;background:linear-gradient(90deg,rgba(167,139,250,.12),rgba(167,139,250,.03),transparent)!important;box-shadow:inset -3px 0 8px rgba(167,139,250,.15),inset 0 1px 0 rgba(255,255,255,.04)!important}
+#nv-salary.active{border-right-color:#06d6a0!important;color:#06d6a0!important;background:linear-gradient(90deg,rgba(6,214,160,.12),rgba(6,214,160,.03),transparent)!important;box-shadow:inset -3px 0 8px rgba(6,214,160,.15),inset 0 1px 0 rgba(255,255,255,.04)!important}
+#nv-meetings.active{border-right-color:#06d6a0!important;color:#06d6a0!important;background:linear-gradient(90deg,rgba(6,214,160,.12),rgba(6,214,160,.03),transparent)!important;box-shadow:inset -3px 0 8px rgba(6,214,160,.15),inset 0 1px 0 rgba(255,255,255,.04)!important}
+#nv-clients.active{border-right-color:#c8a96e!important;color:#c8a96e!important;background:linear-gradient(90deg,rgba(200,169,110,.14),rgba(200,169,110,.04),transparent)!important;box-shadow:inset -3px 0 8px rgba(200,169,110,.18),inset 0 1px 0 rgba(255,255,255,.04)!important}
+#nv-workplan.active{border-right-color:#a78bfa!important;color:#a78bfa!important;background:linear-gradient(90deg,rgba(167,139,250,.12),rgba(167,139,250,.03),transparent)!important;box-shadow:inset -3px 0 8px rgba(167,139,250,.15),inset 0 1px 0 rgba(255,255,255,.04)!important}
+#nv-alerts.active{border-right-color:#e63946!important;color:#e63946!important;background:linear-gradient(90deg,rgba(230,57,70,.12),rgba(230,57,70,.03),transparent)!important;box-shadow:inset -3px 0 8px rgba(230,57,70,.15),inset 0 1px 0 rgba(255,255,255,.04)!important}
+#nv-export.active{border-right-color:#4cc9f0!important;color:#4cc9f0!important;background:linear-gradient(90deg,rgba(76,201,240,.12),rgba(76,201,240,.03),transparent)!important;box-shadow:inset -3px 0 8px rgba(76,201,240,.15),inset 0 1px 0 rgba(255,255,255,.04)!important}
 .stit{
   font-family:'Playfair Display',serif;
   font-size:22px;font-weight:700;letter-spacing:-.2px;
@@ -315,6 +315,19 @@ body{font-family:'Heebo',sans-serif;background:#080c18;color:var(--text);font-si
 #sec-dists{--tab-active-color:#a78bfa;--tab-active-bg:rgba(167,139,250,.07)}
 #sec-salary{--tab-active-color:#06d6a0;--tab-active-bg:rgba(6,214,160,.07)}
 #sec-meetings{--tab-active-color:#06d6a0;--tab-active-bg:rgba(6,214,160,.07)}
+
+/* archive thdr — inherit section accent for right border */
+#sec-deals .thdr{--thdr-accent:#4cc9f0}
+#sec-tenders .thdr{--thdr-accent:#f4a261}
+#sec-dists .thdr{--thdr-accent:#a78bfa}
+#sec-salary .thdr{--thdr-accent:#06d6a0}
+#sec-meetings .thdr{--thdr-accent:#06d6a0}
+#sec-clients .thdr{--thdr-accent:#c8a96e}
+#sec-workplan .thdr{--thdr-accent:#a78bfa}
+#sec-alerts .thdr{--thdr-accent:#e63946}
+#sec-export .thdr{--thdr-accent:#4cc9f0}
+/* apply to any thdr without explicit inline border-right */
+.thdr:not([style*="border-right"]){border-right:3px solid var(--thdr-accent,rgba(200,169,110,.3))}
 
 /* ─── TABLE WRAPPER ─── */
 .tw{background:linear-gradient(170deg,rgba(38,55,96,.62),rgba(34,50,90,.62));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(200,169,110,.2);border-radius:14px;overflow:hidden;margin-bottom:16px;box-shadow:0 6px 28px rgba(0,0,0,.16)}
