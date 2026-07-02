@@ -522,6 +522,7 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
   transition:all .38s var(--expo);
   box-shadow:0 6px 20px rgba(0,0,0,.3);
   position:relative;overflow:hidden;
+  transform-style:preserve-3d;will-change:transform;
 }
 .client-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(200,169,110,.5),transparent);
@@ -988,6 +989,12 @@ tr:hover td{background:rgba(255,255,255,.038)!important}
 /* ── Calendar / context menu popup buttons ── */
 .cal-menu-btn{display:block;width:100%;background:transparent;border:none;color:var(--text);padding:8px 12px;text-align:right;cursor:pointer;border-radius:8px;font-family:'Heebo',sans-serif;font-size:12px;transition:background .15s}
 .cal-menu-btn:hover{background:rgba(255,255,255,.07)}
+
+/* ── Client card status-matched hover glow ── */
+.client-card.cl-active:hover{box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 32px rgba(6,214,160,.18)}
+.client-card.cl-potential:hover{box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 32px rgba(76,201,240,.18)}
+.client-card.cl-lead:hover{box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 32px rgba(244,162,97,.18)}
+.client-card.cl-inactive:hover{box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 32px rgba(230,57,70,.18)}
 
 /* ── Mobile FAB ── */
 #mob-fab-btn{
@@ -4344,6 +4351,7 @@ function rClients(){
   grid.innerHTML=D.clients.map(c=>{
     const sc={r:'#e63946',y:'#f4a261',g:'var(--teal)',b:'#4cc9f0'};
     const stCol=c.status==='לקוח פעיל'?sc.g:c.status==='לקוח פוטנציאלי'?sc.b:c.status==='ליד חדש'?sc.y:sc.r;
+    const stCls=c.status==='לקוח פעיל'?'cl-active':c.status==='לקוח פוטנציאלי'?'cl-potential':c.status==='ליד חדש'?'cl-lead':'cl-inactive';
     const warns=getExpiryWarnings(c);
     const potActive=(c.potential||[]).filter(p=>p.status!=='נסגר');
     const potVal=potActive.reduce((s,p)=>s+(+p.estimatedValue||0),0);
@@ -4370,7 +4378,7 @@ function rClients(){
     const cMtgs=D.meetings.filter(m=>(m.cl||'').trim()===(c.name||'').trim());
     const nextMtg=cMtgs.filter(m=>m.dt>=todayStrC&&m.hl!=='מבוטל').sort((a,b)=>(a.dt+(a.time||''))<(b.dt+(b.time||''))?-1:1)[0];
     const lastMtg=cMtgs.filter(m=>m.hl==='כן').sort((a,b)=>(a.dt)<(b.dt)?1:-1)[0];
-    return`<div class="client-card" style="border-right:3px solid ${stCol}" onclick="openClientModal('${c.id}')">
+    return`<div class="client-card ${stCls}" style="border-right:3px solid ${stCol}" onclick="openClientModal('${c.id}')">
       <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:8px">
         <div>
           <div style="font-size:13px;font-weight:700">${c.name||''}</div>
@@ -6745,7 +6753,7 @@ function refreshEdges(){} // no-op, kept so nav() calls don't throw
 
 // ── 3D TILT ON CARDS (touch + mouse) ──────────────────────────────────
 (function(){
-  const TILT_SELECTORS = '.kc,.dpanel,.cl-card';
+  const TILT_SELECTORS = '.kc,.dpanel,.cl-card,.client-card';
   const MAX_TILT = 12; // degrees
 
   function applyTilt(el, cx, cy){
