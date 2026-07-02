@@ -2693,7 +2693,7 @@ function _finishLoad(){
   }
   rAll();
   showLoginHealth();
-  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); }catch(e){} }, 2500);
+  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); }catch(e){} }, 2500);
   setTimeout(()=>{ try{ checkEmptyAndRecovery(); }catch(e){} }, 4000);
 }
 function loadAll(){
@@ -5703,15 +5703,60 @@ function restoreData(){
 
 // ===== AUTOMATIC BACKUP (IndexedDB rolling snapshots + daily file) =====
 const IDB_NAME='cem_hot_backups', IDB_STORE='snapshots', IDB_KEEP=300;
+const IDB_DAILY_STORE='daily_snapshots', IDB_DAILY_KEEP=7; // one per day, 7 days back
 const IDB_GOLD_KEY='cem_gold_backup'; // never overwritten by empty data
 function idbOpen(){
   return new Promise((res,rej)=>{
     let r;
-    try{ r=indexedDB.open(IDB_NAME,1); }catch(e){ return rej(e); }
-    r.onupgradeneeded=()=>{const db=r.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE,{keyPath:'ts'});};
+    try{ r=indexedDB.open(IDB_NAME,2); }catch(e){ return rej(e); }
+    r.onupgradeneeded=e=>{
+      const db=r.result;
+      if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE,{keyPath:'ts'});
+      if(!db.objectStoreNames.contains(IDB_DAILY_STORE)) db.createObjectStore(IDB_DAILY_STORE,{keyPath:'day'});
+    };
     r.onsuccess=()=>res(r.result);
     r.onerror=()=>rej(r.error);
   });
+}
+// Daily backup — one snapshot per calendar day, kept 7 days
+async function idbDailyBackup(){
+  try{
+    const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+    const totalRec=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
+    if(totalRec===0)return; // never save empty daily snapshot
+    const day=nd(); // YYYY-MM-DD
+    const db=await idbOpen();
+    const snap={day, ts:Date.now(), date:new Date().toISOString(), data:JSON.stringify(D)};
+    await new Promise((res,rej)=>{const tx=db.transaction(IDB_DAILY_STORE,'readwrite');tx.objectStore(IDB_DAILY_STORE).put(snap);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});
+    // Prune to last IDB_DAILY_KEEP days
+    const db2=await idbOpen();
+    const all=await new Promise(res2=>{const tx=db2.transaction(IDB_DAILY_STORE,'readonly');const req=tx.objectStore(IDB_DAILY_STORE).getAll();req.onsuccess=()=>res2((req.result||[]).sort((a,b)=>a.day<b.day?-1:1));req.onerror=()=>res2([]);});
+    if(all.length>IDB_DAILY_KEEP){
+      const del=all.slice(0,all.length-IDB_DAILY_KEEP);
+      const db3=await idbOpen();
+      const tx=db3.transaction(IDB_DAILY_STORE,'readwrite');
+      del.forEach(s=>tx.objectStore(IDB_DAILY_STORE).delete(s.day));
+    }
+    localStorage.setItem('cem_last_daily_idb',day);
+  }catch(e){console.warn('daily idb backup failed:',e);}
+}
+function idbDailyList(){
+  return new Promise(res=>{
+    idbOpen().then(db=>{
+      const tx=db.transaction(IDB_DAILY_STORE,'readonly');
+      const req=tx.objectStore(IDB_DAILY_STORE).getAll();
+      req.onsuccess=()=>res((req.result||[]).sort((a,b)=>a.day<b.day?1:-1)); // newest first
+      req.onerror=()=>res([]);
+    }).catch(()=>res([]));
+  });
+}
+// Save daily backup once per calendar day when data is non-empty
+function maybeDailyIdbBackup(){
+  const today=nd();
+  if(localStorage.getItem('cem_last_daily_idb')===today)return;
+  const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+  const totalRec=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
+  if(totalRec>0) idbDailyBackup();
 }
 function idbList(){
   return new Promise(res=>{
@@ -5799,9 +5844,10 @@ function maybeDailyBackupFile(){
 // restore-from-auto-backup UI
 async function openAutoBackups(){
   const list=await idbList();
+  const dailyList=await idbDailyList();
   const box=document.getElementById('bk-list');
   if(!box)return;
-  if(!list.length){
+  if(!list.length&&!dailyList.length){
     box.innerHTML='<div style="color:var(--text2);text-align:center;padding:30px"><div style="font-size:32px;margin-bottom:8px">🔍</div><div style="font-size:13px;font-weight:600;margin-bottom:6px">אין גיבויים אוטומטיים שמורים</div><div style="font-size:11px">הגיבויים נשמרים אוטומטית כל 2 דקות בזמן השימוש<br>ובמכשיר הנוכחי</div></div>';
     document.getElementById('mbackups').classList.add('open');
     return;
@@ -5819,7 +5865,7 @@ async function openAutoBackups(){
     const dt=new Date(s.ts);
     const timeStr=dt.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
     const dateStr=dt.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'});
-    const isNow=(sorted[0].ts===s.ts);
+    const isNow=(sorted.length&&sorted[0].ts===s.ts);
     const badge=isNow?'<span style="background:#06d6a0;color:#000;border-radius:4px;font-size:9px;padding:1px 5px;margin-right:4px;font-weight:800">עכשיו</span>':highlight?'<span style="background:#fbbf24;color:#000;border-radius:4px;font-size:9px;padding:1px 5px;margin-right:4px;font-weight:800">קרוב ל-18:00</span>':'';
     const bg=highlight?'background:rgba(251,191,36,.08);':'';
     return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);${bg}">
@@ -5837,6 +5883,27 @@ async function openAutoBackups(){
   todayItems.forEach(s=>{const diff=Math.abs(s.ts-target18);if(diff<closest18Diff){closest18Diff=diff;closest18=s;}});
 
   let html='';
+
+  // === DAILY BACKUPS SECTION — up to 7 days ===
+  if(dailyList.length){
+    html+=`<div style="padding:8px 12px;font-size:11px;font-weight:800;color:#a78bfa;background:rgba(167,139,250,.09);border-bottom:1px solid var(--border)">📆 גיבויים יומיים — ${dailyList.length} ימים אחרונים</div>`;
+    html+=dailyList.map(s=>{
+      let d={};try{d=JSON.parse(s.data);}catch(e){}
+      const ttl=(d.deals||[]).length+(d.clients||[]).length+(d.meetings||[]).length+(d.dists||[]).length+(d.tenders||[]).length+(d.salary||[]).length;
+      const cnt=(d.deals||[]).length+' עסקאות · '+(d.clients||[]).length+' לקוחות · '+(d.meetings||[]).length+' פגישות';
+      const timeStr=new Date(s.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+      const isToday=(s.day===todayStr);
+      const badge=isToday?'<span style="background:#a78bfa;color:#000;border-radius:4px;font-size:9px;padding:1px 5px;margin-left:4px;font-weight:800">היום</span>':'';
+      return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:12px;font-weight:700">${badge}${s.day} <span style="color:var(--text2);font-weight:400;font-size:10px">נשמר ${timeStr}</span></div>
+          <div style="font-size:10px;color:var(--text2);margin-top:2px">${cnt} · סה"כ ${ttl} רשומות</div>
+        </div>
+        <button class="btn btns" onclick="restoreFromDailyIdb('${s.day}')" style="border-color:#a78bfa;color:#a78bfa;white-space:nowrap">↩ שחזר</button>
+      </div>`;
+    }).join('');
+  }
+
   if(todayItems.length){
     html+=`<div style="padding:8px 12px;font-size:11px;font-weight:800;color:var(--teal);background:rgba(6,214,160,.07);border-bottom:1px solid var(--border)">📅 היום – ${todayItems.length} גיבויים</div>`;
     html+=todayItems.map(s=>mkItem(s,closest18&&s.ts===closest18.ts)).join('');
@@ -5860,6 +5927,46 @@ async function openAutoBackups(){
   }
 
   document.getElementById('mbackups').classList.add('open');
+}
+async function restoreFromDailyIdb(day){
+  const dailyList=await idbDailyList();
+  const snap=dailyList.find(s=>s.day===day);
+  if(!snap){showToast('⚠️ הגיבוי היומי לא נמצא','warn');return;}
+  const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+  const allCols=['deals','tenders','dists','salary','meetings','clients','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
+  const currentlyEmpty=mainCols.every(c=>!(D[c]||[]).length);
+  const confirmMsg=currentlyEmpty
+    ?`לשחזר נתונים מגיבוי יומי של ${day}?\n\nהמערכת ריקה — כל הנתונים יוחזרו במלואם.`
+    :`לשחזר נתונים מגיבוי יומי של ${day}?\n\nהנתונים הנוכחיים יתמזגו עם הגיבוי — שום דבר לא יימחק.`;
+  confirmAct(confirmMsg,()=>{
+    try{
+      const p=JSON.parse(snap.data);
+      idbBackup(JSON.stringify(D));
+      if(currentlyEmpty){
+        allCols.forEach(col=>{D[col]=p[col]||[];});
+        D.goals=p.goals||D.goals||{};
+        D.lastCycleMonth=p.lastCycleMonth||'';
+        D._deletedIds={};
+      }else{
+        allCols.forEach(col=>{
+          const curr=D[col]||[];
+          const bk=p[col]||[];
+          const currIds=new Set(curr.map(x=>String(x.id)));
+          const missing=bk.filter(x=>!currIds.has(String(x.id)));
+          if(missing.length)D[col]=[...curr,...missing];
+        });
+        if(!D.goals||!Object.keys(D.goals).length)D.goals=p.goals||{};
+        D._deletedIds=D._deletedIds||p._deletedIds||{};
+      }
+      saveAll();rAll();
+      const bkModal=document.getElementById('mbackups');
+      if(bkModal)bkModal.classList.remove('open');
+      const eb=document.getElementById('emergency-recovery-bar');
+      if(eb)eb.remove();
+      const totalRestored=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
+      showToast(`✅ שוחזרו ${totalRestored} רשומות מגיבוי יומי ${day}`,'ok');
+    }catch(e){alert('שגיאה בשחזור: '+e.message);}
+  },currentlyEmpty?'כן, שחזר הכל':'כן, שחזר ומזג');
 }
 async function restoreFromIdb(ts){
   const list=await idbList();
@@ -5964,6 +6071,8 @@ async function checkEmptyAndRecovery(){
 }
 // periodic snapshot every 2 minutes while the app is open
 setInterval(()=>{ const app=document.getElementById('app'); if(app&&app.style.display!=='none') idbBackup(); }, 2*60*1000);
+// daily IDB snapshot — check every 30 minutes if a new day started
+setInterval(()=>{ const app=document.getElementById('app'); if(app&&app.style.display!=='none') maybeDailyIdbBackup(); }, 30*60*1000);
 
 // Close modal when tapping the dark backdrop (mobile-friendly)
 document.addEventListener('click',e=>{
