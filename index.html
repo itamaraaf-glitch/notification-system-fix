@@ -964,6 +964,19 @@ tr:hover td{background:rgba(255,255,255,.038)!important}
 ::-webkit-scrollbar-thumb{background:rgba(200,169,110,.22);border-radius:4px}
 ::-webkit-scrollbar-thumb:hover{background:rgba(200,169,110,.4)}
 
+/* ── Export / clickable card hover ── */
+.tw[style*="cursor:pointer"]{transition:transform .28s var(--expo),box-shadow .28s,border-color .28s}
+.tw[style*="cursor:pointer"]:hover{transform:translateY(-5px);box-shadow:0 18px 52px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.07);border-color:rgba(200,169,110,.35)}
+
+/* ── Progress bar shimmer ── */
+@keyframes barShine{0%{transform:translateX(200%)}100%{transform:translateX(-200%)}}
+.gbar-fill{position:relative;overflow:hidden}
+.gbar-fill::after{content:'';position:absolute;top:0;bottom:0;width:50%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:barShine 2.8s linear infinite}
+
+/* ── Backup list item hover ── */
+.bk-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);transition:background .15s;cursor:default}
+.bk-item:hover{background:rgba(255,255,255,.05)!important}
+
 /* ── Mobile FAB ── */
 #mob-fab-btn{
   position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));left:16px;
@@ -6066,7 +6079,7 @@ async function openAutoBackups(){
     const isNow=(sorted.length&&sorted[0].ts===s.ts);
     const badge=isNow?'<span style="background:#06d6a0;color:#000;border-radius:4px;font-size:9px;padding:1px 5px;margin-right:4px;font-weight:800">עכשיו</span>':highlight?'<span style="background:#fbbf24;color:#000;border-radius:4px;font-size:9px;padding:1px 5px;margin-right:4px;font-weight:800">קרוב ל-18:00</span>':'';
     const bg=highlight?'background:rgba(251,191,36,.08);':'';
-    return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);${bg}">
+    return`<div class="bk-item" style="${bg}">
       <div>
         <div style="font-size:12px;font-weight:700">${badge}${timeStr} <span style="color:var(--text2);font-weight:400">${dateStr}</span></div>
         <div style="font-size:10px;color:var(--text2);margin-top:2px">${cnt} · סה"כ ${ttl} רשומות</div>
@@ -6092,7 +6105,7 @@ async function openAutoBackups(){
       const timeStr=new Date(s.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
       const isToday=(s.day===todayStr);
       const badge=isToday?'<span style="background:#a78bfa;color:#000;border-radius:4px;font-size:9px;padding:1px 5px;margin-left:4px;font-weight:800">היום</span>':'';
-      return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border)">
+      return`<div class="bk-item">
         <div>
           <div style="font-size:12px;font-weight:700">${badge}${s.day} <span style="color:var(--text2);font-weight:400;font-size:10px">נשמר ${timeStr}</span></div>
           <div style="font-size:10px;color:var(--text2);margin-top:2px">${cnt} · סה"כ ${ttl} רשומות</div>
