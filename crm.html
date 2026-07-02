@@ -2111,6 +2111,8 @@ function showToast(msg,type='ok'){
   const t=document.createElement('div');
   t.className=`toast toast-${type}`;t.textContent=msg;
   const restack=()=>{document.querySelectorAll('.toast').forEach((el,i)=>{el.style.bottom=(16+i*54)+'px';});};
+  const existing=document.querySelectorAll('.toast');
+  if(existing.length>=3)existing[0].remove();
   document.body.appendChild(t);
   restack();
   setTimeout(()=>{t.style.opacity='0';setTimeout(()=>{t.remove();restack();},400);},3500);
@@ -3558,19 +3560,31 @@ function rDash(){
     <div class="kc y"><div class="lb">OTC נסגר</div><div class="vl">₪${Math.round(tot/1000)}K</div></div>
     <div class="kc p"><div class="lb">מכרזים</div><div class="vl">${D.tenders.length}</div></div>
     <div class="kc g"><div class="lb">פגישות</div><div class="vl">${held}/${MEETING_GOAL}</div><div class="sb">${pct}%</div></div>`;
-  const pi=[];
-  D.deals.filter(d=>d.st!=='נסגר').forEach(d=>{const p=pri(d,'deal');if(p==='r'||p==='o')pi.push({p,t:d.co,s:d.srv||'',nav:'deals'});});
-  D.tenders.forEach(t=>{const p=pri(t,'ten');if(p==='r'||p==='o')pi.push({p,t:t.name,s:`מועד: ${fmtDate(t.deadline)}`,nav:'tenders'});});
-  D.dists.filter(d=>d.st!=='הושלם').forEach(d=>{const p=pri(d,'dist');if(p==='r')pi.push({p,t:d.co,s:d.st,nav:'dists'});});
+  const pi=[];const tPri=nd();
+  D.deals.filter(d=>d.st!=='נסגר').forEach(d=>{
+    const p=pri(d,'deal');if(p!=='r'&&p!=='o')return;
+    const days=d.date?db(d.date,tPri):0;
+    pi.push({p,t:d.co+(d.srv?' · '+d.srv:''),s:`עסקה בסטטוס "${d.st||'פתוח'}" ${days>0?days+' ימים':''}${d.ct?' מול '+d.ct:''} | ${fmt(d.v)}`,ico:'💼',nav:'deals'});
+  });
+  D.tenders.forEach(t=>{
+    const p=pri(t,'ten');if(p!=='r'&&p!=='o')return;
+    const dl=t.deadline?db(tPri,t.deadline):null;
+    pi.push({p,t:t.name,s:`${dl!=null&&dl>=0?'הגשה בעוד '+dl+' ימים ('+fmtDate(t.deadline)+')':'מועד: '+fmtDate(t.deadline)}${t.submitted==='כן'?' | הוגש':' | טרם הוגש'}`,ico:'📋',nav:'tenders'});
+  });
+  D.dists.filter(d=>d.st!=='הושלם').forEach(d=>{
+    const p=pri(d,'dist');if(p!=='r')return;
+    const days=d.dt?db(d.dt,tPri):0;
+    pi.push({p,t:d.co+(d.no?' · #'+d.no:''),s:d.mi?`תקוע: ${d.mi}`:`"${d.st}" ${days} ימים${d.hd?' | מנהל: '+d.hd:''}`,ico:'🚀',nav:'dists'});
+  });
   pi.sort((a,b)=>a.p==='r'?-1:b.p==='r'?1:0);
-  document.getElementById('prilist').innerHTML=pi.length?pi.slice(0,8).map(i=>`<div onclick="nav('${i.nav}')" style="display:flex;align-items:center;gap:7px;padding:6px 4px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;border-radius:4px" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">${pB(i.p)}<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.t}</div><div style="font-size:10px;color:var(--text2)">${i.s}</div></div><span style="font-size:10px;color:var(--text3);flex-shrink:0">←</span></div>`).join(''):'<div style="font-size:11px;color:var(--teal);padding:6px 0">✅ אין פריטים קריטיים</div>';
+  document.getElementById('prilist').innerHTML=pi.length?pi.slice(0,8).map(i=>`<div onclick="nav('${i.nav}')" style="display:flex;align-items:center;gap:8px;padding:7px 6px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;border-radius:6px;border-right:2px solid ${i.p==='r'?'rgba(230,57,70,.55)':'rgba(244,162,97,.5)'}" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background=''"><span style="font-size:13px;flex-shrink:0">${i.ico}</span><div style="flex:1;min-width:0"><div style="font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.t}</div><div style="font-size:10.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.s}</div></div>${pB(i.p)}</div>`).join(''):'<div style="font-size:11px;color:var(--teal);padding:6px 0">✅ אין פריטים קריטיים</div>';
   // 🔥 urgent list — date-driven alerts (crit first), clickable to client / alerts
   const uEl=document.getElementById('urgentlist');
   if(uEl){
     const ord={crit:0,warn:1,info:2};
     const urg=al.slice().sort((a,b)=>(ord[a.type]??3)-(ord[b.type]??3)).slice(0,10);
     uEl.innerHTML=urg.length?urg.map((x,i)=>{
-      const c=x.co?D.clients.find(cl=>cl.name===x.co):null;
+      const c=x.co?findClientByName(x.co):null;
       const act=c?`openClientModal('${c.id}')`:`nav('alerts')`;
       const dot=x.type==='crit'?'#e63946':x.type==='warn'?'#f4a261':'#4cc9f0';
       return`<div onclick="${act}" class="urg-row">
@@ -4539,14 +4553,21 @@ function rClients(){
       const nm=cfg.label.split(' ').slice(1).join(' ');
       return`<span title="${cfg.label}" style="font-size:10px;padding:2px 7px;border-radius:20px;background:${cfg.color}18;color:${cfg.color};border:1px solid ${cfg.color}44;white-space:nowrap">${em} ${nm}${cnt>1?' ×'+cnt:''}${expiring?' ⚠️':''}</span>`;
     }).join(''):`<span style="font-size:10px;color:var(--text3);font-style:italic">אין שירותים רשומים</span>`;
-    const missingHtml=missingTypes.map(([t,cfg])=>{
+    // מציגים קודם מוצרים שבתהליך עבודה, מוגבל ל-6 צ'יפים + מונה — פחות עומס ויזואלי
+    const missingSorted=missingTypes.slice().sort(([a],[b])=>{
+      const ip=t2=>(c.potential||[]).some(p2=>p2.productType===ITEM_CFG[t2].label||p2.productType===t2)?0:1;
+      return ip(a)-ip(b);
+    });
+    const missingShown=missingSorted.slice(0,6);
+    const missingMore=missingSorted.length-missingShown.length;
+    const missingHtml=missingShown.map(([t,cfg])=>{
       const inPot=(c.potential||[]).some(p=>p.productType===cfg.label||p.productType===t);
       const abbr=TYPE_ABBR[t]||cfg.label.replace(/^\S+\s*/,'').substring(0,3)||'?';
       return`<span title="${cfg.label}${inPot?' – בתהליך עבודה':''}" style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.04);color:${inPot?'#7b5ea7':'var(--text3)'};border:1px dashed ${inPot?'rgba(123,94,167,.5)':'rgba(255,255,255,.1)'};white-space:nowrap;font-weight:700;letter-spacing:.3px">${inPot?'🎯 ':''}${abbr}</span>`;
-    }).join('');
+    }).join('')+(missingMore>0?`<span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.03);color:var(--text3);border:1px dashed rgba(255,255,255,.08);white-space:nowrap">+${missingMore}</span>`:'');
     const mRev=clientMonthlyRevenue(c);
     const mTotal=mRev.reduce((s,x)=>s+x.val,0);
-    const mBreakHtml=mRev.map(x=>`<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(212,168,71,.1);color:var(--gold);border:1px solid rgba(212,168,71,.25);white-space:nowrap">${x.cfg.label.split(' ')[0]} ${fmt(x.val)}</span>`).join('');
+    const mBreakHtml=mRev.length>1?mRev.map(x=>`<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(212,168,71,.1);color:var(--gold);border:1px solid rgba(212,168,71,.25);white-space:nowrap">${x.cfg.label.split(' ')[0]} ${fmt(x.val)}</span>`).join(''):(mRev.length===1?`<span style="font-size:9px;color:var(--text3)">${mRev[0].cfg.label}</span>`:'');
     const emailBtn=`<button class="btn btns" onclick="event.stopPropagation();sendEmailToClient('${c.id}')" style="font-size:9px;opacity:${c.email?1:.35}" title="${c.email?'שלח מייל ללקוח':'הוסף מייל ללקוח'}">📧</button>`;
     // meeting summary for client card
     const todayStrC=nd();
