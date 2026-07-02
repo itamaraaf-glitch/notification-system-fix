@@ -1160,6 +1160,7 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <button class="btn mob-hide" onclick="saveAll()" style="background:var(--tealdim);color:var(--teal);border:1px solid rgba(6,214,160,.4);font-size:11px;padding:4px 12px;border-radius:20px">💾 שמור</button>
     <button class="btn mob-hide" id="undo-btn" onclick="undoLast()" title="בטל את המחיקה האחרונה" style="display:none;background:rgba(244,162,97,.14);color:#f4a261;border:1px solid rgba(244,162,97,.45);font-size:11px;padding:4px 12px;border-radius:20px">↩ בטל מחיקה</button>
     <button class="btn mob-hide" onclick="openAutoBackups()" title="שחזר נתונים מגיבוי אוטומטי" style="background:rgba(6,214,160,.1);color:#06d6a0;border:1px solid rgba(6,214,160,.35);font-size:11px;padding:4px 12px;border-radius:20px">🛡️ שחזר</button>
+    <button class="btn mob-hide" onclick="restoreGoldBackup()" title="גיבוי זהב — המצב האחרון עם נתונים" style="background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.4);font-size:11px;padding:4px 12px;border-radius:20px">⭐ גיבוי זהב</button>
     <button class="btn mob-hide" onclick="openSendToMobile()" title="שלח נתונים למובייל" style="background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.4);font-size:11px;padding:4px 12px;border-radius:20px">📱 מובייל</button>
     <button class="abtn" onclick="nav('alerts')">⚠ <span id="acnt">0</span></button>
     <button class="btn btnbk mob-hide" onclick="backupData()" title="גיבוי">💾 גיבוי</button>
@@ -2477,6 +2478,10 @@ async function ssPoll(){
 
 async function ssPush(){
   if(!_ssUrl||_fbApplying)return;
+  // SAFETY: never push empty data to cloud — protects against sync bugs
+  const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+  const totalRec=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
+  if(totalRec===0){console.warn('ssPush blocked: D is empty, refusing to overwrite cloud data');return;}
   const ts=Date.now();
   localStorage.setItem('cem_sync_ts',String(ts));
   fbStatus('syncing');
@@ -5697,7 +5702,8 @@ function restoreData(){
 }
 
 // ===== AUTOMATIC BACKUP (IndexedDB rolling snapshots + daily file) =====
-const IDB_NAME='cem_hot_backups', IDB_STORE='snapshots', IDB_KEEP=100;
+const IDB_NAME='cem_hot_backups', IDB_STORE='snapshots', IDB_KEEP=300;
+const IDB_GOLD_KEY='cem_gold_backup'; // never overwritten by empty data
 function idbOpen(){
   return new Promise((res,rej)=>{
     let r;
@@ -5719,8 +5725,17 @@ function idbList(){
 }
 async function idbBackup(jsonStr){
   try{
+    const dataStr=(jsonStr!=null?jsonStr:JSON.stringify(D));
+    // Never save an empty snapshot — protect against sync bugs wiping data
+    const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+    let parsed; try{parsed=JSON.parse(dataStr);}catch(e){return;}
+    const totalRec=mainCols.reduce((s,c)=>s+(parsed[c]||[]).length,0);
+    if(totalRec===0){
+      // Check if we have a gold backup with data — if so, skip this empty save
+      try{const g=localStorage.getItem(IDB_GOLD_KEY);if(g){const gp=JSON.parse(g);const gc=mainCols.reduce((s,c)=>s+(gp[c]||[]).length,0);if(gc>0)return;}}catch(e){}
+    }
     const db=await idbOpen();
-    const snap={ts:Date.now(), date:new Date().toISOString(), data:(jsonStr!=null?jsonStr:JSON.stringify(D))};
+    const snap={ts:Date.now(), date:new Date().toISOString(), data:dataStr};
     await new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).put(snap);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});
     const all=await idbList();
     if(all.length>IDB_KEEP){
@@ -5729,7 +5744,33 @@ async function idbBackup(jsonStr){
       const tx=db2.transaction(IDB_STORE,'readwrite');
       del.forEach(s=>tx.objectStore(IDB_STORE).delete(s.ts));
     }
+    // Update gold backup only when data is non-empty
+    if(totalRec>0){
+      try{localStorage.setItem(IDB_GOLD_KEY,dataStr);}catch(e){}
+    }
   }catch(e){console.warn('auto-backup (idb) failed:',e);}
+}
+// Restore gold backup — the last known non-empty state
+async function restoreGoldBackup(){
+  try{
+    const g=localStorage.getItem(IDB_GOLD_KEY);
+    if(!g){showToast('⚠️ אין גיבוי זהב שמור','warn');return;}
+    const p=JSON.parse(g);
+    const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+    const cnt=mainCols.reduce((s,c)=>s+(p[c]||[]).length,0);
+    if(!cnt){showToast('⚠️ גיבוי הזהב ריק','warn');return;}
+    confirmAct(`לשחזר ${cnt} רשומות מגיבוי הזהב (המצב האחרון הידוע עם נתונים)?`,()=>{
+      try{
+        idbBackup(JSON.stringify(D));
+        const allCols=['deals','tenders','dists','salary','meetings','clients','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
+        allCols.forEach(col=>{D[col]=p[col]||[];});
+        D.goals=p.goals||D.goals;D._deletedIds={};D.lastCycleMonth=p.lastCycleMonth||'';
+        saveAll();rAll();
+        const eb=document.getElementById('emergency-recovery-bar');if(eb)eb.remove();
+        showToast('✅ גיבוי הזהב שוחזר — '+cnt+' רשומות','ok');
+      }catch(e){alert('שגיאה: '+e.message);}
+    },'כן, שחזר');
+  }catch(e){showToast('⚠️ שגיאה בגיבוי הזהב: '+e.message,'warn');}
 }
 let _idbT=null;
 function scheduleAutoBackup(){ clearTimeout(_idbT); _idbT=setTimeout(idbBackup,8000); } // debounced after saves
