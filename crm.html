@@ -997,6 +997,10 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 .client-card.cl-lead:hover{box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 32px rgba(244,162,97,.18)}
 .client-card.cl-inactive:hover{box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 32px rgba(230,57,70,.18)}
 
+/* ── Quick action panel items ── */
+.qa-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;transition:transform .2s var(--expo),box-shadow .2s,border-color .2s}
+.qa-item:hover{transform:scale(1.02) translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.35)}
+
 /* ── Section-specific input focus color ── */
 #sec-deals input:focus,#sec-deals select:focus,#sec-deals textarea:focus,#sec-export input:focus,#sec-export select:focus{border-color:rgba(76,201,240,.6)!important;box-shadow:0 0 0 3px rgba(76,201,240,.1),inset 0 1px 0 rgba(255,255,255,.06)!important}
 #sec-tenders input:focus,#sec-tenders select:focus,#sec-tenders textarea:focus{border-color:rgba(244,162,97,.6)!important;box-shadow:0 0 0 3px rgba(244,162,97,.1),inset 0 1px 0 rgba(255,255,255,.06)!important}
@@ -4266,23 +4270,23 @@ function renderQuickActions(){
   const pendingSal=D.salary.filter(s=>s.st!=='סגור'&&(s.pv||0)>0).length;
   const activeTenders=D.tenders.filter(t=>t.submitted!=='כן').length;
   el.innerHTML=`
-    <div onclick="openM('meeting',null)" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.2);cursor:pointer">
+    <div onclick="openM('meeting',null)" class="qa-item" style="background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.2)">
       <span style="font-size:16px">📅</span>
       <div style="flex:1"><div style="font-size:11px;font-weight:700;color:#06d6a0">פגישה חדשה</div><div style="font-size:10px;color:var(--text3)">${todayMtgs} היום</div></div>
     </div>
-    <div onclick="openM('deal',null)" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:rgba(76,201,240,.08);border:1px solid rgba(76,201,240,.2);cursor:pointer">
+    <div onclick="openM('deal',null)" class="qa-item" style="background:rgba(76,201,240,.08);border:1px solid rgba(76,201,240,.2)">
       <span style="font-size:16px">💼</span>
       <div style="flex:1"><div style="font-size:11px;font-weight:700;color:#4cc9f0">עסקה חדשה</div><div style="font-size:10px;color:var(--text3)">${openDeals} פעילות</div></div>
     </div>
-    <div onclick="openClientModal(null)" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:rgba(200,169,110,.08);border:1px solid rgba(200,169,110,.2);cursor:pointer">
+    <div onclick="openClientModal(null)" class="qa-item" style="background:rgba(200,169,110,.08);border:1px solid rgba(200,169,110,.2)">
       <span style="font-size:16px">🏢</span>
       <div style="flex:1"><div style="font-size:11px;font-weight:700;color:var(--gold)">לקוח חדש</div><div style="font-size:10px;color:var(--text3)">${D.clients.length} לקוחות</div></div>
     </div>
-    ${activeTenders?`<div onclick="nav('tenders')" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:rgba(244,162,97,.08);border:1px solid rgba(244,162,97,.2);cursor:pointer">
+    ${activeTenders?`<div onclick="nav('tenders')" class="qa-item" style="background:rgba(244,162,97,.08);border:1px solid rgba(244,162,97,.2)">
       <span style="font-size:16px">📋</span>
       <div style="flex:1"><div style="font-size:11px;font-weight:700;color:#f4a261">מכרזים פעילים</div><div style="font-size:10px;color:var(--text3)">${activeTenders} פתוחים</div></div>
     </div>`:''}
-    ${pendingSal?`<div onclick="nav('salary')" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);cursor:pointer">
+    ${pendingSal?`<div onclick="nav('salary')" class="qa-item" style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2)">
       <span style="font-size:16px">💰</span>
       <div style="flex:1"><div style="font-size:11px;font-weight:700;color:var(--purple)">שכר לגביה</div><div style="font-size:10px;color:var(--text3)">${pendingSal} פרויקטים</div></div>
     </div>`:''}
