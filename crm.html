@@ -1115,6 +1115,9 @@ tr:hover td{background:rgba(200,169,110,.045) !important}
     <div class="lg"><label>סיסמה</label><div style="position:relative"><input type="password" id="lp" placeholder="סיסמה" autocomplete="new-password" name="pwd_m4r7" onkeydown="if(event.key==='Enter')doLogin()" style="padding-left:36px"><button type="button" onclick="(function(){const i=document.getElementById('lp');const b=document.getElementById('lp-eye');if(i.type==='password'){i.type='text';b.textContent='🙈';}else{i.type='password';b.textContent='👁';}})()" id="lp-eye" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;line-height:1;color:var(--text3);padding:4px;-webkit-tap-highlight-color:transparent">👁</button></div></div>
     <button class="lbtn" id="lbtn" onclick="doLogin()">כניסה למערכת</button>
     <div class="lerr" id="lerr"></div>
+    <div id="lerr-unlock" style="display:none;margin-top:8px;text-align:center">
+      <button onclick="_resetLoginLock()" style="background:none;border:none;color:rgba(200,169,110,.6);font-size:11px;cursor:pointer;text-decoration:underline;font-family:inherit">שחרר נעילה וסנכרן</button>
+    </div>
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(200,169,110,.1);display:flex;align-items:center;justify-content:center;gap:12px">
       <span style="font-size:9px;color:rgba(74,82,110,.5);letter-spacing:.8px;text-transform:uppercase">HOT Business · v3.7 · 2026</span>
       <span style="width:3px;height:3px;border-radius:50%;background:rgba(200,169,110,.3)"></span>
@@ -1928,6 +1931,13 @@ function _getLck(){return parseInt(localStorage.getItem(_LS_LCK)||'0',10);}
 function _setAtt(n){localStorage.setItem(_LS_ATT,n);}
 function _setLck(ts){localStorage.setItem(_LS_LCK,ts);}
 function _clearAuth(){localStorage.removeItem(_LS_ATT);localStorage.removeItem(_LS_LCK);}
+function _resetLoginLock(){
+  localStorage.removeItem(_LS_ATT);localStorage.removeItem(_LS_LCK);
+  const e=document.getElementById('lerr');if(e)e.textContent='';
+  const u=document.getElementById('lerr-unlock');if(u)u.style.display='none';
+  const b=document.getElementById('lbtn');if(b){b.textContent='כניסה למערכת';b.disabled=false;}
+  document.getElementById('lu').focus();
+}
 function _lockDuration(att){
   if(att>=10)return 3600;   // 1 hour after 10 attempts
   if(att>=5) return 600;    // 10 min after 5 attempts
@@ -1936,6 +1946,7 @@ function _lockDuration(att){
 function _showLockMsg(sec){
   const m=sec>=3600?'חסום לשעה':sec>=60?`חסום ${Math.ceil(sec/60)} דקות`:`נסה שוב בעוד ${sec} שניות`;
   document.getElementById('lerr').textContent=m;
+  const ul=document.getElementById('lerr-unlock');if(ul)ul.style.display='';
 }
 // Disable/enable login button visually
 function _setBusy(on){const b=document.getElementById('lbtn');if(b){b.disabled=on;b.style.opacity=on?'.5':'';}}
@@ -1965,7 +1976,9 @@ async function doLogin(){
     const delaySec=_lockDuration(att);
     _setLck(Date.now()+delaySec*1000);
     const msg=att>=5?`שם משתמש או סיסמה שגויים — ${delaySec>=3600?'חסום לשעה':delaySec>=60?`חסום ${Math.ceil(delaySec/60)} דקות`:`חסום ${delaySec} שניות`}`:'שם משתמש או סיסמה שגויים';
-    errEl.textContent=msg;return;
+    errEl.textContent=msg;
+    const ul=document.getElementById('lerr-unlock');if(ul)ul.style.display='';
+    return;
   }
   _clearAuth();
   document.getElementById('lerr').textContent='';
