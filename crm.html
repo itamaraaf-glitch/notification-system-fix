@@ -1193,6 +1193,11 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 @media(min-width:1024px){
   #hero-h1-line1,#hero-h1-line2{font-size:3rem}
 }
+/* גרף מכרז במובייל: התחנות נשברות לשורות במקום גלילה אופקית (שבורה ב-RTL בספארי) */
+@media(max-width:768px){
+  .tflow-steps{flex-wrap:wrap;justify-content:center;row-gap:12px;column-gap:10px;overflow:visible !important}
+  .tflow-conn{display:none}
+}
 </style>
 </head>
 <body>
@@ -3977,7 +3982,7 @@ function renderTenderFlow(t){
   const done=tenderStageCount(t);
   const submitted=!!stages.submit;
   const resNode=(()=>{
-    const conn=`<div style="flex:1;height:3px;min-width:10px;border-radius:2px;background:${submitted?'#06d6a0':'rgba(255,255,255,.1)'}"></div>`;
+    const conn=`<div class="tflow-conn" style="flex:1;height:3px;min-width:10px;border-radius:2px;background:${submitted?'#06d6a0':'rgba(255,255,255,.1)'}"></div>`;
     if(!submitted)return conn+`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px" title="תוצאת המכרז תיפתח לאחר ההגשה">
       <div style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.18)">🏁</div>
       <span style="font-size:9px;font-weight:700;color:var(--text3);white-space:nowrap">תוצאה</span><span style="font-size:8px"></span></div>`;
@@ -3997,7 +4002,7 @@ function renderTenderFlow(t){
     const isDone=!!stages[st.k];
     const isNext=!isDone&&TENDER_STAGES.slice(0,i).every(x=>stages[x.k]);
     const clr=isDone?'#06d6a0':isNext?'#f4a261':'rgba(255,255,255,.18)';
-    const conn=i<TENDER_STAGES.length-1?`<div style="flex:1;height:3px;min-width:10px;border-radius:2px;background:${isDone?'#06d6a0':'rgba(255,255,255,.1)'}"></div>`:'';
+    const conn=i<TENDER_STAGES.length-1?`<div class="tflow-conn" style="flex:1;height:3px;min-width:10px;border-radius:2px;background:${isDone?'#06d6a0':'rgba(255,255,255,.1)'}"></div>`:'';
     return`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;cursor:pointer" onclick="toggleTenderStage('${t.id}','${st.k}')" title="${isDone?'הושלם ב-'+fmtDate(stages[st.k])+' — לחץ לביטול':isNext?'לחץ לסימון כהושלם':'השלם קודם את התחנות הקודמות'}">
       <div style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:${isDone?'rgba(6,214,160,.18)':isNext?'rgba(244,162,97,.14)':'rgba(255,255,255,.04)'};border:2px solid ${clr};${isNext?'box-shadow:0 0 10px rgba(244,162,97,.4);':''}">${isDone?'✓':st.ico}</div>
       <span style="font-size:9px;font-weight:700;color:${isDone?'#06d6a0':isNext?'#f4a261':'var(--text3)'};white-space:nowrap">${st.l}</span>
@@ -4009,7 +4014,7 @@ function renderTenderFlow(t){
       <span style="font-size:11px;font-weight:800;color:#f4a261">🗺️ התקדמות המכרז — ${done}/${TENDER_STAGES.length} תחנות</span>
       <span style="font-size:10px;color:var(--text2)">${t.result?(t.result==='זכייה'?'<b style="color:#06d6a0">🏆 זכייה במכרז!</b>':'<b style="color:#e63946">❌ אי-זכייה</b>'):done===TENDER_STAGES.length?'🎉 הוגש — <b style="color:#a78bfa">ממתין לתוצאה</b>':'הבא בתור: <b style="color:#f4a261">'+(tenderNextStage(t)||{}).l+'</b>'}</span>
     </div>
-    <div style="display:flex;align-items:flex-start;gap:2px;overflow-x:auto;padding-bottom:4px">${steps}${resNode}</div>
+    <div class="tflow-steps" style="display:flex;align-items:flex-start;gap:2px;overflow-x:auto;padding-bottom:4px">${steps}${resNode}</div>
     ${t.result?`<div style="margin-top:8px;text-align:left"><button class="btn btns" onclick="_sendTenderReqMail('${t.id}','${t.result==='זכייה'?'win':'lose'}')" style="border-color:${t.result==='זכייה'?'#06d6a0':'#4cc9f0'};color:${t.result==='זכייה'?'#06d6a0':'#4cc9f0'};font-size:10px">📨 ${t.result==='זכייה'?'שלח אישור קבלת הודעת זכייה למבקש':'שלח אישור + בקשת משוב למבקש'}</button></div>`:''}
   </div>`;
 }
