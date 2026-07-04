@@ -3975,6 +3975,24 @@ function renderTenderFlow(t){
   if(!t){el.innerHTML='<div style="font-size:11px;color:var(--text3);background:rgba(255,255,255,.03);border:1px dashed var(--border);border-radius:10px;padding:10px 14px">🗺️ גרף התקדמות המכרז יופיע כאן לאחר שמירת המכרז — כל תחנה חייבת בהשלמה כדי להתקדם להגשה</div>';return;}
   const stages=t.stages||{};
   const done=tenderStageCount(t);
+  const submitted=!!stages.submit;
+  const resNode=(()=>{
+    const conn=`<div style="flex:1;height:3px;min-width:10px;border-radius:2px;background:${submitted?'#06d6a0':'rgba(255,255,255,.1)'}"></div>`;
+    if(!submitted)return conn+`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px" title="תוצאת המכרז תיפתח לאחר ההגשה">
+      <div style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.18)">🏁</div>
+      <span style="font-size:9px;font-weight:700;color:var(--text3);white-space:nowrap">תוצאה</span><span style="font-size:8px"></span></div>`;
+    if(!t.result)return conn+`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:96px">
+      <div style="display:flex;gap:4px">
+        <button onclick="setTenderResult('${t.id}','זכייה')" title="סמן זכייה במכרז" style="width:34px;height:34px;border-radius:50%;font-size:15px;cursor:pointer;background:rgba(6,214,160,.12);border:2px solid #06d6a0;box-shadow:0 0 10px rgba(6,214,160,.35)">🏆</button>
+        <button onclick="setTenderResult('${t.id}','אי-זכייה')" title="סמן אי-זכייה" style="width:34px;height:34px;border-radius:50%;font-size:15px;cursor:pointer;background:rgba(230,57,70,.1);border:2px solid #e63946">❌</button>
+      </div>
+      <span style="font-size:9px;font-weight:700;color:#a78bfa;white-space:nowrap">מה התוצאה?</span><span style="font-size:8px;color:var(--text3)">ממתין לתוצאה</span></div>`;
+    const won=t.result==='זכייה',rc=won?'#06d6a0':'#e63946';
+    return conn+`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:80px;cursor:pointer" onclick="setTenderResult('${t.id}',null)" title="${t.result} — נרשם ב-${fmtDate(t.resultDate)} · לחץ לאיפוס">
+      <div style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:${rc}1f;border:2px solid ${rc};box-shadow:0 0 10px ${rc}55">${won?'🏆':'❌'}</div>
+      <span style="font-size:9px;font-weight:800;color:${rc};white-space:nowrap">${t.result}</span>
+      <span style="font-size:8px;color:var(--text3)">${fmtDate(t.resultDate)}</span></div>`;
+  })();
   const steps=TENDER_STAGES.map((st,i)=>{
     const isDone=!!stages[st.k];
     const isNext=!isDone&&TENDER_STAGES.slice(0,i).every(x=>stages[x.k]);
@@ -3989,10 +4007,23 @@ function renderTenderFlow(t){
   el.innerHTML=`<div style="background:rgba(255,255,255,.03);border:1px solid rgba(244,162,97,.25);border-radius:12px;padding:12px 14px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">
       <span style="font-size:11px;font-weight:800;color:#f4a261">🗺️ התקדמות המכרז — ${done}/${TENDER_STAGES.length} תחנות</span>
-      <span style="font-size:10px;color:var(--text2)">${done===TENDER_STAGES.length?'🎉 המכרז הוגש!':'הבא בתור: <b style="color:#f4a261">'+(tenderNextStage(t)||{}).l+'</b>'}</span>
+      <span style="font-size:10px;color:var(--text2)">${t.result?(t.result==='זכייה'?'<b style="color:#06d6a0">🏆 זכייה במכרז!</b>':'<b style="color:#e63946">❌ אי-זכייה</b>'):done===TENDER_STAGES.length?'🎉 הוגש — <b style="color:#a78bfa">ממתין לתוצאה</b>':'הבא בתור: <b style="color:#f4a261">'+(tenderNextStage(t)||{}).l+'</b>'}</span>
     </div>
-    <div style="display:flex;align-items:flex-start;gap:2px;overflow-x:auto;padding-bottom:4px">${steps}</div>
+    <div style="display:flex;align-items:flex-start;gap:2px;overflow-x:auto;padding-bottom:4px">${steps}${resNode}</div>
+    ${t.result?`<div style="margin-top:8px;text-align:left"><button class="btn btns" onclick="_sendTenderReqMail('${t.id}','${t.result==='זכייה'?'win':'lose'}')" style="border-color:${t.result==='זכייה'?'#06d6a0':'#4cc9f0'};color:${t.result==='זכייה'?'#06d6a0':'#4cc9f0'};font-size:10px">📨 ${t.result==='זכייה'?'שלח אישור קבלת הודעת זכייה למבקש':'שלח אישור + בקשת משוב למבקש'}</button></div>`:''}
   </div>`;
+}
+// תוצאת המכרז — התחנה הסופית אחרי ההגשה: זכייה או אי-זכייה
+function setTenderResult(id,res){
+  const t=D.tenders.find(x=>x.id==id);if(!t)return;
+  if(!(t.stages||{}).submit){showToast('⚠️ יש להשלים קודם את תחנת ההגשה','warn');return;}
+  if(res===null){delete t.result;delete t.resultDate;showToast('התוצאה אופסה — ממתין לתוצאה','ok');}
+  else{
+    t.result=res;t.resultDate=nd();
+    if(res==='זכייה')showToast('🏆 זכייה במכרז! כל הכבוד — שלח אישור קבלת הודעת זכייה למבקש','ok');
+    else showToast('התוצאה נרשמה: אי-זכייה — מומלץ לשלוח אישור ובקשת משוב למבקש','warn');
+  }
+  saveAll();renderTenderFlow(t);rTenders();
 }
 function toggleTenderStage(id,k){
   const t=D.tenders.find(x=>x.id==id);if(!t)return;
@@ -4001,6 +4032,7 @@ function toggleTenderStage(id,k){
   if(t.stages[k]){
     if(TENDER_STAGES.slice(idx+1).some(st=>t.stages[st.k])){showToast('⚠️ בטל קודם את התחנות שאחריה','warn');return;}
     delete t.stages[k];
+    if(k==='submit'){delete t.result;delete t.resultDate;}
     if(k==='submit'&&t.submitted==='כן'){t.submitted='בתהליך';const el=document.getElementById('tsb');if(el){el.value='בתהליך';if(window.csResync)csResync();}}
   }else{
     const missing=TENDER_STAGES.slice(0,idx).filter(st=>!t.stages[st.k]);
@@ -4267,7 +4299,7 @@ function rTenders(){
     const lb=tn.linked==='כן'?'<span class="badge bg">כן</span>':'<span class="badge br">לא</span>';
     let qd='–';if(tn.questions){const d=db(t,tn.questions);qd=d>=0?`<b style="color:${d<=2?'#e63946':'#f4a261'}">${d}י</b>`:'<span style="color:#3a4468">עבר</span>';}
     const chk=SEL['tenders']&&SEL['tenders'].has(tn.id)?'checked':'';
-    return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-tenders" ${chk} onchange="toggleSel('tenders','${tn.id}')"></td><td>${pB(p)}</td><td>${sb2}</td><td>${tn.qty||1}</td><td style="font-size:10px">${fmtDate(tn.pub)}</td><td style="font-weight:600;min-width:120px">${tn.name||''}</td><td style="font-size:10px">${tn.proj||'–'}</td><td>${tn.link?`<a href="${tn.link}" target="_blank" style="color:#4cc9f0;font-size:10px">🔗</a>`:'–'}</td><td style="font-size:10px">${fmtDate(tn.quote)}</td><td>${qd}</td><td>${tn.rounds||'–'}</td><td style="font-weight:600;color:#e63946;font-size:10px">${fmtDate(tn.deadline)}</td><td style="font-size:10px">${tn.handler||'–'}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.docs||'–'}</td><td>${lb}</td><td class="nb">${fmt(tn.amount)}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.notes||'–'}</td><td style="white-space:nowrap">${(()=>{const sd=tenderStageCount(tn);const nx=tenderNextStage(tn);const fc=sd===TENDER_STAGES.length?'var(--teal)':sd>0?'#f4a261':'var(--text3)';return`<span onclick="openM('tender','${tn.id}')" title="${nx?'הבא בתור: '+nx.l:'המכרז הוגש!'}" style="cursor:pointer;font-size:9px;font-weight:800;padding:2px 8px;border-radius:12px;background:${fc}18;color:${fc};border:1px solid ${fc}44;white-space:nowrap">🗺️ ${sd}/${TENDER_STAGES.length}</span> `;})()}<button class="btn btns" onclick="showTenderTeamMenu('${tn.id}',event)" title="מייל פנימי: התנעה / איפיון / משפטית / ביטוח / חתימות" style="border-color:#a78bfa;color:#a78bfa">📧</button> <button class="btn btns" onclick="showTenderReqMenu('${tn.id}',event)" title="מייל למבקש המכרז" style="border-color:#4cc9f0;color:#4cc9f0">📨</button> <button class="btn btns" onclick="schedMeetFromTender('${tn.id}')" title="קבע פגישה למכרז" style="border-color:#06d6a0;color:#06d6a0">📅</button> ${(tn.files&&tn.files.length)?`<button class="btn btns" onclick="rowFilesMenu('tenders','${tn.id}',event)" title="${tn.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${tn.files.length>1?tn.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('tender','${tn.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tenders','${tn.id}')">🗑</button></td></tr>`;
+    return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-tenders" ${chk} onchange="toggleSel('tenders','${tn.id}')"></td><td>${pB(p)}</td><td>${sb2}</td><td>${tn.qty||1}</td><td style="font-size:10px">${fmtDate(tn.pub)}</td><td style="font-weight:600;min-width:120px">${tn.name||''}</td><td style="font-size:10px">${tn.proj||'–'}</td><td>${tn.link?`<a href="${tn.link}" target="_blank" style="color:#4cc9f0;font-size:10px">🔗</a>`:'–'}</td><td style="font-size:10px">${fmtDate(tn.quote)}</td><td>${qd}</td><td>${tn.rounds||'–'}</td><td style="font-weight:600;color:#e63946;font-size:10px">${fmtDate(tn.deadline)}</td><td style="font-size:10px">${tn.handler||'–'}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.docs||'–'}</td><td>${lb}</td><td class="nb">${fmt(tn.amount)}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.notes||'–'}</td><td style="white-space:nowrap">${(()=>{if(tn.result){const won=tn.result==='זכייה',rc=won?'#06d6a0':'#e63946';return`<span onclick="openM('tender','${tn.id}')" title="${tn.result} — ${fmtDate(tn.resultDate)}" style="cursor:pointer;font-size:9px;font-weight:800;padding:2px 8px;border-radius:12px;background:${rc}18;color:${rc};border:1px solid ${rc}44;white-space:nowrap">${won?'🏆 זכייה':'❌ אי-זכייה'}</span> `;}const sd=tenderStageCount(tn);const nx=tenderNextStage(tn);const fc=sd===TENDER_STAGES.length?'#a78bfa':sd>0?'#f4a261':'var(--text3)';return`<span onclick="openM('tender','${tn.id}')" title="${nx?'הבא בתור: '+nx.l:'הוגש — ממתין לתוצאה: סמן זכייה/אי-זכייה בגרף'}" style="cursor:pointer;font-size:9px;font-weight:800;padding:2px 8px;border-radius:12px;background:${fc}18;color:${fc};border:1px solid ${fc}44;white-space:nowrap">🗺️ ${sd}/${TENDER_STAGES.length}${sd===TENDER_STAGES.length?' 🏁':''}</span> `;})()}<button class="btn btns" onclick="showTenderTeamMenu('${tn.id}',event)" title="מייל פנימי: התנעה / איפיון / משפטית / ביטוח / חתימות" style="border-color:#a78bfa;color:#a78bfa">📧</button> <button class="btn btns" onclick="showTenderReqMenu('${tn.id}',event)" title="מייל למבקש המכרז" style="border-color:#4cc9f0;color:#4cc9f0">📨</button> <button class="btn btns" onclick="schedMeetFromTender('${tn.id}')" title="קבע פגישה למכרז" style="border-color:#06d6a0;color:#06d6a0">📅</button> ${(tn.files&&tn.files.length)?`<button class="btn btns" onclick="rowFilesMenu('tenders','${tn.id}',event)" title="${tn.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${tn.files.length>1?tn.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('tender','${tn.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tenders','${tn.id}')">🗑</button></td></tr>`;
   }).join('')||emptyRow(18,'📋',"אין מכרזים","openM('tender',null)");
   const ta=D.tenders.reduce((s,t)=>s+(t.amount||0),0);
   const tsubmit=D.tenders.filter(t=>t.submitted==='כן').length;
