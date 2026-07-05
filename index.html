@@ -2590,7 +2590,11 @@ function showLoginHealth(){
 }
 function checkBackupAge(){
   const last=localStorage.getItem('cem_last_dl');
-  if(!last) return;
+  if(!last){
+    const total=(D.deals.length||0)+(D.tenders.length||0)+(D.dists.length||0)+(D.salary.length||0)+(D.meetings.length||0)+(D.clients.length||0);
+    if(total>=5) setTimeout(()=>showToast('💡 טרם הורד גיבוי ידני — גבה נתונים מסעיף הייצוא','warn'),3000);
+    return;
+  }
   const daysSince=Math.floor((Date.now()-new Date(last).getTime())/(86400000));
   if(daysSince>=7) setTimeout(()=>showToast('⚠️ הגיבוי האחרון לפני '+daysSince+' ימים — הורד גיבוי עכשיו!','warn'),2000);
 }
@@ -3495,18 +3499,26 @@ function getAlerts(){
     if(t2.questions){const dq=db(t,t2.questions);if(dq>=0&&dq<=2)a.push({type:'warn',h:`מועד שאלות הבהרה בעוד ${dq} ימים – ${t2.name}`,s:`תאריך אחרון לשאלות: ${fmtDate(t2.questions)}${t2.proj?` | פרויקט: ${t2.proj}`:''}`});}
   });
   const held=heldThisMonth();
-  if(held<MEETING_GOAL)a.push({type:'info',h:`יעד פגישות – ${held}/${MEETING_GOAL}`,s:`${MEETING_GOAL-held} פגישות נדרשות`});
+  if(held<MEETING_GOAL){
+    const _n=now();const _wd=wdM(_n.getFullYear(),_n.getMonth());const _wdp=wdP(_n.getFullYear(),_n.getMonth(),_n.getDate());
+    const exp=_wd?Math.round((MEETING_GOAL/_wd)*_wdp):0;
+    const behindBy=exp-held;
+    const alertType=behindBy>=3?'warn':'info';
+    const paceStr=behindBy>=2?` · מאחרי קצב — צפי ${exp} עד היום`:(behindBy<=0&&held>0?' · בקצב ✅':'');
+    a.push({type:alertType,h:`יעד פגישות – ${held}/${MEETING_GOAL}`,s:`${MEETING_GOAL-held} פגישות נדרשות${paceStr}`});
+  }
   // Today's meetings that haven't been marked
   const todayMtgsAlert=D.meetings.filter(m=>m.dt===t&&m.hl!=='כן'&&m.hl!=='מבוטל');
-  if(todayMtgsAlert.length)a.push({type:'warn',h:`📅 פגישות היום (${todayMtgsAlert.length})`,s:todayMtgsAlert.map(m=>m.cl).filter(Boolean).join(', '),kind:'meetings'});
+  if(todayMtgsAlert.length)a.push({type:'warn',h:`📅 פגישות היום (${todayMtgsAlert.length})`,s:todayMtgsAlert.sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(m=>`${m.time?m.time+' – ':''}${m.cl||''}`).filter(Boolean).join(' | '),kind:'meetings'});
   // Tomorrow's meetings reminder
   const tomorrow=new Date(now());tomorrow.setDate(tomorrow.getDate()+1);
   const tomorrowStr=tomorrow.toISOString().split('T')[0];
   const tomorrowMtgs=D.meetings.filter(m=>m.dt===tomorrowStr&&m.hl!=='מבוטל');
-  if(tomorrowMtgs.length)a.push({type:'info',h:`📅 פגישות מחר (${tomorrowMtgs.length})`,s:tomorrowMtgs.map(m=>`${m.cl}${m.time?' '+m.time:''}`).filter(Boolean).join(' | '),kind:'meetings'});
-  // Missed meetings (past, not held)
-  const missedMtgs=D.meetings.filter(m=>m.dt&&m.dt<t&&m.hl!=='כן'&&m.hl!=='מבוטל').slice(-3);
-  if(missedMtgs.length)a.push({type:'warn',h:`🤝 פגישות שלא סומנו (${missedMtgs.length})`,s:missedMtgs.map(m=>`${m.cl} ${fmtDate(m.dt)}`).join(', '),kind:'meetings'});
+  if(tomorrowMtgs.length)a.push({type:'info',h:`📅 פגישות מחר (${tomorrowMtgs.length})`,s:tomorrowMtgs.sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(m=>`${m.time?m.time+' – ':''}${m.cl||''}`).filter(Boolean).join(' | '),kind:'meetings'});
+  // Missed meetings (past, not held) — most recent first, show real total in header
+  const allMissedMtgs=D.meetings.filter(m=>m.dt&&m.dt<t&&m.hl!=='כן'&&m.hl!=='מבוטל').sort((a,b)=>b.dt.localeCompare(a.dt));
+  const missedMtgs=allMissedMtgs.slice(0,3);
+  if(missedMtgs.length)a.push({type:'warn',h:`🤝 פגישות שלא סומנו (${allMissedMtgs.length})`,s:missedMtgs.map(m=>`${m.cl} ${fmtDate(m.dt)}`).join(', ')+(allMissedMtgs.length>3?` ועוד ${allMissedMtgs.length-3}...`:''),kind:'meetings'});
   a.push(...getClientAlerts());
   document.getElementById('acnt').textContent=a.length;
   const dot=document.getElementById('mob-alert-dot');
@@ -5072,11 +5084,11 @@ function renderQuickActions(){
 
 function showTodayMeetings(){
   const todayStr=nd();
-  const todayMtgs=D.meetings.filter(m=>m.dt===todayStr&&m.hl!=='מבוטל');
+  const todayMtgs=D.meetings.filter(m=>m.dt===todayStr&&m.hl!=='מבוטל').sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   if(!todayMtgs.length)return;
-  const names=todayMtgs.slice(0,2).map(m=>m.cl||'?').join(', ');
-  const more=todayMtgs.length>2?` +${todayMtgs.length-2}`:'';;
-  showToast(`📅 היום יש לך ${todayMtgs.length} פגישות: ${names}${more}`,'ok');
+  const entries=todayMtgs.slice(0,2).map(m=>`${m.time?m.time+' – ':''}${m.cl||'?'}`).join(', ');
+  const more=todayMtgs.length>2?` +${todayMtgs.length-2}`:'';
+  showToast(`📅 היום יש לך ${todayMtgs.length} פגישות: ${entries}${more}`,'ok');
 }
 
 function openClientModal(id){
