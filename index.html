@@ -4661,7 +4661,13 @@ function rMeetings(){
     const typeIco={פגישה:'🤝',שיחת_טלפון:'📞','שיחת טלפון':'📞',זום:'🖥',Teams:'🟦',אחר:'📌'}[m.mtype||'פגישה']||'🤝';
     const todayBadge=isToday?'<span class="badge bb" style="font-size:9px;margin-right:2px">היום!</span>':'';
     const clSafe=(m.cl||'').replace(/'/g,'&#39;');
-    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-meetings" ${chk} onchange="toggleSel('meetings','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${todayBadge}</td><td>${timeDisp}</td><td style="font-size:11px">${typeIco}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb2}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${m.no||'–'}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openMeetingSummary('${m.id}')" title="סיכום פגישה אוטומטי" style="border-color:var(--gold);color:var(--gold)">📝</button> ${(m.files&&m.files.length)?`<button class="btn btns" onclick="rowFilesMenu('meetings','${m.id}',event)" title="${m.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${m.files.length>1?m.files.length:''}</button> `:''}<button class="btn btns" onclick="showCalendarMenu('${m.id}',event)" title="הוסף ליומן / שלח הזמנה" style="border-color:#a78bfa;color:#a78bfa">📆</button> <button class="btn btns" onclick="openMeetingFor('${clSafe}')" title="קבע פגישה נוספת עם לקוח זה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns" onclick="openM('meeting','${m.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('meetings','${m.id}')">🗑</button></td></tr>`;
+    const hasSummary=!!(m.summary&&m.summary.trim().length>10);
+    const sumBtnStyle=hasSummary?'border-color:#06d6a0;color:#06d6a0':'border-color:var(--gold);color:var(--gold)';
+    const sumBtnTitle=hasSummary?'סיכום פגישה נשמר — לחץ לצפייה ועריכה':'צור סיכום פגישה';
+    const sumBtnLbl=hasSummary?'📝✓':'📝';
+    const topicChips=(m.topics&&m.topics.length)?m.topics.slice(0,3).map(k=>{const cfg=ITEM_CFG[k];return cfg?`<span style="font-size:8px;padding:1px 5px;border-radius:10px;background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44;white-space:nowrap">${cfg.label.split(' ')[0]}</span>`:''}).join(''):'';
+    const notesCell=topicChips?`<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px" title="${(m.no||'').replace(/"/g,'&quot;')}">${m.no||'–'}</span><div style="display:flex;gap:2px;flex-wrap:wrap">${topicChips}</div></div>`:`<span style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:80px" title="${(m.no||'').replace(/"/g,'&quot;')}">${m.no||'–'}</span>`;
+    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-meetings" ${chk} onchange="toggleSel('meetings','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${todayBadge}</td><td>${timeDisp}</td><td style="font-size:11px">${typeIco}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb2}</td><td>${notesCell}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openMeetingSummary('${m.id}')" title="${sumBtnTitle}" style="${sumBtnStyle}">${sumBtnLbl}</button> ${(m.files&&m.files.length)?`<button class="btn btns" onclick="rowFilesMenu('meetings','${m.id}',event)" title="${m.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${m.files.length>1?m.files.length:''}</button> `:''}<button class="btn btns" onclick="showCalendarMenu('${m.id}',event)" title="הוסף ליומן / שלח הזמנה" style="border-color:#a78bfa;color:#a78bfa">📆</button> <button class="btn btns" onclick="openMeetingFor('${clSafe}')" title="קבע פגישה נוספת עם לקוח זה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns" onclick="openM('meeting','${m.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('meetings','${m.id}')">🗑</button></td></tr>`;
   }).join('')||emptyRow(11,'🤝',"אין פגישות","openM('meeting',null)");
   document.getElementById('mft').innerHTML=`<span class="fi">סה"כ: <b>${D.meetings.length}</b></span><span class="fi">התקיימו: <b>${held}</b></span><span class="fi">לא: <b>${D.meetings.filter(m=>m.hl!=='כן').length}</b></span><span class="fi">יעד: <b style="color:${pct>=100?'var(--teal)':pct>=66?'#f4a261':'#e63946'}">${pct}%</b></span>`;
   updateSelBar('meetings');
@@ -6327,11 +6333,11 @@ function applySmartFill(kind,mode){
 
 // בלוק צירוף קבצים אחיד לטפסים
 function attachBlockHtml(kind){
-  return `<div class="gf"><label>📎 קבצים מצורפים (Word / PDF / Excel / תמונה)</label>
+  return `<div class="gf"><label>📎 קבצים מצורפים <span style="font-size:9px;color:#a78bfa;font-weight:600">(Word / PDF / Excel → 📖 חילוץ אוטומטי)</span></label>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <input type="file" id="att-inp-${kind}" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('${kind}',event)">
       <button type="button" class="btn btns" onclick="document.getElementById('att-inp-${kind}').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
-      <span style="font-size:9px;color:var(--text3)">עד 2MB לקובץ</span>
+      <span style="font-size:9px;color:var(--text3)">עד 2MB · לחץ 📖 לחילוץ נתונים</span>
     </div>
     <div id="att-list-${kind}"></div>
   </div>`;
