@@ -354,6 +354,8 @@ tr:hover td{background:rgba(200,169,110,.05)!important}
 .tft{background:linear-gradient(0deg,rgba(7,9,16,.9),rgba(10,13,22,.8));padding:9px 16px;display:flex;gap:20px;flex-wrap:wrap;border-top:1px solid var(--tft-accent,var(--border))}
 .cb-row{display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(230,57,70,.08);border-top:1px solid rgba(230,57,70,.2);position:sticky;bottom:0;z-index:5;backdrop-filter:blur(8px)}
 .cb-row button{padding:5px 13px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;font-family:'Heebo',sans-serif}
+.cb-del{background:#e63946;color:#fff}
+.cb-clr{background:var(--s3);color:var(--text3);margin-right:auto}
 input[type=checkbox]{width:14px;height:14px;accent-color:var(--red);cursor:pointer}
 th.cb-th{width:32px;padding:4px 8px}
 td.cb-td{width:32px;padding:4px 8px}
@@ -1016,6 +1018,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 .exp-tile{padding:18px 20px;text-align:center}
 .exp-tile-ico{border-radius:10px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-size:26px;transition:transform .25s var(--expo)}
 .tw:hover .exp-tile-ico{transform:scale(1.14) translateY(-2px)}
+.exp-tile-ttl{font-weight:700;margin-bottom:3px}
+.exp-tile-sub{font-size:11px;color:var(--text2)}
 
 /* ── Month summary mini stat cards ── */
 .stat-mini{border-radius:8px;padding:7px 11px;transition:transform .18s var(--expo),box-shadow .18s}
@@ -1522,8 +1526,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="tft" id="lft"></div>
     <div class="cb-row" id="selbar-deals-long" style="display:none">
       <span id="selcnt-deals-long" style="font-size:11px;color:var(--text)"></span>
-      <button onclick="deleteSelected('deals-long')" style="background:#e63946;color:#fff">🗑 מחק נבחרים</button>
-      <button onclick="clearSel('deals-long')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
+      <button onclick="deleteSelected('deals-long')" class="cb-del">🗑 מחק נבחרים</button>
+      <button onclick="clearSel('deals-long')" class="cb-clr">✕ נקה</button>
     </div></div>
   </div>
   <div id="st" style="display:none">
@@ -1537,8 +1541,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="tft" id="sft"></div>
     <div class="cb-row" id="selbar-deals-short" style="display:none">
       <span id="selcnt-deals-short" style="font-size:11px;color:var(--text)"></span>
-      <button onclick="deleteSelected('deals-short')" style="background:#e63946;color:#fff">🗑 מחק נבחרים</button>
-      <button onclick="clearSel('deals-short')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
+      <button onclick="deleteSelected('deals-short')" class="cb-del">🗑 מחק נבחרים</button>
+      <button onclick="clearSel('deals-short')" class="cb-clr">✕ נקה</button>
     </div></div>
   </div>
   <div id="sumt" style="display:none"><div id="deal-goal-box"></div><div id="deal-pipeline-box" style="padding:0 4px"></div><div class="krow" id="dsk"></div><div class="tw" id="dst"></div></div>
@@ -1572,8 +1576,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="tft" id="tft"></div>
     <div class="cb-row" id="selbar-tenders" style="display:none">
       <span id="selcnt-tenders" style="font-size:11px;color:var(--text)"></span>
-      <button onclick="deleteSelected('tenders')" style="background:#e63946;color:#fff">🗑 מחק נבחרים</button>
-      <button onclick="clearSel('tenders')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
+      <button onclick="deleteSelected('tenders')" class="cb-del">🗑 מחק נבחרים</button>
+      <button onclick="clearSel('tenders')" class="cb-clr">✕ נקה</button>
     </div></div>
   </div>
   <div id="archivtent" style="display:none"><div id="archive-tenders-content" style="padding:4px 0"></div></div>
@@ -1609,8 +1613,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="tft" id="ldft"></div>
     <div class="cb-row" id="selbar-dists-long" style="display:none">
       <span id="selcnt-dists-long" style="font-size:11px;color:var(--text)"></span>
-      <button onclick="deleteSelected('dists-long')" style="background:#e63946;color:#fff">🗑 מחק</button>
-      <button onclick="clearSel('dists-long')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
+      <button onclick="deleteSelected('dists-long')" class="cb-del">🗑 מחק</button>
+      <button onclick="clearSel('dists-long')" class="cb-clr">✕ נקה</button>
     </div></div>
   </div>
   <div id="sdt" style="display:none">
@@ -1623,8 +1627,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="tft" id="sdft"></div>
     <div class="cb-row" id="selbar-dists-short" style="display:none">
       <span id="selcnt-dists-short" style="font-size:11px;color:var(--text)"></span>
-      <button onclick="deleteSelected('dists-short')" style="background:#e63946;color:#fff">🗑 מחק</button>
-      <button onclick="clearSel('dists-short')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
+      <button onclick="deleteSelected('dists-short')" class="cb-del">🗑 מחק</button>
+      <button onclick="clearSel('dists-short')" class="cb-clr">✕ נקה</button>
     </div></div>
   </div>
   <div id="sumdt" style="display:none"><div id="dist-goal-box"></div><div class="krow" id="dstk"></div></div>
@@ -1660,8 +1664,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="tft" id="svcft"></div>
     <div class="cb-row" id="selbar-salary-service" style="display:none">
       <span id="selcnt-salary-service" style="font-size:11px;color:var(--text)"></span>
-      <button onclick="deleteSelected('salary-service')" style="background:#e63946;color:#fff">🗑 מחק</button>
-      <button onclick="clearSel('salary-service')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
+      <button onclick="deleteSelected('salary-service')" class="cb-del">🗑 מחק</button>
+      <button onclick="clearSel('salary-service')" class="cb-clr">✕ נקה</button>
     </div></div>
   </div>
   <div id="seq" style="display:none">
@@ -1674,8 +1678,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="tft" id="eqft"></div>
     <div class="cb-row" id="selbar-salary-equip" style="display:none">
       <span id="selcnt-salary-equip" style="font-size:11px;color:var(--text)"></span>
-      <button onclick="deleteSelected('salary-equip')" style="background:#e63946;color:#fff">🗑 מחק</button>
-      <button onclick="clearSel('salary-equip')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
+      <button onclick="deleteSelected('salary-equip')" class="cb-del">🗑 מחק</button>
+      <button onclick="clearSel('salary-equip')" class="cb-clr">✕ נקה</button>
     </div></div>
   </div>
   <div id="ssum" style="display:none"><div id="sal-goal-box"></div><div class="krow" id="ssk"></div></div>
@@ -1711,8 +1715,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="tft" id="mft"></div>
     <div class="cb-row" id="selbar-meetings" style="display:none">
       <span id="selcnt-meetings" style="font-size:11px;color:var(--text)"></span>
-      <button onclick="deleteSelected('meetings')" style="background:#e63946;color:#fff">🗑 מחק</button>
-      <button onclick="clearSel('meetings')" style="background:var(--s3);color:var(--text3);margin-right:auto">✕ נקה</button>
+      <button onclick="deleteSelected('meetings')" class="cb-del">🗑 מחק</button>
+      <button onclick="clearSel('meetings')" class="cb-clr">✕ נקה</button>
     </div></div>
   </div>
   <div id="archivmtg" style="display:none"><div id="archive-meetings-content" style="padding:4px 0"></div></div>
@@ -1738,21 +1742,21 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   <div class="shdr"><div class="stit">📥 ייצוא וגיבוי</div></div>
   <div style="font-size:9px;font-weight:800;color:rgba(200,169,110,.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding:0 2px">📤 ייצוא נתונים</div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px">
-    <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0" onclick="exportExcel('deals')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(76,201,240,.1)">💼</div><div style="font-weight:700;margin-bottom:3px">עסקאות</div><div style="font-size:11px;color:var(--text2)" id="exp-deals-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #f4a261" onclick="exportExcel('tenders')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(244,162,97,.1)">📋</div><div style="font-weight:700;margin-bottom:3px">מכרזים</div><div style="font-size:11px;color:var(--text2)" id="exp-tenders-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #a78bfa" onclick="exportExcel('dists')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(167,139,250,.1)">🚀</div><div style="font-weight:700;margin-bottom:3px">הפצות</div><div style="font-size:11px;color:var(--text2)" id="exp-dists-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #c8a96e" onclick="exportExcel('salary')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(200,169,110,.1)">💰</div><div style="font-weight:700;margin-bottom:3px">פרויקטי שכר</div><div style="font-size:11px;color:var(--text2)" id="exp-salary-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="exportExcel('meetings')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(6,214,160,.1)">🤝</div><div style="font-weight:700;margin-bottom:3px">פגישות</div><div style="font-size:11px;color:var(--text2)" id="exp-meetings-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #c8a96e" onclick="exportExcel('clients')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(200,169,110,.1)">🏢</div><div style="font-weight:700;margin-bottom:3px">כרטיסי לקוח</div><div style="font-size:11px;color:var(--text2)" id="exp-clients-count">0 לקוחות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #e63946" onclick="exportAll()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(230,57,70,.1)">📊</div><div style="font-weight:700;margin-bottom:3px">כל הנתונים</div><div style="font-size:11px;color:var(--text2)">כל הנושאים</div><div class="exp-tile-btn" style="background:#e63946;color:#fff">📥 ייצוא הכל</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0" onclick="exportExcel('deals')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(76,201,240,.1)">💼</div><div class="exp-tile-ttl">עסקאות</div><div class="exp-tile-sub" id="exp-deals-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #f4a261" onclick="exportExcel('tenders')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(244,162,97,.1)">📋</div><div class="exp-tile-ttl">מכרזים</div><div class="exp-tile-sub" id="exp-tenders-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #a78bfa" onclick="exportExcel('dists')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(167,139,250,.1)">🚀</div><div class="exp-tile-ttl">הפצות</div><div class="exp-tile-sub" id="exp-dists-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #c8a96e" onclick="exportExcel('salary')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(200,169,110,.1)">💰</div><div class="exp-tile-ttl">פרויקטי שכר</div><div class="exp-tile-sub" id="exp-salary-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="exportExcel('meetings')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(6,214,160,.1)">🤝</div><div class="exp-tile-ttl">פגישות</div><div class="exp-tile-sub" id="exp-meetings-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #c8a96e" onclick="exportExcel('clients')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(200,169,110,.1)">🏢</div><div class="exp-tile-ttl">כרטיסי לקוח</div><div class="exp-tile-sub" id="exp-clients-count">0 לקוחות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #e63946" onclick="exportAll()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(230,57,70,.1)">📊</div><div class="exp-tile-ttl">כל הנתונים</div><div class="exp-tile-sub">כל הנושאים</div><div class="exp-tile-btn" style="background:#e63946;color:#fff">📥 ייצוא הכל</div></div></div>
   </div>
   <div style="font-size:9px;font-weight:800;color:rgba(200,169,110,.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding:0 2px">🛡️ גיבוי ושחזור</div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px">
-    <div class="tw" style="cursor:pointer;border-top:3px solid #0078d4" onclick="backupData()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(0,120,212,.1)">💾</div><div style="font-weight:700;margin-bottom:3px">גיבוי מלא</div><div style="font-size:11px;color:var(--text2)">קובץ JSON לשחזור</div><div class="exp-tile-btn" style="background:#0078d4;color:#fff">💾 הורד גיבוי</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #f4a261" onclick="clipboardBackup()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(244,162,97,.1)">📋</div><div style="font-weight:700;margin-bottom:3px">העתק לגיבוי</div><div style="font-size:11px;color:var(--text2)">העתק נתונים ללוח</div><div class="exp-tile-btn" style="background:#f4a261;color:#000">📋 העתק ללוח</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #7b5ea7" onclick="restoreData()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(123,94,167,.1)">📂</div><div style="font-weight:700;margin-bottom:3px">שחזור נתונים</div><div style="font-size:11px;color:var(--text2)">מקובץ JSON</div><div class="exp-tile-btn" style="background:#7b5ea7;color:#fff">📂 שחזר מגיבוי</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="openAutoBackups()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(6,214,160,.1)">🛡️</div><div style="font-weight:700;margin-bottom:3px">גיבויים אוטומטיים</div><div style="font-size:11px;color:var(--text2)">300 גיבויים + 14 ימים אחורה · שחזור בקליק</div><div class="exp-tile-btn" style="background:rgba(6,214,160,.15);color:#06d6a0;border:1px solid rgba(6,214,160,.3)">🛡️ צפה ושחזר</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0;position:relative" onclick="openSyncModal()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(76,201,240,.1)">☁️</div><div style="font-weight:700;margin-bottom:3px">סנכרון ענן</div><div style="font-size:11px;color:var(--text2)" id="fb-tile-status">לא מוגדר</div><div class="exp-tile-btn" style="background:rgba(76,201,240,.15);color:#4cc9f0;border:1px solid rgba(76,201,240,.3)">☁️ הגדרת סנכרון</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #0078d4" onclick="backupData()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(0,120,212,.1)">💾</div><div class="exp-tile-ttl">גיבוי מלא</div><div class="exp-tile-sub">קובץ JSON לשחזור</div><div class="exp-tile-btn" style="background:#0078d4;color:#fff">💾 הורד גיבוי</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #f4a261" onclick="clipboardBackup()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(244,162,97,.1)">📋</div><div class="exp-tile-ttl">העתק לגיבוי</div><div class="exp-tile-sub">העתק נתונים ללוח</div><div class="exp-tile-btn" style="background:#f4a261;color:#000">📋 העתק ללוח</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #7b5ea7" onclick="restoreData()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(123,94,167,.1)">📂</div><div class="exp-tile-ttl">שחזור נתונים</div><div class="exp-tile-sub">מקובץ JSON</div><div class="exp-tile-btn" style="background:#7b5ea7;color:#fff">📂 שחזר מגיבוי</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="openAutoBackups()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(6,214,160,.1)">🛡️</div><div class="exp-tile-ttl">גיבויים אוטומטיים</div><div class="exp-tile-sub">300 גיבויים + 14 ימים אחורה · שחזור בקליק</div><div class="exp-tile-btn" style="background:rgba(6,214,160,.15);color:#06d6a0;border:1px solid rgba(6,214,160,.3)">🛡️ צפה ושחזר</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0;position:relative" onclick="openSyncModal()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(76,201,240,.1)">☁️</div><div class="exp-tile-ttl">סנכרון ענן</div><div class="exp-tile-sub" id="fb-tile-status">לא מוגדר</div><div class="exp-tile-btn" style="background:rgba(76,201,240,.15);color:#4cc9f0;border:1px solid rgba(76,201,240,.3)">☁️ הגדרת סנכרון</div></div></div>
   </div>
 </div>
 
