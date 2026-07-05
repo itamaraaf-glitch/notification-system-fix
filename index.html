@@ -6259,6 +6259,18 @@ function parseDocumentFields(text){
     const v=parseFloat((m[1]||m[2]).replace(/,/g,''));
     if(v>0&&!f.amounts.includes(v))f.amounts.push(v);
   }
+  // Email addresses
+  f.emails=[];
+  for(const m of text.matchAll(/[\w.+%-]+@[\w.-]+\.[a-z]{2,}/gi)){
+    const e=m[0].toLowerCase();
+    if(!f.emails.includes(e))f.emails.push(e);
+  }
+  // Israeli phone numbers (landline & mobile, 9-10 digits)
+  f.phones=[];
+  for(const m of text.matchAll(/\b(0[2-9]\d[\d\- ]{5,8}\d)\b/g)){
+    const ph=m[1].replace(/[\s\-]/g,'');
+    if(ph.length>=9&&ph.length<=10&&!f.phones.includes(ph))f.phones.push(ph);
+  }
   f.notes=text.replace(/\s+/g,' ').trim().substring(0,3000);
   return f;
 }
@@ -6289,6 +6301,8 @@ function _showSmartFillPopup(kind,flds,filename){
   if(flds.projectNums.length)lines.push(`🔢 מספרי פרויקט: <b>${flds.projectNums.join(', ')}</b>`);
   if(flds.companyIds.length)lines.push(`🏢 ח.פ: <b>${flds.companyIds.join(', ')}</b>`);
   if(flds.amounts.length)lines.push(`💰 סכומים: <b>${flds.amounts.map(fmt).join(', ')}</b>`);
+  if(flds.emails&&flds.emails.length)lines.push(`📧 אימייל: <b>${flds.emails.join(', ')}</b>`);
+  if(flds.phones&&flds.phones.length)lines.push(`📞 טלפון: <b>${flds.phones.join(', ')}</b>`);
   if(!lines.length&&flds.notes){lines.push(`📝 טקסט זוהה (${flds.notes.length} תווים)`);}
   const pop=document.createElement('div');
   pop.id='smart-fill-popup';
@@ -6312,7 +6326,7 @@ function applySmartFill(kind,mode){
     tender:{deadline:'tdl',projectNum:'tp',notes:'tno'},
     dist:{date:'didt',projectNum:'diproj',notes:'dimi'},
     salary:{projectNum:'spj',notes:'sno'},
-    client:{cp:'cl-cp',notes:'cl-gen-notes'},
+    client:{cp:'cl-cp',notes:'cl-gen-notes',email:'cl-email',phone:'cl-phone'},
   };
   const m=map[kind]||{};
   if(mode==='notes'||mode==='all'){
@@ -6342,6 +6356,14 @@ function applySmartFill(kind,mode){
     if(m.amount&&f.amounts.length){
       const el=document.getElementById(m.amount);
       if(el&&!el.value)el.value=f.amounts[0];
+    }
+    if(m.email&&f.emails&&f.emails.length){
+      const el=document.getElementById(m.email);
+      if(el&&!el.value)el.value=f.emails[0];
+    }
+    if(m.phone&&f.phones&&f.phones.length){
+      const el=document.getElementById(m.phone);
+      if(el&&!el.value)el.value=f.phones[0];
     }
   }
   toast('✅ הנתונים שולבו בטופס','ok');
