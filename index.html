@@ -5687,30 +5687,25 @@ function emailHandlerFromDistForm(){
 // ===== תיאום פ.ע (פגישת עבודה) — סנכרון מלא מול מנהל פרויקט / גורם מטפל =====
 // לחיצה אחת מייצרת מייל מקצועי עם כל הפרויקטים של אותו גורם: מס׳ פרויקט + שם לקוח + סטטוס
 function _paProjects(name,role){
-  if(role==='mgr') return D.dists.filter(d=>d.hd===name);
-  if(name==='כולם') return D.dists.filter(d=>d.hp);
-  return D.dists.filter(d=>d.hp===name||d.hp==='כולם');
+  // פ.ע רלוונטי רק להפצות פעילות — מה שהושלם לא נכנס לרשימה ולא נספר
+  const act=D.dists.filter(d=>d.st!=='הושלם');
+  if(role==='mgr') return act.filter(d=>d.hd===name);
+  if(name==='כולם') return act.filter(d=>d.hp);
+  return act.filter(d=>d.hp===name||d.hp==='כולם');
 }
 function _paEmailBody(name,list,dt,time){
-  const open=list.filter(d=>d.st!=='הושלם');
-  const done=list.filter(d=>d.st==='הושלם');
   const row=(d,i)=>`${i+1}. פרויקט ${d.no||'ללא מספר'} – ${d.co||d.cl||'ללא שם לקוח'}${d.st?` | סטטוס: ${d.st}`:''}${d.mi?` | חוסרים: ${d.mi}`:''}`;
   const greet=name==='כולם'?'שלום לכולם,':`שלום ${name},`;
   const lines=[
     greet,
     ``,
-    `אשמח לתאם עמך פגישת עבודה קצרה לסנכרון מלא של הפרויקטים המשותפים שלנו.`,
+    `אשמח לתאם עמך פגישת עבודה קצרה לסנכרון מלא של הפרויקטים הפעילים המשותפים שלנו.`,
     ``,
   ];
   if(dt){
     lines.push(`מועד מוצע: ${fmtDate(dt)}${time?` בשעה ${time}`:''} — אם אינו מתאים, אשמח להצעה חלופית.`,``);
   }
-  if(open.length){
-    lines.push(`להלן הפרויקטים הפעילים שאבקש שנעבור עליהם יחד:`,``,...open.map(row));
-  }
-  if(done.length){
-    lines.push(``,`בנוסף, פרויקטים שהושלמו — לסגירה מסודרת בלבד:`,``,...done.map((d,i)=>row(d,i)));
-  }
+  lines.push(`להלן הפרויקטים שאבקש שנעבור עליהם יחד:`,``,...list.map(row));
   lines.push(
     ``,
     `סה"כ ${list.length} פרויקטים לדיון.`,
