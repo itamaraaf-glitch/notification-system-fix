@@ -2555,9 +2555,32 @@ function doLogout(){
 })();
 
 // ===== STORAGE =====
+// חותמות סנכרון אוטומטיות: המיזוג בין מכשירים מחיל פריט מרוחק רק אם ה-_mts שלו
+// חדש יותר, ולכן כל שינוי חייב לקבל חותמת — גם בנתיבי שמירה שלא עוברים דרך dbUpdate.
+// משווים כל פריט לחתימה מהשמירה הקודמת ומטביעים _mts רק על מה שבאמת השתנה.
+const SYNC_COLS=['deals','tenders','dists','salary','meetings','clients','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
+const SYNC_META=['lastCycleMonth','lastMeetCycle','goals','tenderEmails'];
+let _syncSnap=null;
+function _syncSig(x){return JSON.stringify(x,(k,v)=>k==='_mts'?undefined:v);}
+function _metaSig(){return JSON.stringify(SYNC_META.map(k=>D[k]===undefined?null:D[k]));}
+function _buildSyncSnap(){
+  _syncSnap={'::meta':_metaSig()};
+  SYNC_COLS.forEach(c=>(Array.isArray(D[c])?D[c]:[]).forEach(x=>{_syncSnap[c+':'+x.id]=_syncSig(x);}));
+}
+function _stampChanges(){
+  if(!_syncSnap){_buildSyncSnap();return;}
+  const ts=Date.now();
+  SYNC_COLS.forEach(c=>(Array.isArray(D[c])?D[c]:[]).forEach(x=>{
+    const k=c+':'+x.id,sig=_syncSig(x);
+    if(_syncSnap[k]!==sig){x._mts=ts;_syncSnap[k]=sig;}
+  }));
+  const m=_metaSig();
+  if(_syncSnap['::meta']!==m){D._metaMts=ts;_syncSnap['::meta']=m;}
+}
 let _quotaAlerted=false;
 function saveAll(){
   try{
+    _stampChanges();
     const snap=JSON.stringify(D);
     localStorage.setItem(LS_KEY,snap);
     // Verify write succeeded (read back and compare)
@@ -2606,28 +2629,30 @@ let _lastSyncTs=0;
 
 // Smart merge: never overwrites local items — merges by ID, keeps newer _mts per item
 function fbMergeRemote(remote){
-  const cols=['deals','tenders','dists','salary','meetings','clients'];
+  const cols=SYNC_COLS; // כולל טבלאות ארכיון — סגירת חודש במחשב מגיעה גם למובייל
   if(!D._deletedIds)D._deletedIds={};
   const rDel=remote._deletedIds||{};
   // Merge deletion maps (union)
-  cols.forEach(col=>{
+  Object.keys(rDel).forEach(col=>{
     if(rDel[col]){if(!D._deletedIds[col])D._deletedIds[col]={};Object.assign(D._deletedIds[col],rDel[col]);}
   });
   let changed=false;
   cols.forEach(col=>{
-    if(!Array.isArray(remote[col]))return;
+    if(!Array.isArray(D[col]))D[col]=[];
     const myDel=D._deletedIds[col]||{};
-    const byId=new Map(D[col].map(x=>[String(x.id),x]));
-    remote[col].forEach(rItem=>{
-      const sid=String(rItem.id);
-      if(myDel[sid])return; // intentionally deleted locally — don't resurrect
-      const lItem=byId.get(sid);
-      if(!lItem){D[col].push(rItem);changed=true;}
-      else if((rItem._mts||0)>(lItem._mts||0)){
-        const idx=D[col].findIndex(x=>String(x.id)===sid);
-        if(idx>=0){D[col][idx]={...lItem,...rItem};changed=true;}
-      }
-    });
+    if(Array.isArray(remote[col])){
+      const byId=new Map(D[col].map(x=>[String(x.id),x]));
+      remote[col].forEach(rItem=>{
+        const sid=String(rItem.id);
+        if(myDel[sid])return; // intentionally deleted locally — don't resurrect
+        const lItem=byId.get(sid);
+        if(!lItem){D[col].push(rItem);changed=true;}
+        else if((rItem._mts||0)>(lItem._mts||0)){
+          const idx=D[col].findIndex(x=>String(x.id)===sid);
+          if(idx>=0){D[col][idx]={...lItem,...rItem};changed=true;}
+        }
+      });
+    }
     // Apply remote deletions to local arrays
     if(Object.keys(myDel).length){
       const before=D[col].length;
@@ -2635,6 +2660,13 @@ function fbMergeRemote(remote){
       if(D[col].length!==before)changed=true;
     }
   });
+  // שדות כלליים (יעדים, סמן סגירת חודש, מיילים למכרזים) — צד עם חותמת חדשה יותר מנצח
+  if((remote._metaMts||0)>(D._metaMts||0)){
+    SYNC_META.forEach(k=>{if(remote[k]!==undefined)D[k]=remote[k];});
+    D._metaMts=remote._metaMts;changed=true;
+  }
+  // רענון חתימות אחרי מיזוג — שינויים שהגיעו מהענן לא ייחתמו מחדש ויוחזרו כהד
+  _buildSyncSnap();
   return changed;
 }
 
@@ -2748,11 +2780,19 @@ function fbPush(){
   if(_fbApplying||!_fbRef)return;
   clearTimeout(_fbPushTimer);
   _fbPushTimer=setTimeout(()=>{
+    // SAFETY: never push empty data to cloud
+    const totalRec=['deals','tenders','dists','salary','meetings','clients'].reduce((s,c)=>s+(D[c]||[]).length,0);
+    if(totalRec===0){console.warn('fbPush blocked: D is empty');return;}
     const ts=Date.now();
-    localStorage.setItem('cem_sync_ts',String(ts));
     fbStatus('syncing');
     _fbRef.set({_ts:ts,data:D})
-      .then(()=>fbStatus('connected'))
+      .then(()=>{
+        // חותמת הסנכרון נכתבת רק אחרי הצלחה — כתיבה מוקדמת גורמת למכשיר
+        // "לחשוב" שהוא מעודכן ולחסום משיכות מהענן אחרי העלאה שנכשלה
+        localStorage.setItem('cem_sync_ts',String(ts));
+        _lastSyncTs=Date.now();
+        fbStatus('connected');
+      })
       .catch(e=>{console.error('fbPush:',e);fbStatus('error');});
   },1000);
 }
@@ -2844,7 +2884,7 @@ async function saveSimpleSync(){
   closeM('msync');
   showToast('🔄 מתחבר לענן...','info');
   await ssInit(url,code);
-  if(_ssUrl) ssPush();
+  if(_ssUrl) _ssPushNow();
 }
 
 async function ssInit(dbUrl,syncCode){
@@ -2908,24 +2948,36 @@ async function ssPoll(){
       }finally{_fbApplying=false;}
     }
   }catch(e){console.warn('ssPoll:',e);}
-  finally{_ssPollActive=false;}
+  finally{
+    _ssPollActive=false;
+    // העלאה שנכשלה (אופליין וכו') — ניסיון חוזר אחרי שמשכנו את העדכונים מהענן
+    if(_ssDirty&&navigator.onLine)_ssPushNow();
+  }
 }
 
-async function ssPush(){
+let _ssPushTimer=null,_ssDirty=false;
+function ssPush(){
+  if(!_ssUrl)return;
+  clearTimeout(_ssPushTimer);
+  _ssPushTimer=setTimeout(_ssPushNow,800);
+}
+async function _ssPushNow(){
   if(!_ssUrl||_fbApplying)return;
   // SAFETY: never push empty data to cloud — protects against sync bugs
   const mainCols=['deals','tenders','dists','salary','meetings','clients'];
   const totalRec=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
   if(totalRec===0){console.warn('ssPush blocked: D is empty, refusing to overwrite cloud data');return;}
   const ts=Date.now();
-  localStorage.setItem('cem_sync_ts',String(ts));
   fbStatus('syncing');
   try{
     const r=await fetch(_ssUrl,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({_ts:ts,data:D})});
     if(!r.ok)throw new Error('HTTP '+r.status);
+    // חותמת הסנכרון נכתבת רק אחרי הצלחה — אחרת העלאה שנכשלה חוסמת משיכות עתידיות
+    localStorage.setItem('cem_sync_ts',String(ts));
     _lastSyncTs=Date.now();
+    _ssDirty=false;
     fbStatus('connected');
-  }catch(e){console.error('ssPush:',e);fbStatus('error');}
+  }catch(e){console.error('ssPush:',e);_ssDirty=true;fbStatus('error');}
 }
 
 // ===== SYNC SHARING (QR CODE + LINK) =====
@@ -3042,7 +3094,7 @@ async function openSendToMobile(){
 async function _smobPushAndQR(){
   showToast('🔄 שולח נתונים לענן...','info');
   try{
-    if(_ssUrl){await ssPush();}
+    if(_ssUrl){await _ssPushNow();}
     else if(_fbRef){fbPush();}
     else{showToast('⚠️ הסנכרון לא מחובר','warn');return;}
     const url=genSyncShareUrl();
@@ -3118,6 +3170,7 @@ async function fbSyncNow(){
 }
 
 function _finishLoad(){
+  _buildSyncSnap(); // בסיס החתימות = הנתונים כפי שנטענו; כל שינוי מכאן והלאה יוחתם
   syncAllDealsToClients();
   syncAllDealsToDists();
   syncAllDealsToSalary();
@@ -3241,6 +3294,8 @@ document.addEventListener('visibilitychange',()=>{
         showToast('⚠️ אחסון מקומי אופס — הנתונים שוחזרו בזיכרון','warn');
       }
     }catch(e){}
+    // מצב REST: משיכה מיידית מהענן כשחוזרים לאפליקציה — במובייל לא מחכים לטיימר של 30ש'
+    if(_ssUrl&&!_fbApplying)setTimeout(ssPoll,800);
     // Pull latest from Firebase when tab becomes active again (after 1s delay)
     if(_fbRef&&_fbListening&&!_fbApplying){
       setTimeout(()=>{
@@ -3340,6 +3395,9 @@ function dbDelete(table,id){
       if(undone)return;
       undone=true;
       D[table].splice(Math.min(origIdx,D[table].length),0,item);
+      // ביטול רישום המחיקה — אחרת הסנכרון הבא ימחק את הפריט המשוחזר שוב
+      if(D._deletedIds&&D._deletedIds[table])delete D._deletedIds[table][String(id)];
+      item._mts=Date.now();
       saveAll();rAll();
       t.style.opacity='0';setTimeout(()=>t.remove(),400);
       showToast('↩ שוחזר','ok');
@@ -5588,6 +5646,11 @@ function archiveOldMeetings(force){
     D.archivedMeetings=[...D.archivedMeetings,...old];
     const ids=new Set(old.map(m=>m.id));
     D.meetings=D.meetings.filter(m=>!ids.has(m.id));
+    // רישום ההעברה לארכיון כמחיקה מהטבלה הפעילה — כדי שהסנכרון יעביר לארכיון
+    // גם במכשיר השני במקום "להחיות" את הפגישות הישנות בחזרה
+    if(!D._deletedIds)D._deletedIds={};
+    if(!D._deletedIds.meetings)D._deletedIds.meetings={};
+    ids.forEach(id=>{D._deletedIds.meetings[String(id)]=Date.now();});
     setTimeout(()=>{
       showToast('📦 '+old.length+' פגישות מחודשים קודמים הועברו לארכיון — לא נמחקו! (פגישות ← 📦 ארכיון)','ok');
     },2200);
@@ -5607,6 +5670,10 @@ function runMonthlyCycle(force){
     D.archivedDeals=[...D.archivedDeals,...archDeals];
     const ids=new Set(archDeals.map(d=>d.id));
     D.deals=D.deals.filter(d=>!ids.has(d.id));
+    // רישום ההעברה לארכיון כמחיקה מהטבלה הפעילה — הסנכרון יעביר לארכיון גם במכשיר השני
+    if(!D._deletedIds)D._deletedIds={};
+    if(!D._deletedIds.deals)D._deletedIds.deals={};
+    ids.forEach(id=>{D._deletedIds.deals[String(id)]=Date.now();});
     // Alert the user so they know where the deals went — not deleted!
     setTimeout(()=>{
       showToast('📦 '+archDeals.length+' עסקאות שנסגרו הועברו לארכיון החודשי — לא נמחקו! (ארכיון ← עסקאות)','ok');
