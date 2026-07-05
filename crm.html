@@ -298,7 +298,7 @@ body{font-family:'Heebo',sans-serif;background:#080c18;color:var(--text);font-si
 .ac.crit{background:linear-gradient(145deg,rgba(230,57,70,.12),rgba(230,57,70,.04));border-right-color:var(--red)}
 .ac.warn{background:linear-gradient(145deg,rgba(244,162,97,.12),rgba(244,162,97,.04));border-right-color:#f4a261}
 .ac.info{background:linear-gradient(145deg,rgba(76,201,240,.12),rgba(76,201,240,.04));border-right-color:var(--blue)}
-.ac .at{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:5px}
+.ac .at{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:5px}
 .ac.crit .at{color:#ff5561}.ac.warn .at{color:#f4a261}.ac.info .at{color:var(--blue)}
 .ac .ah{font-size:13px;font-weight:700;margin-bottom:4px}
 .ac .as{font-size:12px;color:var(--text2)}
@@ -3706,7 +3706,7 @@ function renderMonthSummary(){
       <div style="height:6px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden">
         <div style="height:100%;width:${pct}%;background:${pc};border-radius:4px;transition:width .4s"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--text3);margin-top:4px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:4px">
         <span>נסגר מתוך הפעיל</span><b style="color:${pc}">${pct}%</b>
       </div>
     </div>`;
@@ -4612,7 +4612,7 @@ function showDayMeetings(dStr,e){
   const isArchived=m=>!D.meetings.some(x=>x.id===m.id);
   const rows=mtgs.map(m=>{
     const arch=isArchived(m);
-    const hlB=m.hl==='כן'?'<span style="font-size:9px;color:#06d6a0">✓ התקיימה</span>':m.hl==='מבוטל'?'<span style="font-size:9px;color:#e63946">✕ מבוטל</span>':'<span style="font-size:9px;color:#f4a261">⏳ ממתין</span>';
+    const hlB=m.hl==='כן'?'<span style="font-size:10px;color:#06d6a0">✓ התקיימה</span>':m.hl==='מבוטל'?'<span style="font-size:10px;color:#e63946">✕ מבוטל</span>':'<span style="font-size:10px;color:#f4a261">⏳ ממתין</span>';
     return`<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin-bottom:5px;flex-wrap:wrap">
       <span>${typeIco[m.mtype||'פגישה']||'🤝'}</span>
       ${m.time?`<span style="font-size:10px;color:var(--gold);font-weight:700">${m.time}</span>`:''}
@@ -4710,7 +4710,7 @@ function addItem(type,data={}){
     let inp='';
     if(f.t==='sel'){inp=`<select data-key="${f.k}">${(f.opts||[]).map(o=>`<option ${v===o?'selected':''}>${o}</option>`).join('')}</select>`;}
     else{inp=`<input type="${f.t||'text'}" data-key="${f.k}" value="${String(v).replace(/"/g,'&quot;')}" placeholder="${f.ph||''}">`;}
-    return`<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:9px;color:var(--text2)">${f.l}</label>${inp}</div>`;
+    return`<div style="display:flex;flex-direction:column;gap:2px"><label style="font-size:10px;color:var(--text2)">${f.l}</label>${inp}</div>`;
   }).join('');
   const div=document.createElement('div');
   div.className='item-row';
@@ -5194,25 +5194,25 @@ function rClients(){
       </div>
       ${mTotal>0?`<div style="padding:5px 8px;background:rgba(212,168,71,.07);border-radius:8px;border:1px solid rgba(212,168,71,.22);margin-bottom:7px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-          <span style="font-size:9px;font-weight:800;color:var(--gold);letter-spacing:.5px">💰 הכנסה חודשית</span>
+          <span style="font-size:10px;font-weight:800;color:var(--gold);letter-spacing:.5px">💰 הכנסה חודשית</span>
           <span style="font-size:12px;font-weight:800;color:var(--gold)">${fmt(mTotal)}</span>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:3px">${mBreakHtml}</div>
       </div>`:''}
       <div style="margin-bottom:7px">
-        <div style="font-size:9px;font-weight:800;color:var(--teal);letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase">✅ יש ללקוח</div>
+        <div style="font-size:10px;font-weight:800;color:var(--teal);letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase">✅ יש ללקוח</div>
         <div style="display:flex;flex-wrap:wrap;gap:3px">${hasHtml}</div>
       </div>
       <div style="border-top:1px solid var(--border);padding-top:6px;margin-bottom:6px">
-        <div style="font-size:9px;font-weight:800;color:var(--text3);letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase">⬜ לא קיים</div>
-        <div style="display:flex;flex-wrap:wrap;gap:3px">${missingHtml||'<span style="font-size:9px;color:var(--text3)">–</span>'}</div>
+        <div style="font-size:10px;font-weight:800;color:var(--text3);letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase">⬜ לא קיים</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px">${missingHtml||'<span style="font-size:10px;color:var(--text3)">–</span>'}</div>
       </div>
       ${potActive.length?(()=>{const late=potActive.filter(p=>{const cl2=contactLight(p);return cl2&&cl2.lvl===3;}).length;return`<div class="pot-chip" style="${late?'border-color:rgba(230,57,70,.55)':''}">🎯 ${potActive.length} בתהליך עבודה לקוחות${potVal?` · ${fmt(potVal)}`:''}${late?` · <b style="color:#e63946">🔴 ${late} ללא קשר!</b>`:''}</div>`;})():''}
       ${warns.length?`<div class="exp-warn">⚠ ${warns.slice(0,2).join(' | ')}</div>`:''}
       ${nextMtg?`<div class="next-mtg-chip" style="margin-top:4px">
         <span>📅</span><span style="color:#06d6a0;font-weight:700">${nextMtg.dt===todayStrC?'פגישה היום!':'פגישה ב-'+fmtDate(nextMtg.dt)}</span>${nextMtg.time?`<span style="color:var(--text3)">${nextMtg.time}</span>`:''}
       </div>`:''}
-      ${!nextMtg&&lastMtg?`<div style="font-size:9px;color:var(--text3);margin-top:4px">🤝 פגישה אחרונה: ${fmtDate(lastMtg.dt)}</div>`:''}
+      ${!nextMtg&&lastMtg?`<div style="font-size:10px;color:var(--text3);margin-top:4px">🤝 פגישה אחרונה: ${fmtDate(lastMtg.dt)}</div>`:''}
       ${c.genNotes?`<div style="font-size:10px;color:var(--text2);margin-top:4px;padding-top:4px;border-top:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.genNotes}">${c.genNotes}</div>`:''}
     </div>`;
   }).join('');
