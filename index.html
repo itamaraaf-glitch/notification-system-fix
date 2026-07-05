@@ -1597,6 +1597,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <button class="btn btnp" onclick="openM('dist',null)">+ הפצה חדשה</button>
       <button class="btn btn-excel" onclick="exportExcel('dists')">📥 Excel</button>
       <button class="btn btn-import" onclick="importFromExcel('dists')" title="ייבוא מ-Excel">📤 ייבוא</button>
+      <button class="btn" onclick="showPaMenu(event)" title="תיאום פגישת עבודה: מייל מקצועי עם כל הפרויקטים (מס׳ פרויקט + לקוח) של מנהל הפרויקט / הגורם המטפל" style="border-color:#a78bfa;color:#a78bfa">🤝 תיאום פ.ע</button>
       <button class="btn btnwp" onclick="sendWhatsAppDists()">📱 WA</button>
       <button class="btn btnd" onclick="deleteAll('dists')" title="מחק את כל ההפצות">🗑 מחק הכל</button>
     </div>
@@ -5682,6 +5683,87 @@ function emailHandlerFromDistForm(){
   const subject=`HOT Business – הפצה ${d.no||d.co||''} – ${d.co||''}`;
   const body=buildHandlerEmailBody(d,greet);
   openMail(emails, subject, body);
+}
+// ===== תיאום פ.ע (פגישת עבודה) — סנכרון מלא מול מנהל פרויקט / גורם מטפל =====
+// לחיצה אחת מייצרת מייל מקצועי עם כל הפרויקטים של אותו גורם: מס׳ פרויקט + שם לקוח + סטטוס
+function _paProjects(name,role){
+  if(role==='mgr') return D.dists.filter(d=>d.hd===name);
+  if(name==='כולם') return D.dists.filter(d=>d.hp);
+  return D.dists.filter(d=>d.hp===name||d.hp==='כולם');
+}
+function _paEmailBody(name,list){
+  const open=list.filter(d=>d.st!=='הושלם');
+  const done=list.filter(d=>d.st==='הושלם');
+  const row=(d,i)=>`${i+1}. פרויקט ${d.no||'ללא מספר'} – ${d.co||d.cl||'ללא שם לקוח'}${d.st?` | סטטוס: ${d.st}`:''}${d.mi?` | חוסרים: ${d.mi}`:''}`;
+  const greet=name==='כולם'?'שלום לכולם,':`שלום ${name},`;
+  const lines=[
+    greet,
+    ``,
+    `אשמח לתאם עמך פגישת עבודה קצרה לסנכרון מלא של הפרויקטים המשותפים שלנו.`,
+    ``,
+  ];
+  if(open.length){
+    lines.push(`להלן הפרויקטים הפעילים שאבקש שנעבור עליהם יחד:`,``,...open.map(row));
+  }
+  if(done.length){
+    lines.push(``,`בנוסף, פרויקטים שהושלמו — לסגירה מסודרת בלבד:`,``,...done.map((d,i)=>row(d,i)));
+  }
+  lines.push(
+    ``,
+    `סה"כ ${list.length} פרויקטים לדיון.`,
+    ``,
+    `מטרת הפגישה: מעבר מסודר על סטטוס כל פרויקט, זיהוי חסמים וחוסרים ותיאום צעדי המשך — כדי שנצא מסונכרנים באופן מלא.`,
+    ``,
+    `אודה לחזרתך עם מועד שנוח לך, ואשריין ביומן בהתאם.`,
+    ``,
+    `תודה על שיתוף הפעולה,`,
+    `איתמר ונדן`,
+    `HOT Business`,
+    `Itamar.venden@hot.net.il`,
+  );
+  return lines.join('\n');
+}
+function _paSend(name,role){
+  const list=_paProjects(name,role);
+  if(!list.length){showToast('⚠️ אין פרויקטים בהפצות עבור '+name,'warn');return;}
+  const to=role==='mgr'?((MANAGERS.find(m=>m.name===name)||{}).email||''):handlerEmails(name);
+  const body=_paEmailBody(name,list);
+  const subject=`HOT Business – תיאום פגישת עבודה – סנכרון ${list.length} פרויקטים`;
+  // גיבוי ללוח: גוף ארוך עלול להיחתך במגבלת mailto — כך תמיד אפשר להדביק ידנית
+  try{if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText('נושא: '+subject+'\n\n'+body);}catch(e){}
+  openMail(to,subject,body);
+  showToast('📧 נפתחה טיוטת פ.ע עם '+list.length+' פרויקטים (הטקסט גם הועתק ללוח)','ok');
+}
+function showPaMenu(ev){
+  if(ev)ev.stopPropagation();
+  const prev=document.getElementById('pa-menu-popup');
+  if(prev){prev.remove();return;}
+  const pop=document.createElement('div');
+  pop.id='pa-menu-popup';
+  pop.style.cssText='position:fixed;background:var(--s2,#101525);border:1px solid var(--border);border-radius:12px;padding:6px;z-index:99999;min-width:260px;box-shadow:0 8px 32px rgba(0,0,0,.6);direction:rtl';
+  const mkHdr=t=>{const h=document.createElement('div');h.style.cssText='font-size:10px;color:var(--text3);padding:5px 10px 3px;font-weight:800';h.textContent=t;return h;};
+  const mkItem=(name,role,sub)=>{
+    const n=_paProjects(name,role).length;
+    const b=document.createElement('button');
+    b.style.cssText='display:block;width:100%;background:transparent;border:none;color:var(--text);padding:8px 12px;text-align:right;cursor:pointer;border-radius:8px;font-family:inherit;font-size:12px';
+    b.innerHTML=`🤝 ${name} <span style="color:var(--text3);font-size:10px">${sub} · ${n} פרויקטים</span>`;
+    if(!n)b.style.opacity='.45';
+    b.onmouseover=()=>b.style.background='rgba(255,255,255,.07)';
+    b.onmouseout=()=>b.style.background='transparent';
+    b.onclick=()=>{pop.remove();_paSend(name,role);};
+    return b;
+  };
+  pop.appendChild(mkHdr('🤝 תיאום פ.ע — מנהלי פרויקט'));
+  MANAGERS.forEach(m=>pop.appendChild(mkItem(m.name,'mgr','מנהל פרויקט')));
+  pop.appendChild(mkHdr('גורמים מטפלים'));
+  HANDLERS.forEach(h=>pop.appendChild(mkItem(h.name,'handler','גורם מטפל')));
+  pop.appendChild(mkItem('כולם','handler','כל הגורמים המטפלים'));
+  const anchor=(ev&&(ev.currentTarget||ev.target))||document.body;
+  const r=anchor.getBoundingClientRect?anchor.getBoundingClientRect():{bottom:80,right:innerWidth/2};
+  pop.style.top=Math.min(r.bottom+4,innerHeight-360)+'px';
+  pop.style.right=Math.max(6,innerWidth-r.right)+'px';
+  document.body.appendChild(pop);
+  setTimeout(()=>{document.addEventListener('click',function cl(e2){if(!pop.contains(e2.target)){pop.remove();document.removeEventListener('click',cl);}});},80);
 }
 function buildGmailUrl(){
   const to=document.getElementById('em-to').value.trim();
