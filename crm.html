@@ -5851,8 +5851,11 @@ function showPaMenu(ev){
   const anchor=(ev&&(ev.currentTarget||ev.target))||document.body;
   const r=anchor.getBoundingClientRect?anchor.getBoundingClientRect():{bottom:80,right:innerWidth/2};
   pop.style.top=Math.min(r.bottom+4,innerHeight-360)+'px';
-  pop.style.right=Math.max(6,innerWidth-r.right)+'px';
+  pop.style.maxWidth='calc(100vw - 12px)';
   document.body.appendChild(pop);
+  // הצמדה לימין העוגן, אבל בלי לחרוג משמאל המסך (חשוב במובייל)
+  const rightPos=Math.min(Math.max(6,innerWidth-r.right),Math.max(6,innerWidth-pop.offsetWidth-6));
+  pop.style.right=rightPos+'px';
   setTimeout(()=>{document.addEventListener('click',function cl(e2){if(!pop.contains(e2.target)){pop.remove();document.removeEventListener('click',cl);}});},80);
 }
 function buildGmailUrl(){
