@@ -1837,8 +1837,10 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn" onclick="fbSyncNow()" style="background:rgba(6,214,160,.15);color:#06d6a0;border-color:rgba(6,214,160,.4);font-size:11px;padding:4px 10px">🔄 סנכרן עכשיו</button>
         <button class="btn" onclick="showSyncShare()" style="background:rgba(167,139,250,.12);color:#a78bfa;border-color:rgba(167,139,250,.35);font-size:11px;padding:4px 10px">📱 שתף למכשיר נוסף</button>
+        <button class="btn" onclick="fbBaselineNow()" title="הנתונים במכשיר הזה יחליפו את הנתונים בכל שאר המכשירים" style="background:rgba(251,191,36,.12);color:#fbbf24;border-color:rgba(251,191,36,.4);font-size:11px;padding:4px 10px">🟰 יישור קו מהמכשיר הזה</button>
       </div>
     </div>
+    <div style="font-size:10px;color:var(--text2);margin-top:6px">🟰 יישור קו: המכשיר הזה נקבע כמקור האמת — כל שאר המכשירים יקבלו עותק מדויק שלו (מוחק אצלם מה שלא קיים כאן)</div>
   </div>
 
   <!-- Share panel (QR code) -->
@@ -2629,6 +2631,26 @@ let _lastSyncTs=0;
 
 // Smart merge: never overwrites local items — merges by ID, keeps newer _mts per item
 function fbMergeRemote(remote){
+  // ── יישור קו ──
+  // בסיס מרוחק חדש משלנו: המכשיר הראשי הכריז שהנתונים שלו הם מקור האמת —
+  // מחליפים הכול בעותק מדויק (עם גיבוי מקומי קודם) במקום למזג
+  if((remote._baseline||0)>(D._baseline||0)){
+    const total=['deals','tenders','dists','salary','meetings','clients'].reduce((s,c)=>s+(Array.isArray(remote[c])?remote[c].length:0),0);
+    if(total>0){
+      try{if(typeof idbBackup==='function')idbBackup(JSON.stringify(D));}catch(e){}
+      D=Object.assign(emptyData(),remote);
+      D.goals=Object.assign({},_GOAL_DEFAULTS,D.goals||{});
+      _buildSyncSnap();
+      showToast('🟰 בוצע יישור קו — הנתונים הוחלפו בעותק מהמכשיר הראשי','ok');
+      return true;
+    }
+  }
+  // בסיס מרוחק ישן משלנו: מכשיר שעוד לא אימץ את יישור הקו דחף נתונים ישנים —
+  // מתעלמים מהם ודוחפים חזרה את הבסיס העדכני
+  if((remote._baseline||0)<(D._baseline||0)){
+    setTimeout(()=>{try{fbPush();}catch(e){}},50);
+    return false;
+  }
   const cols=SYNC_COLS; // כולל טבלאות ארכיון — סגירת חודש במחשב מגיעה גם למובייל
   if(!D._deletedIds)D._deletedIds={};
   const rDel=remote._deletedIds||{};
@@ -2713,6 +2735,35 @@ async function fbForcePull(){
   },err=>showToast('⚠️ לא ניתן לתקשר עם הענן: '+err.message,'warn'));
 }
 
+// יישור קו: המכשיר הנוכחי נקבע כמקור האמת — כל שאר המכשירים יקבלו עותק מדויק
+async function fbBaselineNow(){
+  const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+  const totalRec=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
+  if(totalRec===0){showToast('⚠️ אין נתונים במכשיר הזה — יישור קו בוטל','warn');return;}
+  if(!_ssUrl&&!_fbRef){showToast('⚠️ הסנכרון לא מחובר — הגדר סנכרון ענן קודם','warn');return;}
+  if(!confirm('🟰 יישור קו\n\nהנתונים במכשיר הזה ('+totalRec+' רשומות) ייקבעו כמקור האמת ויחליפו את הנתונים בכל שאר המכשירים.\n\nמה שקיים במכשירים אחרים ולא קיים כאן — יימחק שם.\n(נשמר גיבוי אוטומטי בכל מכשיר לפני ההחלפה)\n\nלהמשיך?'))return;
+  try{if(typeof idbBackup==='function')idbBackup(JSON.stringify(D));}catch(e){}
+  const ts=Date.now();
+  // חותמת טרייה לכל הפריטים — מיזוגים עתידיים יעדיפו את הגרסה הזו
+  SYNC_COLS.forEach(c=>(Array.isArray(D[c])?D[c]:[]).forEach(x=>{x._mts=ts;}));
+  D._metaMts=ts;
+  D._baseline=ts;
+  D._deletedIds={}; // הבסיס החדש שלם — היסטוריית מחיקות ישנה מיותרת ועלולה למחוק בטעות
+  _buildSyncSnap();
+  try{localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}
+  fbStatus('syncing');
+  if(_ssUrl){await _ssPushNow();}
+  else if(_fbRef){
+    try{
+      await _fbRef.set({_ts:ts,_baseline:ts,data:D});
+      localStorage.setItem('cem_sync_ts',String(ts));
+      _lastSyncTs=Date.now();
+      fbStatus('connected');
+    }catch(e){console.error('baseline push:',e);fbStatus('error');showToast('⚠️ שגיאה בהעלאת יישור הקו: '+e.message,'warn');return;}
+  }
+  showToast('🟰 יישור קו בוצע! כל המכשירים יקבלו את הנתונים של המכשיר הזה','ok');
+}
+
 // BroadcastChannel: sync between tabs in same browser without Firebase
 let _bc=null;
 function initBroadcast(){
@@ -2779,13 +2830,18 @@ function fbPush(){
   if(_ssUrl){ssPush();return;} // simple REST mode
   if(_fbApplying||!_fbRef)return;
   clearTimeout(_fbPushTimer);
-  _fbPushTimer=setTimeout(()=>{
+  _fbPushTimer=setTimeout(async()=>{
     // SAFETY: never push empty data to cloud
     const totalRec=['deals','tenders','dists','salary','meetings','clients'].reduce((s,c)=>s+(D[c]||[]).length,0);
     if(totalRec===0){console.warn('fbPush blocked: D is empty');return;}
+    // לפני דחיפה: אם בענן יש יישור קו חדש משלנו — לא דורסים אותו אלא מאמצים
+    try{
+      const snap=await _fbRef.child('_baseline').once('value');
+      if((snap.val()||0)>(D._baseline||0)){console.warn('fbPush skipped: newer baseline in cloud');fbForcePull();return;}
+    }catch(e){}
     const ts=Date.now();
     fbStatus('syncing');
-    _fbRef.set({_ts:ts,data:D})
+    _fbRef.set({_ts:ts,_baseline:D._baseline||0,data:D})
       .then(()=>{
         // חותמת הסנכרון נכתבת רק אחרי הצלחה — כתיבה מוקדמת גורמת למכשיר
         // "לחשוב" שהוא מעודכן ולחסום משיכות מהענן אחרי העלאה שנכשלה
@@ -2903,12 +2959,13 @@ async function ssInit(dbUrl,syncCode){
     if(remote&&remote.data){
       const remoteTs=remote._ts||0;
       const localTs=parseInt(localStorage.getItem('cem_sync_ts')||'0');
-      if(remoteTs>localTs+500){
+      // יישור קו חדש בענן נמשך תמיד — גם אם חותמת הזמן המקומית "עדכנית"
+      if(remoteTs>localTs+500||(remote.data._baseline||0)>(D._baseline||0)){
         _fbApplying=true;
         try{
           const changed=fbMergeRemote(JSON.parse(JSON.stringify(remote.data)));
           localStorage.setItem(LS_KEY,JSON.stringify(D));
-          localStorage.setItem('cem_sync_ts',String(remoteTs));
+          localStorage.setItem('cem_sync_ts',String(Math.max(remoteTs,localTs)));
           _lastSyncTs=Date.now();
           if(changed){rAll();showToast('🔄 עודכן מהענן – נתונים חדשים','ok');}
         }finally{_fbApplying=false;}
@@ -2937,12 +2994,13 @@ async function ssPoll(){
     if(!remote||!remote.data)return;
     const remoteTs=remote._ts||0;
     const localTs=parseInt(localStorage.getItem('cem_sync_ts')||'0');
-    if(remoteTs>localTs+500){
+    // יישור קו חדש בענן נמשך תמיד — גם אם חותמת הזמן המקומית "עדכנית"
+    if(remoteTs>localTs+500||(remote.data._baseline||0)>(D._baseline||0)){
       _fbApplying=true;
       try{
         const changed=fbMergeRemote(JSON.parse(JSON.stringify(remote.data)));
         localStorage.setItem(LS_KEY,JSON.stringify(D));
-        localStorage.setItem('cem_sync_ts',String(remoteTs));
+        localStorage.setItem('cem_sync_ts',String(Math.max(remoteTs,localTs)));
         _lastSyncTs=Date.now();
         if(changed){rAll();showToast('🔄 עודכן מהענן','ok');}
       }finally{_fbApplying=false;}
@@ -2967,10 +3025,18 @@ async function _ssPushNow(){
   const mainCols=['deals','tenders','dists','salary','meetings','clients'];
   const totalRec=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
   if(totalRec===0){console.warn('ssPush blocked: D is empty, refusing to overwrite cloud data');return;}
+  // לפני דחיפה: אם בענן יש יישור קו חדש משלנו — לא דורסים אותו אלא מאמצים
+  try{
+    const rb=await fetch(_ssUrl.replace(/\.json$/,'/_baseline.json'));
+    if(rb.ok){
+      const remoteBase=await rb.json();
+      if((remoteBase||0)>(D._baseline||0)){console.warn('ssPush skipped: newer baseline in cloud, adopting');_ssDirty=false;ssPoll();return;}
+    }
+  }catch(e){}
   const ts=Date.now();
   fbStatus('syncing');
   try{
-    const r=await fetch(_ssUrl,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({_ts:ts,data:D})});
+    const r=await fetch(_ssUrl,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({_ts:ts,_baseline:D._baseline||0,data:D})});
     if(!r.ok)throw new Error('HTTP '+r.status);
     // חותמת הסנכרון נכתבת רק אחרי הצלחה — אחרת העלאה שנכשלה חוסמת משיכות עתידיות
     localStorage.setItem('cem_sync_ts',String(ts));
@@ -3195,6 +3261,7 @@ function loadAll(){
       D.salary=p.salary||[];D.meetings=p.meetings||[];D.clients=p.clients||[];
       D.archivedDeals=p.archivedDeals||[];D.archivedTenders=p.archivedTenders||[];D.archivedDists=p.archivedDists||[];D.archivedSalary=p.archivedSalary||[];D.archivedMeetings=p.archivedMeetings||[];D.lastCycleMonth=p.lastCycleMonth||'';D.lastMeetCycle=p.lastMeetCycle||'';D.tenderEmails=p.tenderEmails||{};
       D._deletedIds=p._deletedIds||{};
+      D._metaMts=p._metaMts||0;D._baseline=p._baseline||0; // חותמות סנכרון חייבות לשרוד רענון דף
       // Merge with defaults so new goal keys are never undefined in old saves
       D.goals=Object.assign({},_GOAL_DEFAULTS,p.goals||{});
       // Only seed demo data if all tables are empty AND no initialized flag
@@ -3305,7 +3372,7 @@ document.addEventListener('visibilitychange',()=>{
           if(!remote||!remote.data)return;
           const remoteTs=remote._ts||0;
           const localTs=parseInt(localStorage.getItem('cem_sync_ts')||'0');
-          if(remoteTs>localTs+500){
+          if(remoteTs>localTs+500||(remote.data._baseline||0)>(D._baseline||0)){
             _fbApplying=true;
             try{
               const changed=fbMergeRemote(JSON.parse(JSON.stringify(remote.data)));
