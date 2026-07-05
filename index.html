@@ -3192,6 +3192,31 @@ function _smobDownloadJSON(){
   }catch(e){showToast('⚠️ שגיאה בהורדה: '+e.message,'warn');}
 }
 
+// ── בדיקת עדכון גרסה: טאב שנשאר פתוח ימים לא מקבל עדכונים עד רענון ידני ──
+// בודקים מול השרת (ETag) לכל היותר פעם בחצי שעה; כשיש גרסה חדשה — מרעננים
+// אוטומטית אם הדף ברקע, או מציעים רענון בלחיצה אם המשתמש בעבודה פעילה
+let _verEtag=null,_verLast=0;
+async function checkAppVersion(){
+  if(Date.now()-_verLast<30*60*1000)return;
+  _verLast=Date.now();
+  try{
+    const r=await fetch(location.pathname+'?vchk='+Date.now(),{method:'HEAD',cache:'no-store'});
+    if(!r.ok)return;
+    const et=r.headers.get('ETag')||r.headers.get('Last-Modified')||'';
+    if(!et)return;
+    if(_verEtag===null){_verEtag=et;return;}
+    if(et!==_verEtag){
+      // לא מעדכנים את הבסיס — אם המשתמש מתעלם, ההצעה תחזור בבדיקה הבאה
+      try{_bgSave();}catch(e){}
+      if(document.visibilityState==='hidden'){location.reload();return;}
+      showToastWithAction('🔄 גרסה חדשה של המערכת זמינה','רענן עכשיו',()=>{try{_bgSave();}catch(e){}location.reload();});
+    }
+  }catch(e){}
+}
+setTimeout(checkAppVersion,6000);
+setInterval(checkAppVersion,35*60*1000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkAppVersion();});
+
 // Network reconnect — when going back online, re-init sync
 window.addEventListener('online',()=>{
   showToast('🌐 חיבור אינטרנט חזר','info');
