@@ -168,6 +168,8 @@ body{font-family:'Heebo',sans-serif;background:#080c18;color:var(--text);font-si
 .lout:hover{background:rgba(255,255,255,.08);color:var(--text);border-color:var(--border2)}
 .bk-item{display:block;width:100%;text-align:right;padding:7px 10px;border:none;background:none;cursor:pointer;font-family:'Heebo',sans-serif;font-size:12px;border-radius:8px;transition:background .15s;color:var(--text)}
 .bk-item:hover{background:rgba(200,169,110,.08)}
+tr.row-flash{animation:rowflash 3s ease-out}
+@keyframes rowflash{0%,35%{background:rgba(200,169,110,.38);box-shadow:inset 0 0 0 2px rgba(200,169,110,.85)}100%{background:transparent;box-shadow:none}}
 .save-ind{font-size:11px;color:var(--teal);display:none;background:var(--tealdim);border:1px solid rgba(6,214,160,.3);border-radius:20px;padding:4px 12px}
 .save-ind.show{display:flex;align-items:center;gap:5px;animation:fadeIn .3s}
 .toast{position:fixed;bottom:24px;left:24px;z-index:9999;padding:11px 18px;border-radius:12px;font-size:12px;font-weight:700;font-family:'Heebo',sans-serif;backdrop-filter:blur(12px);max-width:340px;box-shadow:0 10px 32px rgba(0,0,0,.5);animation:slideIn .3s ease;white-space:pre-line;line-height:1.5;transition:opacity .4s}
@@ -1489,6 +1491,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   <div class="shdr">
     <div class="stit">⚠️ התראות פעילות</div>
     <div style="display:flex;gap:8px;align-items:center">
+      <input type="text" class="srch" placeholder="🔍 חיפוש בהתראות..." oninput="filtCards(this.value,'alcont')" style="max-width:200px">
       <span style="font-size:11px;color:var(--text2)" id="alerts-count"></span>
       <button class="btn btnwp" onclick="sendWhatsApp()">📱 WhatsApp</button>
     </div>
@@ -1548,7 +1551,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     </div></div>
   </div>
   <div id="sumt" style="display:none"><div id="deal-goal-box"></div><div id="deal-pipeline-box" style="padding:0 4px"></div><div class="krow" id="dsk"></div><div class="tw" id="dst"></div></div>
-  <div id="archivt" style="display:none"><div id="archive-deals-content" style="padding:4px 0"></div></div>
+  <div id="archivt" style="display:none"><input type="text" class="srch" placeholder="🔍 חיפוש בארכיון העסקאות..." style="margin:6px 0 10px;max-width:280px" oninput="filtArch(this.value,'archive-deals-content')"><div id="archive-deals-content" style="padding:4px 0"></div></div>
 </div>
 
 <!-- TENDERS -->
@@ -1582,7 +1585,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <button onclick="clearSel('tenders')" class="cb-clr">✕ נקה</button>
     </div></div>
   </div>
-  <div id="archivtent" style="display:none"><div id="archive-tenders-content" style="padding:4px 0"></div></div>
+  <div id="archivtent" style="display:none"><input type="text" class="srch" placeholder="🔍 חיפוש בארכיון המכרזים..." style="margin:6px 0 10px;max-width:280px" oninput="filtArch(this.value,'archive-tenders-content')"><div id="archive-tenders-content" style="padding:4px 0"></div></div>
 </div>
 
 <!-- DISTS -->
@@ -1634,7 +1637,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     </div></div>
   </div>
   <div id="sumdt" style="display:none"><div id="dist-goal-box"></div><div class="krow" id="dstk"></div></div>
-  <div id="archivdist" style="display:none"><div id="archive-dists-content" style="padding:4px 0"></div></div>
+  <div id="archivdist" style="display:none"><input type="text" class="srch" placeholder="🔍 חיפוש בארכיון ההפצות..." style="margin:6px 0 10px;max-width:280px" oninput="filtArch(this.value,'archive-dists-content')"><div id="archive-dists-content" style="padding:4px 0"></div></div>
 </div>
 
 <!-- SALARY -->
@@ -1685,7 +1688,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     </div></div>
   </div>
   <div id="ssum" style="display:none"><div id="sal-goal-box"></div><div class="krow" id="ssk"></div></div>
-  <div id="archivsal" style="display:none"><div id="archive-salary-content" style="padding:4px 0"></div></div>
+  <div id="archivsal" style="display:none"><input type="text" class="srch" placeholder="🔍 חיפוש בארכיון השכר..." style="margin:6px 0 10px;max-width:280px" oninput="filtArch(this.value,'archive-salary-content')"><div id="archive-salary-content" style="padding:4px 0"></div></div>
 </div>
 
 <!-- MEETINGS -->
@@ -1721,7 +1724,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <button onclick="clearSel('meetings')" class="cb-clr">✕ נקה</button>
     </div></div>
   </div>
-  <div id="archivmtg" style="display:none"><div id="archive-meetings-content" style="padding:4px 0"></div></div>
+  <div id="archivmtg" style="display:none"><input type="text" class="srch" placeholder="🔍 חיפוש בארכיון הפגישות..." style="margin:6px 0 10px;max-width:280px" oninput="filtArch(this.value,'archive-meetings-content')"><div id="archive-meetings-content" style="padding:4px 0"></div></div>
 </div>
 
 <!-- CLIENTS -->
@@ -3519,6 +3522,22 @@ function filt(ev,...ids){
   const q=ev.target.value.toLowerCase();
   ids.forEach(id=>{const tb=document.getElementById(id);if(!tb)return;tb.querySelectorAll('tr').forEach(r=>r.style.display=r.textContent.toLowerCase().includes(q)?'':'none');});
 }
+// חיפוש בארכיון: מסנן שורות ומסתיר בלוקים של חודשים שנשארו ריקים
+function filtArch(q,contId){
+  q=(q||'').trim().toLowerCase();
+  const cont=document.getElementById(contId);if(!cont)return;
+  cont.querySelectorAll('tbody tr').forEach(r=>{r.style.display=!q||r.textContent.toLowerCase().includes(q)?'':'none';});
+  cont.querySelectorAll('.tw').forEach(b=>{
+    const vis=!q||Array.from(b.querySelectorAll('tbody tr')).some(r=>r.style.display!=='none');
+    b.style.display=vis?'':'none';
+  });
+}
+// חיפוש בכרטיסים (התראות): מסנן לפי הטקסט המלא של כל כרטיס
+function filtCards(q,contId){
+  q=(q||'').trim().toLowerCase();
+  const cont=document.getElementById(contId);if(!cont)return;
+  Array.from(cont.children).forEach(c=>{c.style.display=!q||c.textContent.toLowerCase().includes(q)?'':'none';});
+}
 
 // ===== RENDER ALL =====
 function rAll(){
@@ -3563,17 +3582,48 @@ function globalSearch(q){
   _gsRes=[];
   if(!q){box.classList.remove('show');box.innerHTML='';return;}
   const hit=(...v)=>v.some(x=>String(x==null?'':x).toLowerCase().includes(q));
-  const push=(icon,label,sub,type,id)=>{ if(_gsRes.length<25)_gsRes.push({icon,label,sub,type,id}); };
+  const push=(icon,label,sub,type,id,arch)=>{ if(_gsRes.length<25)_gsRes.push({icon,label,sub,type,id,arch}); };
   D.deals.forEach(d=>{ if(hit(d.co,d.srv,d.ct,d.num,d.no)) push('💼',d.co||'(ללא שם)','עסקה'+(d.srv?' · '+d.srv:''),'deal',d.id); });
   D.clients.forEach(c=>{ if(hit(c.name,c.contact,c.email,c.phone,c.cp)) push('🏢',c.name||'(ללא שם)','לקוח'+(c.contact?' · '+c.contact:''),'client',c.id); });
   D.dists.forEach(d=>{ if(hit(d.co,d.cl,d.no,d.so,d.hd)) push('🚀',d.co||'(ללא שם)','הפצה'+(d.no?' · #'+d.no:''),'dist',d.id); });
   D.salary.forEach(s=>{ if(hit(s.cl,s.pj,s.no)) push('💰',s.cl||'(ללא שם)','שכר'+(s.pj?' · '+s.pj:''),'salary',s.id); });
   D.tenders.forEach(t=>{ if(hit(t.name,t.proj,t.handler)) push('📋',t.name||'(ללא שם)','מכרז','tender',t.id); });
   D.meetings.forEach(m=>{ if(hit(m.cl,m.no)) push('🤝',m.cl||'(ללא שם)','פגישה','meeting',m.id); });
+  // ארכיון — כדי שאיתור מדויק יעבוד גם על רשומות מחודשים קודמים
+  (D.archivedDeals||[]).forEach(d=>{ if(hit(d.co,d.srv,d.ct,d.num,d.no)) push('📦',d.co||'(ללא שם)','עסקה בארכיון','deal',d.id,true); });
+  (D.archivedTenders||[]).forEach(t=>{ if(hit(t.name,t.proj,t.handler)) push('📦',t.name||'(ללא שם)','מכרז בארכיון','tender',t.id,true); });
+  (D.archivedDists||[]).forEach(d=>{ if(hit(d.co,d.cl,d.no,d.so,d.hd)) push('📦',d.co||'(ללא שם)','הפצה בארכיון','dist',d.id,true); });
+  (D.archivedSalary||[]).forEach(s=>{ if(hit(s.cl,s.pj,s.no)) push('📦',s.cl||'(ללא שם)','שכר בארכיון','salary',s.id,true); });
+  (D.archivedMeetings||[]).forEach(m=>{ if(hit(m.cl,m.no)) push('📦',m.cl||'(ללא שם)','פגישה בארכיון','meeting',m.id,true); });
   if(!_gsRes.length){ box.innerHTML='<div class="gsr-empty">לא נמצאו תוצאות</div>'; box.classList.add('show'); return; }
   const gsClr={deal:'#4cc9f0',client:'#c8a96e',dist:'#a78bfa',salary:'#06d6a0',tender:'#f4a261',meeting:'#06d6a0'};
   box.innerHTML=_gsRes.map((r,i)=>{const c=gsClr[r.type]||'var(--gold)';return`<div class="gsr" onclick="gsGo(${i})" style="border-right:2px solid ${c}22"><span class="gsr-ic" style="background:${c}15;border-radius:6px;padding:2px 4px">${r.icon}</span><span class="gsr-lb">${r.label}</span><span class="gsr-sub" style="color:${c}">${r.sub}</span></div>`;}).join('');
   box.classList.add('show');
+}
+// מפת הלשוניות של כל סעיף — לניווט מדויק מהחיפוש הגלובלי אל השורה עצמה
+const SEC_TABS={
+  deals:{tabs:'deals-tabs',contents:['lt','st','sumt','archivt'],skip:[2]},
+  tenders:{tabs:'tenders-tabs',contents:['tent','archivtent'],skip:[]},
+  dists:{tabs:'dists-tabs',contents:['ldt','sdt','sumdt','archivdist'],skip:[2]},
+  salary:{tabs:'salary-tabs',contents:['ssvc','seq','ssum','archivsal'],skip:[2]},
+  meetings:{tabs:'meetings-tabs',contents:['mtent','archivmtg'],skip:[]}
+};
+function _gsFindRow(root,id,label){
+  if(!root)return null;
+  const rows=root.querySelectorAll('tbody tr');
+  // עדיפות לזיהוי לפי מזהה הרשומה (מוטמע בכפתורי הפעולות של השורה)
+  if(id){for(const r of rows){ if(r.innerHTML.includes("'"+id+"'"))return r; }}
+  // שורות ארכיון ללא מזהה — איתור לפי הטקסט
+  if(label){const l=String(label).toLowerCase();for(const r of rows){ if(r.textContent.toLowerCase().includes(l))return r; }}
+  return null;
+}
+function _gsFlash(row){
+  let p=row.parentElement;
+  while(p){ if(p.tagName==='DETAILS')p.open=true; p=p.parentElement; }
+  row.scrollIntoView({behavior:'smooth',block:'center'});
+  row.classList.remove('row-flash');void row.offsetWidth;
+  row.classList.add('row-flash');
+  setTimeout(()=>row.classList.remove('row-flash'),3200);
 }
 function gsGo(i){
   const r=_gsRes[i]; if(!r)return;
@@ -3581,8 +3631,47 @@ function gsGo(i){
   const si=document.getElementById('gsi'); if(si)si.value='';
   if(r.type==='client'){ if(typeof openClientModal==='function')openClientModal(r.id); return; }
   const secMap={deal:'deals',dist:'dists',salary:'salary',tender:'tenders',meeting:'meetings'};
-  nav(secMap[r.type]);
-  setTimeout(()=>openM(r.type,r.id),340);
+  const sec=secMap[r.type]; if(!sec)return;
+  nav(sec);
+  setTimeout(()=>{
+    const cfg=SEC_TABS[sec];
+    const tabs=cfg?document.querySelectorAll('#'+cfg.tabs+' .tab'):[];
+    const locateActive=()=>{
+      let row=null,idx=-1;
+      cfg.contents.forEach((cid,ci)=>{
+        if(row||cfg.skip.includes(ci))return;
+        const f=_gsFindRow(document.getElementById(cid),r.id,r.label);
+        if(f){row=f;idx=ci;}
+      });
+      return{row,idx};
+    };
+    const openArchive=()=>{
+      if(!tabs.length)return null;
+      tabs[tabs.length-1].click(); // מפעיל את לשונית הארכיון ומרנדר אותה
+      return _gsFindRow(document.getElementById(cfg.contents[cfg.contents.length-1]),r.id,r.label);
+    };
+    if(r.arch){
+      const row=openArchive();
+      if(row)_gsFlash(row);
+      else showToast('הרשומה בארכיון — פתח את לשונית 📦 ארכיון וחפש שם','info');
+      return;
+    }
+    const found=locateActive();
+    if(found.row){
+      if(tabs[found.idx])tabs[found.idx].click();
+      // ההקלקה על הלשונית מרנדרת מחדש — מאתרים שוב את השורה אחרי הרינדור
+      setTimeout(()=>{
+        const row2=_gsFindRow(document.getElementById(cfg.contents[found.idx]),r.id,r.label)||found.row;
+        _gsFlash(row2);
+      },80);
+      return;
+    }
+    // לא נמצא בטבלאות הפעילות — ייתכן שבארכיון
+    const archRow=openArchive();
+    if(archRow){_gsFlash(archRow);return;}
+    // נפילה אחורה: פתיחת חלון העריכה של הרשומה
+    openM(r.type,r.id);
+  },380);
 }
 // close the search dropdown when clicking/tapping elsewhere
 function _closeGsIfOutside(e){
