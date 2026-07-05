@@ -1419,6 +1419,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
         <div style="border-top:1px solid rgba(255,255,255,.06);margin:4px 0"></div>
         <div style="font-size:10px;font-weight:800;color:rgba(200,169,110,.55);padding:5px 10px 3px;text-transform:uppercase;letter-spacing:.8px">גיבוי</div>
         <button onclick="backupData();toggleBkMenu()" class="bk-item">💾 הורד גיבוי JSON</button>
+        <button onclick="backupDataTxt();toggleBkMenu()" class="bk-item">📄 הורד גיבוי כקובץ טקסט</button>
+        <button onclick="clipboardBackup();toggleBkMenu()" class="bk-item" style="color:#f4a261">📋 העתק גיבוי ללוח</button>
         <div style="border-top:1px solid rgba(255,255,255,.06);margin:4px 0"></div>
         <button onclick="openSendToMobile();toggleBkMenu()" class="bk-item" style="color:#a78bfa">📱 שלח למובייל</button>
       </div>
@@ -7533,6 +7535,22 @@ async function backupData(){
     }catch(e2){ toast('⚠️ שגיאה בגיבוי: '+e2.message,'warn'); }
   }
 }
+// גיבוי כקובץ טקסט רגיל — מחשבי עבודה עם מדיניות ארגונית חוסמים לרוב הורדת
+// קבצי JSON אבל מאפשרים קובצי טקסט; התוכן זהה והשחזור מקבל גם .txt
+function backupDataTxt(){
+  try{
+    const json=JSON.stringify(D,null,2);
+    const fname='crm_backup_'+nd()+'.txt';
+    const blob=new Blob([json],{type:'text/plain;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=fname;a.style.display='none';
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1500);
+    localStorage.setItem('cem_last_dl',nd());
+    toast('📄 הגיבוי הורד כקובץ טקסט: '+fname,'ok');
+  }catch(e){toast('⚠️ שגיאה בגיבוי: '+e.message,'warn');}
+}
 // Clipboard export — works on every platform including PWA without any dialog
 async function clipboardBackup(){
   const json=JSON.stringify(D,null,2);
@@ -7554,7 +7572,7 @@ function restoreData(){
   let inp=document.getElementById('_restore_file_inp');
   if(!inp){
     inp=document.createElement('input');
-    inp.type='file';inp.accept='.json';inp.id='_restore_file_inp';
+    inp.type='file';inp.accept='.json,.txt';inp.id='_restore_file_inp';
     inp.style.cssText='position:fixed;opacity:0;pointer-events:none;top:0;left:0;width:1px;height:1px;';
     document.body.appendChild(inp);
   }
