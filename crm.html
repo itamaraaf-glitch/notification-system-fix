@@ -5691,7 +5691,7 @@ function _paProjects(name,role){
   if(name==='כולם') return D.dists.filter(d=>d.hp);
   return D.dists.filter(d=>d.hp===name||d.hp==='כולם');
 }
-function _paEmailBody(name,list){
+function _paEmailBody(name,list,dt,time){
   const open=list.filter(d=>d.st!=='הושלם');
   const done=list.filter(d=>d.st==='הושלם');
   const row=(d,i)=>`${i+1}. פרויקט ${d.no||'ללא מספר'} – ${d.co||d.cl||'ללא שם לקוח'}${d.st?` | סטטוס: ${d.st}`:''}${d.mi?` | חוסרים: ${d.mi}`:''}`;
@@ -5702,6 +5702,9 @@ function _paEmailBody(name,list){
     `אשמח לתאם עמך פגישת עבודה קצרה לסנכרון מלא של הפרויקטים המשותפים שלנו.`,
     ``,
   ];
+  if(dt){
+    lines.push(`מועד מוצע: ${fmtDate(dt)}${time?` בשעה ${time}`:''} — אם אינו מתאים, אשמח להצעה חלופית.`,``);
+  }
   if(open.length){
     lines.push(`להלן הפרויקטים הפעילים שאבקש שנעבור עליהם יחד:`,``,...open.map(row));
   }
@@ -5723,16 +5726,108 @@ function _paEmailBody(name,list){
   );
   return lines.join('\n');
 }
-function _paSend(name,role){
+function _paEmails(name,role){
+  return role==='mgr'?[((MANAGERS.find(m=>m.name===name)||{}).email||'')].filter(Boolean):handlerEmails(name);
+}
+function _paSend(name,role,dt,time){
   const list=_paProjects(name,role);
   if(!list.length){showToast('⚠️ אין פרויקטים בהפצות עבור '+name,'warn');return;}
-  const to=role==='mgr'?((MANAGERS.find(m=>m.name===name)||{}).email||''):handlerEmails(name);
-  const body=_paEmailBody(name,list);
+  const to=_paEmails(name,role);
+  const body=_paEmailBody(name,list,dt,time);
   const subject=`HOT Business – תיאום פגישת עבודה – סנכרון ${list.length} פרויקטים`;
   // גיבוי ללוח: גוף ארוך עלול להיחתך במגבלת mailto — כך תמיד אפשר להדביק ידנית
   try{if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText('נושא: '+subject+'\n\n'+body);}catch(e){}
   openMail(to,subject,body);
   showToast('📧 נפתחה טיוטת פ.ע עם '+list.length+' פרויקטים (הטקסט גם הועתק ללוח)','ok');
+}
+// ── קביעת פ.ע ביומן: בדיוק כמו פגישה עם לקוח, רק מול הגורם המטפל ──
+function _paCompact(list){
+  return list.map(d=>`${d.no||'ללא מס׳'} – ${d.co||d.cl||''}`).join('; ');
+}
+let _paDlgMeetingId=null;
+// הפגישה נרשמת בסעיף הפגישות פעם אחת גם אם לוחצים על כמה אפשרויות יומן
+function _paEnsureMeeting(name,role,dt,time,list){
+  if(_paDlgMeetingId){const ex=D.meetings.find(m=>m.id===_paDlgMeetingId);if(ex){ex.dt=dt;ex.time=time;saveAll();return ex;}}
+  const m=dbInsert('meetings',{dt:dt,time:time,mtype:'פגישה',cl:name,nu:'',hl:'לא',
+    no:'פ.ע – סנכרון '+list.length+' פרויקטים ('+(role==='mgr'?'מנהל פרויקט':'גורם מטפל')+'): '+_paCompact(list)});
+  _paDlgMeetingId=m.id;
+  rMeetings();
+  return m;
+}
+function _paGcal(name,role,dt,time){
+  const list=_paProjects(name,role);
+  if(!dt){showToast('⚠️ בחר תאריך לפגישה','warn');return;}
+  _paEnsureMeeting(name,role,dt,time,list);
+  const title='פ.ע – סנכרון פרויקטים – '+name+' – HOT Business';
+  const d=dt.replace(/-/g,'');
+  let dates;
+  if(time){const ts=time.replace(':','')+'00';const te=_icsDateEnd(dt,time,60).split('T')[1];dates=d+'T'+ts+'/'+d+'T'+te;}
+  else dates=d+'/'+d;
+  const details=_paEmailBody(name,list,dt,time);
+  const guests=_paEmails(name,role).join(',');
+  const url='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)
+    +'&dates='+encodeURIComponent(dates)+'&details='+encodeURIComponent(details)
+    +(guests?'&add='+encodeURIComponent(guests):'');
+  window.open(url,'_blank','noopener,noreferrer');
+  showToast('🔵 נפתח Google Calendar – הגורם המטפל צורף כמוזמן, והפגישה נרשמה בסעיף הפגישות','ok');
+}
+function _paIcs(name,role,dt,time){
+  const list=_paProjects(name,role);
+  if(!dt){showToast('⚠️ בחר תאריך לפגישה','warn');return;}
+  const m=_paEnsureMeeting(name,role,dt,time,list);
+  const uid='hot-crm-pa-'+m.id+'@hot-business';
+  const hasTime=!!time;
+  const dtstart=hasTime?dt.replace(/-/g,'')+'T'+time.replace(':','')+'00':dt.replace(/-/g,'');
+  let dtend=dtstart;
+  if(hasTime)dtend=_icsDateEnd(dt,time,60);
+  else{const nx=new Date(dt);nx.setDate(nx.getDate()+1);dtend=nx.toISOString().split('T')[0].replace(/-/g,'');}
+  const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
+  const attendees=_paEmails(name,role).map(e=>'ATTENDEE;CN='+_icsEsc(name)+';RSVP=TRUE:mailto:'+e);
+  const ev=[
+    'BEGIN:VEVENT','UID:'+uid,'DTSTAMP:'+stamp,
+    hasTime?'DTSTART:'+dtstart:'DTSTART;VALUE=DATE:'+dtstart,
+    hasTime?'DTEND:'+dtend:'DTEND;VALUE=DATE:'+dtend,
+    'SUMMARY:'+_icsEsc('פ.ע – סנכרון פרויקטים – '+name+' – HOT Business'),
+    'DESCRIPTION:'+_icsEsc(_paEmailBody(name,list,dt,time)),
+    ...attendees,
+    'STATUS:CONFIRMED','TRANSP:BUSY','END:VEVENT'
+  ].join('\r\n');
+  _downloadICS(_buildICS([ev]),'פע_'+name.replace(/[\s/\\:*?"<>|]/g,'_')+'_'+dt.replace(/-/g,'')+'.ics');
+  showToast('📆 קובץ יומן הורד עם הגורם כמוזמן – פתח אותו ב-Outlook/Apple, והפגישה נרשמה בסעיף הפגישות','ok');
+}
+function _paDialog(name,role){
+  const list=_paProjects(name,role);
+  if(!list.length){showToast('⚠️ אין פרויקטים בהפצות עבור '+name,'warn');return;}
+  const prev=document.getElementById('pa-sched-dlg');if(prev)prev.remove();
+  _paDlgMeetingId=null;
+  // ברירת מחדל: מחר בשעה 10:00
+  const tm=new Date();tm.setDate(tm.getDate()+1);
+  const defDt=tm.toISOString().split('T')[0];
+  const dlg=document.createElement('div');
+  dlg.id='pa-sched-dlg';
+  dlg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--s2,#101525);border:1px solid var(--border);border-radius:14px;padding:18px;z-index:99999;min-width:300px;max-width:92vw;box-shadow:0 16px 64px rgba(0,0,0,.75);direction:rtl';
+  dlg.innerHTML=`
+    <div style="font-size:14px;font-weight:800;margin-bottom:2px">🤝 תיאום פ.ע – ${name}</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:12px">${list.length} פרויקטים לסנכרון (${role==='mgr'?'מנהל פרויקט':'גורם מטפל'})</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div style="flex:1"><label style="font-size:10px;color:var(--text2);display:block;margin-bottom:3px">תאריך</label>
+        <input type="date" id="pa-dlg-dt" value="${defDt}" style="width:100%;box-sizing:border-box;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-family:inherit;font-size:12px"></div>
+      <div style="width:110px"><label style="font-size:10px;color:var(--text2);display:block;margin-bottom:3px">שעה</label>
+        <input type="time" id="pa-dlg-time" value="10:00" style="width:100%;box-sizing:border-box;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-family:inherit;font-size:12px"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <button id="pa-dlg-gcal" class="btn" style="border-color:#4cc9f0;color:#4cc9f0;justify-content:center">🔵 קבע ב-Google Calendar (מזמין את הגורם)</button>
+      <button id="pa-dlg-ics" class="btn" style="border-color:#06d6a0;color:#06d6a0;justify-content:center">📅 קובץ יומן ICS – Outlook / Apple</button>
+      <button id="pa-dlg-mail" class="btn" style="border-color:#a78bfa;color:#a78bfa;justify-content:center">📧 מייל תיאום עם המועד המוצע</button>
+      <button id="pa-dlg-close" class="btn" style="justify-content:center;opacity:.7">סגור</button>
+    </div>`;
+  document.body.appendChild(dlg);
+  const val=()=>({dt:document.getElementById('pa-dlg-dt').value,time:document.getElementById('pa-dlg-time').value});
+  document.getElementById('pa-dlg-gcal').onclick=()=>{const v=val();_paGcal(name,role,v.dt,v.time);};
+  document.getElementById('pa-dlg-ics').onclick=()=>{const v=val();_paIcs(name,role,v.dt,v.time);};
+  document.getElementById('pa-dlg-mail').onclick=()=>{const v=val();_paSend(name,role,v.dt,v.time);};
+  document.getElementById('pa-dlg-close').onclick=()=>dlg.remove();
+  initDateHints(dlg);
 }
 function showPaMenu(ev){
   if(ev)ev.stopPropagation();
@@ -5750,7 +5845,7 @@ function showPaMenu(ev){
     if(!n)b.style.opacity='.45';
     b.onmouseover=()=>b.style.background='rgba(255,255,255,.07)';
     b.onmouseout=()=>b.style.background='transparent';
-    b.onclick=()=>{pop.remove();_paSend(name,role);};
+    b.onclick=()=>{pop.remove();_paDialog(name,role);};
     return b;
   };
   pop.appendChild(mkHdr('🤝 תיאום פ.ע — מנהלי פרויקט'));
