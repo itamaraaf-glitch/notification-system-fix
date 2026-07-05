@@ -5536,7 +5536,7 @@ function goalBarHtml(label,curVal,goal,qData,clr,section){
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <span style="font-size:12px;font-weight:800;color:${accent}">${label}</span>
       <div style="display:flex;align-items:center;gap:5px">
-        <span style="font-size:9px;color:var(--text3)">יעד ₪</span>
+        <span style="font-size:10px;color:var(--text3)">יעד ₪</span>
         <input type="number" value="${goal}" min="1000" step="1000"
           style="width:82px;font-size:11px;font-weight:700;background:rgba(255,255,255,.07);border:1px solid ${accent}55;border-radius:7px;padding:3px 7px;color:var(--text);font-family:inherit;text-align:center;outline:none"
           onchange="setGoal('${section}',this.value)" onblur="setGoal('${section}',this.value)">
@@ -5551,13 +5551,13 @@ function goalBarHtml(label,curVal,goal,qData,clr,section){
       <span style="color:var(--text2)">${status}</span>
       <b style="color:${barColor}">${pct}%</b>
     </div>
-    <div style="font-size:9px;font-weight:700;color:var(--text3);margin-top:12px;margin-bottom:2px;letter-spacing:.3px">גרף 4 רבעונים — יעד: ${fmt(goal)} | מינימום: ${fmt(half)}</div>
+    <div style="font-size:10px;font-weight:700;color:var(--text3);margin-top:12px;margin-bottom:2px;letter-spacing:.3px">גרף 4 רבעונים — יעד: ${fmt(goal)} | מינימום: ${fmt(half)}</div>
     <div style="position:relative">
       <div style="position:absolute;top:${Math.max(0,60-tlH)}px;left:0;right:0;border-top:1.5px dashed rgba(255,255,255,.3);z-index:1;pointer-events:none"></div>
       <div style="position:absolute;top:${Math.max(0,60-hlH)}px;left:0;right:0;border-top:1.5px dashed rgba(244,162,97,.55);z-index:1;pointer-events:none"></div>
       <div class="mbchart">${bars}</div>
     </div>
-    <div style="display:flex;gap:10px;margin-top:4px;font-size:9px;color:var(--text3);flex-wrap:wrap">
+    <div style="display:flex;gap:10px;margin-top:4px;font-size:10px;color:var(--text3);flex-wrap:wrap">
       <span>── יעד מלא</span><span style="color:#f4a261">── 50% מינימום</span>
       <span style="color:var(--teal)">■ הושג</span><span style="color:#f4a261">■ מינימום</span><span style="color:#e63946">■ חסר</span>
     </div>
@@ -6072,7 +6072,7 @@ function attachRender(kind){
     return `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-top:4px">
     <span>${_fileIcon(f.name)}</span>
     <span style="font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(f.name||'').replace(/"/g,'&quot;')}">${f.name}</span>
-    <span style="font-size:9px;color:var(--text3)">${Math.round((f.size||0)/1024)}KB</span>
+    <span style="font-size:10px;color:var(--text3)">${Math.round((f.size||0)/1024)}KB</span>
     ${canRead?`<button type="button" class="btn btns" onclick="smartReadFile('${kind}',${i})" title="חלץ נתונים מהקובץ" style="font-size:9px;border-color:#a78bfa;color:#a78bfa">📖</button>`:''}
     <button type="button" class="btn btns" onclick="attachDl('${kind}',${i})" style="font-size:9px;border-color:#4cc9f0;color:#4cc9f0">⬇</button>
     <button type="button" class="btn btns btnd" onclick="attachRm('${kind}',${i})" style="font-size:9px">🗑</button>
@@ -6337,11 +6337,11 @@ function applySmartFill(kind,mode){
 
 // בלוק צירוף קבצים אחיד לטפסים
 function attachBlockHtml(kind){
-  return `<div class="gf"><label>📎 קבצים מצורפים <span style="font-size:9px;color:#a78bfa;font-weight:600">(Word / PDF / Excel → 📖 חילוץ אוטומטי)</span></label>
+  return `<div class="gf"><label>📎 קבצים מצורפים <span style="font-size:10px;color:#a78bfa;font-weight:600">(Word / PDF / Excel → 📖 חילוץ אוטומטי)</span></label>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <input type="file" id="att-inp-${kind}" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('${kind}',event)">
       <button type="button" class="btn btns" onclick="document.getElementById('att-inp-${kind}').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
-      <span style="font-size:9px;color:var(--text3)">עד 2MB · לחץ 📖 לחילוץ נתונים</span>
+      <span style="font-size:10px;color:var(--text3)">עד 2MB · לחץ 📖 לחילוץ נתונים</span>
     </div>
     <div id="att-list-${kind}"></div>
   </div>`;
