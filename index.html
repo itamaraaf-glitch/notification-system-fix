@@ -1412,12 +1412,12 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div style="position:relative" id="bk-dd-wrap" class="mob-hide">
       <button onclick="toggleBkMenu()" title="גיבוי ושחזור" style="background:rgba(6,214,160,.1);color:#06d6a0;border:1px solid rgba(6,214,160,.35);font-size:11px;padding:4px 12px;border-radius:20px;cursor:pointer;font-family:'Heebo',sans-serif;display:flex;align-items:center;gap:4px">🛡️ גיבוי <span style="font-size:9px;opacity:.7">▾</span></button>
       <div id="bk-dd" style="display:none;position:absolute;top:38px;left:0;background:linear-gradient(145deg,#0b0e1c,#090c16);border:1px solid rgba(200,169,110,.28);border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,.72),0 0 0 1px rgba(255,255,255,.03);z-index:2000;min-width:220px;padding:5px">
-        <div style="font-size:9px;font-weight:800;color:rgba(200,169,110,.5);padding:5px 10px 3px;text-transform:uppercase;letter-spacing:.8px">שחזור</div>
+        <div style="font-size:10px;font-weight:800;color:rgba(200,169,110,.55);padding:5px 10px 3px;text-transform:uppercase;letter-spacing:.8px">שחזור</div>
         <button onclick="openAutoBackups();toggleBkMenu()" class="bk-item" style="color:#06d6a0">🛡️ גיבויים אוטומטיים</button>
         <button onclick="restoreGoldBackup();toggleBkMenu()" class="bk-item" style="color:#fbbf24">⭐ גיבוי זהב</button>
         <button onclick="restoreData();toggleBkMenu()" class="bk-item">📂 שחזור מקובץ JSON</button>
         <div style="border-top:1px solid rgba(255,255,255,.06);margin:4px 0"></div>
-        <div style="font-size:9px;font-weight:800;color:rgba(200,169,110,.5);padding:5px 10px 3px;text-transform:uppercase;letter-spacing:.8px">גיבוי</div>
+        <div style="font-size:10px;font-weight:800;color:rgba(200,169,110,.55);padding:5px 10px 3px;text-transform:uppercase;letter-spacing:.8px">גיבוי</div>
         <button onclick="backupData();toggleBkMenu()" class="bk-item">💾 הורד גיבוי JSON</button>
         <div style="border-top:1px solid rgba(255,255,255,.06);margin:4px 0"></div>
         <button onclick="openSendToMobile();toggleBkMenu()" class="bk-item" style="color:#a78bfa">📱 שלח למובייל</button>
@@ -1787,7 +1787,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   </div>
   <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px">
     <div style="flex:1;min-width:180px">
-      <label style="font-size:10px;font-weight:800;color:var(--text3);display:block;margin-bottom:6px">נושא מטרה</label>
+      <label style="font-size:11px;font-weight:800;color:var(--text3);display:block;margin-bottom:6px">נושא מטרה</label>
       <select id="si-kind" style="width:100%">
         <option value="meeting">🤝 פגישה</option>
         <option value="deal">💼 עסקה</option>
@@ -1798,16 +1798,16 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       </select>
     </div>
     <div style="flex:2;min-width:200px">
-      <label style="font-size:10px;font-weight:800;color:var(--text3);display:block;margin-bottom:6px">קובץ לייבוא</label>
+      <label style="font-size:11px;font-weight:800;color:var(--text3);display:block;margin-bottom:6px">קובץ לייבוא</label>
       <input type="file" id="si-file-inp" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" style="display:none" onchange="smartImportFileChosen(event)">
       <button class="btn" style="border-color:#a78bfa;color:#a78bfa;width:100%" onclick="document.getElementById('si-file-inp').click()">📎 בחר קובץ</button>
-      <div id="si-file-name" style="font-size:10px;color:var(--text3);margin-top:4px;text-align:center">לא נבחר קובץ</div>
+      <div id="si-file-name" style="font-size:11px;color:var(--text3);margin-top:4px;text-align:center">לא נבחר קובץ</div>
     </div>
   </div>
   <div id="si-extract-area" style="display:none">
-    <div style="font-size:10px;font-weight:800;color:#a78bfa;margin-bottom:8px;border-bottom:1px solid rgba(167,139,250,.2);padding-bottom:6px">📊 נתונים שחולצו</div>
+    <div style="font-size:11px;font-weight:800;color:#a78bfa;margin-bottom:8px;border-bottom:1px solid rgba(167,139,250,.2);padding-bottom:6px">📊 נתונים שחולצו</div>
     <div id="si-fields-preview" style="font-size:12px;line-height:1.8;padding:8px 0"></div>
-    <div style="font-size:10px;color:var(--text3);margin:8px 0 4px;max-height:80px;overflow-y:auto" id="si-text-preview"></div>
+    <div style="font-size:11px;color:var(--text3);margin:8px 0 4px;max-height:80px;overflow-y:auto" id="si-text-preview"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">
       <button class="btn" onclick="closeM('msmart-import')">ביטול</button>
       <button class="btn" style="border-color:#a78bfa;color:#a78bfa" onclick="smartImportApply('notes')">📝 שלב בהערות בלבד</button>
@@ -1869,7 +1869,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div style="margin-bottom:12px">
       <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px">כתובת Firebase Database URL:</label>
       <input type="url" id="fb-simple-url" placeholder="https://my-project-default-rtdb.firebaseio.com" style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-size:12px;direction:ltr;font-family:monospace">
-      <div style="font-size:10px;color:var(--text3);margin-top:4px">אפשר למצוא אותה בקונסול Firebase: Realtime Database → כתובת בראש הדף</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">אפשר למצוא אותה בקונסול Firebase: Realtime Database → כתובת בראש הדף</div>
     </div>
     <div style="margin-bottom:14px">
       <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px">קוד סנכרון <span style="font-weight:400;color:var(--text3)">(השתמש באותו קוד בכל המכשירים)</span>:</label>
@@ -1975,7 +1975,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <input type="file" id="att-inp-deal" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('deal',event)">
         <button type="button" class="btn btns" onclick="document.getElementById('att-inp-deal').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
-        <span style="font-size:9px;color:var(--text3)">עד 2MB לקובץ</span>
+        <span style="font-size:10px;color:var(--text3)">עד 2MB לקובץ</span>
       </div>
       <div id="att-list-deal"></div>
     </div>
@@ -2013,7 +2013,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <input type="file" id="att-inp-tender" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('tender',event)">
         <button type="button" class="btn btns" onclick="document.getElementById('att-inp-tender').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
-        <span style="font-size:9px;color:var(--text3)">עד 2MB לקובץ</span>
+        <span style="font-size:10px;color:var(--text3)">עד 2MB לקובץ</span>
       </div>
       <div id="att-list-tender"></div>
     </div>
@@ -2051,7 +2051,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <input type="file" id="att-inp-dist" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('dist',event)">
         <button type="button" class="btn btns" onclick="document.getElementById('att-inp-dist').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
-        <span style="font-size:9px;color:var(--text3)">עד 2MB לקובץ</span>
+        <span style="font-size:10px;color:var(--text3)">עד 2MB לקובץ</span>
       </div>
       <div id="att-list-dist"></div>
     </div>
@@ -2081,7 +2081,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <input type="file" id="att-inp-salary" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('salary',event)">
         <button type="button" class="btn btns" onclick="document.getElementById('att-inp-salary').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
-        <span style="font-size:9px;color:var(--text3)">עד 2MB לקובץ</span>
+        <span style="font-size:10px;color:var(--text3)">עד 2MB לקובץ</span>
       </div>
       <div id="att-list-salary"></div>
     </div>
@@ -2108,7 +2108,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <input type="file" id="att-inp-meeting" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('meeting',event)">
         <button type="button" class="btn btns" onclick="document.getElementById('att-inp-meeting').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
-        <span style="font-size:9px;color:var(--text3)">עד 2MB לקובץ</span>
+        <span style="font-size:10px;color:var(--text3)">עד 2MB לקובץ</span>
       </div>
       <div id="att-list-meeting"></div>
     </div>
@@ -2147,11 +2147,11 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <button id="sum-mode-internal" onclick="setSummaryMode('internal')" style="flex:1;padding:8px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;background:transparent;color:var(--text2);transition:.2s">🏢 סיכום פנימי</button>
   </div>
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
-    <label style="font-size:10px;font-weight:800;color:var(--text3)">🔢 מספר פרויקט</label>
+    <label style="font-size:11px;font-weight:800;color:var(--text3)">🔢 מספר פרויקט</label>
     <input type="text" id="sum-proj" placeholder="לא חובה" style="width:120px">
     <button class="btn btns" onclick="regenSummary()" style="border-color:#a78bfa;color:#a78bfa" title="בנה מחדש את הסיכום מנתוני המערכת">🔄 צור מחדש</button>
     <button class="btn btns" id="sum-read-file-btn" onclick="enrichSummaryFromFile()" style="border-color:#06d6a0;color:#06d6a0;display:none" title="קרא תוכן מקובץ מצורף לפגישה ושלב בסיכום">📖 קרא מהקובץ</button>
-    <span style="font-size:9px;color:var(--text3)">סיכום ללקוח = בלי מידע פנימי · נבנה לפי הנושאים שנבחרו בפגישה · ניתן לערוך</span>
+    <span style="font-size:10px;color:var(--text3)">סיכום ללקוח = בלי מידע פנימי · נבנה לפי הנושאים שנבחרו בפגישה · ניתן לערוך</span>
   </div>
   <textarea id="sum-text" rows="18" style="width:100%;font-size:12px;line-height:1.7;direction:rtl"></textarea>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">
@@ -2195,7 +2195,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <input type="file" id="att-inp-client" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('client',event)">
         <button type="button" class="btn btns" onclick="document.getElementById('att-inp-client').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
-        <span style="font-size:9px;color:var(--text3)">עד 2MB לקובץ</span>
+        <span style="font-size:10px;color:var(--text3)">עד 2MB לקובץ</span>
       </div>
       <div id="att-list-client"></div>
     </div>
@@ -4040,17 +4040,17 @@ function renderTenderFlow(t){
     const conn=`<div class="tflow-conn" style="flex:1;height:3px;min-width:10px;border-radius:2px;background:${submitted?'#06d6a0':'rgba(255,255,255,.1)'}"></div>`;
     if(!submitted)return conn+`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px" title="תוצאת המכרז תיפתח לאחר ההגשה">
       <div style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.18)">🏁</div>
-      <span style="font-size:9px;font-weight:700;color:var(--text3);white-space:nowrap">תוצאה</span><span style="font-size:8px"></span></div>`;
+      <span style="font-size:10px;font-weight:700;color:var(--text3);white-space:nowrap">תוצאה</span><span style="font-size:8px"></span></div>`;
     if(!t.result)return conn+`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:96px">
       <div style="display:flex;gap:4px">
         <button onclick="setTenderResult('${t.id}','זכייה')" title="סמן זכייה במכרז" style="width:34px;height:34px;border-radius:50%;font-size:15px;cursor:pointer;background:rgba(6,214,160,.12);border:2px solid #06d6a0;box-shadow:0 0 10px rgba(6,214,160,.35)">🏆</button>
         <button onclick="setTenderResult('${t.id}','אי-זכייה')" title="סמן אי-זכייה" style="width:34px;height:34px;border-radius:50%;font-size:15px;cursor:pointer;background:rgba(230,57,70,.1);border:2px solid #e63946">❌</button>
       </div>
-      <span style="font-size:9px;font-weight:700;color:#a78bfa;white-space:nowrap">מה התוצאה?</span><span style="font-size:8px;color:var(--text3)">ממתין לתוצאה</span></div>`;
+      <span style="font-size:10px;font-weight:700;color:#a78bfa;white-space:nowrap">מה התוצאה?</span><span style="font-size:8px;color:var(--text3)">ממתין לתוצאה</span></div>`;
     const won=t.result==='זכייה',rc=won?'#06d6a0':'#e63946';
     return conn+`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:80px;cursor:pointer" onclick="setTenderResult('${t.id}',null)" title="${t.result} — נרשם ב-${fmtDate(t.resultDate)} · לחץ לאיפוס">
       <div style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:${rc}1f;border:2px solid ${rc};box-shadow:0 0 10px ${rc}55">${won?'🏆':'❌'}</div>
-      <span style="font-size:9px;font-weight:800;color:${rc};white-space:nowrap">${t.result}</span>
+      <span style="font-size:10px;font-weight:800;color:${rc};white-space:nowrap">${t.result}</span>
       <span style="font-size:8px;color:var(--text3)">${fmtDate(t.resultDate)}</span></div>`;
   })();
   const steps=TENDER_STAGES.map((st,i)=>{
@@ -4060,7 +4060,7 @@ function renderTenderFlow(t){
     const conn=i<TENDER_STAGES.length-1?`<div class="tflow-conn" style="flex:1;height:3px;min-width:10px;border-radius:2px;background:${isDone?'#06d6a0':'rgba(255,255,255,.1)'}"></div>`:'';
     return`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:64px;cursor:pointer" onclick="toggleTenderStage('${t.id}','${st.k}')" title="${isDone?'הושלם ב-'+fmtDate(stages[st.k])+' — לחץ לביטול':isNext?'לחץ לסימון כהושלם':'השלם קודם את התחנות הקודמות'}">
       <div style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;background:${isDone?'rgba(6,214,160,.18)':isNext?'rgba(244,162,97,.14)':'rgba(255,255,255,.04)'};border:2px solid ${clr};${isNext?'box-shadow:0 0 10px rgba(244,162,97,.4);':''}">${isDone?'✓':st.ico}</div>
-      <span style="font-size:9px;font-weight:700;color:${isDone?'#06d6a0':isNext?'#f4a261':'var(--text3)'};white-space:nowrap">${st.l}</span>
+      <span style="font-size:10px;font-weight:700;color:${isDone?'#06d6a0':isNext?'#f4a261':'var(--text3)'};white-space:nowrap">${st.l}</span>
       <span style="font-size:8px;color:var(--text3)">${isDone?fmtDate(stages[st.k]):''}</span>
     </div>${conn}`;
   }).join('');
@@ -4836,12 +4836,12 @@ function renderClientProjects(id){
     <span style="font-size:10px;color:var(--text2);min-width:62px;white-space:nowrap">${fmtDate(d.dt)}</span>
     <span style="font-size:10px;flex:1;min-width:90px">${d.so||'–'}</span>
     ${d.inc?`<span style="font-size:10px;color:var(--gold);white-space:nowrap">${fmt(d.inc)}</span>`:''}
-    ${d.hd?`<span style="font-size:9px;color:var(--text3);white-space:nowrap">מנהל: ${d.hd}</span>`:''}
-    <span style="font-size:9px;padding:2px 7px;border-radius:20px;background:${stC(d.st)}18;color:${stC(d.st)};border:1px solid ${stC(d.st)}44;white-space:nowrap">${d.st||''}</span>
-    ${d._arch?'<span style="font-size:9px;color:#a78bfa">📦</span>':''}
-    ${d.mi?`<span style="font-size:9px;color:#f4a261;flex-basis:100%">חוסרים: ${d.mi}</span>`:''}
-    <button class="btn btns" onclick="repeatProject('${d.id}')" title="פתח פרויקט חדש על בסיס פרויקט זה" style="font-size:9px;border-color:#a78bfa;color:#a78bfa">🔁 הפעל שוב</button>
-    ${d._arch?'':`<button class="btn btns" onclick="closeM('mclient');setTimeout(()=>openM('dist','${d.id}'),100)" title="פתח לעריכה" style="font-size:9px">✏️</button>`}
+    ${d.hd?`<span style="font-size:10px;color:var(--text3);white-space:nowrap">מנהל: ${d.hd}</span>`:''}
+    <span style="font-size:10px;padding:2px 7px;border-radius:20px;background:${stC(d.st)}18;color:${stC(d.st)};border:1px solid ${stC(d.st)}44;white-space:nowrap">${d.st||''}</span>
+    ${d._arch?'<span style="font-size:10px;color:#a78bfa">📦</span>':''}
+    ${d.mi?`<span style="font-size:10px;color:#f4a261;flex-basis:100%">חוסרים: ${d.mi}</span>`:''}
+    <button class="btn btns" onclick="repeatProject('${d.id}')" title="פתח פרויקט חדש על בסיס פרויקט זה" style="font-size:10px;border-color:#a78bfa;color:#a78bfa">🔁 הפעל שוב</button>
+    ${d._arch?'':`<button class="btn btns" onclick="closeM('mclient');setTimeout(()=>openM('dist','${d.id}'),100)" title="פתח לעריכה" style="font-size:10px">✏️</button>`}
   </div>`).join('');
   const totInc=all.reduce((a,d)=>a+(d.inc||0),0);
   sec.style.display='';
@@ -4899,14 +4899,14 @@ function renderClientDeals(id){
     <span style="font-size:10px;color:var(--text3);min-width:44px">${d.num||'–'}</span>
     <span style="font-size:10px;flex:1;min-width:80px">${d.srv||'–'}</span>
     <span style="font-size:10px;color:var(--gold);white-space:nowrap">${fmt(d.v)}</span>
-    <span style="font-size:9px;padding:2px 7px;border-radius:20px;background:${stColor(d.st)}18;color:${stColor(d.st)};border:1px solid ${stColor(d.st)}44;white-space:nowrap">${d.st||''}</span>
-    ${isArch?'<span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.3);white-space:nowrap">📦 ארכיון</span>':''}
-    ${isArch?'':`<button class="btn btns" onclick="sendEmailToDeal('${d.id}')" title="שלח עדכון מייל ללקוח" style="font-size:9px;border-color:#4cc9f0;color:#4cc9f0">📧</button>`}
-    ${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד: ${(d.quote.name||'').replace(/'/g,'&#39;')}" style="font-size:9px;border-color:#06d6a0;color:#06d6a0">📎</button>`:''}
-    ${isArch?'':`<button class="btn btns" onclick="closeM('mclient');setTimeout(()=>openM('deal','${d.id}'),100)" title="פתח עסקה לעריכה" style="font-size:9px">✏️</button>`}
+    <span style="font-size:10px;padding:2px 7px;border-radius:20px;background:${stColor(d.st)}18;color:${stColor(d.st)};border:1px solid ${stColor(d.st)}44;white-space:nowrap">${d.st||''}</span>
+    ${isArch?'<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.3);white-space:nowrap">📦 ארכיון</span>':''}
+    ${isArch?'':`<button class="btn btns" onclick="sendEmailToDeal('${d.id}')" title="שלח עדכון מייל ללקוח" style="font-size:10px;border-color:#4cc9f0;color:#4cc9f0">📧</button>`}
+    ${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד: ${(d.quote.name||'').replace(/'/g,'&#39;')}" style="font-size:10px;border-color:#06d6a0;color:#06d6a0">📎</button>`:''}
+    ${isArch?'':`<button class="btn btns" onclick="closeM('mclient');setTimeout(()=>openM('deal','${d.id}'),100)" title="פתח עסקה לעריכה" style="font-size:10px">✏️</button>`}
   </div>`;
   const rows=deals.map(d=>mkDealRow(d,false)).join('')
-    +(archDeals.length?`<div style="font-size:9px;font-weight:800;color:#a78bfa;letter-spacing:.5px;margin:8px 0 4px">📦 עסקאות מארכיון (${archDeals.length})</div>`+archDeals.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(d=>mkDealRow(d,true)).join(''):'');
+    +(archDeals.length?`<div style="font-size:10px;font-weight:800;color:#a78bfa;letter-spacing:.5px;margin:8px 0 4px">📦 עסקאות מארכיון (${archDeals.length})</div>`+archDeals.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(d=>mkDealRow(d,true)).join(''):'');
   const all=[...deals,...archDeals];
   const totV=all.reduce((s,d)=>s+(d.v||0),0);
   const closedN=all.filter(d=>d.st==='נסגר').length;
@@ -4986,8 +4986,8 @@ function renderClientMeetings(id){
   const rows=mtgs.map(m=>{
     const ico=(typeIco[m.mtype||'פגישה']||'🤝');
     const isToday=m.dt===todayStr;
-    const hlBadge=m.hl==='כן'?'<span style="font-size:9px;color:#06d6a0">✓ התקיימה</span>':m.hl==='מבוטל'?'<span style="font-size:9px;color:#e63946">✕ מבוטל</span>':'<span style="font-size:9px;color:#f4a261">⏳ ממתין</span>';
-    const todayMark=isToday?'<span style="font-size:9px;font-weight:700;color:#4cc9f0;margin-right:3px">היום!</span>':'';
+    const hlBadge=m.hl==='כן'?'<span style="font-size:10px;color:#06d6a0">✓ התקיימה</span>':m.hl==='מבוטל'?'<span style="font-size:10px;color:#e63946">✕ מבוטל</span>':'<span style="font-size:10px;color:#f4a261">⏳ ממתין</span>';
+    const todayMark=isToday?'<span style="font-size:10px;font-weight:700;color:#4cc9f0;margin-right:3px">היום!</span>':'';
     return`<div class="cmod-row" style="padding:5px 8px;background:${isToday?'rgba(6,214,160,.07)':'rgba(255,255,255,.03)'};border:1px solid ${isToday?'rgba(6,214,160,.2)':'rgba(255,255,255,.07)'};margin-bottom:4px">
       <span style="font-size:14px">${ico}</span>
       <span style="font-size:10px;color:var(--text2);white-space:nowrap">${fmtDate(m.dt)}</span>
@@ -4995,9 +4995,9 @@ function renderClientMeetings(id){
       ${todayMark}
       <span style="font-size:10px;flex:1">${m.nu||''}</span>
       ${hlBadge}
-      ${m._arch?'<span style="font-size:9px;color:#a78bfa">📦 ארכיון</span>':''}
+      ${m._arch?'<span style="font-size:10px;color:#a78bfa">📦 ארכיון</span>':''}
       ${m.no?`<span style="font-size:10px;color:var(--text3);flex-basis:100%">${m.no}</span>`:''}
-      ${m._arch?'':`<button class="btn btns" onclick="closeM('mclient');setTimeout(()=>openM('meeting','${m.id}'),100)" style="font-size:9px;margin-right:auto">✏️</button>`}
+      ${m._arch?'':`<button class="btn btns" onclick="closeM('mclient');setTimeout(()=>openM('meeting','${m.id}'),100)" style="font-size:10px;margin-right:auto">✏️</button>`}
     </div>`;
   }).join('');
   sec.style.display='';
