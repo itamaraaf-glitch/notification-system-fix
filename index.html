@@ -1758,6 +1758,17 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="openAutoBackups()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(6,214,160,.1)">🛡️</div><div class="exp-tile-ttl">גיבויים אוטומטיים</div><div class="exp-tile-sub">300 גיבויים + 14 ימים אחורה · שחזור בקליק</div><div class="exp-tile-btn" style="background:rgba(6,214,160,.15);color:#06d6a0;border:1px solid rgba(6,214,160,.3)">🛡️ צפה ושחזר</div></div></div>
     <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0;position:relative" onclick="openSyncModal()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(76,201,240,.1)">☁️</div><div class="exp-tile-ttl">סנכרון ענן</div><div class="exp-tile-sub" id="fb-tile-status">לא מוגדר</div><div class="exp-tile-btn" style="background:rgba(76,201,240,.15);color:#4cc9f0;border:1px solid rgba(76,201,240,.3)">☁️ הגדרת סנכרון</div></div></div>
   </div>
+  <div style="font-size:9px;font-weight:800;color:rgba(167,139,250,.5);letter-spacing:1px;text-transform:uppercase;margin:18px 0 10px;padding:0 2px">📖 ייבוא חכם מקבצים</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">
+    <div class="tw" style="cursor:pointer;border-top:3px solid #a78bfa;grid-column:1/-1" onclick="openSmartImport()"><div class="exp-tile" style="display:flex;align-items:center;gap:16px;text-align:right">
+      <div class="exp-tile-ico" style="background:rgba(167,139,250,.15);flex-shrink:0">📖</div>
+      <div>
+        <div class="exp-tile-ttl">ייבוא חכם מקובץ</div>
+        <div class="exp-tile-sub" style="font-size:10px;line-height:1.5">העלה Word / PDF / Excel — המערכת תחלץ תאריכים, מספרי פרויקט, ח.פ, סכומים ותמלא שדות אוטומטית</div>
+        <div class="exp-tile-btn" style="display:inline-block;background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff;border-radius:8px;margin-top:8px">📖 פתח ייבוא חכם</div>
+      </div>
+    </div></div>
+  </div>
 </div>
 
 <!-- AUTO-BACKUPS MODAL -->
@@ -1765,6 +1776,45 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   <div class="mhdr"><h3>🛡️ גיבויים אוטומטיים</h3><button class="mcls" onclick="closeM('mbackups')">✕</button></div>
   <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">גיבוי אוטומטי כל 2 דקות (<b style="color:var(--teal)">עד 300 גיבויים</b>) + <b style="color:#a78bfa">גיבוי יומי ל-14 ימים אחרונים</b>. בחר נקודת זמן לשחזור:</div>
   <div id="bk-list" style="max-height:50vh;overflow-y:auto"></div>
+</div></div>
+
+<!-- SMART IMPORT MODAL -->
+<div class="mw" id="msmart-import"><div class="modal" style="max-width:580px">
+  <div class="mhdr"><h3>📖 ייבוא חכם מקובץ</h3><button class="mcls" onclick="closeM('msmart-import')">✕</button></div>
+  <div style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.6;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:10px;padding:10px 14px">
+    העלה קובץ Word / PDF / Excel / CSV / TXT — המערכת תחלץ אוטומטית תאריכים, מספרי פרויקט, מספרי ח.פ, סכומים ותוכן.
+    לאחר החילוץ תוכל לבחור לאיזה נושא לשייך ולמלא את השדות בלחיצה.
+  </div>
+  <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px">
+    <div style="flex:1;min-width:180px">
+      <label style="font-size:10px;font-weight:800;color:var(--text3);display:block;margin-bottom:6px">נושא מטרה</label>
+      <select id="si-kind" style="width:100%">
+        <option value="meeting">🤝 פגישה</option>
+        <option value="deal">💼 עסקה</option>
+        <option value="tender">📋 מכרז</option>
+        <option value="dist">🚀 הפצה</option>
+        <option value="salary">💰 שכר</option>
+        <option value="client">🏢 לקוח</option>
+      </select>
+    </div>
+    <div style="flex:2;min-width:200px">
+      <label style="font-size:10px;font-weight:800;color:var(--text3);display:block;margin-bottom:6px">קובץ לייבוא</label>
+      <input type="file" id="si-file-inp" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" style="display:none" onchange="smartImportFileChosen(event)">
+      <button class="btn" style="border-color:#a78bfa;color:#a78bfa;width:100%" onclick="document.getElementById('si-file-inp').click()">📎 בחר קובץ</button>
+      <div id="si-file-name" style="font-size:10px;color:var(--text3);margin-top:4px;text-align:center">לא נבחר קובץ</div>
+    </div>
+  </div>
+  <div id="si-extract-area" style="display:none">
+    <div style="font-size:10px;font-weight:800;color:#a78bfa;margin-bottom:8px;border-bottom:1px solid rgba(167,139,250,.2);padding-bottom:6px">📊 נתונים שחולצו</div>
+    <div id="si-fields-preview" style="font-size:12px;line-height:1.8;padding:8px 0"></div>
+    <div style="font-size:10px;color:var(--text3);margin:8px 0 4px;max-height:80px;overflow-y:auto" id="si-text-preview"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">
+      <button class="btn" onclick="closeM('msmart-import')">ביטול</button>
+      <button class="btn" style="border-color:#a78bfa;color:#a78bfa" onclick="smartImportApply('notes')">📝 שלב בהערות בלבד</button>
+      <button class="btn btnp" onclick="smartImportApply('all')">✅ פתח טופס ומלא שדות</button>
+    </div>
+  </div>
+  <div id="si-loading" style="display:none;text-align:center;padding:20px;color:var(--text2);font-size:12px">⏳ מחלץ נתונים מהקובץ...</div>
 </div></div>
 
 <!-- SEND TO MOBILE MODAL -->
@@ -2100,6 +2150,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <label style="font-size:10px;font-weight:800;color:var(--text3)">🔢 מספר פרויקט</label>
     <input type="text" id="sum-proj" placeholder="לא חובה" style="width:120px">
     <button class="btn btns" onclick="regenSummary()" style="border-color:#a78bfa;color:#a78bfa" title="בנה מחדש את הסיכום מנתוני המערכת">🔄 צור מחדש</button>
+    <button class="btn btns" id="sum-read-file-btn" onclick="enrichSummaryFromFile()" style="border-color:#06d6a0;color:#06d6a0;display:none" title="קרא תוכן מקובץ מצורף לפגישה ושלב בסיכום">📖 קרא מהקובץ</button>
     <span style="font-size:9px;color:var(--text3)">סיכום ללקוח = בלי מידע פנימי · נבנה לפי הנושאים שנבחרו בפגישה · ניתן לערוך</span>
   </div>
   <textarea id="sum-text" rows="18" style="width:100%;font-size:12px;line-height:1.7;direction:rtl"></textarea>
@@ -4516,8 +4567,8 @@ function renderMeetingsMiniCal(){
     if((m.dt||'').startsWith(mPrefix)){const d=parseInt((m.dt||'').slice(8));(byDay[d]=byDay[d]||[]).push(m);}
   });
   const DAYS=['א','ב','ג','ד','ה','ו','ש'];
-  let cells='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;font-size:12px">';
-  DAYS.forEach(d=>cells+=`<div style="text-align:center;color:var(--text2);padding:4px 2px;font-weight:800;font-size:11px">${d}</div>`);
+  let cells='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:12px">';
+  DAYS.forEach(d=>cells+=`<div style="text-align:center;color:var(--gold);padding:5px 2px;font-weight:800;font-size:11px;border-bottom:1px solid rgba(200,169,110,.2);margin-bottom:2px">${d}</div>`);
   for(let i=0;i<firstDay;i++) cells+='<div></div>';
   for(let d=1;d<=daysInMonth;d++){
     const dStr=`${mPrefix}-${String(d).padStart(2,'0')}`;
@@ -4526,8 +4577,8 @@ function renderMeetingsMiniCal(){
     const hasMtg=dayMtgs.length>0;
     const allHeld=hasMtg&&dayMtgs.every(m=>m.hl==='כן'||m.hl==='מבוטל');
     const anyMissed=hasMtg&&dStr<todayStr&&dayMtgs.some(m=>m.hl!=='כן'&&m.hl!=='מבוטל');
-    const bg=isT?'rgba(200,169,110,.3)':hasMtg?'rgba(6,214,160,.16)':'rgba(255,255,255,.02)';
-    const bd=isT?'1.5px solid rgba(200,169,110,.65)':hasMtg?'1px solid rgba(6,214,160,.4)':'1px solid rgba(255,255,255,.05)';
+    const bg=isT?'rgba(200,169,110,.3)':hasMtg?(anyMissed?'rgba(230,57,70,.1)':'rgba(6,214,160,.16)'):'rgba(255,255,255,.06)';
+    const bd=isT?'1.5px solid rgba(200,169,110,.65)':hasMtg?(anyMissed?'1px solid rgba(230,57,70,.4)':'1px solid rgba(6,214,160,.4)'):'1px solid rgba(255,255,255,.14)';
     const dotClr=anyMissed?'#e63946':allHeld?'#06d6a0':'#f4a261';
     const dot=hasMtg?`<span style="display:block;font-size:10px;line-height:1.2;color:${dotClr};font-weight:800">${dayMtgs.length>1?dayMtgs.length+' פגישות':'●'}</span>`:'';
     cells+=`<div onclick="showDayMeetings('${dStr}',event)" title="${hasMtg?dayMtgs.length+' פגישות – לחץ לצפייה':'לחץ לקביעת פגישה'}" style="text-align:center;padding:6px 2px;min-height:34px;border-radius:7px;background:${bg};border:${bd};cursor:pointer;color:${isT?'var(--gold)':hasMtg?'var(--teal)':'var(--text2)'};font-weight:${isT||hasMtg?800:500}">${d}${dot}</div>`;
@@ -6004,13 +6055,19 @@ function attachAdd(kind,ev){
 function attachRender(kind){
   const el=document.getElementById('att-list-'+kind);if(!el)return;
   const files=_attPending[kind]||[];
-  el.innerHTML=files.length?files.map((f,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-top:4px">
+  const readable=new Set(['docx','doc','pdf','txt','csv','xlsx','xls']);
+  el.innerHTML=files.length?files.map((f,i)=>{
+    const ext=(f.name||'').split('.').pop().toLowerCase();
+    const canRead=readable.has(ext);
+    return `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-top:4px">
     <span>${_fileIcon(f.name)}</span>
     <span style="font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(f.name||'').replace(/"/g,'&quot;')}">${f.name}</span>
     <span style="font-size:9px;color:var(--text3)">${Math.round((f.size||0)/1024)}KB</span>
+    ${canRead?`<button type="button" class="btn btns" onclick="smartReadFile('${kind}',${i})" title="חלץ נתונים מהקובץ" style="font-size:9px;border-color:#a78bfa;color:#a78bfa">📖</button>`:''}
     <button type="button" class="btn btns" onclick="attachDl('${kind}',${i})" style="font-size:9px;border-color:#4cc9f0;color:#4cc9f0">⬇</button>
     <button type="button" class="btn btns btnd" onclick="attachRm('${kind}',${i})" style="font-size:9px">🗑</button>
-  </div>`).join(''):'<div style="font-size:10px;color:var(--text3);margin-top:4px">לא צורפו קבצים</div>';
+  </div>`;
+  }).join(''):'<div style="font-size:10px;color:var(--text3);margin-top:4px">לא צורפו קבצים</div>';
 }
 function attachDl(kind,i){
   const f=(_attPending[kind]||[])[i];if(!f||!f.data)return;
@@ -6044,6 +6101,230 @@ function rowFilesMenu(table,id,e){
   document.body.appendChild(pop);
   setTimeout(()=>{document.addEventListener('click',function cl(ev){if(!pop.contains(ev.target)){pop.remove();document.removeEventListener('click',cl);}});},80);
 }
+// ===== SMART DOCUMENT EXTRACTION =====
+// Extract plain text from various file formats stored as base64 data URIs or ArrayBuffers
+async function extractFileText(fileObj){
+  const name=(fileObj.name||'').toLowerCase();
+  const ext=name.split('.').pop();
+  // fileObj.data is a base64 data URL from attachAdd
+  if(!fileObj.data)return '';
+  const b64=fileObj.data.split(',')[1]||fileObj.data;
+  const binary=atob(b64);
+  const bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  const ab=bytes.buffer;
+
+  if(ext==='txt'||ext==='csv'){
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+  if(ext==='xlsx'||ext==='xls'){
+    if(!window.XLSX)return '';
+    try{
+      const wb=XLSX.read(ab,{type:'array'});
+      let txt='';
+      wb.SheetNames.forEach(s=>{
+        const ws=wb.Sheets[s];
+        const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        rows.forEach(r=>{txt+=r.filter(c=>c!=='').join('\t')+'\n';});
+      });
+      return txt;
+    }catch(e){return '';}
+  }
+  if(ext==='docx'||ext==='doc'){
+    // DOCX = ZIP + XML. Parse ZIP local file headers and decompress word/document.xml
+    try{
+      let offset=0;
+      while(offset<bytes.length-30){
+        if(bytes[offset]===0x50&&bytes[offset+1]===0x4B&&bytes[offset+2]===0x03&&bytes[offset+3]===0x04){
+          const compMethod=bytes[offset+8]|(bytes[offset+9]<<8);
+          const compSize=bytes[offset+18]|(bytes[offset+19]<<8)|(bytes[offset+20]<<16)|(bytes[offset+21]<<24);
+          const fnLen=bytes[offset+26]|(bytes[offset+27]<<8);
+          const extraLen=bytes[offset+28]|(bytes[offset+29]<<8);
+          const hdrSz=30+fnLen+extraLen;
+          const filename=new TextDecoder('utf-8',{fatal:false}).decode(bytes.slice(offset+30,offset+30+fnLen));
+          if(filename==='word/document.xml'){
+            const fileData=bytes.slice(offset+hdrSz,offset+hdrSz+compSize);
+            let xmlBytes;
+            if(compMethod===0){xmlBytes=fileData;}
+            else if(compMethod===8&&typeof DecompressionStream!=='undefined'){
+              try{
+                const ds=new DecompressionStream('deflate-raw');
+                const writer=ds.writable.getWriter();
+                writer.write(fileData);writer.close();
+                const reader=ds.readable.getReader();
+                const chunks=[];let r2;
+                while(!(r2=await reader.read()).done)chunks.push(r2.value);
+                const tot=chunks.reduce((s,c)=>s+c.length,0);
+                const combined=new Uint8Array(tot);let pos=0;
+                for(const c of chunks){combined.set(c,pos);pos+=c.length;}
+                xmlBytes=combined;
+              }catch(e){xmlBytes=null;}
+            }
+            if(xmlBytes){
+              const xml=new TextDecoder('utf-8',{fatal:false}).decode(xmlBytes);
+              let txt=xml
+                .replace(/<w:p[ >]/g,'\n<w:p ')
+                .replace(/<w:t[^>]*>([^<]*)<\/w:t>/g,'$1')
+                .replace(/<[^>]+>/g,'')
+                .replace(/\n{3,}/g,'\n\n').trim();
+              if(txt.length>30)return txt;
+            }
+            break;
+          }
+          offset+=hdrSz+Math.max(0,compSize);
+        }else{offset++;}
+      }
+    }catch(e){}
+    return '';
+  }
+  if(ext==='pdf'){
+    try{
+      let raw='';
+      for(let i=0;i<Math.min(bytes.length,3000000);i++){
+        const b=bytes[i];
+        if(b>=32&&b<=126)raw+=String.fromCharCode(b);
+        else if(b===10||b===13)raw+='\n';
+        else raw+=' ';
+      }
+      const texts=[];
+      // BT...ET text blocks
+      for(const m of raw.matchAll(/BT\s+([\s\S]{1,2000}?)ET/g)){
+        const blk=m[1];
+        for(const tj of blk.matchAll(/\(([^)]{1,300})\)\s*Tj/g))texts.push(tj[1]);
+        for(const tj of blk.matchAll(/\[([^\]]{1,500})\]\s*TJ/g)){
+          for(const p of tj[1].matchAll(/\(([^)]{1,200})\)/g))texts.push(p[1]);
+        }
+      }
+      if(texts.length>3)return texts.join(' ').replace(/\s+/g,' ').trim();
+      // Fallback: plain text runs
+      return raw.replace(/<[^\n>]*>/g,' ').replace(/\s{4,}/g,' ').trim().substring(0,5000);
+    }catch(e){return '';}
+  }
+  return '';
+}
+
+// Smart parser: extracts dates (Israeli DD/MM/YYYY), project numbers, ח.פ, amounts from free text
+function parseDocumentFields(text){
+  const f={dates:[],projectNums:[],companyIds:[],amounts:[],notes:''};
+  if(!text)return f;
+  // Israeli / European dates: DD/MM/YYYY or DD.MM.YYYY
+  for(const m of text.matchAll(/\b(\d{1,2})[\/\.](\d{1,2})[\/\.](\d{2,4})\b/g)){
+    const d=m[1].padStart(2,'0'),mo=m[2].padStart(2,'0'),y=m[3].length===2?'20'+m[3]:m[3];
+    const iso=`${y}-${mo}-${d}`;
+    if(!f.dates.includes(iso)&&+mo>=1&&+mo<=12&&+d>=1&&+d<=31)f.dates.push(iso);
+  }
+  // ISO dates YYYY-MM-DD
+  for(const m of text.matchAll(/\b(\d{4})-(\d{2})-(\d{2})\b/g)){
+    const iso=m[0];if(!f.dates.includes(iso))f.dates.push(iso);
+  }
+  // Project numbers (Hebrew: "פרויקט", "מס׳", "#")
+  for(const m of text.matchAll(/(?:פרויקט|מס['׳]?\s*פרויקט|project|proj\.?)\s*#?\s*:?\s*([A-Za-z0-9\-]{3,12})/gi)){
+    if(!f.projectNums.includes(m[1]))f.projectNums.push(m[1]);
+  }
+  for(const m of text.matchAll(/#\s*([A-Za-z]?\d{4,9})\b/g)){
+    if(!f.projectNums.includes(m[1]))f.projectNums.push(m[1]);
+  }
+  // ח.פ (9 digits)
+  for(const m of text.matchAll(/(?:ח\.?פ\.?|c\.?p\.?)[:\s]*(\d{8,9})\b/gi)){
+    if(!f.companyIds.includes(m[1]))f.companyIds.push(m[1]);
+  }
+  // Standalone 9-digit numbers (Israeli company ID)
+  for(const m of text.matchAll(/\b(\d{9})\b/g)){
+    if(!f.companyIds.includes(m[1]))f.companyIds.push(m[1]);
+  }
+  // Amounts with ₪ or שח
+  for(const m of text.matchAll(/₪\s*([0-9,]+(?:\.\d{1,2})?)|([0-9,]+(?:\.\d{1,2})?)\s*(?:ש["׳]?ח|₪)/g)){
+    const v=parseFloat((m[1]||m[2]).replace(/,/g,''));
+    if(v>0&&!f.amounts.includes(v))f.amounts.push(v);
+  }
+  f.notes=text.replace(/\s+/g,' ').trim().substring(0,3000);
+  return f;
+}
+
+// Read an attached pending file and show smart-fill popup for the current form
+async function smartReadFile(kind,idx){
+  const file=(_attPending[kind]||[])[idx];
+  if(!file){toast('⚠️ קובץ לא נמצא','warn');return;}
+  const btn=event&&event.target;
+  if(btn){btn.disabled=true;btn.textContent='...';}
+  try{
+    const txt=await extractFileText(file);
+    if(!btn){}else{btn.disabled=false;btn.textContent='📖';}
+    if(!txt||txt.length<10){toast('⚠️ לא ניתן לחלץ טקסט מ-'+file.name+' — ודא שהקובץ אינו מוגן','warn');return;}
+    const flds=parseDocumentFields(txt);
+    _pendingSmartFill={kind,fields:flds,text:txt};
+    _showSmartFillPopup(kind,flds,file.name);
+  }catch(e){
+    if(btn){btn.disabled=false;btn.textContent='📖';}
+    toast('⚠️ שגיאה בחילוץ: '+e.message,'warn');
+  }
+}
+let _pendingSmartFill=null;
+function _showSmartFillPopup(kind,flds,filename){
+  const prev=document.getElementById('smart-fill-popup');if(prev)prev.remove();
+  const lines=[];
+  if(flds.dates.length)lines.push(`📅 תאריכים: <b>${flds.dates.map(fmtDate).join(', ')}</b>`);
+  if(flds.projectNums.length)lines.push(`🔢 מספרי פרויקט: <b>${flds.projectNums.join(', ')}</b>`);
+  if(flds.companyIds.length)lines.push(`🏢 ח.פ: <b>${flds.companyIds.join(', ')}</b>`);
+  if(flds.amounts.length)lines.push(`💰 סכומים: <b>${flds.amounts.map(fmt).join(', ')}</b>`);
+  if(!lines.length&&flds.notes){lines.push(`📝 טקסט זוהה (${flds.notes.length} תווים)`);}
+  const pop=document.createElement('div');
+  pop.id='smart-fill-popup';
+  pop.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--s2,#101525);border:1px solid rgba(167,139,250,.5);border-radius:14px;padding:20px 22px;z-index:9999;min-width:320px;max-width:480px;box-shadow:0 16px 50px rgba(0,0,0,.7);direction:rtl';
+  pop.innerHTML=`<div style="font-size:13px;font-weight:800;color:#a78bfa;margin-bottom:10px">📖 חולץ מ-${filename}</div>
+${lines.length?lines.map(l=>`<div style="font-size:12px;padding:4px 0;line-height:1.5">${l}</div>`).join(''):'<div style="font-size:11px;color:var(--text3)">לא נמצאו שדות מובנים — הטקסט הגולמי ישולב בהערות</div>'}
+<div style="font-size:10px;color:var(--text3);margin:10px 0 4px">תוכן הקובץ יועתק להערות — השדות הספציפיים ימולאו אם זוהו</div>
+<div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;flex-wrap:wrap">
+  <button class="btn" onclick="document.getElementById('smart-fill-popup').remove()">סגור</button>
+  <button class="btn" style="border-color:#a78bfa;color:#a78bfa" onclick="applySmartFill('${kind}','notes');document.getElementById('smart-fill-popup').remove()">📝 שלב בהערות</button>
+  <button class="btn btnp" onclick="applySmartFill('${kind}','all');document.getElementById('smart-fill-popup').remove()">✅ מלא שדות</button>
+</div>`;
+  document.body.appendChild(pop);
+}
+function applySmartFill(kind,mode){
+  const sf=_pendingSmartFill;if(!sf)return;
+  const f=sf.fields;
+  const map={
+    meeting:{date:'mdt',projectNum:'mnu',notes:'mno'},
+    deal:{date:'dd',cp:'dcp',amount:'dv',notes:'dno'},
+    tender:{deadline:'tdl',projectNum:'tp',notes:'tno'},
+    dist:{date:'didt',projectNum:'diproj',notes:'dimi'},
+    salary:{projectNum:'spj',notes:'sno'},
+    client:{cp:'cl-cp',notes:'cl-gen-notes'},
+  };
+  const m=map[kind]||{};
+  if(mode==='notes'||mode==='all'){
+    const notesId=m.notes;
+    if(notesId){
+      const el=document.getElementById(notesId);
+      if(el){
+        const existing=el.value.trim();
+        const add=f.notes.substring(0,2000);
+        el.value=existing?(existing+'\n\n'+add):add;
+      }
+    }
+  }
+  if(mode==='all'){
+    if(m.date&&f.dates.length){
+      const el=document.getElementById(m.date);
+      if(el&&!el.value)el.value=f.dates[0];
+    }
+    if(m.projectNum&&f.projectNums.length){
+      const el=document.getElementById(m.projectNum);
+      if(el&&!el.value)el.value=f.projectNums[0];
+    }
+    if(m.cp&&f.companyIds.length){
+      const el=document.getElementById(m.cp);
+      if(el&&!el.value)el.value=f.companyIds[0];
+    }
+    if(m.amount&&f.amounts.length){
+      const el=document.getElementById(m.amount);
+      if(el&&!el.value)el.value=f.amounts[0];
+    }
+  }
+  toast('✅ הנתונים שולבו בטופס','ok');
+}
+
 // בלוק צירוף קבצים אחיד לטפסים
 function attachBlockHtml(kind){
   return `<div class="gf"><label>📎 קבצים מצורפים (Word / PDF / Excel / תמונה)</label>
@@ -6767,6 +7048,10 @@ function openMeetingSummary(id){
   const cb=document.getElementById('sum-mode-client'),ib=document.getElementById('sum-mode-internal');
   if(cb){cb.style.background='#06d6a0';cb.style.color='#000';}
   if(ib){ib.style.background='transparent';ib.style.color='var(--text2)';}
+  const readBtn=document.getElementById('sum-read-file-btn');
+  const readable=new Set(['docx','doc','pdf','txt','csv','xlsx','xls']);
+  const hasReadableFile=(m.files||[]).some(f=>{const ext=(f.name||'').split('.').pop().toLowerCase();return readable.has(ext);});
+  if(readBtn)readBtn.style.display=hasReadableFile?'':'none';
   document.getElementById('msummary').classList.add('open');
 }
 function regenSummary(){
@@ -6807,6 +7092,88 @@ function emailSummary(){
   openMail((c&&c.email)||'',subject,txt);
   if(!(c&&c.email))showToast('📧 נפתח מייל — הוסף נמען (אין מייל בכרטיס הלקוח)','warn');
   else showToast('📧 נפתח מייל עם הסיכום ל'+(c.name||''),'ok');
+}
+
+// ===== SMART IMPORT =====
+function openSmartImport(){
+  document.getElementById('si-file-inp').value='';
+  document.getElementById('si-file-name').textContent='לא נבחר קובץ';
+  document.getElementById('si-extract-area').style.display='none';
+  document.getElementById('si-loading').style.display='none';
+  document.getElementById('msmart-import').classList.add('open');
+}
+let _siPending=null; // {kind, fields, text}
+async function smartImportFileChosen(ev){
+  const f=ev.target.files&&ev.target.files[0];
+  if(!f)return;
+  const MAX=2*1024*1024;
+  if(f.size>MAX){toast('⚠️ קובץ גדול מ-2MB — בחר קובץ קטן יותר','warn');return;}
+  document.getElementById('si-file-name').textContent=f.name;
+  document.getElementById('si-extract-area').style.display='none';
+  document.getElementById('si-loading').style.display='block';
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    const fobj={name:f.name,type:f.type,size:f.size,data:e.target.result};
+    try{
+      const txt=await extractFileText(fobj);
+      document.getElementById('si-loading').style.display='none';
+      if(!txt||txt.length<5){
+        toast('⚠️ לא ניתן לחלץ טקסט — ודא שהקובץ אינו מוגן','warn');
+        document.getElementById('si-file-name').textContent=f.name+' ⚠️ לא ניתן לקרוא';
+        return;
+      }
+      const flds=parseDocumentFields(txt);
+      const kind=document.getElementById('si-kind').value;
+      _siPending={kind,fields:flds,text:txt};
+      const lines=[];
+      if(flds.dates.length)lines.push(`📅 תאריכים: <b>${flds.dates.map(fmtDate).join(', ')}</b>`);
+      if(flds.projectNums.length)lines.push(`🔢 מספרי פרויקט: <b>${flds.projectNums.join(', ')}</b>`);
+      if(flds.companyIds.length)lines.push(`🏢 ח.פ: <b>${flds.companyIds.join(', ')}</b>`);
+      if(flds.amounts.length)lines.push(`💰 סכומים: <b>${flds.amounts.map(fmt).join(', ')}</b>`);
+      if(!lines.length)lines.push(`📝 טקסט זוהה (${txt.length} תווים) — ישולב בהערות`);
+      document.getElementById('si-fields-preview').innerHTML=lines.map(l=>`<div style="padding:2px 0">${l}</div>`).join('');
+      const preview=txt.replace(/\s+/g,' ').trim().substring(0,200);
+      document.getElementById('si-text-preview').textContent=preview+(txt.length>200?'...':'');
+      document.getElementById('si-extract-area').style.display='block';
+    }catch(e2){
+      document.getElementById('si-loading').style.display='none';
+      toast('⚠️ שגיאה בחילוץ: '+e2.message,'warn');
+    }
+  };
+  reader.readAsDataURL(f);
+}
+function smartImportApply(mode){
+  if(!_siPending){toast('⚠️ אין נתונים להחיל — בחר קובץ תחילה','warn');return;}
+  const {kind,fields,text}=_siPending;
+  _pendingSmartFill={kind,fields,text};
+  closeM('msmart-import');
+  openM(kind,null);
+  setTimeout(()=>applySmartFill(kind,mode),150);
+}
+// Enrich meeting summary from attached files
+async function enrichSummaryFromFile(){
+  const m=[...D.meetings,...(D.archivedMeetings||[])].find(x=>x.id==_sumMeetingId);
+  if(!m||!(m.files||[]).length){toast('⚠️ אין קבצים מצורפים לפגישה זו','warn');return;}
+  const readable=new Set(['docx','doc','pdf','txt','csv','xlsx','xls']);
+  const candidates=(m.files||[]).filter(f=>{const ext=(f.name||'').split('.').pop().toLowerCase();return readable.has(ext);});
+  if(!candidates.length){toast('⚠️ אין קבצים ניתנים לקריאה בפגישה זו','warn');return;}
+  const btn=document.getElementById('sum-read-file-btn');
+  if(btn){btn.disabled=true;btn.textContent='...';}
+  try{
+    // Use first readable file
+    const txt=await extractFileText(candidates[0]);
+    if(btn){btn.disabled=false;btn.textContent='📖 קרא מהקובץ';}
+    if(!txt||txt.length<10){toast('⚠️ לא ניתן לחלץ טקסט מ-'+candidates[0].name,'warn');return;}
+    const sumEl=document.getElementById('sum-text');
+    const existing=sumEl.value.trim();
+    const excerpt=txt.replace(/\s+/g,' ').trim().substring(0,3000);
+    const addition=`\n\n--- תוכן מצורף: ${candidates[0].name} ---\n${excerpt}`;
+    sumEl.value=existing+addition;
+    toast('✅ תוכן הקובץ שולב בסיכום — ניתן לערוך ולשמור','ok');
+  }catch(e){
+    if(btn){btn.disabled=false;btn.textContent='📖 קרא מהקובץ';}
+    toast('⚠️ שגיאה בקריאת קובץ: '+e.message,'warn');
+  }
 }
 
 // ===== CALENDAR INTEGRATION =====
