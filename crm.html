@@ -1962,8 +1962,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="g"><label>חודש נוכחי ₪</label><input type="number" id="dmv" placeholder="0" oninput="dealAutoCalc()"></div>
     <div class="g"><label>הפצה ₪</label><input type="number" id="ddi" placeholder="0" oninput="dealAutoCalc()"></div>
     <div class="g"><label>חודש הבא ₪ <span style="font-size:9px;color:var(--teal);font-weight:400">אוטומטי: שווי − נוכחי − הפצה</span></label><input type="number" id="ddn" placeholder="0" oninput="this.dataset.manual='1'"></div>
-    <div class="g"><label>OTC ₪</label><input type="number" id="dot" placeholder="0"></div>
-    <div class="g"><label>OTC נסגר ₪</label><input type="number" id="dotc" placeholder="0"></div>
+    <div class="g"><label style="color:#f4a261">📦 OTC ₪ <span style="font-size:9px;font-weight:400">ציוד – בנפרד מהשירות</span></label><input type="number" id="dot" placeholder="0" style="border-color:rgba(244,162,97,.35)"></div>
+    <div class="g"><label style="color:#f4a261">📦 OTC נסגר ₪</label><input type="number" id="dotc" placeholder="0" style="border-color:rgba(244,162,97,.35)"></div>
     <div class="g"><label>מול מי</label><input type="text" id="dct"></div>
     <div class="g"><label>סיכוי</label><select id="dch"><option value="1">100% – נסגר</option><option value="0.99" selected>99%</option><option value="0.75">75%</option><option value="0.5">50%</option><option value="0.25">25%</option></select></div>
     <div class="g"><label>סטטוס</label><select id="dst2"><option>ממתין לתשובה</option><option>נסגר</option><option>בטיפול</option><option>הוצאת הצעה</option><option>בעיה</option></select></div>
@@ -4120,6 +4120,10 @@ function rDeals(){
   const sumDi=D.deals.reduce((a,d)=>a+(+d.di||0),0);
   const sumRem=D.deals.reduce((a,d)=>a+Math.max(0,(+d.v||0)-(+d.mv||0)-(+d.di||0)),0);
   const sumDn=D.deals.reduce((a,d)=>a+(+d.dn||0),0);
+  // OTC (ציוד) — מופרד לגמרי מהשירות כדי שלא יתערבב בסיכומים
+  const sumOt=D.deals.reduce((a,d)=>a+(+d.ot||0),0);
+  const sumOtc=D.deals.reduce((a,d)=>a+(+d.otc||0),0);
+  const sumOtRem=D.deals.reduce((a,d)=>a+Math.max(0,(+d.ot||0)-(+d.otc||0)),0);
   const mb=document.getElementById('month-banner');
   if(mb)mb.innerHTML=`
     <div style="background:linear-gradient(135deg,rgba(16,21,37,.95),rgba(10,14,28,.98));border:1px solid rgba(76,201,240,.2);border-radius:12px;padding:14px 18px;margin-bottom:16px;box-shadow:0 4px 20px rgba(76,201,240,.08)">
@@ -4150,22 +4154,42 @@ function rDeals(){
           <div style="font-size:20px;font-weight:900;color:var(--text3)">${arch}</div>
         </div>`:''}
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">
-        <div class="stat-mini" style="background:rgba(6,214,160,.07);border:1px solid rgba(6,214,160,.15)">
-          <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">📅 סיכום חודש נוכחי</div>
-          <div style="font-size:18px;font-weight:900;color:var(--teal)">${fmt(sumMv)}</div>
+      <div style="margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">
+        <div style="font-size:10px;font-weight:800;color:var(--teal);letter-spacing:.7px;margin-bottom:6px">💰 שירות</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">
+          <div class="stat-mini" style="background:rgba(6,214,160,.07);border:1px solid rgba(6,214,160,.15)">
+            <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">📅 סיכום חודש נוכחי</div>
+            <div style="font-size:18px;font-weight:900;color:var(--teal)">${fmt(sumMv)}</div>
+          </div>
+          <div class="stat-mini" style="background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.18)">
+            <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">🚀 סיכום הפצות</div>
+            <div style="font-size:18px;font-weight:900;color:#a78bfa">${fmt(sumDi)}</div>
+          </div>
+          <div class="stat-mini" style="background:rgba(244,162,97,.07);border:1px solid rgba(244,162,97,.18)">
+            <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">⏳ סיכום יתרה</div>
+            <div style="font-size:18px;font-weight:900;color:#f4a261">${fmt(sumRem)}</div>
+          </div>
+          <div class="stat-mini" style="background:rgba(76,201,240,.07);border:1px solid rgba(76,201,240,.15)">
+            <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">⏭ יתרה לחודש הבא</div>
+            <div style="font-size:18px;font-weight:900;color:var(--blue)">${fmt(sumDn)}</div>
+          </div>
         </div>
-        <div class="stat-mini" style="background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.18)">
-          <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">🚀 סיכום הפצות</div>
-          <div style="font-size:18px;font-weight:900;color:#a78bfa">${fmt(sumDi)}</div>
-        </div>
-        <div class="stat-mini" style="background:rgba(244,162,97,.07);border:1px solid rgba(244,162,97,.18)">
-          <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">⏳ סיכום יתרה</div>
-          <div style="font-size:18px;font-weight:900;color:#f4a261">${fmt(sumRem)}</div>
-        </div>
-        <div class="stat-mini" style="background:rgba(76,201,240,.07);border:1px solid rgba(76,201,240,.15)">
-          <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">⏭ יתרה לחודש הבא</div>
-          <div style="font-size:18px;font-weight:900;color:var(--blue)">${fmt(sumDn)}</div>
+      </div>
+      <div style="margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">
+        <div style="font-size:10px;font-weight:800;color:#f4a261;letter-spacing:.7px;margin-bottom:6px">📦 OTC – ציוד (בנפרד מהשירות)</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">
+          <div class="stat-mini" style="background:rgba(244,162,97,.07);border:1px solid rgba(244,162,97,.18)">
+            <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">📦 OTC פתוח</div>
+            <div style="font-size:18px;font-weight:900;color:#f4a261">${fmt(sumOt)}</div>
+          </div>
+          <div class="stat-mini" style="background:rgba(6,214,160,.07);border:1px solid rgba(6,214,160,.15)">
+            <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">✅ OTC נסגר</div>
+            <div style="font-size:18px;font-weight:900;color:var(--teal)">${fmt(sumOtc)}</div>
+          </div>
+          <div class="stat-mini" style="background:rgba(230,57,70,.06);border:1px solid rgba(230,57,70,.15)">
+            <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">⏳ יתרת OTC</div>
+            <div style="font-size:18px;font-weight:900;color:#e63946">${fmt(sumOtRem)}</div>
+          </div>
         </div>
       </div>
     </div>`;
@@ -4200,10 +4224,11 @@ function rDeals(){
     if(closedThis.length) html+=div('mdiv-closed','✅','נסגרו החודש – יועברו לארכיון בתחילת החודש הבא',closedThis.length)+closedThis.map(mkRow).join('');
     if(pendingArch.length) html+=div('mdiv-pending','📦','נסגרו בחודש קודם – ממתינות לארכיון',pendingArch.length)+pendingArch.map(mkRow).join('');
     document.getElementById(tbId).innerHTML=html||emptyRow(18,'💼',"אין עסקאות פעילות","openM('deal',null)");
-    const tv=items.reduce((s,d)=>s+(d.v||0),0),td=items.reduce((s,d)=>s+(d.di||0),0),to=items.reduce((s,d)=>s+(d.otc||0),0);
+    const tv=items.reduce((s,d)=>s+(d.v||0),0),td=items.reduce((s,d)=>s+(d.di||0),0);
+    const tot=items.reduce((s,d)=>s+(+d.ot||0),0),totc=items.reduce((s,d)=>s+(+d.otc||0),0);
     const tmv=items.reduce((s,d)=>s+(+d.mv||0),0),tdn=items.reduce((s,d)=>s+(+d.dn||0),0);
     const trem=items.reduce((s,d)=>s+Math.max(0,(+d.v||0)-(+d.mv||0)-(+d.di||0)),0);
-    document.getElementById(ftId).innerHTML=`<span class="fi">סה"כ: <b>${items.length}</b></span><span class="fi">שווי: <b>${fmt(tv)}</b></span><span class="fi" style="color:var(--teal)">חודש נוכחי: <b>${fmt(tmv)}</b></span><span class="fi">הפצות: <b>${fmt(td)}</b></span><span class="fi" style="color:#f4a261">יתרה: <b>${fmt(trem)}</b></span><span class="fi" style="color:var(--blue)">חודש הבא: <b>${fmt(tdn)}</b></span><span class="fi">OTC: <b>${fmt(to)}</b></span>${carries.length?`<span class="fi" style="color:#f4a261">↩ עוברות: <b>${carries.length}</b></span>`:''}${closedThis.length?`<span class="fi" style="color:var(--blue)">✅ נסגרו: <b>${closedThis.length}</b></span>`:''}`;
+    document.getElementById(ftId).innerHTML=`<span class="fi">סה"כ: <b>${items.length}</b></span><span class="fi" style="color:var(--teal);font-weight:800">💰 שירות —</span><span class="fi">שווי: <b>${fmt(tv)}</b></span><span class="fi" style="color:var(--teal)">חודש נוכחי: <b>${fmt(tmv)}</b></span><span class="fi">הפצות: <b>${fmt(td)}</b></span><span class="fi" style="color:#f4a261">יתרה: <b>${fmt(trem)}</b></span><span class="fi" style="color:var(--blue)">חודש הבא: <b>${fmt(tdn)}</b></span><span class="fi" style="opacity:.35">|</span><span class="fi" style="color:#f4a261;font-weight:800">📦 OTC —</span><span class="fi">פתוח: <b>${fmt(tot)}</b></span><span class="fi" style="color:var(--teal)">נסגר: <b>${fmt(totc)}</b></span>${carries.length?`<span class="fi" style="color:#f4a261">↩ עוברות: <b>${carries.length}</b></span>`:''}${closedThis.length?`<span class="fi" style="color:var(--blue)">✅ נסגרו: <b>${closedThis.length}</b></span>`:''}`;
     updateSelBar(sk);
   });
 }
@@ -4264,8 +4289,21 @@ function rDealSum(){
   const _sumMv=_all.reduce((a,d)=>a+(+d.mv||0),0);
   const _sumDn=_all.reduce((a,d)=>a+(+d.dn||0),0);
   const _sumRem=_all.reduce((a,d)=>a+Math.max(0,(+d.v||0)-(+d.mv||0)-(+d.di||0)),0);
-  document.getElementById('dsk').innerHTML=`<div class="kc"><div class="lb">שווי ארוך</div><div class="vl">₪${Math.round(sm(l,'v')/1000)}K</div></div><div class="kc y"><div class="lb">שווי קצר</div><div class="vl">₪${Math.round(sm(s,'v')/1000)}K</div></div><div class="kc g"><div class="lb">סה"כ</div><div class="vl">₪${Math.round((sm(l,'v')+sm(s,'v'))/1000)}K</div></div><div class="kc g"><div class="lb">📅 חודש נוכחי</div><div class="vl">${fmt(_sumMv)}</div></div><div class="kc g"><div class="lb">הפצות ארוך</div><div class="vl">₪${Math.round(sm(l,'di')/1000)}K</div></div><div class="kc y"><div class="lb">הפצות קצר</div><div class="vl">₪${Math.round(sm(s,'di')/1000)}K</div></div><div class="kc r"><div class="lb">⏳ יתרה</div><div class="vl">${fmt(_sumRem)}</div></div><div class="kc"><div class="lb">⏭ יתרה לחודש הבא</div><div class="vl" style="color:var(--blue)">${fmt(_sumDn)}</div></div><div class="kc p"><div class="lb">OTC כולל</div><div class="vl">₪${Math.round((sm(l,'otc')+sm(s,'otc'))/1000)}K</div></div>`;
-  document.getElementById('dst').innerHTML=`<div class="thdr" style="border-right:3px solid #4cc9f0">סיכום עסקאות</div><div class="tscroll"><table><thead><tr style="background:var(--s1)"><th>קטגוריה</th><th>כמות</th><th>שווי</th><th>הפצות</th><th>OTC</th></tr></thead><tbody><tr><td style="font-weight:600">טווח ארוך</td><td>${l.length}</td><td>${fmt(sm(l,'v'))}</td><td>${fmt(sm(l,'di'))}</td><td>${fmt(sm(l,'otc'))}</td></tr><tr><td style="font-weight:600">טווח קצר</td><td>${s.length}</td><td>${fmt(sm(s,'v'))}</td><td>${fmt(sm(s,'di'))}</td><td>${fmt(sm(s,'otc'))}</td></tr><tr style="background:var(--s3);font-weight:700"><td>סה"כ</td><td>${D.deals.length}</td><td>${fmt(sm(l,'v')+sm(s,'v'))}</td><td>${fmt(sm(l,'di')+sm(s,'di'))}</td><td>${fmt(sm(l,'otc')+sm(s,'otc'))}</td></tr></tbody></table></div>`;
+  const _sumOt=_all.reduce((a,d)=>a+(+d.ot||0),0);
+  const _sumOtc=_all.reduce((a,d)=>a+(+d.otc||0),0);
+  // שירות בשורה עליונה, OTC (ציוד) בבלוק נפרד — כדי שלא יתערבבו
+  document.getElementById('dsk').innerHTML=`<div class="kc"><div class="lb">שווי ארוך</div><div class="vl">₪${Math.round(sm(l,'v')/1000)}K</div></div><div class="kc y"><div class="lb">שווי קצר</div><div class="vl">₪${Math.round(sm(s,'v')/1000)}K</div></div><div class="kc g"><div class="lb">סה"כ שירות</div><div class="vl">₪${Math.round((sm(l,'v')+sm(s,'v'))/1000)}K</div></div><div class="kc g"><div class="lb">📅 חודש נוכחי</div><div class="vl">${fmt(_sumMv)}</div></div><div class="kc g"><div class="lb">הפצות ארוך</div><div class="vl">₪${Math.round(sm(l,'di')/1000)}K</div></div><div class="kc y"><div class="lb">הפצות קצר</div><div class="vl">₪${Math.round(sm(s,'di')/1000)}K</div></div><div class="kc r"><div class="lb">⏳ יתרה</div><div class="vl">${fmt(_sumRem)}</div></div><div class="kc"><div class="lb">⏭ יתרה לחודש הבא</div><div class="vl" style="color:var(--blue)">${fmt(_sumDn)}</div></div>`;
+  document.getElementById('dst').innerHTML=`
+  <div style="margin-bottom:14px">
+    <div style="font-size:11px;font-weight:800;color:#f4a261;letter-spacing:.7px;margin:2px 2px 8px">📦 OTC – ציוד (בנפרד מהשירות)</div>
+    <div class="krow" style="margin:0">
+      <div class="kc y"><div class="lb">📦 OTC פתוח</div><div class="vl">${fmt(_sumOt)}</div></div>
+      <div class="kc g"><div class="lb">✅ OTC נסגר</div><div class="vl">${fmt(_sumOtc)}</div></div>
+      <div class="kc r"><div class="lb">⏳ יתרת OTC</div><div class="vl">${fmt(Math.max(0,_sumOt-_sumOtc))}</div></div>
+    </div>
+  </div>
+  <div class="thdr" style="border-right:3px solid #4cc9f0">סיכום עסקאות — שירות</div><div class="tscroll"><table><thead><tr style="background:var(--s1)"><th>קטגוריה</th><th>כמות</th><th>שווי</th><th>הפצות</th></tr></thead><tbody><tr><td style="font-weight:600">טווח ארוך</td><td>${l.length}</td><td>${fmt(sm(l,'v'))}</td><td>${fmt(sm(l,'di'))}</td></tr><tr><td style="font-weight:600">טווח קצר</td><td>${s.length}</td><td>${fmt(sm(s,'v'))}</td><td>${fmt(sm(s,'di'))}</td></tr><tr style="background:var(--s3);font-weight:700"><td>סה"כ</td><td>${D.deals.length}</td><td>${fmt(sm(l,'v')+sm(s,'v'))}</td><td>${fmt(sm(l,'di')+sm(s,'di'))}</td></tr></tbody></table></div>
+  <div class="thdr" style="border-right:3px solid #f4a261;margin-top:12px">סיכום עסקאות — 📦 OTC (ציוד)</div><div class="tscroll"><table><thead><tr style="background:var(--s1)"><th>קטגוריה</th><th>OTC פתוח</th><th>OTC נסגר</th></tr></thead><tbody><tr><td style="font-weight:600">טווח ארוך</td><td>${fmt(sm(l,'ot'))}</td><td>${fmt(sm(l,'otc'))}</td></tr><tr><td style="font-weight:600">טווח קצר</td><td>${fmt(sm(s,'ot'))}</td><td>${fmt(sm(s,'otc'))}</td></tr><tr style="background:var(--s3);font-weight:700"><td>סה"כ</td><td>${fmt(sm(l,'ot')+sm(s,'ot'))}</td><td>${fmt(sm(l,'otc')+sm(s,'otc'))}</td></tr></tbody></table></div>`;
 }
 
 function rDealsArchive(){
