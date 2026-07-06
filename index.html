@@ -1604,13 +1604,13 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   </div>
   <div id="dist-goal-top"></div>
   <div class="tabs" id="dists-tabs">
-    <div class="tab active" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDists()">מרכזים / ארוך</div>
+    <div class="tab active" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDists()">הפצות לטווח ארוך</div>
     <div class="tab" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDists()">הפצות – קצר</div>
     <div class="tab" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDistSum()">סיכום</div>
     <div class="tab" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDistsArchive()">📦 ארכיון</div>
   </div>
   <div id="ldt">
-    <div class="tw"><div class="thdr" style="border-right:3px solid #a78bfa">📦 מרכזים / ארוך טווח</div>
+    <div class="tw"><div class="thdr" style="border-right:3px solid #a78bfa">📦 הפצות לטווח ארוך</div>
     <div class="tscroll"><table><thead><tr>
       <th class="cb-th"><input type="checkbox" id="chk-all-dists-long" onchange="toggleAll('dists-long',this.checked)"></th>
       <th>⚡</th><th>מטפל</th><th>מס׳ פרויקט</th><th>שם חברה</th><th>לקוח</th><th>IT</th>
@@ -2079,9 +2079,9 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="g"><label>מס׳ פרויקט</label><input type="text" id="spj"></div>
     <div class="g"><label>שם לקוח</label><input type="text" id="scl"></div>
     <div class="g"><label>כמות</label><input type="number" id="sqt" placeholder="1"></div>
-    <div class="g"><label>יעד ₪</label><input type="number" id="str" placeholder="0"></div>
-    <div class="g"><label>סגירה ₪</label><input type="number" id="scl2" placeholder="0"></div>
-    <div class="g"><label>יתרה קודמת ₪</label><input type="number" id="spv" placeholder="0"></div>
+    <div class="g"><label>יעד ₪</label><input type="number" id="str" placeholder="0" oninput="salAutoCalc()"></div>
+    <div class="g"><label>סגירה ₪</label><input type="number" id="scl2" placeholder="0" oninput="salAutoCalc()"></div>
+    <div class="g"><label>יתרה ₪ <span style="font-size:9px;color:var(--teal);font-weight:400">אוטומטי: יעד − סגירה</span></label><input type="number" id="spv" placeholder="0" oninput="this.dataset.manual='1'"></div>
     <div class="g"><label>סטטוס</label><select id="sst"><option>פתוח</option><option>בתהליך</option><option>סגור</option><option>חלקי</option></select></div>
     <div class="g"><label>סוג</label><select id="sty"><option value="service">שירות</option><option value="equipment">ציוד (OTC)</option></select></div>
     <div class="gf"><label>הערות</label><textarea id="sno" rows="2"></textarea></div>
@@ -4745,12 +4745,35 @@ function rDistSum(){
   const totalInc=sm(l,'inc')+sm(s,'inc'),totalTgt=sm(l,'tgt')+sm(s,'tgt'),totalEq=sm(l,'eq')+sm(s,'eq');
   const perfD=totalTgt?Math.round(totalInc/totalTgt*100):0;
   const perfCol=perfD>=100?'var(--teal)':perfD>=50?'#f4a261':'#e63946';
-  document.getElementById('dstk').innerHTML=`<div class="kc"><div class="lb">מרכזים</div><div class="vl">${l.length}</div><div class="sb">${fmt(sm(l,'inc'))} ביצוע</div></div><div class="kc y"><div class="lb">הפצות קצר</div><div class="vl">${s.length}</div><div class="sb">${fmt(sm(s,'inc'))} ביצוע</div></div>${totalTgt?`<div class="kc"><div class="lb">יעד הכנסה</div><div class="vl">${fmt(totalTgt)}</div></div><div class="kc g"><div class="lb">ביצוע הכנסה</div><div class="vl">${fmt(totalInc)}</div></div><div class="kc ${perfD>=100?'g':perfD>=50?'y':'r'}"><div class="lb">עמידה ביעד</div><div class="vl" style="color:${perfCol}">${perfD}%</div></div>`:`<div class="kc g"><div class="lb">הכנסה כוללת</div><div class="vl">₪${Math.round(totalInc/1000)}K</div></div>`}<div class="kc p"><div class="lb">ציוד סה"כ</div><div class="vl">₪${Math.round(totalEq/1000)}K</div></div>`;
+  document.getElementById('dstk').innerHTML=`<div class="kc"><div class="lb">הפצות לטווח ארוך</div><div class="vl">${l.length}</div><div class="sb">${fmt(sm(l,'inc'))} ביצוע</div></div><div class="kc y"><div class="lb">הפצות קצר</div><div class="vl">${s.length}</div><div class="sb">${fmt(sm(s,'inc'))} ביצוע</div></div>${totalTgt?`<div class="kc"><div class="lb">יעד הכנסה</div><div class="vl">${fmt(totalTgt)}</div></div><div class="kc g"><div class="lb">ביצוע הכנסה</div><div class="vl">${fmt(totalInc)}</div></div><div class="kc ${perfD>=100?'g':perfD>=50?'y':'r'}"><div class="lb">עמידה ביעד</div><div class="vl" style="color:${perfCol}">${perfD}%</div></div>`:`<div class="kc g"><div class="lb">הכנסה כוללת</div><div class="vl">₪${Math.round(totalInc/1000)}K</div></div>`}<div class="kc p"><div class="lb">ציוד סה"כ</div><div class="vl">₪${Math.round(totalEq/1000)}K</div></div>`;
 }
 
 // ===== SALARY =====
 function rSalary(){
-  const gt=document.getElementById('sal-goal-top'); if(gt)gt.innerHTML=salGoalBanner();
+  // סיכומים אוטומטיים לפרויקטי שכר — שירות וציוד בנפרד, מחושבים מכל הטבלה
+  const _salTile=(lbl,val,clr,bg)=>`<div class="stat-mini" style="background:${bg};border:1px solid ${clr}33"><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${lbl}</div><div style="font-size:18px;font-weight:900;color:${clr}">${val}</div></div>`;
+  const _salGroup=(title,accent,items)=>{
+    const tt=items.reduce((s,i)=>s+(+i.tr||0),0),tc=items.reduce((s,i)=>s+(+i.cl2||0),0);
+    const tp=items.reduce((s,i)=>s+Math.max(0,(+i.tr||0)-(+i.cl2||0)),0);
+    const pct=tt?Math.round(tc/tt*100):0;
+    const pcol=pct>=100?'var(--teal)':pct>=50?'#f4a261':'#e63946';
+    return`<div style="margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">
+      <div style="font-size:10px;font-weight:800;color:${accent};letter-spacing:.7px;margin-bottom:6px">${title}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">
+        ${_salTile('🎯 סיכום יעד',fmt(tt),accent,'rgba(255,255,255,.03)')}
+        ${_salTile('✅ סיכום סגירה',fmt(tc),'var(--teal)','rgba(6,214,160,.07)')}
+        ${_salTile('⏳ סיכום יתרה',fmt(tp),'#e63946','rgba(230,57,70,.06)')}
+        ${_salTile('📈 עמידה ביעד',pct+'%',pcol,'rgba(255,255,255,.03)')}
+      </div>
+    </div>`;
+  };
+  const _svc=D.salary.filter(s=>s.ty==='service'),_eq=D.salary.filter(s=>s.ty==='equipment');
+  const gt=document.getElementById('sal-goal-top');
+  if(gt)gt.innerHTML=salGoalBanner()
+    +`<div style="background:linear-gradient(135deg,rgba(16,21,37,.95),rgba(10,14,28,.98));border:1px solid rgba(6,214,160,.2);border-radius:12px;padding:12px 18px 14px;margin-bottom:16px">`
+    +_salGroup('🔧 שירות — סיכום אוטומטי','var(--teal)',_svc).replace('margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)','')
+    +_salGroup('📦 ציוד (OTC) — סיכום אוטומטי (בנפרד מהשירות)','#4cc9f0',_eq)
+    +`</div>`;
   ['service','equipment'].forEach(ty=>{
     const tbId=ty==='service'?'svctb':'eqtb',ftId=ty==='service'?'svcft':'eqft';
     const items=D.salary.filter(s=>s.ty===ty);
@@ -6431,6 +6454,14 @@ function dealAutoCalc(){
   const rem=Math.max(0,v-mv-di);
   dn.value=rem||'';
 }
+// חישוב אוטומטי בטופס פרויקט שכר: "יתרה" = יעד − סגירה (עריכה ידנית מבטלת)
+function salAutoCalc(){
+  const pv=document.getElementById('spv');
+  if(!pv||pv.dataset.manual==='1')return;
+  const tr=+document.getElementById('str').value||0;
+  const cl2=+document.getElementById('scl2').value||0;
+  pv.value=Math.max(0,tr-cl2)||'';
+}
 function openM(type,id){
   if(typeof closeFab==='function')closeFab();
   EI=id;ET=type;const isNew=!id;
@@ -6462,6 +6493,12 @@ function openM(type,id){
     document.getElementById('sttit').textContent=isNew?'פרויקט לשכר':'עריכת פרויקט';
     const s=isNew?{}:D.salary.find(x=>x.id==id)||{};
     document.getElementById('spj').value=s.pj||'';document.getElementById('scl').value=s.cl||'';document.getElementById('sqt').value=s.qt||1;document.getElementById('str').value=s.tr||0;document.getElementById('scl2').value=s.cl2||0;document.getElementById('spv').value=s.pv||0;document.getElementById('sst').value=s.st||'פתוח';document.getElementById('sty').value=s.ty||'service';document.getElementById('sno').value=s.no||'';
+    // אתחול האוטומטיקה של "יתרה": ערך ידני קיים ששונה מהחישוב — נשמר ולא נדרס
+    const _spv=document.getElementById('spv');
+    if(_spv){
+      const _sauto=Math.max(0,(+s.tr||0)-(+s.cl2||0));
+      _spv.dataset.manual=(!isNew&&+s.pv&&+s.pv!==_sauto)?'1':'';
+    }
   }else if(type==='meeting'){
     document.getElementById('metit').textContent=isNew?'פגישה חדשה':'עריכת פגישה';
     const m=isNew?{}:D.meetings.find(x=>x.id==id)||{};
