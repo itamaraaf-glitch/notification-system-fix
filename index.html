@@ -3315,6 +3315,38 @@ function _notifyTick(){
   }
 }
 setInterval(_notifyTick,60000);
+// באנר הקפצה: מציע להפעיל התראות טלפון בכניסה למערכת — לחיצה פותחת את
+// חלון ההרשאה של המכשיר. "לא עכשיו" משתיק לשלושה ימים.
+function maybeAskNotifyPermission(){
+  try{
+    if(document.getElementById('notify-ask-banner'))return;
+    const c=notifyCfg();
+    const snooze=+localStorage.getItem('cem_notify_snooze')||0;
+    if(Date.now()-snooze<3*86400000)return;
+    const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+    const standalone=window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
+    let mode='';
+    if(!('Notification' in window)){
+      if(isIOS&&!standalone)mode='ios-install'; // באייפון התראות עובדות רק מאפליקציה מותקנת
+      else return;
+    }else if(Notification.permission==='denied')return; // הדפדפן חסם — אין טעם להציק
+    else if(Notification.permission==='granted'&&c.on)return; // כבר פעיל
+    const b=document.createElement('div');
+    b.id='notify-ask-banner';
+    b.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:9998;padding:14px 16px;border-radius:18px;background:linear-gradient(135deg,rgba(200,169,110,.28),rgba(200,169,110,.1) 45%,rgba(200,169,110,.2));backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);box-shadow:inset 0 1px 0 rgba(255,236,190,.4),0 14px 44px rgba(0,0,0,.6);direction:rtl;max-width:440px;margin:0 auto;animation:toastPop .45s cubic-bezier(.5,1.5,.5,1)';
+    b.innerHTML=mode==='ios-install'
+      ?`<div style="font-size:13px;font-weight:800;color:#f6ecce;margin-bottom:4px">🔔 רוצה התראות בטלפון?</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:10px">באייפון: לחץ על כפתור השיתוף ← "הוסף למסך הבית" — ואז ההתראות יעבדו מהאפליקציה.</div>
+        <button class="btn" onclick="localStorage.setItem('cem_notify_snooze',Date.now());document.getElementById('notify-ask-banner').remove()" style="font-size:11px">הבנתי</button>`
+      :`<div style="font-size:13px;font-weight:800;color:#f6ecce;margin-bottom:4px">🔔 קבל התראות ישירות לטלפון</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:10px">תקציר בוקר ותזכורות לפני פגישות — במסך ההתראות של המכשיר, בלי להיכנס למערכת.</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btnp" onclick="enableNotify().then(()=>{const x=document.getElementById('notify-ask-banner');if(x)x.remove();})" style="font-size:12px">🔔 הפעל עכשיו</button>
+          <button class="btn" onclick="localStorage.setItem('cem_notify_snooze',Date.now());document.getElementById('notify-ask-banner').remove()" style="font-size:11px;opacity:.8">לא עכשיו</button>
+        </div>`;
+    document.body.appendChild(b);
+  }catch(e){}
+}
 function renderNotifyPanel(){
   const p=document.getElementById('notify-panel');if(!p)return;
   const c=notifyCfg();
@@ -3403,7 +3435,7 @@ function _finishLoad(){
   }
   rAll();
   showLoginHealth();
-  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); renderNotifyPanel(); const nc=notifyCfg(); if(nc.on&&('Notification' in window)&&Notification.permission==='granted'){_registerPeriodicDigest();_notifyTick();} }catch(e){} }, 2500);
+  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); renderNotifyPanel(); const nc=notifyCfg(); if(nc.on&&('Notification' in window)&&Notification.permission==='granted'){_registerPeriodicDigest();_notifyTick();} setTimeout(maybeAskNotifyPermission,2000); }catch(e){} }, 2500);
   setTimeout(()=>{ try{ checkEmptyAndRecovery(); }catch(e){} }, 4000);
 }
 function loadAll(){
