@@ -172,6 +172,10 @@ body{font-family:'Heebo',sans-serif;background:#080c18;color:var(--text);font-si
 .bk-item:hover{background:rgba(200,169,110,.08)}
 tr.row-flash{animation:rowflash 3s ease-out}
 @keyframes rowflash{0%,35%{background:rgba(200,169,110,.38);box-shadow:inset 0 0 0 2px rgba(200,169,110,.85)}100%{background:transparent;box-shadow:none}}
+/* העתקה בלחיצה על תא בטבלה */
+.tscroll td{cursor:copy}
+td.cell-copied{animation:cellcopied 1s ease-out}
+@keyframes cellcopied{0%{background:rgba(6,214,160,.4);box-shadow:inset 0 0 0 2px rgba(6,214,160,.9)}100%{background:transparent;box-shadow:none}}
 .save-ind{font-size:11px;color:var(--teal);display:none;background:var(--tealdim);border:1px solid rgba(6,214,160,.3);border-radius:20px;padding:4px 12px}
 .save-ind.show{display:flex;align-items:center;gap:5px;animation:fadeIn .3s}
 .toast{position:fixed;bottom:24px;left:24px;z-index:9999;padding:11px 18px;border-radius:12px;font-size:12px;font-weight:700;font-family:'Heebo',sans-serif;backdrop-filter:blur(12px);max-width:340px;box-shadow:0 10px 32px rgba(0,0,0,.5);animation:slideIn .3s ease;white-space:pre-line;line-height:1.5;transition:opacity .4s}
@@ -3879,6 +3883,35 @@ function alertGo(i){
   const label=(al.h||'').split('–').pop().trim();
   setTimeout(()=>_secLocateFlash(sec,mtypeMap[al.kind],al.id,al.co||label,false),380);
 }
+// ===== העתקה בלחיצה: כל תא בטבלאות מועתק ללוח בלחיצה אחת =====
+// מספרי פרויקט, שמות לקוח, סכומים — בלי להיכנס לרשומה. לחיצה על
+// כפתורים/תיבות סימון בתוך התא לא מעתיקה.
+document.addEventListener('click',e=>{
+  try{
+    const td=e.target.closest('td');
+    if(!td||!td.closest('.tscroll'))return;
+    if(e.target.closest('button,a,input,select,textarea,label,[onclick]'))return;
+    if(td.classList.contains('cb-td'))return;
+    const txt=(td.innerText||'').replace(/\s+/g,' ').trim();
+    if(!txt||txt==='–'||txt==='-')return;
+    const done=()=>{
+      td.classList.remove('cell-copied');void td.offsetWidth;td.classList.add('cell-copied');
+      showToast('📋 הועתק: '+(txt.length>40?txt.slice(0,40)+'…':txt),'ok');
+    };
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done).catch(()=>{_cellCopyFallback(txt,done);});
+    }else _cellCopyFallback(txt,done);
+  }catch(e2){}
+});
+function _cellCopyFallback(t,done){
+  try{
+    const ta=document.createElement('textarea');
+    ta.value=t;ta.style.cssText='position:fixed;opacity:0;top:0;left:0;width:1px;height:1px';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+    if(done)done();
+  }catch(e){}
+}
+
 // close the search dropdown when clicking/tapping elsewhere
 function _closeGsIfOutside(e){
   const gs=document.getElementById('gsearch');
