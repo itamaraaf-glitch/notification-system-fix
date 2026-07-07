@@ -2214,6 +2214,15 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   <div class="mhdr"><h3 id="ctit">כרטיס לקוח חדש</h3><button class="mcls" onclick="closeM('mclient')">✕</button></div>
   <div class="msec">
     <div class="msec-hdr"><span style="color:#4cc9f0">📋 פרטי לקוח</span></div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap">
+      <div id="cl-avatar" style="width:64px;height:64px;border-radius:50%;background-color:rgba(200,169,110,.12);background-size:cover;background-position:center;border:2px solid rgba(200,169,110,.4);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">🏢</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button type="button" class="btn" onclick="pickClientContact()" title="מושך שם, טלפון ותמונה מאנשי הקשר של הטלפון (כרום באנדרואיד)" style="border-color:#06d6a0;color:#06d6a0;font-size:11px">📇 משוך מאנשי הקשר</button>
+        <button type="button" class="btn" onclick="document.getElementById('cl-photo-inp').click()" style="border-color:#4cc9f0;color:#4cc9f0;font-size:11px">📷 העלה תמונה</button>
+        <button type="button" class="btn btnd" id="cl-photo-rm" onclick="_setClientPhoto(null);showToast('התמונה הוסרה','info')" style="display:none;font-size:11px">🗑 הסר תמונה</button>
+        <input type="file" id="cl-photo-inp" accept="image/*" style="display:none" onchange="uploadClientPhoto(event)">
+      </div>
+    </div>
     <div class="fg">
       <div class="g"><label>שם חברה *</label><input type="text" id="cl-name"></div>
       <div class="g"><label>ח.פ</label><input type="text" id="cl-cp" placeholder="מספר ח.פ"></div>
@@ -5639,11 +5648,69 @@ function showTodayMeetings(){
   showToast(`📅 היום יש לך ${todayMtgs.length} פגישות: ${entries}${more}`,'ok');
 }
 
+// ===== תמונת איש קשר בכרטיס לקוח =====
+let _clientPhotoPending=null;
+function _setClientPhoto(dataUrl){
+  _clientPhotoPending=dataUrl||null;
+  const av=document.getElementById('cl-avatar');
+  const rm=document.getElementById('cl-photo-rm');
+  if(av){av.style.backgroundImage=dataUrl?`url(${dataUrl})`:'';av.textContent=dataUrl?'':'🏢';}
+  if(rm)rm.style.display=dataUrl?'':'none';
+}
+// הקטנה לעיגול 128px — שומר את האחסון קטן (כ-5-10KB לתמונה)
+async function _blobToImg(blob){
+  try{return await createImageBitmap(blob);}
+  catch(e){
+    // פורמטים שה-decoder המהיר לא מפענח — נתיב חלופי דרך תגית תמונה
+    return await new Promise((res,rej)=>{
+      const url=URL.createObjectURL(blob);
+      const img=new Image();
+      img.onload=()=>{res(img);setTimeout(()=>URL.revokeObjectURL(url),1000);};
+      img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('decode failed'));};
+      img.src=url;
+    });
+  }
+}
+async function _resizeToDataUrl(blob,px){
+  const bmp=await _blobToImg(blob);
+  const w=bmp.width||bmp.naturalWidth,h=bmp.height||bmp.naturalHeight;
+  const s=Math.min(w,h);
+  const cv=document.createElement('canvas');cv.width=px;cv.height=px;
+  cv.getContext('2d').drawImage(bmp,(w-s)/2,(h-s)/2,s,s,0,0,px,px);
+  return cv.toDataURL('image/jpeg',.82);
+}
+// משיכה מאנשי הקשר של הטלפון: שם + טלפון + התמונה השמורה (Contact Picker API)
+async function pickClientContact(){
+  if(!('contacts' in navigator)||!navigator.contacts.select){
+    showToast('📇 משיכה מאנשי קשר עובדת בטלפון (כרום באנדרואיד). כאן — השתמש ב"העלה תמונה"','info');
+    return;
+  }
+  try{
+    const sel=await navigator.contacts.select(['name','tel','icon'],{multiple:false});
+    if(!sel||!sel.length)return;
+    const ct=sel[0];
+    if(ct.tel&&ct.tel.length)document.getElementById('cl-phone').value=ct.tel[0];
+    const cn=document.getElementById('cl-contact');
+    if(ct.name&&ct.name.length&&!cn.value.trim())cn.value=ct.name[0];
+    if(ct.icon&&ct.icon.length){
+      _setClientPhoto(await _resizeToDataUrl(ct.icon[0],128));
+      showToast('📇 השם, הטלפון והתמונה נמשכו מאנשי הקשר','ok');
+    }else showToast('📇 הפרטים נמשכו — לאיש הקשר אין תמונה שמורה בטלפון','ok');
+  }catch(e){/* המשתמש ביטל את הבחירה */}
+}
+function uploadClientPhoto(ev){
+  const f=ev.target.files[0];ev.target.value='';
+  if(!f)return;
+  _resizeToDataUrl(f,128)
+    .then(d=>{_setClientPhoto(d);showToast('📷 התמונה נוספה — לחץ שמור כדי לקבע','ok');})
+    .catch(()=>showToast('⚠️ קובץ תמונה לא תקין','warn'));
+}
 function openClientModal(id){
   EI=id;ET='client';
   buildClientSections();
   document.getElementById('ctit').textContent=id?'עריכת כרטיס לקוח':'כרטיס לקוח חדש';
   const c=id?D.clients.find(x=>x.id==id)||{}:{};
+  _setClientPhoto(c.photo||null);
   document.getElementById('cl-name').value=c.name||'';
   document.getElementById('cl-contact').value=c.contact||'';
   document.getElementById('cl-phone').value=c.phone||'';
@@ -5664,7 +5731,7 @@ function openClientModal(id){
 function saveClient(){
   const name=document.getElementById('cl-name').value.trim();
   if(!name){alert('יש להזין שם חברה');return;}
-  const row={name,cp:document.getElementById('cl-cp').value,contact:document.getElementById('cl-contact').value,phone:document.getElementById('cl-phone').value,email:document.getElementById('cl-email').value,address:document.getElementById('cl-address').value,status:document.getElementById('cl-status').value,genNotes:document.getElementById('cl-gen-notes').value,files:_attPending['client']||[]};
+  const row={name,cp:document.getElementById('cl-cp').value,contact:document.getElementById('cl-contact').value,phone:document.getElementById('cl-phone').value,email:document.getElementById('cl-email').value,address:document.getElementById('cl-address').value,status:document.getElementById('cl-status').value,genNotes:document.getElementById('cl-gen-notes').value,photo:_clientPhotoPending,files:_attPending['client']||[]};
   Object.keys(ITEM_CFG).forEach(type=>{row[type]=getItemData(type);});
   row.potential=getPotentialData();
   // any potential marked 'נסגר' moves into the client's purchased products
@@ -5739,9 +5806,12 @@ function rClients(){
     const lastMtg=cMtgs.filter(m=>m.hl==='כן').sort((a,b)=>(a.dt)<(b.dt)?1:-1)[0];
     return`<div class="client-card ${stCls}" style="border-right:3px solid ${stCol}" onclick="openClientModal('${c.id}')">
       <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:8px">
-        <div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:38px;height:38px;border-radius:50%;flex-shrink:0;border:2px solid ${stCol}55;background:${c.photo?`url(${c.photo}) center/cover no-repeat`:'rgba(200,169,110,.1)'};display:flex;align-items:center;justify-content:center;font-size:16px">${c.photo?'':'🏢'}</div>
+          <div>
           <div style="font-size:13px;font-weight:700">${c.name||''}</div>
           <div style="font-size:10px;color:var(--text2)">${c.contact||''}${c.phone?' · '+c.phone:''}</div>
+          </div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
           <span class="badge" style="background:${stCol}22;color:${stCol};border:1px solid ${stCol}44;font-size:9px">${c.status||''}</span>
