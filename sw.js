@@ -1,6 +1,6 @@
-const CACHE = 'hot-crm-v9';
+const CACHE = 'hot-crm-v10';
 const META_CACHE = 'hot-crm-meta';
-const ASSETS = ['./manifest.json', './office-bg.jpg', './mountains-bg.mp4'];
+const ASSETS = ['./manifest.json', './office-bg.jpg', './mountains-bg.mp4', './icon-192.png', './icon-512.png', './badge-96.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -81,7 +81,7 @@ async function digestFromBackup() {
       : '📅 אין פגישות ביומן היום — פתח את המערכת להתראות ומשימות';
     await self.registration.showNotification('📣 תקציר בוקר — HOT CRM', {
       body, tag: 'daily-digest', dir: 'rtl', lang: 'he',
-      icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%23060810'/%3E%3Ctext x='50%25' y='54%25' font-size='110' text-anchor='middle' dominant-baseline='middle' fill='%23c8a96e'%3E📊%3C/text%3E%3C/svg%3E"
+      icon: './icon-192.png', badge: './badge-96.png'
     });
   } catch (e) {}
 }
