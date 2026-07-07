@@ -1,0 +1,26 @@
+# הרצה יומית בענן: קוראת את נתוני ה-CRM מענן הסנכרון (Firebase) ופותחת
+# Issue עם תקציר הבוקר — GitHub שולח אותו אוטומטית למייל של בעל המאגר.
+# פועלת רק אם הוגדרו הסודות FIREBASE_DB_URL ו-SYNC_CODE (Settings → Secrets).
+name: daily-digest
+
+on:
+  schedule:
+    - cron: '30 4 * * 0-5'   # 07:30 שעון ישראל (קיץ), ימים ראשון–שישי
+  workflow_dispatch: {}
+
+permissions:
+  issues: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: build and send digest
+        env:
+          FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
+          SYNC_CODE: ${{ secrets.SYNC_CODE }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          OWNER: ${{ github.repository_owner }}
+        run: node .github/scripts/daily-digest.js

@@ -1801,6 +1801,12 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       </div>
     </div></div>
   </div>
+  <!-- 🔔 התראות מחוץ למערכת -->
+  <div class="tw" style="margin-top:16px;padding:16px 18px;border-top:3px solid #f4a261">
+    <div style="font-size:13px;font-weight:800;color:#f4a261;margin-bottom:4px">🔔 התראות מחוץ למערכת</div>
+    <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:12px">תקציר בוקר יומי + תזכורת לפני כל פגישה — כהתראות מערכת בטלפון ובמחשב, בלי להיכנס למערכת. עובד כשהדפדפן פתוח ברקע; באנדרואיד עם האפליקציה המותקנת — גם כשהיא סגורה.</div>
+    <div id="notify-panel" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"></div>
+  </div>
 </div>
 
 <!-- AUTO-BACKUPS MODAL -->
@@ -3243,6 +3249,99 @@ setTimeout(checkAppVersion,6000);
 setInterval(checkAppVersion,35*60*1000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkAppVersion();});
 
+// ═══ התראות מחוץ למערכת: תקציר בוקר + תזכורות פגישה כהתראות מערכת ═══
+const NOTIFY_CFG_KEY='cem_notify_cfg';
+function notifyCfg(){try{return Object.assign({on:false,hour:'08:30',meetRem:true,remMin:30},JSON.parse(localStorage.getItem(NOTIFY_CFG_KEY)||'{}'));}catch(e){return{on:false,hour:'08:30',meetRem:true,remMin:30};}}
+function saveNotifyCfg(c){localStorage.setItem(NOTIFY_CFG_KEY,JSON.stringify(c));}
+function sysNotify(title,body,tag){
+  try{
+    if(!('Notification' in window)||Notification.permission!=='granted')return;
+    const opts={body:body,tag:tag||'hot-crm',dir:'rtl',lang:'he',icon:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%23060810'/%3E%3Ctext x='50%25' y='54%25' font-size='110' text-anchor='middle' dominant-baseline='middle' fill='%23c8a96e'%3E📊%3C/text%3E%3C/svg%3E"};
+    // דרך ה-service worker כשאפשר — נדרש להתראות מ-PWA באנדרואיד
+    if(navigator.serviceWorker&&navigator.serviceWorker.controller){
+      navigator.serviceWorker.ready.then(reg=>reg.showNotification(title,opts)).catch(()=>{try{new Notification(title,opts);}catch(e){}});
+    }else{try{new Notification(title,opts);}catch(e){}}
+  }catch(e){}
+}
+async function enableNotify(){
+  if(!('Notification' in window)){showToast('⚠️ הדפדפן הזה לא תומך בהתראות מערכת','warn');return;}
+  let perm=Notification.permission;
+  if(perm!=='granted')perm=await Notification.requestPermission();
+  if(perm!=='granted'){showToast('⚠️ ההרשאה נדחתה — אפשר "התראות" לאתר בהגדרות הדפדפן ונסה שוב','warn');renderNotifyPanel();return;}
+  const c=notifyCfg();c.on=true;saveNotifyCfg(c);
+  _registerPeriodicDigest();
+  renderNotifyPanel();
+  sysNotify('🔔 ההתראות פעילות — HOT CRM','מעכשיו תקבל תקציר בוקר ותזכורות פגישות גם כשהמערכת ברקע');
+  showToast('✅ התראות מחוץ למערכת הופעלו','ok');
+}
+function disableNotify(){const c=notifyCfg();c.on=false;saveNotifyCfg(c);renderNotifyPanel();showToast('🔕 ההתראות כובו','info');}
+async function _registerPeriodicDigest(){
+  // אנדרואיד (PWA מותקן): הרשמה להתעוררות תקופתית — תקציר גם כשהאפליקציה סגורה
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    if(reg&&'periodicSync' in reg)await reg.periodicSync.register('hot-crm-digest',{minInterval:6*60*60*1000});
+  }catch(e){}
+}
+function _notifyTick(){
+  const c=notifyCfg();
+  if(!c.on||!('Notification' in window)||Notification.permission!=='granted')return;
+  const now_=new Date();const today=nd();
+  const hm=now_.toTimeString().slice(0,5);
+  // תקציר בוקר — פעם ביום מהשעה שנקבעה
+  if(hm>=c.hour&&localStorage.getItem('cem_last_digest')!==today){
+    localStorage.setItem('cem_last_digest',today);
+    try{
+      const al=getAlerts();
+      const crit=al.filter(x=>x.type==='crit').length,warn=al.filter(x=>x.type==='warn').length;
+      const mtgs=D.meetings.filter(m=>m.dt===today&&m.hl!=='מבוטל').sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+      const lines=[];
+      if(crit||warn)lines.push((crit?'🔴 '+crit+' קריטיות':'')+(crit&&warn?' · ':'')+(warn?'🟠 '+warn+' אזהרות':''));
+      lines.push(mtgs.length?'📅 '+mtgs.length+' פגישות היום: '+mtgs.map(m=>(m.time?m.time+' ':'')+(m.cl||'')).join(', '):'📅 אין פגישות היום');
+      sysNotify('📣 תקציר בוקר — HOT CRM',lines.join('\n'),'daily-digest');
+    }catch(e){}
+  }
+  // תזכורת לפני פגישה
+  if(c.meetRem){
+    D.meetings.forEach(m=>{
+      if(m.dt!==today||!m.time||m.hl==='מבוטל'||m.hl==='כן')return;
+      const p=m.time.split(':');const mt=new Date();mt.setHours(+p[0],+p[1]||0,0,0);
+      const diff=(mt-now_)/60000;
+      const key='cem_mrem_'+today+'_'+m.id;
+      if(diff<=(c.remMin||30)&&diff>-5&&!localStorage.getItem(key)){
+        localStorage.setItem(key,'1');
+        sysNotify('⏰ פגישה '+(diff>1?'בעוד '+Math.round(diff)+' דק׳':'עכשיו')+' — '+(m.cl||''),m.time+(m.mtype&&m.mtype!=='פגישה'?' · '+m.mtype:'')+(m.no?'\n'+m.no:''),'meet-'+m.id);
+      }
+    });
+  }
+}
+setInterval(_notifyTick,60000);
+function renderNotifyPanel(){
+  const p=document.getElementById('notify-panel');if(!p)return;
+  const c=notifyCfg();
+  const perm=('Notification' in window)?Notification.permission:'unsupported';
+  const active=c.on&&perm==='granted';
+  const status=active?'<span style="color:var(--teal);font-weight:800">● פעיל</span>'
+    :perm==='denied'?'<span style="color:#e63946;font-weight:800">● נחסם בדפדפן</span>'
+    :'<span style="color:var(--text3);font-weight:800">● כבוי</span>';
+  p.innerHTML=`
+    <span style="font-size:12px">${status}</span>
+    ${active
+      ?`<button class="btn" onclick="disableNotify()" style="font-size:11px">🔕 כבה</button>
+        <label style="font-size:11px;color:var(--text2)">שעת תקציר בוקר:
+          <input type="time" value="${c.hour}" onchange="(function(v){const c2=notifyCfg();c2.hour=v;saveNotifyCfg(c2);showToast('🕗 שעת התקציר עודכנה ל-'+v,'ok');})(this.value)" style="padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-family:inherit"></label>
+        <label style="font-size:11px;color:var(--text2)">תזכורת לפני פגישה:
+          <select onchange="(function(v){const c2=notifyCfg();c2.meetRem=v!=='off';c2.remMin=+v||30;saveNotifyCfg(c2);showToast('⏰ עודכן','ok');})(this.value)" style="padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-family:inherit">
+            <option value="15" ${c.meetRem&&c.remMin===15?'selected':''}>15 דק׳</option>
+            <option value="30" ${c.meetRem&&c.remMin===30?'selected':''}>30 דק׳</option>
+            <option value="60" ${c.meetRem&&c.remMin===60?'selected':''}>שעה</option>
+            <option value="off" ${!c.meetRem?'selected':''}>כבוי</option>
+          </select></label>
+        <button class="btn" onclick="sysNotify('🔔 התראת ניסיון — HOT CRM','ככה ייראו התקציר והתזכורות שלך');showToast('נשלחה התראת ניסיון','ok')" style="font-size:11px;border-color:#4cc9f0;color:#4cc9f0">🧪 שלח ניסיון</button>`
+      :`<button class="btn btnp" onclick="enableNotify()" style="font-size:11px">🔔 הפעל התראות</button>
+        ${perm==='denied'?'<span style="font-size:10px;color:var(--text3)">ההרשאה נחסמה — פתח את הגדרות האתר בדפדפן ← התראות ← אפשר</span>':''}`}
+  `;
+}
+
 // Network reconnect — when going back online, re-init sync
 window.addEventListener('online',()=>{
   showToast('🌐 חיבור אינטרנט חזר','info');
@@ -3304,7 +3403,7 @@ function _finishLoad(){
   }
   rAll();
   showLoginHealth();
-  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); }catch(e){} }, 2500);
+  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); renderNotifyPanel(); const nc=notifyCfg(); if(nc.on&&('Notification' in window)&&Notification.permission==='granted'){_registerPeriodicDigest();_notifyTick();} }catch(e){} }, 2500);
   setTimeout(()=>{ try{ checkEmptyAndRecovery(); }catch(e){} }, 4000);
 }
 function loadAll(){
