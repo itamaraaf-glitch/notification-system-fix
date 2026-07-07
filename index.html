@@ -11,6 +11,8 @@
 <meta name="apple-mobile-web-app-title" content="HOT CRM">
 <meta name="theme-color" content="#060810">
 <meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
 <title>CRM | HOT Business v3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3256,7 +3258,7 @@ function saveNotifyCfg(c){localStorage.setItem(NOTIFY_CFG_KEY,JSON.stringify(c))
 function sysNotify(title,body,tag){
   try{
     if(!('Notification' in window)||Notification.permission!=='granted')return;
-    const opts={body:body,tag:tag||'hot-crm',dir:'rtl',lang:'he',icon:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%23060810'/%3E%3Ctext x='50%25' y='54%25' font-size='110' text-anchor='middle' dominant-baseline='middle' fill='%23c8a96e'%3E📊%3C/text%3E%3C/svg%3E"};
+    const opts={body:body,tag:tag||'hot-crm',dir:'rtl',lang:'he',icon:'./icon-192.png',badge:'./badge-96.png'};
     // דרך ה-service worker כשאפשר — נדרש להתראות מ-PWA באנדרואיד
     if(navigator.serviceWorker&&navigator.serviceWorker.controller){
       navigator.serviceWorker.ready.then(reg=>reg.showNotification(title,opts)).catch(()=>{try{new Notification(title,opts);}catch(e){}});
