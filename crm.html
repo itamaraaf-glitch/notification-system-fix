@@ -3677,6 +3677,47 @@ function _gsFlash(row){
   row.classList.add('row-flash');
   setTimeout(()=>row.classList.remove('row-flash'),3200);
 }
+// איתור והדגשת רשומה בתוך סעיף (אחרי nav) — משמש גם את החיפוש הגלובלי וגם את ההתראות
+function _secLocateFlash(sec,mtype,id,label,arch){
+  const cfg=SEC_TABS[sec];
+  if(!cfg)return;
+  const tabs=document.querySelectorAll('#'+cfg.tabs+' .tab');
+  const locateActive=()=>{
+    let row=null,idx=-1;
+    cfg.contents.forEach((cid,ci)=>{
+      if(row||cfg.skip.includes(ci))return;
+      const f=_gsFindRow(document.getElementById(cid),id,label);
+      if(f){row=f;idx=ci;}
+    });
+    return{row,idx};
+  };
+  const openArchive=()=>{
+    if(!tabs.length)return null;
+    tabs[tabs.length-1].click(); // מפעיל את לשונית הארכיון ומרנדר אותה
+    return _gsFindRow(document.getElementById(cfg.contents[cfg.contents.length-1]),id,label);
+  };
+  if(arch){
+    const row=openArchive();
+    if(row)_gsFlash(row);
+    else showToast('הרשומה בארכיון — פתח את לשונית 📦 ארכיון וחפש שם','info');
+    return;
+  }
+  const found=locateActive();
+  if(found.row){
+    if(tabs[found.idx])tabs[found.idx].click();
+    // ההקלקה על הלשונית מרנדרת מחדש — מאתרים שוב את השורה אחרי הרינדור
+    setTimeout(()=>{
+      const row2=_gsFindRow(document.getElementById(cfg.contents[found.idx]),id,label)||found.row;
+      _gsFlash(row2);
+    },80);
+    return;
+  }
+  // לא נמצא בטבלאות הפעילות — ייתכן שבארכיון
+  const archRow=openArchive();
+  if(archRow){_gsFlash(archRow);return;}
+  // נפילה אחורה: פתיחת חלון העריכה של הרשומה
+  if(mtype&&id)openM(mtype,id);
+}
 function gsGo(i){
   const r=_gsRes[i]; if(!r)return;
   const box=document.getElementById('gsres'); if(box)box.classList.remove('show');
@@ -3685,45 +3726,25 @@ function gsGo(i){
   const secMap={deal:'deals',dist:'dists',salary:'salary',tender:'tenders',meeting:'meetings'};
   const sec=secMap[r.type]; if(!sec)return;
   nav(sec);
-  setTimeout(()=>{
-    const cfg=SEC_TABS[sec];
-    const tabs=cfg?document.querySelectorAll('#'+cfg.tabs+' .tab'):[];
-    const locateActive=()=>{
-      let row=null,idx=-1;
-      cfg.contents.forEach((cid,ci)=>{
-        if(row||cfg.skip.includes(ci))return;
-        const f=_gsFindRow(document.getElementById(cid),r.id,r.label);
-        if(f){row=f;idx=ci;}
-      });
-      return{row,idx};
-    };
-    const openArchive=()=>{
-      if(!tabs.length)return null;
-      tabs[tabs.length-1].click(); // מפעיל את לשונית הארכיון ומרנדר אותה
-      return _gsFindRow(document.getElementById(cfg.contents[cfg.contents.length-1]),r.id,r.label);
-    };
-    if(r.arch){
-      const row=openArchive();
-      if(row)_gsFlash(row);
-      else showToast('הרשומה בארכיון — פתח את לשונית 📦 ארכיון וחפש שם','info');
-      return;
-    }
-    const found=locateActive();
-    if(found.row){
-      if(tabs[found.idx])tabs[found.idx].click();
-      // ההקלקה על הלשונית מרנדרת מחדש — מאתרים שוב את השורה אחרי הרינדור
-      setTimeout(()=>{
-        const row2=_gsFindRow(document.getElementById(cfg.contents[found.idx]),r.id,r.label)||found.row;
-        _gsFlash(row2);
-      },80);
-      return;
-    }
-    // לא נמצא בטבלאות הפעילות — ייתכן שבארכיון
-    const archRow=openArchive();
-    if(archRow){_gsFlash(archRow);return;}
-    // נפילה אחורה: פתיחת חלון העריכה של הרשומה
-    openM(r.type,r.id);
-  },380);
+  setTimeout(()=>_secLocateFlash(sec,r.type,r.id,r.label,r.arch),380);
+}
+// לחיצה על התראה במסך ההתראות: קיצור דרך ישירות לרשומה הרלוונטית בנושא שלה
+function alertGo(i){
+  const al=(window._alertsList||[])[i]; if(!al)return;
+  // התראות לקוח (תפוגה / יצירת קשר / יעד סגירה) — פותחות את כרטיס הלקוח
+  if(al.cid||al.kind==='expiry'||al.kind==='potential'){
+    let cid=al.cid;
+    if(!cid&&al.co){const c=findClientByName(al.co);cid=c&&c.id;}
+    if(cid&&typeof openClientModal==='function'){openClientModal(cid);return;}
+  }
+  const secMap={deal:'deals',dist:'dists',salary:'salary',tender:'tenders',meetings:'meetings'};
+  const mtypeMap={deal:'deal',dist:'dist',salary:'salary',tender:'tender'};
+  const sec=secMap[al.kind];
+  if(!sec)return;
+  nav(sec);
+  if(!al.id)return; // התראות כלליות (יעד פגישות, פגישות היום) — מעבר לסעיף מספיק
+  const label=(al.h||'').split('–').pop().trim();
+  setTimeout(()=>_secLocateFlash(sec,mtypeMap[al.kind],al.id,al.co||label,false),380);
 }
 // close the search dropdown when clicking/tapping elsewhere
 function _closeGsIfOutside(e){
@@ -3743,7 +3764,7 @@ function getAlerts(){
       const reason=d.st==='בעיה'?(d.no?`תקועה בגלל: ${d.no}`:'מסומנת "בעיה" — ראה הערות בעסקה')
         :d.st==='ממתין לתשובה'?`ממתינה לתשובת ${d.ct||'הלקוח'} מאז ${fmtDate(d.date)}`
         :`בסטטוס "${d.st||'פתוח'}" מאז ${fmtDate(d.date)}`;
-      a.push({type:'crit',h:`עסקה פתוחה ${months} חודשים – ${d.co}${d.srv?' · '+d.srv:''}`,s:`${reason} | שווי: ${fmt(d.v)}${d.ch?` | סיכוי: ${Math.round((d.ch||0)*100)}%`:''}${d.no&&d.st!=='בעיה'?` | רקע: ${d.no}`:''}`,co:d.co,kind:'deal',meta:{srv:d.srv,st:d.st,num:d.num,ch:d.ch,v:d.v}});
+      a.push({type:'crit',h:`עסקה פתוחה ${months} חודשים – ${d.co}${d.srv?' · '+d.srv:''}`,s:`${reason} | שווי: ${fmt(d.v)}${d.ch?` | סיכוי: ${Math.round((d.ch||0)*100)}%`:''}${d.no&&d.st!=='בעיה'?` | רקע: ${d.no}`:''}`,co:d.co,kind:'deal',id:d.id,meta:{srv:d.srv,st:d.st,num:d.num,ch:d.ch,v:d.v}});
     }
   });
   D.dists.forEach(d=>{
@@ -3753,18 +3774,18 @@ function getAlerts(){
         :d.st==='בעיה'?'מסומן "בעיה" — נדרש טיפול'
         :d.st==='בהתקנה'?`בהתקנה ${days} ימים — לוודא סיום מול ${d.hd||'מנהל הפרויקט'}`
         :`בסטטוס "${d.st||'ממתין להפצה'}" ${days} ימים ללא התקדמות`;
-      a.push({type:'crit',h:`פרויקט תקוע – ${d.co}${d.no?' · #'+d.no:''}${d.so?' · '+d.so:''}`,s:`${reason}${d.hd?` | מנהל: ${d.hd}`:''} | מתאריך ${fmtDate(d.dt)}`,co:d.co,kind:'dist',meta:{srv:d.so,projNo:d.no,manager:d.hd,days}});
+      a.push({type:'crit',h:`פרויקט תקוע – ${d.co}${d.no?' · #'+d.no:''}${d.so?' · '+d.so:''}`,s:`${reason}${d.hd?` | מנהל: ${d.hd}`:''} | מתאריך ${fmtDate(d.dt)}`,co:d.co,kind:'dist',id:d.id,meta:{srv:d.so,projNo:d.no,manager:d.hd,days}});
     }
   });
   D.salary.forEach(sl=>{
     if(sl.st!=='סגור'&&(sl.pv||0)>0){
       const kind=sl.ty==='equipment'?'ציוד':'שירות';
-      a.push({type:'warn',h:`שכר לא ממומש – ${sl.cl}${sl.pj?' · פרויקט '+sl.pj:''}`,s:`יתרה לגבייה: ${fmt(sl.pv)} מתוך יעד ${fmt(sl.tr)} (${kind}) | סטטוס: ${sl.st||'פתוח'}${sl.no?` | רקע: ${sl.no}`:''}`,co:sl.cl,kind:'salary'});
+      a.push({type:'warn',h:`שכר לא ממומש – ${sl.cl}${sl.pj?' · פרויקט '+sl.pj:''}`,s:`יתרה לגבייה: ${fmt(sl.pv)} מתוך יעד ${fmt(sl.tr)} (${kind}) | סטטוס: ${sl.st||'פתוח'}${sl.no?` | רקע: ${sl.no}`:''}`,co:sl.cl,kind:'salary',id:sl.id});
     }
   });
   D.tenders.forEach(t2=>{
-    if(t2.deadline){const dl=db(t,t2.deadline);if(dl>=0&&dl<=5&&t2.submitted!=='כן'){const nx=tenderNextStage(t2);a.push({type:'crit',h:`הגשת מכרז בעוד ${dl} ימים – ${t2.name}`,s:`מועד הגשה: ${fmtDate(t2.deadline)} | תחנה נוכחית: ${nx?nx.l+' ('+tenderStageCount(t2)+'/'+TENDER_STAGES.length+')':'הוגש'}${t2.handler?` | מטפל: ${t2.handler}`:''}${t2.amount?` | היקף: ${fmt(t2.amount)}`:''}${t2.notes?` | ${t2.notes}`:''}`});}}
-    if(t2.questions){const dq=db(t,t2.questions);if(dq>=0&&dq<=2)a.push({type:'warn',h:`מועד שאלות הבהרה בעוד ${dq} ימים – ${t2.name}`,s:`תאריך אחרון לשאלות: ${fmtDate(t2.questions)}${t2.proj?` | פרויקט: ${t2.proj}`:''}`});}
+    if(t2.deadline){const dl=db(t,t2.deadline);if(dl>=0&&dl<=5&&t2.submitted!=='כן'){const nx=tenderNextStage(t2);a.push({type:'crit',h:`הגשת מכרז בעוד ${dl} ימים – ${t2.name}`,s:`מועד הגשה: ${fmtDate(t2.deadline)} | תחנה נוכחית: ${nx?nx.l+' ('+tenderStageCount(t2)+'/'+TENDER_STAGES.length+')':'הוגש'}${t2.handler?` | מטפל: ${t2.handler}`:''}${t2.amount?` | היקף: ${fmt(t2.amount)}`:''}${t2.notes?` | ${t2.notes}`:''}`,kind:'tender',id:t2.id});}}
+    if(t2.questions){const dq=db(t,t2.questions);if(dq>=0&&dq<=2)a.push({type:'warn',h:`מועד שאלות הבהרה בעוד ${dq} ימים – ${t2.name}`,s:`תאריך אחרון לשאלות: ${fmtDate(t2.questions)}${t2.proj?` | פרויקט: ${t2.proj}`:''}`,kind:'tender',id:t2.id});}
   });
   const held=heldThisMonth();
   if(held<MEETING_GOAL){
@@ -3773,7 +3794,7 @@ function getAlerts(){
     const behindBy=exp-held;
     const alertType=behindBy>=3?'warn':'info';
     const paceStr=behindBy>=2?` · מאחרי קצב — צפי ${exp} עד היום`:(behindBy<=0&&held>0?' · בקצב ✅':'');
-    a.push({type:alertType,h:`יעד פגישות – ${held}/${MEETING_GOAL}`,s:`${MEETING_GOAL-held} פגישות נדרשות${paceStr}`});
+    a.push({type:alertType,h:`יעד פגישות – ${held}/${MEETING_GOAL}`,s:`${MEETING_GOAL-held} פגישות נדרשות${paceStr}`,kind:'meetings'});
   }
   // Today's meetings that haven't been marked
   const todayMtgsAlert=D.meetings.filter(m=>m.dt===t&&m.hl!=='כן'&&m.hl!=='מבוטל');
@@ -3798,15 +3819,18 @@ function rAlerts(){
   const critN=a.filter(x=>x.type==='crit').length,warnN=a.filter(x=>x.type==='warn').length;
   const cnt=document.getElementById('alerts-count');
   if(cnt)cnt.innerHTML=a.length===0?'<span style="color:var(--teal)">✅ הכל תקין</span>':[critN?`<span style="color:#e63946;font-weight:700">${critN} קריטי</span>`:'',warnN?`<span style="color:#f4a261">${warnN} אזהרה</span>`:'',`<span style="color:var(--text3)">${a.length} סה"כ</span>`].filter(Boolean).join(' · ');
+  window._alertsList=a; // לניווט בלחיצה על התראה
   document.getElementById('alcont').innerHTML=a.length?a.map((x,i)=>{
     let mailBtn='';
     if(x.co){
       const c=findClientByName(x.co);
       const has=!!(c&&c.email&&c.email.trim());
       const tip=has?'שלח את ההתראה במייל ללקוח':(c?'אין מייל ללקוח – הוסף בכרטיס':'אין כרטיס לקוח – ייפתח כרטיס חדש');
-      mailBtn=`<button class="btn btns" onclick="sendAlertEmail(${i})" title="${tip}" style="margin-top:8px;border-color:#4cc9f0;color:#4cc9f0;opacity:${has?1:.6}">📧 שלח ללקוח</button>`;
+      mailBtn=`<button class="btn btns" onclick="event.stopPropagation();sendAlertEmail(${i})" title="${tip}" style="margin-top:8px;border-color:#4cc9f0;color:#4cc9f0;opacity:${has?1:.6}">📧 שלח ללקוח</button>`;
     }
-    return`<div class="ac ${x.type}"><div class="at">${x.type==='crit'?'🔴 קריטי':x.type==='warn'?'🟠 אזהרה':'ℹ מידע'}</div><div class="ah">${x.h}</div><div class="as">${x.s}</div>${mailBtn}</div>`;
+    // לחיצה על הכרטיס = קיצור דרך ישיר לנושא הרלוונטי
+    const clickable=!!(x.kind||x.cid);
+    return`<div class="ac ${x.type}"${clickable?` onclick="alertGo(${i})" style="cursor:pointer" title="לחץ למעבר ישיר לפרטים בנושא"`:''}><div class="at">${x.type==='crit'?'🔴 קריטי':x.type==='warn'?'🟠 אזהרה':'ℹ מידע'}${clickable?'<span style="float:left;font-size:10px;color:var(--text3);font-weight:600">↗ פתח בנושא</span>':''}</div><div class="ah">${x.h}</div><div class="as">${x.s}</div>${mailBtn}</div>`;
   }).join(''):`<div style="text-align:center;padding:50px 20px;grid-column:1/-1">
     <div style="color:rgba(6,214,160,.25);font-size:48px;margin-bottom:12px">✅</div>
     <div style="font-size:14px;font-weight:700;color:var(--teal);margin-bottom:6px">אין התראות פעילות</div>
@@ -5164,7 +5188,7 @@ function getClientAlerts(){
         if(item.expiry){
           const d=db(nd(),item.expiry);
           if(d>=0&&d<=30){
-            alerts.push({type:d<=7?'crit':'warn',h:`תפוגת ${ITEM_CFG[type].label} – ${c.name}`,s:d===0?'פג היום!':d+' ימים לתפוגה',co:c.name,kind:'expiry',meta:{label:ITEM_CFG[type].label,days:d,date:item.expiry}});
+            alerts.push({type:d<=7?'crit':'warn',h:`תפוגת ${ITEM_CFG[type].label} – ${c.name}`,s:d===0?'פג היום!':d+' ימים לתפוגה',co:c.name,kind:'expiry',cid:c.id,meta:{label:ITEM_CFG[type].label,days:d,date:item.expiry}});
           }
         }
       });
@@ -5176,13 +5200,13 @@ function getClientAlerts(){
       if(p.status!=='נסגר'&&p.contactBy){
         const dc=db(nd(),p.contactBy);
         const topic=p.productType||p.product||'מוצר';
-        if(dc<0)alerts.push({type:'crit',h:`לא נוצר קשר עם הלקוח – ${c.name} · ${topic}`,s:`יעד יצירת הקשר עבר לפני ${Math.abs(dc)} ימים (${fmtDate(p.contactBy)}) — צור קשר עכשיו!${p.notes?` | ${p.notes}`:''}`,co:c.name,kind:'potential',meta:{product:topic}});
-        else if(dc<=2)alerts.push({type:'warn',h:`יצירת קשר ${dc===0?'היום':'בעוד '+dc+' ימים'} – ${c.name} · ${topic}`,s:`יעד יצירת קשר: ${fmtDate(p.contactBy)}${p.notes?` | ${p.notes}`:''}`,co:c.name,kind:'potential',meta:{product:topic}});
+        if(dc<0)alerts.push({type:'crit',h:`לא נוצר קשר עם הלקוח – ${c.name} · ${topic}`,s:`יעד יצירת הקשר עבר לפני ${Math.abs(dc)} ימים (${fmtDate(p.contactBy)}) — צור קשר עכשיו!${p.notes?` | ${p.notes}`:''}`,co:c.name,kind:'potential',cid:c.id,meta:{product:topic}});
+        else if(dc<=2)alerts.push({type:'warn',h:`יצירת קשר ${dc===0?'היום':'בעוד '+dc+' ימים'} – ${c.name} · ${topic}`,s:`יעד יצירת קשר: ${fmtDate(p.contactBy)}${p.notes?` | ${p.notes}`:''}`,co:c.name,kind:'potential',cid:c.id,meta:{product:topic}});
       }
       if(p.status!=='נסגר'&&p.targetDate){
         const d=db(nd(),p.targetDate);
-        if(d<0)alerts.push({type:'warn',h:`יעד סגירה עבר – ${c.name}`,s:`${p.productType||p.product||'מוצר'}: ${Math.abs(d)} ימים באיחור`,co:c.name,kind:'potential',meta:{product:p.productType||p.product}});
-        else if(d<=7)alerts.push({type:'info',h:`יעד סגירה קרוב – ${c.name}`,s:`${p.productType||p.product||'מוצר'}: ${d} ימים`,co:c.name,kind:'potential',meta:{product:p.productType||p.product}});
+        if(d<0)alerts.push({type:'warn',h:`יעד סגירה עבר – ${c.name}`,s:`${p.productType||p.product||'מוצר'}: ${Math.abs(d)} ימים באיחור`,co:c.name,kind:'potential',cid:c.id,meta:{product:p.productType||p.product}});
+        else if(d<=7)alerts.push({type:'info',h:`יעד סגירה קרוב – ${c.name}`,s:`${p.productType||p.product||'מוצר'}: ${d} ימים`,co:c.name,kind:'potential',cid:c.id,meta:{product:p.productType||p.product}});
       }
     });
   });
