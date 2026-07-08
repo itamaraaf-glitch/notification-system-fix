@@ -1404,6 +1404,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div id="l2fa-bio" style="display:none;margin-top:14px;text-align:center">
       <div style="font-size:12px;color:var(--text2);margin-bottom:8px">🔐 אמת את זהותך כדי להיכנס</div>
       <button class="lbtn" id="l2fa-bio-btn" onclick="loginWithBio()">👆 כניסה בטביעת אצבע</button>
+      <div id="l2fa-usecode" style="display:none;margin-top:8px"><button onclick="document.getElementById('l2fa-bio').style.display='none';document.getElementById('l2fa').style.display='';document.getElementById('l2fa-code').focus()" style="background:none;border:none;color:rgba(200,169,110,.6);font-size:11px;cursor:pointer;text-decoration:underline;font-family:inherit">הזן קוד מהאפליקציה במקום</button></div>
     </div>
     <div id="l2fa" style="display:none;margin-top:14px">
       <div class="lg"><label>🔐 קוד אימות דו-שלבי</label><input type="text" id="l2fa-code" placeholder="קוד בן 6 ספרות מהאפליקציה" inputmode="numeric" autocomplete="one-time-code" maxlength="10" style="direction:ltr;text-align:center;letter-spacing:4px;font-size:16px" onkeydown="if(event.key==='Enter')submit2FA()"></div>
@@ -2492,13 +2493,23 @@ async function doLogin(){
     document.getElementById('lbtn').style.display='none';
     document.getElementById('lu').parentElement.style.display='none';
     document.getElementById('lp').parentElement.parentElement.style.display='none';
-    // טביעת אצבע: מציגים כפתור נעילה ביומטרי, ומפעילים אותו אוטומטית
+    // פיצול נקי לפי מכשיר: אם למכשיר הזה יש טביעת אצבע — משתמשים רק בה
+    // (הקוד נשאר כגיבוי בקישור קטן). אחרת — קוד מאפליקציה. כך מובייל עם
+    // טביעת אצבע נכנס בנגיעה, ומחשב בלי טביעת אצבע נכנס עם הקוד המסונכרן.
     const bioWrap=document.getElementById('l2fa-bio');
-    if(_b&&_b.on){bioWrap.style.display='';setTimeout(()=>loginWithBio(),350);}
-    else bioWrap.style.display='none';
-    // קוד מאפליקציה: מוצג רק אם TOTP מופעל
-    document.getElementById('l2fa').style.display=(_t&&_t.on)?'':'none';
-    if(_t&&_t.on&&!(_b&&_b.on))setTimeout(()=>{const i=document.getElementById('l2fa-code');if(i)i.focus();},80);
+    const codeWrap=document.getElementById('l2fa');
+    const fallback=document.getElementById('l2fa-usecode');
+    if(_b&&_b.on){
+      bioWrap.style.display='';
+      codeWrap.style.display='none';
+      if(fallback)fallback.style.display=(_t&&_t.on)?'':'none'; // גיבוי לקוד רק אם מוגדר
+      setTimeout(()=>loginWithBio(),350);
+    }else{
+      bioWrap.style.display='none';
+      if(fallback)fallback.style.display='none';
+      codeWrap.style.display=(_t&&_t.on)?'':'none';
+      if(_t&&_t.on)setTimeout(()=>{const i=document.getElementById('l2fa-code');if(i)i.focus();},80);
+    }
     return;
   }
   _completeLogin(f);
