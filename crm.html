@@ -1401,6 +1401,11 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="lg"><label>שם משתמש</label><input type="text" id="lu" placeholder="שם משתמש" autocomplete="new-password" name="usr_x9k2" spellcheck="false" onkeydown="if(event.key==='Enter')document.getElementById('lp').focus()"></div>
     <div class="lg"><label>סיסמה</label><div style="position:relative"><input type="password" id="lp" placeholder="סיסמה" autocomplete="new-password" name="pwd_m4r7" onkeydown="if(event.key==='Enter')doLogin()" style="padding-left:36px"><button type="button" onclick="(function(){const i=document.getElementById('lp');const b=document.getElementById('lp-eye');if(i.type==='password'){i.type='text';b.textContent='🙈';}else{i.type='password';b.textContent='👁';}})()" id="lp-eye" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;line-height:1;color:var(--text3);padding:4px;-webkit-tap-highlight-color:transparent">👁</button></div></div>
     <button class="lbtn" id="lbtn" onclick="doLogin()">כניסה למערכת</button>
+    <div id="l2fa" style="display:none;margin-top:14px">
+      <div class="lg"><label>🔐 קוד אימות דו-שלבי</label><input type="text" id="l2fa-code" placeholder="קוד בן 6 ספרות מהאפליקציה" inputmode="numeric" autocomplete="one-time-code" maxlength="10" style="direction:ltr;text-align:center;letter-spacing:4px;font-size:16px" onkeydown="if(event.key==='Enter')submit2FA()"></div>
+      <button class="lbtn" onclick="submit2FA()">אמת קוד</button>
+      <div style="text-align:center;margin-top:8px"><span style="font-size:10px;color:var(--text3)">אין גישה לאפליקציה? הזן את קוד הגיבוי בן 8 הספרות</span></div>
+    </div>
     <div class="lerr" id="lerr"></div>
     <div id="lerr-unlock" style="display:none;margin-top:8px;text-align:center">
       <button onclick="_resetLoginLock()" style="background:none;border:none;color:rgba(200,169,110,.6);font-size:11px;cursor:pointer;text-decoration:underline;font-family:inherit">שחרר נעילה וסנכרן</button>
@@ -1812,6 +1817,12 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
         <div class="exp-tile-btn" style="display:inline-block;background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff;border-radius:8px;margin-top:8px">📖 פתח ייבוא חכם</div>
       </div>
     </div></div>
+  </div>
+  <!-- 🔐 כניסה דו-שלבית -->
+  <div class="tw" style="margin-top:16px;padding:16px 18px;border-top:3px solid #06d6a0">
+    <div style="font-size:13px;font-weight:800;color:var(--teal);margin-bottom:4px">🔐 כניסה דו-שלבית (2FA)</div>
+    <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:12px">אחרי הסיסמה נדרש גם קוד מתחלף מאפליקציית אימות בטלפון (Google Authenticator) — הגנה אמיתית גם אם הסיסמה דלפה. כולל קוד גיבוי למקרה של אובדן הטלפון.</div>
+    <div id="security-panel" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"></div>
   </div>
   <!-- 🔔 התראות מחוץ למערכת -->
   <div class="tw" style="margin-top:16px;padding:16px 18px;border-top:3px solid #f4a261">
@@ -2469,6 +2480,54 @@ async function doLogin(){
   }
   _clearAuth();
   document.getElementById('lerr').textContent='';
+  // אימות דו-שלבי: אם מופעל — עוצרים אחרי הסיסמה ומבקשים קוד מהאפליקציה
+  const _t=_totpFromStorage();
+  if(_t&&_t.on){
+    _pending2FA=f;
+    document.getElementById('lbtn').style.display='none';
+    document.getElementById('lu').parentElement.style.display='none';
+    document.getElementById('lp').parentElement.parentElement.style.display='none';
+    document.getElementById('l2fa').style.display='';
+    setTimeout(()=>{const i=document.getElementById('l2fa-code');if(i)i.focus();},80);
+    return;
+  }
+  _completeLogin(f);
+}
+let _pending2FA=null,_2faAtt=0;
+function _totpFromStorage(){
+  try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'{}');return p._totp||null;}catch(e){return null;}
+}
+async function submit2FA(){
+  const errEl=document.getElementById('lerr');
+  if(!_pending2FA){errEl.textContent='התחבר קודם עם שם משתמש וסיסמה';return;}
+  const t=_totpFromStorage();
+  const inp=(document.getElementById('l2fa-code').value||'').replace(/\D/g,'');
+  if(_2faAtt>=8){errEl.textContent='יותר מדי ניסיונות — רענן את הדף ונסה שוב';return;}
+  _2faAtt++;
+  // קוד גיבוי בן 8 ספרות — מבטל את הדו-שלבי ומכניס (למקרה של אובדן הטלפון)
+  if(inp.length===8&&t&&t.backupHash&&(await sha256('totp:'+inp))===t.backupHash){
+    try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'{}');p._totp=null;localStorage.setItem(LS_KEY,JSON.stringify(p));}catch(e){}
+    const f=_pending2FA;_pending2FA=null;
+    _completeLogin(f);
+    setTimeout(()=>showToast('🔓 האימות הדו-שלבי בוטל עם קוד הגיבוי — מומלץ להפעיל מחדש בסעיף ייצוא','warn'),1200);
+    return;
+  }
+  if(t&&t.secret&&await totpVerify(t.secret,inp)){
+    const f=_pending2FA;_pending2FA=null;errEl.textContent='';
+    _completeLogin(f);
+    return;
+  }
+  errEl.textContent='קוד שגוי — בדוק את האפליקציה ונסה שוב';
+}
+function _completeLogin(f){
+  try{
+    document.getElementById('l2fa').style.display='none';
+    document.getElementById('l2fa-code').value='';
+    document.getElementById('lbtn').style.display='';
+    document.getElementById('lu').parentElement.style.display='';
+    document.getElementById('lp').parentElement.parentElement.style.display='';
+    _2faAtt=0;
+  }catch(e){}
   const loginEl=document.getElementById('login');
   const appEl=document.getElementById('app');
   if(window._stopCardTilt) window._stopCardTilt();
@@ -2620,7 +2679,7 @@ function doLogout(){
 // חדש יותר, ולכן כל שינוי חייב לקבל חותמת — גם בנתיבי שמירה שלא עוברים דרך dbUpdate.
 // משווים כל פריט לחתימה מהשמירה הקודמת ומטביעים _mts רק על מה שבאמת השתנה.
 const SYNC_COLS=['deals','tenders','dists','salary','meetings','clients','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
-const SYNC_META=['lastCycleMonth','lastMeetCycle','goals','tenderEmails'];
+const SYNC_META=['lastCycleMonth','lastMeetCycle','goals','tenderEmails','_totp'];
 let _syncSnap=null;
 function _syncSig(x){return JSON.stringify(x,(k,v)=>k==='_mts'?undefined:v);}
 function _metaSig(){return JSON.stringify(SYNC_META.map(k=>D[k]===undefined?null:D[k]));}
@@ -3319,6 +3378,93 @@ setTimeout(checkAppVersion,6000);
 setInterval(checkAppVersion,35*60*1000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkAppVersion();});
 
+// ═══ אימות דו-שלבי אמיתי (TOTP — Google Authenticator וכל אפליקציית אימות) ═══
+const B32A='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+function b32encode(bytes){let bits=0,val=0,out='';for(const b of bytes){val=(val<<8)|b;bits+=8;while(bits>=5){out+=B32A[(val>>>(bits-5))&31];bits-=5;}}if(bits>0)out+=B32A[(val<<(5-bits))&31];return out;}
+function b32decode(str){str=String(str).replace(/[^A-Za-z2-7]/g,'').toUpperCase();let bits=0,val=0;const out=[];for(const c of str){val=(val<<5)|B32A.indexOf(c);bits+=5;if(bits>=8){out.push((val>>>(bits-8))&255);bits-=8;}}return new Uint8Array(out);}
+async function totpCode(secretB32,offset){
+  const key=await crypto.subtle.importKey('raw',b32decode(secretB32),{name:'HMAC',hash:'SHA-1'},false,['sign']);
+  const counter=Math.floor(Date.now()/30000)+(offset||0);
+  const buf=new ArrayBuffer(8);const dv=new DataView(buf);
+  dv.setUint32(0,Math.floor(counter/4294967296));dv.setUint32(4,counter>>>0);
+  const h=new Uint8Array(await crypto.subtle.sign('HMAC',key,buf));
+  const o=h[h.length-1]&15;
+  return String(((h[o]&127)<<24|h[o+1]<<16|h[o+2]<<8|h[o+3])%1000000).padStart(6,'0');
+}
+async function totpVerify(secretB32,input){
+  input=String(input||'').replace(/\D/g,'');
+  if(input.length!==6)return false;
+  for(const off of [0,-1,1]){ if(await totpCode(secretB32,off)===input)return true; }
+  return false;
+}
+let _totpPendingSecret=null;
+function totpSetupStart(){
+  _totpPendingSecret=b32encode(crypto.getRandomValues(new Uint8Array(20)));
+  const grouped=_totpPendingSecret.match(/.{1,4}/g).join(' ');
+  const prev=document.getElementById('totp-wizard');if(prev)prev.remove();
+  const w=document.createElement('div');
+  w.id='totp-wizard';
+  w.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px';
+  w.innerHTML=`<div style="background:var(--s2,#101525);border:1px solid rgba(6,214,160,.4);border-radius:16px;padding:20px;max-width:440px;width:100%;max-height:92vh;overflow-y:auto;direction:rtl">
+    <div style="font-size:15px;font-weight:900;margin-bottom:4px">🔐 הפעלת כניסה דו-שלבית</div>
+    <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:12px">מהיום, כניסה למערכת תדרוש גם קוד מתחלף מאפליקציית אימות בטלפון — שכבת הגנה אמיתית גם אם הסיסמה דלפה.</div>
+    <ol style="font-size:12px;line-height:2;color:var(--text);padding-right:18px;margin:0 0 10px">
+      <li>התקן <b>Google Authenticator</b> (או כל אפליקציית אימות) בטלפון</li>
+      <li>באפליקציה: <b>+</b> ← <b>הזנת מפתח הגדרה</b> (Enter a setup key)</li>
+      <li>שם חשבון: <b>HOT CRM</b> · הדבק את המפתח:</li>
+    </ol>
+    <div style="background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.3);border-radius:10px;padding:12px;text-align:center;font-family:monospace;font-size:15px;letter-spacing:1px;direction:ltr;user-select:all;margin-bottom:8px">${grouped}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="btn" onclick="(function(){try{navigator.clipboard.writeText(_totpPendingSecret).then(()=>showToast('📋 המפתח הועתק — הדבק באפליקציית האימות','ok'));}catch(e){}})()" style="font-size:11px;border-color:#06d6a0;color:#06d6a0">📋 העתק מפתח</button>
+      <a href="otpauth://totp/HOT%20CRM?secret=${_totpPendingSecret}&issuer=HOT%20CRM" style="text-decoration:none"><button class="btn" style="font-size:11px;border-color:#4cc9f0;color:#4cc9f0">📱 פתח באפליקציית אימות (בטלפון)</button></a>
+    </div>
+    <div style="font-size:12px;font-weight:700;margin-bottom:6px">4. הזן את הקוד שמופיע עכשיו באפליקציה לאישור:</div>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="totp-confirm" inputmode="numeric" maxlength="6" placeholder="6 ספרות" style="flex:1;direction:ltr;text-align:center;letter-spacing:4px;font-size:16px;padding:9px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text)">
+      <button class="btn btnp" onclick="totpSetupConfirm()" style="font-size:12px">אשר והפעל</button>
+    </div>
+    <div id="totp-setup-err" style="font-size:11px;color:#e63946;margin-top:6px"></div>
+    <button class="btn" onclick="document.getElementById('totp-wizard').remove()" style="font-size:11px;opacity:.75;margin-top:10px">ביטול</button>
+  </div>`;
+  w.onclick=e=>{if(e.target===w)w.remove();};
+  document.body.appendChild(w);
+}
+async function totpSetupConfirm(){
+  const err=document.getElementById('totp-setup-err');
+  const code=(document.getElementById('totp-confirm').value||'').trim();
+  if(!await totpVerify(_totpPendingSecret,code)){err.textContent='הקוד לא תואם — ודא שהמפתח הוזן נכון באפליקציה ונסה שוב';return;}
+  const backup=String(Math.floor(10000000+Math.random()*90000000));
+  D._totp={secret:_totpPendingSecret,backupHash:await sha256('totp:'+backup),on:true,since:nd()};
+  _totpPendingSecret=null;
+  saveAll();
+  const w=document.getElementById('totp-wizard');
+  if(w)w.querySelector('div').innerHTML=`
+    <div style="font-size:15px;font-weight:900;margin-bottom:8px;color:var(--teal)">✅ הכניסה הדו-שלבית פעילה!</div>
+    <div style="font-size:12px;color:var(--text);line-height:1.8;margin-bottom:10px">מהכניסה הבאה תתבקש קוד מהאפליקציה אחרי הסיסמה — בכל המכשירים (ההגדרה מסתנכרנת מוצפנת).</div>
+    <div style="font-size:12px;font-weight:800;color:#f4a261;margin-bottom:6px">⚠️ קוד גיבוי — שמור אותו במקום בטוח (מכניס גם בלי הטלפון):</div>
+    <div style="background:rgba(244,162,97,.1);border:1px solid rgba(244,162,97,.4);border-radius:10px;padding:14px;text-align:center;font-family:monospace;font-size:22px;letter-spacing:5px;direction:ltr;user-select:all;margin-bottom:12px">${backup}</div>
+    <button class="btn btnp" onclick="document.getElementById('totp-wizard').remove();renderSecurityPanel()" style="font-size:12px">שמרתי — סגור</button>`;
+  showToast('🔐 כניסה דו-שלבית הופעלה','ok');
+}
+async function totpDisable(){
+  const code=prompt('לביטול הכניסה הדו-שלבית, הזן קוד נוכחי מהאפליקציה:');
+  if(!code)return;
+  const t=D._totp;
+  if(!t||!await totpVerify(t.secret,code)){showToast('⚠️ קוד שגוי — הדו-שלבי נשאר פעיל','warn');return;}
+  D._totp=null;saveAll();renderSecurityPanel();
+  showToast('🔓 הכניסה הדו-שלבית בוטלה','info');
+}
+function renderSecurityPanel(){
+  const p=document.getElementById('security-panel');if(!p)return;
+  const on=!!(D._totp&&D._totp.on);
+  p.innerHTML=on
+    ?`<span style="font-size:12px;color:var(--teal);font-weight:800">● פעיל</span>
+      <span style="font-size:11px;color:var(--text2)">כניסה דורשת סיסמה + קוד מהאפליקציה, בכל המכשירים</span>
+      <button class="btn" onclick="totpDisable()" style="font-size:11px;opacity:.85">🔓 בטל</button>`
+    :`<span style="font-size:12px;color:var(--text3);font-weight:800">● כבוי</span>
+      <button class="btn btnp" onclick="totpSetupStart()" style="font-size:11px">🔐 הפעל כניסה דו-שלבית</button>`;
+}
+
 // ═══ בודק אבטחת ענן: מזהה בסיס נתונים פתוח, מנחה לנעילה ומוודא שבוצעה ═══
 const CLOUD_RULES_JSON=`{
   "rules": {
@@ -3577,7 +3723,7 @@ function _finishLoad(){
   }
   rAll();
   showLoginHealth();
-  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); renderNotifyPanel(); const nc=notifyCfg(); if(nc.on&&('Notification' in window)&&Notification.permission==='granted'){_registerPeriodicDigest();_notifyTick();} setTimeout(maybeAskNotifyPermission,2000); setTimeout(checkCloudLock,4500); }catch(e){} }, 2500);
+  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); renderNotifyPanel(); renderSecurityPanel(); const nc=notifyCfg(); if(nc.on&&('Notification' in window)&&Notification.permission==='granted'){_registerPeriodicDigest();_notifyTick();} setTimeout(maybeAskNotifyPermission,2000); setTimeout(checkCloudLock,4500); }catch(e){} }, 2500);
   setTimeout(()=>{ try{ checkEmptyAndRecovery(); }catch(e){} }, 4000);
 }
 function loadAll(){
@@ -3592,6 +3738,7 @@ function loadAll(){
       D.archivedDeals=p.archivedDeals||[];D.archivedTenders=p.archivedTenders||[];D.archivedDists=p.archivedDists||[];D.archivedSalary=p.archivedSalary||[];D.archivedMeetings=p.archivedMeetings||[];D.lastCycleMonth=p.lastCycleMonth||'';D.lastMeetCycle=p.lastMeetCycle||'';D.tenderEmails=p.tenderEmails||{};
       D._deletedIds=p._deletedIds||{};
       D._metaMts=p._metaMts||0;D._baseline=p._baseline||0; // חותמות סנכרון חייבות לשרוד רענון דף
+      D._totp=p._totp||null; // הגדרת האימות הדו-שלבי
       // Merge with defaults so new goal keys are never undefined in old saves
       D.goals=Object.assign({},_GOAL_DEFAULTS,p.goals||{});
       // Only seed demo data if all tables are empty AND no initialized flag
