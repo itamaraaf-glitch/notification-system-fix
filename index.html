@@ -2,6 +2,12 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<!-- ── אבטחה: מדיניות אבטחת תוכן (CSP) — חוסמת טעינת קוד ושליחת נתונים לכל שרת שאינו ברשימה המאושרת ── -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://api.qrserver.com https://images.higgs.ai; media-src 'self'; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app http://localhost:* ws://localhost:*; frame-src https://*.firebaseio.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<!-- אבטחה: בלי דליפת כתובות לאתרים חיצוניים, ובלי אינדוקס במנועי חיפוש -->
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<script>if(window.top!==window.self){try{window.top.location=window.self.location;}catch(e){document.documentElement.style.display='none';}}</script>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -1889,9 +1895,9 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 
   <!-- Share panel (QR code) -->
   <div id="sync-share-panel" style="display:none;padding:14px;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);border-radius:12px;margin-bottom:12px;text-align:center">
-    <div style="font-size:13px;font-weight:700;color:#a78bfa;margin-bottom:8px">📱 סריקה ממכשיר נוסף</div>
-    <div style="font-size:11px;color:var(--text2);margin-bottom:10px">סרוק עם הנייד או לחץ "העתק קישור" — הגדרות הסנכרון יייבאו אוטומטית</div>
-    <img id="sync-qr-img" src="" alt="QR" style="border-radius:8px;background:#fff;padding:6px;max-width:180px;display:block;margin:0 auto 10px">
+    <div style="font-size:13px;font-weight:700;color:#a78bfa;margin-bottom:8px">📱 חיבור מכשיר נוסף</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:10px">🔒 הקישור מכיל את מפתח הסנכרון שלך — לכן הוא מועתק ללוח בלבד (לא נשלח לשום שירות חיצוני).<br>שלח אותו לעצמך בוואטסאפ/מייל ופתח במכשיר השני — ההגדרות ייובאו אוטומטית.</div>
+    <img id="sync-qr-img" src="" alt="QR" style="display:none">
     <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
       <button class="btn" onclick="copySyncLink()" style="color:#a78bfa;border-color:rgba(167,139,250,.4);font-size:11px">📋 העתק קישור</button>
       <button class="btn" onclick="document.getElementById('sync-share-panel').style.display='none'" style="font-size:11px">✕ סגור</button>
@@ -3112,11 +3118,13 @@ function genSyncShareUrl(){
 function showSyncShare(){
   const url=genSyncShareUrl();
   if(!url){showToast('⚠️ אין הגדרות סנכרון פעילות','warn');return;}
-  const qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=180x180&ecc=M&data='+encodeURIComponent(url);
+  // אבטחה: קישור השיתוף מכיל את סוד הסנכרון — לא שולחים אותו לשירות QR חיצוני.
+  // מעתיקים ללוח ושולחים לעצמך (וואטסאפ/מייל) — פתיחה במכשיר השני מייבאת אוטומטית.
   const img=document.getElementById('sync-qr-img');
-  if(img){img.src=qrSrc;img.onerror=()=>{img.style.display='none';};}
+  if(img)img.style.display='none';
   const panel=document.getElementById('sync-share-panel');
   if(panel)panel.style.display='';
+  copySyncLink();
 }
 
 function copySyncLink(){
@@ -3218,12 +3226,13 @@ async function _smobPushAndQR(){
     else{showToast('⚠️ הסנכרון לא מחובר','warn');return;}
     const url=genSyncShareUrl();
     if(!url){showToast('⚠️ לא ניתן לייצר קישור','warn');return;}
-    const qrSrc='https://api.qrserver.com/v1/create-qr-code/?size=180x180&ecc=M&data='+encodeURIComponent(url);
+    // אבטחה: הקישור מכיל את מפתח הסנכרון — מועתק ללוח בלבד, לא נשלח לשירות QR חיצוני
     const area=document.getElementById('smob-qr-area');
     const img=document.getElementById('smob-qr-img');
-    if(img){img.src=qrSrc;img.onerror=()=>{img.alt='שגיאה בטעינת QR';};}
+    if(img)img.style.display='none';
     if(area)area.style.display='';
-    showToast('✅ הנתונים הועלו! סרוק את ה-QR במובייל','ok');
+    copySyncLink();
+    showToast('✅ הנתונים הועלו! הקישור הועתק — שלח אותו לעצמך ופתח במובייל','ok');
   }catch(e){showToast('⚠️ שגיאה: '+e.message,'warn');}
 }
 
@@ -4905,7 +4914,7 @@ function rTenders(){
     const lb=tn.linked==='כן'?'<span class="badge bg">כן</span>':'<span class="badge br">לא</span>';
     let qd='–';if(tn.questions){const d=db(t,tn.questions);qd=d>=0?`<b style="color:${d<=2?'#e63946':'#f4a261'}">${d}י</b>`:'<span style="color:#3a4468">עבר</span>';}
     const chk=SEL['tenders']&&SEL['tenders'].has(tn.id)?'checked':'';
-    return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-tenders" ${chk} onchange="toggleSel('tenders','${tn.id}')"></td><td>${pB(p)}</td><td>${sb2}</td><td>${tn.qty||1}</td><td style="font-size:10px">${fmtDate(tn.pub)}</td><td style="font-weight:600;min-width:120px">${tn.name||''}</td><td style="font-size:10px">${tn.proj||'–'}</td><td>${tn.link?`<a href="${tn.link}" target="_blank" style="color:#4cc9f0;font-size:10px">🔗</a>`:'–'}</td><td style="font-size:10px">${fmtDate(tn.quote)}</td><td>${qd}</td><td>${tn.rounds||'–'}</td><td style="font-weight:600;color:#e63946;font-size:10px">${fmtDate(tn.deadline)}</td><td style="font-size:10px">${tn.handler||'–'}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.docs||'–'}</td><td>${lb}</td><td class="nb">${fmt(tn.amount)}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.notes||'–'}</td><td style="white-space:nowrap">${(()=>{if(tn.result){const won=tn.result==='זכייה',rc=won?'#06d6a0':'#e63946';return`<span onclick="openM('tender','${tn.id}')" title="${tn.result} — ${fmtDate(tn.resultDate)}" style="cursor:pointer;font-size:9px;font-weight:800;padding:2px 8px;border-radius:12px;background:${rc}18;color:${rc};border:1px solid ${rc}44;white-space:nowrap">${won?'🏆 זכייה':'❌ אי-זכייה'}</span> `;}const sd=tenderStageCount(tn);const nx=tenderNextStage(tn);const fc=sd===TENDER_STAGES.length?'#a78bfa':sd>0?'#f4a261':'var(--text3)';return`<span onclick="openM('tender','${tn.id}')" title="${nx?'הבא בתור: '+nx.l:'הוגש — ממתין לתוצאה: סמן זכייה/אי-זכייה בגרף'}" style="cursor:pointer;font-size:9px;font-weight:800;padding:2px 8px;border-radius:12px;background:${fc}18;color:${fc};border:1px solid ${fc}44;white-space:nowrap">🗺️ ${sd}/${TENDER_STAGES.length}${sd===TENDER_STAGES.length?' 🏁':''}</span> `;})()}<button class="btn btns" onclick="showTenderTeamMenu('${tn.id}',event)" title="מייל פנימי: התנעה / איפיון / משפטית / ביטוח / חתימות" style="border-color:#a78bfa;color:#a78bfa">📧</button> <button class="btn btns" onclick="showTenderReqMenu('${tn.id}',event)" title="מייל למבקש המכרז" style="border-color:#4cc9f0;color:#4cc9f0">📨</button> <button class="btn btns" onclick="schedMeetFromTender('${tn.id}')" title="קבע פגישה למכרז" style="border-color:#06d6a0;color:#06d6a0">📅</button> ${(tn.files&&tn.files.length)?`<button class="btn btns" onclick="rowFilesMenu('tenders','${tn.id}',event)" title="${tn.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${tn.files.length>1?tn.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('tender','${tn.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tenders','${tn.id}')">🗑</button></td></tr>`;
+    return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-tenders" ${chk} onchange="toggleSel('tenders','${tn.id}')"></td><td>${pB(p)}</td><td>${sb2}</td><td>${tn.qty||1}</td><td style="font-size:10px">${fmtDate(tn.pub)}</td><td style="font-weight:600;min-width:120px">${tn.name||''}</td><td style="font-size:10px">${tn.proj||'–'}</td><td>${tn.link?`<a href="${tn.link}" target="_blank" rel="noopener noreferrer" style="color:#4cc9f0;font-size:10px">🔗</a>`:'–'}</td><td style="font-size:10px">${fmtDate(tn.quote)}</td><td>${qd}</td><td>${tn.rounds||'–'}</td><td style="font-weight:600;color:#e63946;font-size:10px">${fmtDate(tn.deadline)}</td><td style="font-size:10px">${tn.handler||'–'}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.docs||'–'}</td><td>${lb}</td><td class="nb">${fmt(tn.amount)}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${tn.notes||'–'}</td><td style="white-space:nowrap">${(()=>{if(tn.result){const won=tn.result==='זכייה',rc=won?'#06d6a0':'#e63946';return`<span onclick="openM('tender','${tn.id}')" title="${tn.result} — ${fmtDate(tn.resultDate)}" style="cursor:pointer;font-size:9px;font-weight:800;padding:2px 8px;border-radius:12px;background:${rc}18;color:${rc};border:1px solid ${rc}44;white-space:nowrap">${won?'🏆 זכייה':'❌ אי-זכייה'}</span> `;}const sd=tenderStageCount(tn);const nx=tenderNextStage(tn);const fc=sd===TENDER_STAGES.length?'#a78bfa':sd>0?'#f4a261':'var(--text3)';return`<span onclick="openM('tender','${tn.id}')" title="${nx?'הבא בתור: '+nx.l:'הוגש — ממתין לתוצאה: סמן זכייה/אי-זכייה בגרף'}" style="cursor:pointer;font-size:9px;font-weight:800;padding:2px 8px;border-radius:12px;background:${fc}18;color:${fc};border:1px solid ${fc}44;white-space:nowrap">🗺️ ${sd}/${TENDER_STAGES.length}${sd===TENDER_STAGES.length?' 🏁':''}</span> `;})()}<button class="btn btns" onclick="showTenderTeamMenu('${tn.id}',event)" title="מייל פנימי: התנעה / איפיון / משפטית / ביטוח / חתימות" style="border-color:#a78bfa;color:#a78bfa">📧</button> <button class="btn btns" onclick="showTenderReqMenu('${tn.id}',event)" title="מייל למבקש המכרז" style="border-color:#4cc9f0;color:#4cc9f0">📨</button> <button class="btn btns" onclick="schedMeetFromTender('${tn.id}')" title="קבע פגישה למכרז" style="border-color:#06d6a0;color:#06d6a0">📅</button> ${(tn.files&&tn.files.length)?`<button class="btn btns" onclick="rowFilesMenu('tenders','${tn.id}',event)" title="${tn.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${tn.files.length>1?tn.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('tender','${tn.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tenders','${tn.id}')">🗑</button></td></tr>`;
   }).join('')||emptyRow(18,'📋',"אין מכרזים","openM('tender',null)");
   const ta=D.tenders.reduce((s,t)=>s+(t.amount||0),0);
   const tsubmit=D.tenders.filter(t=>t.submitted==='כן').length;

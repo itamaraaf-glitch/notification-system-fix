@@ -46,6 +46,28 @@ async function main() {
   const openSalary = (D.salary || []).filter(s => s.st !== 'סגור' && (s.pv || 0) > 0);
   const openSalarySum = openSalary.reduce((s, x) => s + (x.pv || 0), 0);
 
+  // אבטחה: במאגר ציבורי ה-Issues גלויים לכולם — מפרסמים מספרים בלבד, בלי שמות לקוחות
+  const gh0 = (path, method, payload) => fetch(`${GH_API}/repos/${REPO}${path}`, {
+    method: method || 'GET',
+    headers: { Authorization: `Bearer ${GH_TOKEN}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'User-Agent': 'hot-crm-digest' },
+    body: payload ? JSON.stringify(payload) : undefined,
+  });
+  let isPublic = true;
+  try { const info = await (await gh0('')).json(); isPublic = !info.private; } catch (e) {}
+
+  if (isPublic) {
+    const L2 = [];
+    L2.push(`## 📣 תקציר בוקר — ${heDate}`);
+    L2.push('', '_המאגר ציבורי — התקציר מציג מספרים בלבד; הפרטים המלאים במערכת._', '');
+    L2.push(`- 📅 פגישות היום: **${mtgs.length}**${mtgs.length ? ' (ראשונה ב-' + (mtgs[0].time || 'ללא שעה') + ')' : ''}`);
+    if (tenders.length) L2.push(`- 📋 מכרזים לפני מועד הגשה: **${tenders.length}**`);
+    if (stuckDeals.length) L2.push(`- 💼 עסקאות תקועות מעל 3 חודשים: **${stuckDeals.length}**`);
+    if (stuckDists.length) L2.push(`- 🚀 פרויקטי הפצה תקועים: **${stuckDists.length}**`);
+    if (openSalary.length) L2.push(`- 💰 שכר לא ממומש: **${openSalary.length} פרויקטים**, יתרה ${fmtN(openSalarySum)}`);
+    L2.push('', '---', `[פתח את המערכת לפרטים המלאים ←](https://${(REPO || '').split('/')[0]}.github.io/${(REPO || '').split('/')[1]}/crm.html)`);
+    return await publishIssue(gh0, `📣 תקציר יומי — ${fmtD(today)} | ${mtgs.length} פגישות · ${tenders.length + stuckDeals.length + stuckDists.length} דורשי טיפול`, L2.join('\n'));
+  }
+
   const L = [];
   L.push(`## 📣 תקציר בוקר — ${heDate}`);
   L.push('');
@@ -72,21 +94,17 @@ async function main() {
   L.push('', '---', `[פתח את המערכת ←](https://${(REPO || '').split('/')[0]}.github.io/${(REPO || '').split('/')[1]}/crm.html)`);
   const body = L.join('\n');
 
-  const gh = (path, method, payload) => fetch(`${GH_API}/repos/${REPO}${path}`, {
-    method: method || 'GET',
-    headers: { Authorization: `Bearer ${GH_TOKEN}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json', 'User-Agent': 'hot-crm-digest' },
-    body: payload ? JSON.stringify(payload) : undefined,
-  });
+  await publishIssue(gh0, `📣 תקציר יומי — ${fmtD(today)} | ${mtgs.length} פגישות · ${tenders.length + stuckDeals.length + stuckDists.length} דורשי טיפול`, body);
+}
 
+async function publishIssue(gh, title, body) {
   // סוגרים תקצירים קודמים כדי שלא יצטברו
   try {
     const prev = await (await gh('/issues?labels=daily-digest&state=open&per_page=20')).json();
     for (const iss of (Array.isArray(prev) ? prev : [])) await gh(`/issues/${iss.number}`, 'PATCH', { state: 'closed' });
   } catch (e) { /* non-fatal */ }
-
   const res = await gh('/issues', 'POST', {
-    title: `📣 תקציר יומי — ${fmtD(today)} | ${mtgs.length} פגישות · ${tenders.length + stuckDeals.length + stuckDists.length} דורשי טיפול`,
-    body,
+    title, body,
     labels: ['daily-digest'],
     assignees: OWNER ? [OWNER] : [],
   });

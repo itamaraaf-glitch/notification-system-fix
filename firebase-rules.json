@@ -1,0 +1,15 @@
+{
+  "_הסבר": "חוקי אבטחה ל-Firebase Realtime Database. להדבקה בקונסולת Firebase: Realtime Database ← Rules ← החלף הכול בתוכן שלמטה (בלי השדה הזה) ← Publish. מה זה עושה: חוסם קריאה/כתיבה של כל בסיס הנתונים בבת אחת; גישה מותרת רק למי שמחזיק את הנתיב המדויק (מפתח סודי באורך 24-32 תווים שנגזר מקוד הסנכרון). המערכת ממשיכה לעבוד בדיוק כרגיל.",
+  "rules": {
+    "crm": {
+      "$syncId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "$restPath": {
+      ".read": "$restPath.beginsWith('cem_hot_')",
+      ".write": "$restPath.beginsWith('cem_hot_')"
+    }
+  }
+}
