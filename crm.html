@@ -3393,6 +3393,8 @@ async function totpCode(secretB32,offset){
 }
 async function totpVerify(secretB32,input){
   input=String(input||'').replace(/\D/g,'');
+  // חלק מהאפליקציות מסתירות אפס מוביל — 5 ספרות נבדקות גם עם 0 בהתחלה
+  if(input.length===5)input='0'+input;
   if(input.length!==6)return false;
   for(const off of [0,-1,1]){ if(await totpCode(secretB32,off)===input)return true; }
   return false;
