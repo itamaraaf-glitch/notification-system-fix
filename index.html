@@ -5996,6 +5996,10 @@ function renderClientMeetings(id){
     const isToday=m.dt===todayStr;
     const hlBadge=m.hl==='כן'?'<span style="font-size:10px;color:#06d6a0">✓ התקיימה</span>':m.hl==='מבוטל'?'<span style="font-size:10px;color:#e63946">✕ מבוטל</span>':'<span style="font-size:10px;color:#f4a261">⏳ ממתין</span>';
     const todayMark=isToday?'<span style="font-size:10px;font-weight:700;color:#4cc9f0;margin-right:3px">היום!</span>':'';
+    const nFiles=(m.files&&m.files.length)||0;
+    // צירוף/הצגה של קובץ סיכום פגישה חיצוני — לכל פגישה, כולל ארכיון
+    const filesBtn=nFiles?`<button class="btn btns" onclick="clientMeetingFiles('${m.id}',event)" title="${nFiles} קבצי סיכום מצורפים — לחץ לצפייה/הורדה" style="font-size:10px;border-color:#4cc9f0;color:#4cc9f0">📎 ${nFiles}</button>`:'';
+    const attachBtn=`<button class="btn btns" onclick="clientMeetingAttach('${m.id}',event)" title="צרף קובץ סיכום פגישה (Word/PDF/Excel/תמונה)" style="font-size:10px;border-color:#06d6a0;color:#06d6a0">📎 צרף סיכום</button>`;
     return`<div class="cmod-row" style="padding:5px 8px;background:${isToday?'rgba(6,214,160,.07)':'rgba(255,255,255,.03)'};border:1px solid ${isToday?'rgba(6,214,160,.2)':'rgba(255,255,255,.07)'};margin-bottom:4px">
       <span style="font-size:14px">${ico}</span>
       <span style="font-size:10px;color:var(--text2);white-space:nowrap">${fmtDate(m.dt)}</span>
@@ -6005,11 +6009,74 @@ function renderClientMeetings(id){
       ${hlBadge}
       ${m._arch?'<span style="font-size:10px;color:#a78bfa">📦 ארכיון</span>':''}
       ${m.no?`<span style="font-size:10px;color:var(--text3);flex-basis:100%">${m.no}</span>`:''}
-      ${m._arch?'':`<button class="btn btns" onclick="closeM('mclient');setTimeout(()=>openM('meeting','${m.id}'),100)" style="font-size:10px;margin-right:auto">✏️</button>`}
+      <div style="display:flex;gap:4px;margin-right:auto;flex-wrap:wrap">${filesBtn}${attachBtn}${m._arch?'':`<button class="btn btns" onclick="closeM('mclient');setTimeout(()=>openM('meeting','${m.id}'),100)" style="font-size:10px">✏️</button>`}</div>
     </div>`;
   }).join('');
   sec.style.display='';
   sec.innerHTML=`<div class="msec" style="border:1px solid rgba(6,214,160,.25)"><div class="msec-hdr"><span style="color:#06d6a0">📅 פגישות (${mtgs.length})</span>${schedBtn}</div>${rows}</div>`;
+}
+// איתור פגישה בטבלה הפעילה או בארכיון
+function _findMeeting(id){
+  let rec=(D.meetings||[]).find(x=>x.id==id);
+  if(rec)return{rec,arch:false};
+  rec=(D.archivedMeetings||[]).find(x=>x.id==id);
+  return rec?{rec,arch:true}:null;
+}
+// צירוף קובץ סיכום פגישה מכרטיס הלקוח — נשמר על הפגישה ומסתנכרן
+function clientMeetingAttach(id,ev){
+  if(ev)ev.stopPropagation();
+  let inp=document.getElementById('_cm-att-inp');
+  if(!inp){
+    inp=document.createElement('input');inp.type='file';inp.id='_cm-att-inp';
+    inp.accept='.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.ppt,.pptx';
+    inp.style.cssText='position:fixed;opacity:0;pointer-events:none;top:0;left:0;width:1px;height:1px';
+    document.body.appendChild(inp);
+  }
+  inp.value='';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    if(f.size>QUOTE_MAX){toast('⚠️ "'+f.name+'" גדול מדי (מקסימום 2MB)','warn');return;}
+    const found=_findMeeting(id);if(!found){toast('⚠️ הפגישה לא נמצאה','warn');return;}
+    const reader=new FileReader();
+    reader.onload=ev2=>{
+      if(!found.rec.files)found.rec.files=[];
+      found.rec.files.push({name:f.name,type:f.type||'',size:f.size,data:ev2.target.result});
+      found.rec._mts=Date.now();
+      saveAll();
+      const cid=EI;renderClientMeetings(cid);rMeetings();
+      toast('📎 קובץ הסיכום צורף לפגישה','ok');
+    };
+    reader.onerror=()=>toast('⚠️ שגיאה בקריאת הקובץ','warn');
+    reader.readAsDataURL(f);
+  };
+  inp.click();
+}
+// צפייה/הורדה של קבצי סיכום פגישה (כולל פגישות ארכיון)
+function clientMeetingFiles(id,ev){
+  if(ev)ev.stopPropagation();
+  const prev=document.getElementById('row-files-popup');
+  if(prev){prev.remove();if(prev.dataset.k==='cm'+id)return;}
+  const found=_findMeeting(id);
+  const files=(found&&found.rec.files)||[];
+  if(!files.length)return;
+  const dl=f=>{const a=document.createElement('a');a.href=f.data;a.download=f.name||'file';document.body.appendChild(a);a.click();a.remove();};
+  if(files.length===1){dl(files[0]);return;}
+  const pop=document.createElement('div');
+  pop.id='row-files-popup';pop.dataset.k='cm'+id;
+  pop.style.cssText='position:fixed;background:var(--s2,#101525);border:1px solid var(--border);border-radius:10px;padding:6px;z-index:100000;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.6);direction:rtl';
+  files.forEach((f,i)=>{
+    const b=document.createElement('button');
+    b.style.cssText='display:block;width:100%;background:transparent;border:none;color:var(--text);padding:7px 10px;text-align:right;cursor:pointer;border-radius:7px;font-family:inherit;font-size:11px';
+    b.innerHTML=`${_fileIcon(f.name)} ${f.name} <span style="color:var(--text3);font-size:9px">(${Math.round((f.size||0)/1024)}KB)</span>`;
+    b.onclick=()=>{dl(f);pop.remove();};
+    pop.appendChild(b);
+  });
+  const anchor=(ev&&(ev.currentTarget||ev.target))||document.body;
+  const r2=anchor.getBoundingClientRect?anchor.getBoundingClientRect():{bottom:80,right:innerWidth/2};
+  pop.style.top=Math.min(r2.bottom+4,innerHeight-220)+'px';
+  pop.style.right=Math.max(6,innerWidth-r2.right)+'px';
+  document.body.appendChild(pop);
+  setTimeout(()=>{document.addEventListener('click',function cl(e2){if(!pop.contains(e2.target)){pop.remove();document.removeEventListener('click',cl);}});},80);
 }
 
 function renderUpcomingMeetings(){
