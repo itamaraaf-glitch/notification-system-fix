@@ -3557,11 +3557,41 @@ async function enableNotify(){
   if(perm!=='granted'){showToast('⚠️ ההרשאה נדחתה — אפשר "התראות" לאתר בהגדרות הדפדפן ונסה שוב','warn');renderNotifyPanel();return;}
   const c=notifyCfg();c.on=true;saveNotifyCfg(c);
   _registerPeriodicDigest();
+  _pushSubscribe();
   renderNotifyPanel();
   sysNotify('🔔 ההתראות פעילות — HOT CRM','מעכשיו תקבל תקציר בוקר ותזכורות פגישות גם כשהמערכת ברקע');
   showToast('✅ התראות מחוץ למערכת הופעלו','ok');
 }
 function disableNotify(){const c=notifyCfg();c.on=false;saveNotifyCfg(c);renderNotifyPanel();showToast('🔕 ההתראות כובו','info');}
+const VAPID_PUBLIC='BFiS4GHvvnyqyKsXa4rjORKb-zSBOQgrHawTs86morznQAijuybe4a2Qr26ysxacJg03g8MYOHIh5boIaXa2TEU';
+function _b64uToBytes(str){const p='='.repeat((4-str.length%4)%4);const b=atob((str+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(b,ch=>ch.charCodeAt(0));}
+function _deviceId(){let id=localStorage.getItem('cem_device_id');if(!id){id=Math.random().toString(36).slice(2,10);localStorage.setItem('cem_device_id',id);}return id;}
+// מינוי לדחיפות אמיתיות מהענן: נרשם מול שירות הדחיפות של הדפדפן, והמינוי
+// נשמר מוצפן בענן הסנכרון — משם ה-GitHub Action שולח תקציר ותזכורות
+// גם כשהאפליקציה סגורה לגמרי. תומך בכמה מכשירים (מפתח לכל מכשיר).
+async function _pushSubscribe(){
+  try{
+    if(!('serviceWorker' in navigator)||!('PushManager' in window))return;
+    const cfg=JSON.parse(localStorage.getItem(FB_CFG_KEY)||'{}');
+    if(!cfg.databaseURL)return;
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_b64uToBytes(VAPID_PUBLIC)});
+    const json=JSON.stringify(sub.toJSON());
+    if(localStorage.getItem('cem_push_saved')===json)return;
+    const hash=await sha256('cem:'+(cfg.syncCode||'hot-crm'));
+    const url=cfg.databaseURL.replace(/\/+$/,'')+'/cem_hot_push_'+hash.substring(0,16)+'.json';
+    // קוראים את מפת המינויים הקיימת, מעדכנים את של המכשיר הזה, ומצפינים חזרה
+    let subs={};
+    try{
+      const r0=await fetch(url,{cache:'no-store'});
+      if(r0.ok){const j0=await r0.json();if(j0&&j0.enc===1){const dec=await _cloudDecrypt(j0.data);if(dec&&typeof dec==='object'&&!dec.endpoint)subs=dec;}}
+    }catch(e){}
+    subs[_deviceId()]=sub.toJSON();
+    const r=await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({enc:1,data:await _cloudEncrypt(subs),_ts:Date.now()})});
+    if(r.ok){localStorage.setItem('cem_push_saved',json);console.log('push subscription saved');}
+  }catch(e){console.warn('push subscribe:',e.message||e);}
+}
 async function _registerPeriodicDigest(){
   // אנדרואיד (PWA מותקן): הרשמה להתעוררות תקופתית — תקציר גם כשהאפליקציה סגורה
   try{
@@ -3723,7 +3753,7 @@ function _finishLoad(){
   }
   rAll();
   showLoginHealth();
-  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); renderNotifyPanel(); renderSecurityPanel(); const nc=notifyCfg(); if(nc.on&&('Notification' in window)&&Notification.permission==='granted'){_registerPeriodicDigest();_notifyTick();} setTimeout(maybeAskNotifyPermission,2000); setTimeout(checkCloudLock,4500); }catch(e){} }, 2500);
+  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); renderNotifyPanel(); renderSecurityPanel(); const nc=notifyCfg(); if(nc.on&&('Notification' in window)&&Notification.permission==='granted'){_registerPeriodicDigest();_pushSubscribe();_notifyTick();} setTimeout(maybeAskNotifyPermission,2000); setTimeout(checkCloudLock,4500); }catch(e){} }, 2500);
   setTimeout(()=>{ try{ checkEmptyAndRecovery(); }catch(e){} }, 4000);
 }
 function loadAll(){

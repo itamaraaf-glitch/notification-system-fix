@@ -1,4 +1,4 @@
-const CACHE = 'hot-crm-v10';
+const CACHE = 'hot-crm-v11';
 const META_CACHE = 'hot-crm-meta';
 const ASSETS = ['./manifest.json', './office-bg.jpg', './mountains-bg.mp4', './icon-192.png', './icon-512.png', './badge-96.png'];
 
@@ -35,6 +35,16 @@ self.addEventListener('fetch', e => {
       return cached || network;
     })
   );
+});
+
+// דחיפת Web Push מהענן (GitHub Actions) — מגיעה גם כשהאפליקציה סגורה לגמרי
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { try { d = { body: e.data.text() }; } catch (e2) {} }
+  e.waitUntil(self.registration.showNotification(d.title || '📣 HOT CRM', {
+    body: d.body || '', tag: d.tag || 'hot-push', dir: 'rtl', lang: 'he',
+    icon: './icon-192.png', badge: './badge-96.png'
+  }));
 });
 
 // לחיצה על התראת מערכת — פתיחת/מיקוד האפליקציה

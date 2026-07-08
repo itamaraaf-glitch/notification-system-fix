@@ -22,6 +22,40 @@ function decryptCloud(b64, code) {
 const fmtN = n => !n ? '–' : '₪' + Number(n).toLocaleString('he-IL');
 const fmtD = s => { if (!s) return '–'; const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; };
 
+const VAPID_PUBLIC = 'BFiS4GHvvnyqyKsXa4rjORKb-zSBOQgrHawTs86morznQAijuybe4a2Qr26ysxacJg03g8MYOHIh5boIaXa2TEU';
+
+// שליחת דחיפת Web Push לכל המכשירים הרשומים (המינויים שמורים מוצפנים בענן)
+async function sendPush(title, body, tag) {
+  const priv = (process.env.VAPID_PRIVATE_KEY || '').trim();
+  if (!priv) { console.log('VAPID_PRIVATE_KEY not set — skipping phone push'); return 0; }
+  let webpush;
+  try { webpush = require('web-push'); } catch (e) { console.log('web-push module missing — skipping'); return 0; }
+  const hash = sha256('cem:' + SYNC_CODE);
+  let subs = null;
+  try {
+    const r = await fetch(`${DB_URL}/cem_hot_push_${hash.substring(0, 16)}.json`);
+    if (r.ok) { const j = await r.json(); if (j && j.enc === 1) subs = decryptCloud(j.data, SYNC_CODE); }
+  } catch (e) {}
+  if (!subs) { console.log('no push subscriptions registered yet'); return 0; }
+  webpush.setVapidDetails('mailto:noreply@users.noreply.github.com', VAPID_PUBLIC, priv);
+  const list = subs.endpoint ? [subs] : Object.values(subs);
+  const payload = JSON.stringify({ title, body, tag });
+  let sent = 0;
+  for (const sub of list) {
+    try { await webpush.sendNotification(sub, payload, { TTL: 3600 }); sent++; }
+    catch (e) { console.log('push failed:', e.statusCode || e.message); }
+  }
+  console.log('pushes sent:', sent, '/', list.length);
+  return sent;
+}
+
+// השעה בישראל כרגע (עשרוני: 9.5 = 09:30)
+function ilNow() {
+  const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
+  const [h, m] = p.split(':').map(Number);
+  return h + m / 60;
+}
+
 async function main() {
   if (!DB_URL || !SYNC_CODE) {
     console.log('FIREBASE_DB_URL / SYNC_CODE not configured — skipping (add repo secrets to enable the daily email digest).');
@@ -51,6 +85,25 @@ async function main() {
 
   const mtgs = (D.meetings || []).filter(m => m.dt === today && m.hl !== 'מבוטל')
     .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+  const nowIL = ilNow();
+  const force = !!process.env.FORCE_DIGEST;
+  // תזכורות פגישה לטלפון: פגישות שמתחילות בעוד 5–35 דקות (הריצה כל 30 דק׳ — בלי כפילויות)
+  for (const m of mtgs) {
+    if (!m.time || m.hl === 'כן') continue;
+    const [h, mi] = m.time.split(':').map(Number);
+    const diffMin = (h + mi / 60 - nowIL) * 60;
+    if (diffMin > 5 && diffMin <= 35) {
+      await sendPush('⏰ פגישה בעוד ' + Math.round(diffMin) + ' דק׳ — ' + (m.cl || ''), m.time + (m.no ? '\n' + m.no : ''), 'meet-' + (m.id || m.time));
+    }
+  }
+  // תקציר בוקר: רק בריצה של חלון 07:00–08:00 (או בהרצה ידנית)
+  const morning = nowIL >= 7 && nowIL < 8;
+  if (!morning && !force) { console.log('not the morning window — reminders only'); return; }
+  const pushBody = (mtgs.length
+    ? '📅 ' + mtgs.length + ' פגישות היום: ' + mtgs.map(m => (m.time ? m.time + ' ' : '') + (m.cl || '')).join(', ')
+    : '📅 אין פגישות ביומן היום');
+  await sendPush('📣 תקציר בוקר — HOT CRM', pushBody, 'daily-digest');
   const tenders = (D.tenders || []).filter(t => t.deadline && t.submitted !== 'כן' &&
     dayDiff(today, t.deadline) >= 0 && dayDiff(today, t.deadline) <= 5);
   const stuckDeals = (D.deals || []).filter(d => d.date && d.st !== 'נסגר' &&
