@@ -10,6 +10,15 @@ const OWNER = process.env.OWNER;
 const GH_API = process.env.GH_API || 'https://api.github.com';
 
 const sha256 = s => crypto.createHash('sha256').update(s, 'utf8').digest('hex');
+// פענוח AES-256-GCM — תואם להצפנה מקצה-לקצה של המערכת (WebCrypto)
+function decryptCloud(b64, code) {
+  const key = crypto.pbkdf2Sync('cem_e2e:' + code, 'cem_hot_e2e_salt_v1', 150000, 32, 'sha256');
+  const raw = Buffer.from(b64, 'base64');
+  const iv = raw.subarray(0, 12), tag = raw.subarray(raw.length - 16), ct = raw.subarray(12, raw.length - 16);
+  const d = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  d.setAuthTag(tag);
+  return JSON.parse(Buffer.concat([d.update(ct), d.final()]).toString('utf8'));
+}
 const fmtN = n => !n ? '–' : '₪' + Number(n).toLocaleString('he-IL');
 const fmtD = s => { if (!s) return '–'; const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; };
 
@@ -27,7 +36,11 @@ async function main() {
       const r = await fetch(`${DB_URL}/${p}.json`);
       if (!r.ok) continue;
       const j = await r.json();
-      if (j && j.data) { D = j.data; break; }
+      if (!j) continue;
+      // פורמט מוצפן מקצה-לקצה (enc:1) — פענוח עם מפתח הנגזר מקוד הסנכרון
+      if (j.enc === 1 && typeof j.data === 'string') {
+        try { D = decryptCloud(j.data, SYNC_CODE); break; } catch (e) { console.log('decrypt failed for', p); }
+      } else if (j.data && typeof j.data === 'object') { D = j.data; break; }
     } catch (e) { /* try next path */ }
   }
   if (!D) { console.log('No CRM data found in cloud — nothing to digest.'); return; }

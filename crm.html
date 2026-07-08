@@ -2688,6 +2688,49 @@ const FB_CFG_KEY='cem_fb_config';
 let _fbDB=null,_fbRef=null,_fbListening=false,_fbApplying=false,_fbPushTimer=null;
 let _lastSyncTs=0;
 
+// ═══ הצפנה מקצה-לקצה של הסנכרון (AES-256-GCM) ═══
+// המפתח נגזר מקוד הסנכרון ולא עוזב את המכשיר — בענן נשמר רק טקסט מוצפן.
+// גם אם בסיס הנתונים פתוח, התוכן בלתי-קריא ללא קוד הסנכרון.
+let _e2eCache={code:null,key:null};
+async function _cloudKey(){
+  const cfg=JSON.parse(localStorage.getItem(FB_CFG_KEY)||'{}');
+  const code=cfg.syncCode||'hot-crm';
+  if(_e2eCache.code===code&&_e2eCache.key)return _e2eCache.key;
+  const km=await crypto.subtle.importKey('raw',new TextEncoder().encode('cem_e2e:'+code),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:new TextEncoder().encode('cem_hot_e2e_salt_v1'),iterations:150000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  _e2eCache={code:code,key:key};
+  return key;
+}
+async function _cloudEncrypt(obj){
+  const key=await _cloudKey();
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,new TextEncoder().encode(JSON.stringify(obj))));
+  const buf=new Uint8Array(iv.length+ct.length);buf.set(iv);buf.set(ct,12);
+  let bin='';const CH=0x8000;
+  for(let i=0;i<buf.length;i+=CH)bin+=String.fromCharCode.apply(null,buf.subarray(i,Math.min(i+CH,buf.length)));
+  return btoa(bin);
+}
+async function _cloudDecrypt(b64){
+  const key=await _cloudKey();
+  const raw=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:raw.slice(0,12)},key,raw.slice(12));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+// חילוץ נתונים מהענן: פורמט מוצפן (enc:1) או הפורמט הישן הלא-מוצפן (מעבר חלק).
+// פענוח כושל (קוד סנכרון שגוי / חבלה בנתונים) — מתעלמים, לא ממזגים זבל.
+async function cloudExtract(remote){
+  if(!remote)return null;
+  if(remote.enc===1&&typeof remote.data==='string'){
+    try{return await _cloudDecrypt(remote.data);}catch(e){console.warn('cloud decrypt failed — ignoring remote');return null;}
+  }
+  if(remote.data&&typeof remote.data==='object')return JSON.parse(JSON.stringify(remote.data));
+  return null;
+}
+// המטען שעולה לענן — תמיד מוצפן
+async function cloudPayload(ts){
+  return {_ts:ts,_baseline:D._baseline||0,enc:1,data:await _cloudEncrypt(D)};
+}
+
 // Smart merge: never overwrites local items — merges by ID, keeps newer _mts per item
 function fbMergeRemote(remote){
   // ── יישור קו ──
@@ -2777,12 +2820,13 @@ async function fbForcePull(){
   if(_ssUrl){await ssPoll();showToast('✅ עודכן מהענן','ok');return;}
   if(!_fbRef){showToast('⚠️ אין חיבור ענן מוגדר — לחץ על ⚡ בסרגל העליון','warn');return;}
   showToast('🔄 מושך נתונים מהענן...','info');
-  _fbRef.once('value',snap=>{
+  _fbRef.once('value',async snap=>{
     const remote=snap.val();
-    if(!remote||!remote.data){showToast('✅ הנתונים כבר מעודכנים','ok');return;}
+    const plain=await cloudExtract(remote);
+    if(!plain){showToast('✅ הנתונים כבר מעודכנים','ok');return;}
     _fbApplying=true;
     try{
-      const changed=fbMergeRemote(JSON.parse(JSON.stringify(remote.data)));
+      const changed=fbMergeRemote(plain);
       const newTs=Math.max(remote._ts||0,parseInt(localStorage.getItem('cem_sync_ts')||'0'));
       localStorage.setItem(LS_KEY,JSON.stringify(D));
       localStorage.setItem('cem_sync_ts',String(newTs));
@@ -2814,7 +2858,7 @@ async function fbBaselineNow(){
   if(_ssUrl){await _ssPushNow();}
   else if(_fbRef){
     try{
-      await _fbRef.set({_ts:ts,_baseline:ts,data:D});
+      await _fbRef.set(await cloudPayload(ts));
       localStorage.setItem('cem_sync_ts',String(ts));
       _lastSyncTs=Date.now();
       fbStatus('connected');
@@ -2864,14 +2908,14 @@ async function fbInit(){
     const path='crm/'+hash.substring(0,32);
     _fbRef=_fbDB.ref(path);
     fbStatus('connecting');
-    _fbRef.on('value',snap=>{
+    _fbRef.on('value',async snap=>{
       const remote=snap.val();
-      if(!remote||!remote.data){fbStatus('connected');_fbListening=true;return;}
+      const parsed=await cloudExtract(remote);
+      if(!parsed){fbStatus('connected');_fbListening=true;return;}
       const remoteTs=remote._ts||0;
       const localTs=parseInt(localStorage.getItem('cem_sync_ts')||'0');
       _fbApplying=true;
       try{
-        const parsed=JSON.parse(JSON.stringify(remote.data));
         const changed=fbMergeRemote(parsed);
         const newTs=Math.max(remoteTs,localTs);
         localStorage.setItem(LS_KEY,JSON.stringify(D));
@@ -2900,7 +2944,7 @@ function fbPush(){
     }catch(e){}
     const ts=Date.now();
     fbStatus('syncing');
-    _fbRef.set({_ts:ts,_baseline:D._baseline||0,data:D})
+    _fbRef.set(await cloudPayload(ts))
       .then(()=>{
         // חותמת הסנכרון נכתבת רק אחרי הצלחה — כתיבה מוקדמת גורמת למכשיר
         // "לחשוב" שהוא מעודכן ולחסום משיכות מהענן אחרי העלאה שנכשלה
@@ -3015,14 +3059,15 @@ async function ssInit(dbUrl,syncCode){
     const remote=await r.json();
     _ssUrl=url;
     _fbListening=true;
-    if(remote&&remote.data){
+    const plainInit=await cloudExtract(remote);
+    if(plainInit){
       const remoteTs=remote._ts||0;
       const localTs=parseInt(localStorage.getItem('cem_sync_ts')||'0');
       // יישור קו חדש בענן נמשך תמיד — גם אם חותמת הזמן המקומית "עדכנית"
-      if(remoteTs>localTs+500||(remote.data._baseline||0)>(D._baseline||0)){
+      if(remoteTs>localTs+500||(plainInit._baseline||0)>(D._baseline||0)){
         _fbApplying=true;
         try{
-          const changed=fbMergeRemote(JSON.parse(JSON.stringify(remote.data)));
+          const changed=fbMergeRemote(plainInit);
           localStorage.setItem(LS_KEY,JSON.stringify(D));
           localStorage.setItem('cem_sync_ts',String(Math.max(remoteTs,localTs)));
           _lastSyncTs=Date.now();
@@ -3050,14 +3095,15 @@ async function ssPoll(){
     const r=await fetch(_ssUrl);
     if(!r.ok)return;
     const remote=await r.json();
-    if(!remote||!remote.data)return;
+    const plainPoll=await cloudExtract(remote);
+    if(!plainPoll)return;
     const remoteTs=remote._ts||0;
     const localTs=parseInt(localStorage.getItem('cem_sync_ts')||'0');
     // יישור קו חדש בענן נמשך תמיד — גם אם חותמת הזמן המקומית "עדכנית"
-    if(remoteTs>localTs+500||(remote.data._baseline||0)>(D._baseline||0)){
+    if(remoteTs>localTs+500||(plainPoll._baseline||0)>(D._baseline||0)){
       _fbApplying=true;
       try{
-        const changed=fbMergeRemote(JSON.parse(JSON.stringify(remote.data)));
+        const changed=fbMergeRemote(plainPoll);
         localStorage.setItem(LS_KEY,JSON.stringify(D));
         localStorage.setItem('cem_sync_ts',String(Math.max(remoteTs,localTs)));
         _lastSyncTs=Date.now();
@@ -3095,7 +3141,7 @@ async function _ssPushNow(){
   const ts=Date.now();
   fbStatus('syncing');
   try{
-    const r=await fetch(_ssUrl,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({_ts:ts,_baseline:D._baseline||0,data:D})});
+    const r=await fetch(_ssUrl,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(await cloudPayload(ts))});
     if(!r.ok)throw new Error('HTTP '+r.status);
     // חותמת הסנכרון נכתבת רק אחרי הצלחה — אחרת העלאה שנכשלה חוסמת משיכות עתידיות
     localStorage.setItem('cem_sync_ts',String(ts));
@@ -3309,7 +3355,7 @@ function _showCloudLockBanner(){
   b.id='cloud-lock-banner';
   b.style.cssText='position:fixed;left:12px;right:12px;top:60px;z-index:9998;padding:12px 16px;border-radius:16px;background:linear-gradient(135deg,rgba(230,57,70,.3),rgba(230,57,70,.12) 45%,rgba(230,57,70,.22));backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);box-shadow:inset 0 1px 0 rgba(255,200,200,.35),0 14px 44px rgba(0,0,0,.6);direction:rtl;max-width:520px;margin:0 auto';
   b.innerHTML=`<div style="font-size:13px;font-weight:800;color:#ffd7d7;margin-bottom:3px">🔓 בסיס הנתונים בענן עדיין פתוח</div>
-    <div style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:9px">נדרש צעד חד-פעמי של 2 דקות כדי לנעול אותו — המערכת תמשיך לעבוד רגיל.</div>
+    <div style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:9px">המידע עצמו כבר מוצפן מקצה-לקצה 🔐 — הנעילה מוסיפה שכבת הגנה נוספת (צעד חד-פעמי של 2 דקות).</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btnp" onclick="openCloudLockWizard()" style="font-size:12px">🔐 נעל עכשיו — הנחיות</button>
       <button class="btn" onclick="localStorage.setItem('cem_dblock_snooze',Date.now());document.getElementById('cloud-lock-banner').remove()" style="font-size:11px;opacity:.8">תזכיר לי מחר</button>
@@ -3504,12 +3550,13 @@ async function fbSyncNow(){
   if(!_fbRef){openSyncModal();return;}
   // Full Firebase mode: pull latest then push merged data
   showToast('🔄 מסנכרן עם הענן...','info');
-  _fbRef.once('value',snap=>{
+  _fbRef.once('value',async snap=>{
     const remote=snap.val();
-    if(remote&&remote.data){
+    const plain=await cloudExtract(remote);
+    if(plain){
       _fbApplying=true;
       try{
-        const changed=fbMergeRemote(JSON.parse(JSON.stringify(remote.data)));
+        const changed=fbMergeRemote(plain);
         if(changed){localStorage.setItem(LS_KEY,JSON.stringify(D));rAll();}
       }finally{_fbApplying=false;}
     }
@@ -3650,15 +3697,16 @@ document.addEventListener('visibilitychange',()=>{
     if(_fbRef&&_fbListening&&!_fbApplying){
       setTimeout(()=>{
         if(_fbApplying)return;
-        _fbRef.once('value',snap=>{
+        _fbRef.once('value',async snap=>{
           const remote=snap.val();
-          if(!remote||!remote.data)return;
+          const plain=await cloudExtract(remote);
+          if(!plain)return;
           const remoteTs=remote._ts||0;
           const localTs=parseInt(localStorage.getItem('cem_sync_ts')||'0');
-          if(remoteTs>localTs+500||(remote.data._baseline||0)>(D._baseline||0)){
+          if(remoteTs>localTs+500||(plain._baseline||0)>(D._baseline||0)){
             _fbApplying=true;
             try{
-              const changed=fbMergeRemote(JSON.parse(JSON.stringify(remote.data)));
+              const changed=fbMergeRemote(plain);
               localStorage.setItem(LS_KEY,JSON.stringify(D));
               localStorage.setItem('cem_sync_ts',String(Math.max(remoteTs,localTs)));
               _lastSyncTs=Date.now();
