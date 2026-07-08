@@ -3273,6 +3273,77 @@ setTimeout(checkAppVersion,6000);
 setInterval(checkAppVersion,35*60*1000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkAppVersion();});
 
+// ═══ בודק אבטחת ענן: מזהה בסיס נתונים פתוח, מנחה לנעילה ומוודא שבוצעה ═══
+const CLOUD_RULES_JSON=`{
+  "rules": {
+    "crm": {
+      "$syncId": { ".read": true, ".write": true }
+    },
+    "$restPath": {
+      ".read": "$restPath.beginsWith('cem_hot_')",
+      ".write": "$restPath.beginsWith('cem_hot_')"
+    }
+  }
+}`;
+async function checkCloudLock(silent){
+  try{
+    const cfgStr=localStorage.getItem(FB_CFG_KEY);if(!cfgStr)return null;
+    const cfg=JSON.parse(cfgStr);if(!cfg.databaseURL)return null;
+    // אם אפשר לקרוא את שורש בסיס הנתונים — הוא פתוח לכל מי שמכיר את הכתובת
+    const r=await fetch(cfg.databaseURL.replace(/\/+$/,'')+'/.json?shallow=true',{cache:'no-store'});
+    if(r.ok){
+      localStorage.removeItem('cem_db_locked');
+      if(!silent)_showCloudLockBanner();
+      return false;
+    }
+    localStorage.setItem('cem_db_locked','1');
+    const b=document.getElementById('cloud-lock-banner');if(b)b.remove();
+    return true;
+  }catch(e){return null;/* אופליין — לא מסיקים כלום */}
+}
+function _showCloudLockBanner(){
+  if(document.getElementById('cloud-lock-banner'))return;
+  const snooze=+localStorage.getItem('cem_dblock_snooze')||0;
+  if(Date.now()-snooze<86400000)return; // תזכורת פעם ביום עד שננעל
+  const b=document.createElement('div');
+  b.id='cloud-lock-banner';
+  b.style.cssText='position:fixed;left:12px;right:12px;top:60px;z-index:9998;padding:12px 16px;border-radius:16px;background:linear-gradient(135deg,rgba(230,57,70,.3),rgba(230,57,70,.12) 45%,rgba(230,57,70,.22));backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);box-shadow:inset 0 1px 0 rgba(255,200,200,.35),0 14px 44px rgba(0,0,0,.6);direction:rtl;max-width:520px;margin:0 auto';
+  b.innerHTML=`<div style="font-size:13px;font-weight:800;color:#ffd7d7;margin-bottom:3px">🔓 בסיס הנתונים בענן עדיין פתוח</div>
+    <div style="font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:9px">נדרש צעד חד-פעמי של 2 דקות כדי לנעול אותו — המערכת תמשיך לעבוד רגיל.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btnp" onclick="openCloudLockWizard()" style="font-size:12px">🔐 נעל עכשיו — הנחיות</button>
+      <button class="btn" onclick="localStorage.setItem('cem_dblock_snooze',Date.now());document.getElementById('cloud-lock-banner').remove()" style="font-size:11px;opacity:.8">תזכיר לי מחר</button>
+    </div>`;
+  document.body.appendChild(b);
+}
+function openCloudLockWizard(){
+  const bn=document.getElementById('cloud-lock-banner');if(bn)bn.remove();
+  const prev=document.getElementById('cloud-lock-wizard');if(prev)prev.remove();
+  const w=document.createElement('div');
+  w.id='cloud-lock-wizard';
+  w.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px';
+  w.innerHTML=`<div style="background:var(--s2,#101525);border:1px solid rgba(230,57,70,.4);border-radius:16px;padding:20px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;direction:rtl">
+    <div style="font-size:15px;font-weight:900;margin-bottom:4px">🔐 נעילת בסיס הנתונים — צעד אחר צעד</div>
+    <div style="font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:12px">אחרי הנעילה רק מי שמחזיק את מפתח הסנכרון הסודי שלך יוכל לגשת לנתונים. המערכת ממשיכה לעבוד בדיוק כרגיל.</div>
+    <ol style="font-size:12px;line-height:2;color:var(--text);padding-right:18px;margin:0 0 12px">
+      <li>לחץ: <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" style="color:#4cc9f0;font-weight:700">פתח את קונסולת Firebase ↗</a> (התחבר עם חשבון Google שאיתו יצרת את הסנכרון)</li>
+      <li>בחר את הפרויקט שלך</li>
+      <li>בתפריט: <b>Realtime Database</b> ← לשונית <b>Rules</b></li>
+      <li>מחק את הכול והדבק את החוקים (כפתור ההעתקה למטה)</li>
+      <li>לחץ <b style="color:#06d6a0">Publish</b></li>
+      <li>חזור לכאן ולחץ "בדוק נעילה"</li>
+    </ol>
+    <textarea readonly id="clw-rules" rows="9" style="width:100%;box-sizing:border-box;font-family:monospace;font-size:10px;direction:ltr;background:rgba(255,255,255,.04);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px;resize:none">${CLOUD_RULES_JSON}</textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn btnp" onclick="(function(){const t=document.getElementById('clw-rules');t.select();try{navigator.clipboard.writeText(t.value).then(()=>showToast('📋 החוקים הועתקו — הדבק בלשונית Rules','ok'));}catch(e){document.execCommand('copy');showToast('📋 החוקים הועתקו','ok');}})()" style="font-size:12px">📋 העתק את החוקים</button>
+      <button class="btn" onclick="(async function(){showToast('🔍 בודק את נעילת הענן...','info');const ok=await checkCloudLock(true);if(ok===true){document.getElementById('cloud-lock-wizard').remove();showToast('🔐 מאובטח! בסיס הנתונים נעול — רק המפתח הסודי שלך פותח אותו','ok');}else if(ok===false)showToast('🔓 עדיין פתוח — ודא שלחצת Publish בקונסולה ונסה שוב','warn');else showToast('⚠️ אין חיבור לענן כרגע — נסה שוב עוד רגע','warn');})()" style="border-color:#06d6a0;color:#06d6a0;font-size:12px">✅ בדוק נעילה</button>
+      <button class="btn" onclick="document.getElementById('cloud-lock-wizard').remove()" style="font-size:11px;opacity:.8">סגור</button>
+    </div>
+  </div>`;
+  w.onclick=e=>{if(e.target===w)w.remove();};
+  document.body.appendChild(w);
+}
+
 // ═══ התראות מחוץ למערכת: תקציר בוקר + תזכורות פגישה כהתראות מערכת ═══
 const NOTIFY_CFG_KEY='cem_notify_cfg';
 function notifyCfg(){try{return Object.assign({on:false,hour:'08:30',meetRem:true,remMin:30},JSON.parse(localStorage.getItem(NOTIFY_CFG_KEY)||'{}'));}catch(e){return{on:false,hour:'08:30',meetRem:true,remMin:30};}}
@@ -3459,7 +3530,7 @@ function _finishLoad(){
   }
   rAll();
   showLoginHealth();
-  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); renderNotifyPanel(); const nc=notifyCfg(); if(nc.on&&('Notification' in window)&&Notification.permission==='granted'){_registerPeriodicDigest();_notifyTick();} setTimeout(maybeAskNotifyPermission,2000); }catch(e){} }, 2500);
+  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); renderNotifyPanel(); const nc=notifyCfg(); if(nc.on&&('Notification' in window)&&Notification.permission==='granted'){_registerPeriodicDigest();_notifyTick();} setTimeout(maybeAskNotifyPermission,2000); setTimeout(checkCloudLock,4500); }catch(e){} }, 2500);
   setTimeout(()=>{ try{ checkEmptyAndRecovery(); }catch(e){} }, 4000);
 }
 function loadAll(){
