@@ -1401,6 +1401,10 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="lg"><label>שם משתמש</label><input type="text" id="lu" placeholder="שם משתמש" autocomplete="new-password" name="usr_x9k2" spellcheck="false" onkeydown="if(event.key==='Enter')document.getElementById('lp').focus()"></div>
     <div class="lg"><label>סיסמה</label><div style="position:relative"><input type="password" id="lp" placeholder="סיסמה" autocomplete="new-password" name="pwd_m4r7" onkeydown="if(event.key==='Enter')doLogin()" style="padding-left:36px"><button type="button" onclick="(function(){const i=document.getElementById('lp');const b=document.getElementById('lp-eye');if(i.type==='password'){i.type='text';b.textContent='🙈';}else{i.type='password';b.textContent='👁';}})()" id="lp-eye" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;line-height:1;color:var(--text3);padding:4px;-webkit-tap-highlight-color:transparent">👁</button></div></div>
     <button class="lbtn" id="lbtn" onclick="doLogin()">כניסה למערכת</button>
+    <div id="l2fa-bio" style="display:none;margin-top:14px;text-align:center">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px">🔐 אמת את זהותך כדי להיכנס</div>
+      <button class="lbtn" id="l2fa-bio-btn" onclick="loginWithBio()">👆 כניסה בטביעת אצבע</button>
+    </div>
     <div id="l2fa" style="display:none;margin-top:14px">
       <div class="lg"><label>🔐 קוד אימות דו-שלבי</label><input type="text" id="l2fa-code" placeholder="קוד בן 6 ספרות מהאפליקציה" inputmode="numeric" autocomplete="one-time-code" maxlength="10" style="direction:ltr;text-align:center;letter-spacing:4px;font-size:16px" onkeydown="if(event.key==='Enter')submit2FA()"></div>
       <button class="lbtn" onclick="submit2FA()">אמת קוד</button>
@@ -1821,7 +1825,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   <!-- 🔐 כניסה דו-שלבית -->
   <div class="tw" style="margin-top:16px;padding:16px 18px;border-top:3px solid #06d6a0">
     <div style="font-size:13px;font-weight:800;color:var(--teal);margin-bottom:4px">🔐 כניסה דו-שלבית (2FA)</div>
-    <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:12px">אחרי הסיסמה נדרש גם קוד מתחלף מאפליקציית אימות בטלפון (Google Authenticator) — הגנה אמיתית גם אם הסיסמה דלפה. כולל קוד גיבוי למקרה של אובדן הטלפון.</div>
+    <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:12px">אחרי הסיסמה נדרש אימות נוסף — <b>טביעת אצבע / Face ID</b> (הכי נוח, במכשיר עצמו) או <b>קוד מאפליקציית אימות</b> (Google Authenticator). אפשר להפעיל אחד מהם או את שניהם. הגנה אמיתית גם אם הסיסמה דלפה.</div>
     <div id="security-panel" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"></div>
   </div>
   <!-- 🔔 התראות מחוץ למערכת -->
@@ -2480,15 +2484,21 @@ async function doLogin(){
   }
   _clearAuth();
   document.getElementById('lerr').textContent='';
-  // אימות דו-שלבי: אם מופעל — עוצרים אחרי הסיסמה ומבקשים קוד מהאפליקציה
+  // אימות דו-שלבי: אם מופעל — עוצרים אחרי הסיסמה ומבקשים אימות (טביעת אצבע / קוד)
   const _t=_totpFromStorage();
-  if(_t&&_t.on){
+  const _b=_bioFromStorage();
+  if((_t&&_t.on)||(_b&&_b.on)){
     _pending2FA=f;
     document.getElementById('lbtn').style.display='none';
     document.getElementById('lu').parentElement.style.display='none';
     document.getElementById('lp').parentElement.parentElement.style.display='none';
-    document.getElementById('l2fa').style.display='';
-    setTimeout(()=>{const i=document.getElementById('l2fa-code');if(i)i.focus();},80);
+    // טביעת אצבע: מציגים כפתור נעילה ביומטרי, ומפעילים אותו אוטומטית
+    const bioWrap=document.getElementById('l2fa-bio');
+    if(_b&&_b.on){bioWrap.style.display='';setTimeout(()=>loginWithBio(),350);}
+    else bioWrap.style.display='none';
+    // קוד מאפליקציה: מוצג רק אם TOTP מופעל
+    document.getElementById('l2fa').style.display=(_t&&_t.on)?'':'none';
+    if(_t&&_t.on&&!(_b&&_b.on))setTimeout(()=>{const i=document.getElementById('l2fa-code');if(i)i.focus();},80);
     return;
   }
   _completeLogin(f);
@@ -2496,6 +2506,32 @@ async function doLogin(){
 let _pending2FA=null,_2faAtt=0;
 function _totpFromStorage(){
   try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'{}');return p._totp||null;}catch(e){return null;}
+}
+function _bioFromStorage(){
+  try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'{}');return p._bio||null;}catch(e){return null;}
+}
+// כניסה בטביעת אצבע / Face ID (WebAuthn) — המפתח הפרטי שמור במעבד המאובטח של המכשיר
+async function loginWithBio(){
+  const errEl=document.getElementById('lerr');
+  const b=_bioFromStorage();
+  if(!b||!b.on||!b.cred){errEl.textContent='האימות הביומטרי לא מוגדר במכשיר זה';return;}
+  if(!window.PublicKeyCredential||!navigator.credentials){errEl.textContent='המכשיר לא תומך בטביעת אצבע — הזן קוד מהאפליקציה';document.getElementById('l2fa').style.display='';return;}
+  try{
+    const chal=crypto.getRandomValues(new Uint8Array(32));
+    await navigator.credentials.get({publicKey:{
+      challenge:chal,
+      allowCredentials:[{type:'public-key',id:_b64uToBytes(b.cred)}],
+      userVerification:'required',
+      timeout:60000
+    }});
+    // אישור ביומטרי מוצלח = המשתמש אימת את עצמו במכשיר הרשום
+    const f=_pending2FA;_pending2FA=null;errEl.textContent='';
+    _completeLogin(f);
+  }catch(e){
+    errEl.textContent='האימות בוטל או נכשל — נסה שוב'+((_totpFromStorage()||{}).on?' או הזן קוד מהאפליקציה':'');
+    const btn=document.getElementById('l2fa-bio-btn');if(btn)btn.textContent='👆 נסה שוב בטביעת אצבע';
+    if((_totpFromStorage()||{}).on)document.getElementById('l2fa').style.display='';
+  }
 }
 async function submit2FA(){
   const errEl=document.getElementById('lerr');
@@ -2522,6 +2558,7 @@ async function submit2FA(){
 function _completeLogin(f){
   try{
     document.getElementById('l2fa').style.display='none';
+    const bw=document.getElementById('l2fa-bio');if(bw)bw.style.display='none';
     document.getElementById('l2fa-code').value='';
     document.getElementById('lbtn').style.display='';
     document.getElementById('lu').parentElement.style.display='';
@@ -3478,16 +3515,61 @@ async function totpNewBackup(){
   w.onclick=e=>{if(e.target===w)w.remove();};
   document.body.appendChild(w);
 }
+// ═══ כניסה בטביעת אצבע / Face ID (Passkey — WebAuthn) ═══
+// המפתח הפרטי נשמר במעבד המאובטח של המכשיר ולא עוזב אותו. ההגדרה מקומית
+// למכשיר (לא מסתנכרנת) — כל מכשיר מפעיל טביעת אצבע משלו.
+function _bioLocal(){try{return JSON.parse(localStorage.getItem('cem_bio_local')||'null');}catch(e){return null;}}
+async function bioSupported(){
+  try{return !!(window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());}
+  catch(e){return false;}
+}
+async function bioSetup(){
+  if(!await bioSupported()){showToast('⚠️ המכשיר הזה לא תומך בטביעת אצבע / Face ID בדפדפן','warn');return;}
+  try{
+    const uid=crypto.getRandomValues(new Uint8Array(16));
+    const cred=await navigator.credentials.create({publicKey:{
+      challenge:crypto.getRandomValues(new Uint8Array(32)),
+      rp:{name:'HOT CRM'},
+      user:{id:uid,name:'hot-crm-user',displayName:'HOT CRM'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'preferred'},
+      timeout:60000,attestation:'none'
+    }});
+    const idB64=_bytesToB64u(new Uint8Array(cred.rawId));
+    // נשמר גם ב-D (לזיהוי שהמכשיר הראשי הפעיל) וגם מקומית (המפתח שייך למכשיר)
+    D._bio={on:true,cred:idB64,since:nd()};
+    localStorage.setItem('cem_bio_local',JSON.stringify({cred:idB64}));
+    saveAll();renderSecurityPanel();
+    showToast('👆 כניסה בטביעת אצבע הופעלה — מהכניסה הבאה תזוהה במכשיר הזה','ok');
+  }catch(e){
+    if(e&&e.name==='NotAllowedError')showToast('הפעולה בוטלה','info');
+    else showToast('⚠️ לא ניתן להפעיל טביעת אצבע: '+(e.message||e.name||''),'warn');
+  }
+}
+function bioDisable(){
+  D._bio=null;localStorage.removeItem('cem_bio_local');saveAll();renderSecurityPanel();
+  showToast('🔓 הכניסה בטביעת אצבע בוטלה','info');
+}
+function _bytesToB64u(bytes){let bin='';for(const b of bytes)bin+=String.fromCharCode(b);return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+
 function renderSecurityPanel(){
   const p=document.getElementById('security-panel');if(!p)return;
   const on=!!(D._totp&&D._totp.on);
-  p.innerHTML=on
+  const bioOn=!!(D._bio&&D._bio.on);
+  const totpRow=on
     ?`<span style="font-size:12px;color:var(--teal);font-weight:800">● פעיל</span>
-      <span style="font-size:11px;color:var(--text2)">כניסה דורשת סיסמה + קוד מהאפליקציה, בכל המכשירים</span>
-      <button class="btn" onclick="totpNewBackup()" style="font-size:11px;border-color:#f4a261;color:#f4a261">🎫 צור קוד גיבוי חדש</button>
-      <button class="btn" onclick="totpDisable()" style="font-size:11px;opacity:.85">🔓 בטל</button>`
-    :`<span style="font-size:12px;color:var(--text3);font-weight:800">● כבוי</span>
-      <button class="btn btnp" onclick="totpSetupStart()" style="font-size:11px">🔐 הפעל כניסה דו-שלבית</button>`;
+      <span style="font-size:11px;color:var(--text2)">כניסה דורשת סיסמה + אימות</span>
+      <button class="btn" onclick="totpNewBackup()" style="font-size:11px;border-color:#f4a261;color:#f4a261">🎫 קוד גיבוי חדש</button>
+      <button class="btn" onclick="totpDisable()" style="font-size:11px;opacity:.85">🔓 בטל קוד</button>`
+    :`<span style="font-size:12px;color:var(--text3);font-weight:800">● קוד כבוי</span>
+      <button class="btn btnp" onclick="totpSetupStart()" style="font-size:11px">🔐 הפעל קוד מאפליקציה</button>`;
+  const bioRow=bioOn
+    ?`<span style="font-size:12px;color:var(--teal);font-weight:800">👆 טביעת אצבע פעילה</span>
+      <button class="btn" onclick="bioDisable()" style="font-size:11px;opacity:.85">בטל טביעת אצבע</button>`
+    :`<span style="font-size:12px;color:var(--text3);font-weight:800">👆 טביעת אצבע כבויה</span>
+      <button class="btn btnp" onclick="bioSetup()" style="font-size:11px">👆 הפעל טביעת אצבע / Face ID</button>`;
+  p.innerHTML=`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%">${totpRow}</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">${bioRow}</div>`;
 }
 
 // ═══ בודק אבטחת ענן: מזהה בסיס נתונים פתוח, מנחה לנעילה ומוודא שבוצעה ═══
@@ -3794,6 +3876,7 @@ function loadAll(){
       D._deletedIds=p._deletedIds||{};
       D._metaMts=p._metaMts||0;D._baseline=p._baseline||0; // חותמות סנכרון חייבות לשרוד רענון דף
       D._totp=p._totp||null; // הגדרת האימות הדו-שלבי
+      D._bio=p._bio||null; // טביעת אצבע (מקומי למכשיר)
       // Merge with defaults so new goal keys are never undefined in old saves
       D.goals=Object.assign({},_GOAL_DEFAULTS,p.goals||{});
       // Only seed demo data if all tables are empty AND no initialized flag
