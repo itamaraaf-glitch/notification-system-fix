@@ -3456,12 +3456,35 @@ async function totpDisable(){
   D._totp=null;saveAll();renderSecurityPanel();
   showToast('🔓 הכניסה הדו-שלבית בוטלה','info');
 }
+// הנפקת קוד גיבוי חדש — למי ששכח לשמור את הקודם. הישן מפסיק לעבוד מיד.
+async function totpNewBackup(){
+  if(!(D._totp&&D._totp.on)){showToast('⚠️ הדו-שלבי לא פעיל','warn');return;}
+  const backup=String(Math.floor(10000000+Math.random()*90000000));
+  D._totp.backupHash=await sha256('totp:'+backup);
+  saveAll();
+  const prev=document.getElementById('totp-wizard');if(prev)prev.remove();
+  const w=document.createElement('div');
+  w.id='totp-wizard';
+  w.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px';
+  w.innerHTML=`<div style="background:var(--s2,#101525);border:1px solid rgba(244,162,97,.45);border-radius:16px;padding:20px;max-width:420px;width:100%;direction:rtl">
+    <div style="font-size:15px;font-weight:900;margin-bottom:8px">🎫 קוד גיבוי חדש</div>
+    <div style="font-size:12px;color:var(--text);line-height:1.8;margin-bottom:10px">זה הקוד החדש שלך — <b>הקודם בוטל</b>. שמור אותו במקום בטוח (צילום מסך / פנקס): הוא מכניס אותך למערכת גם בלי הטלפון.</div>
+    <div style="background:rgba(244,162,97,.1);border:1px solid rgba(244,162,97,.4);border-radius:10px;padding:14px;text-align:center;font-family:monospace;font-size:24px;letter-spacing:6px;direction:ltr;user-select:all;margin-bottom:12px">${backup}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="(function(){try{navigator.clipboard.writeText('${backup}').then(()=>showToast('📋 קוד הגיבוי הועתק','ok'));}catch(e){}})()" style="font-size:11px;border-color:#f4a261;color:#f4a261">📋 העתק</button>
+      <button class="btn btnp" onclick="document.getElementById('totp-wizard').remove()" style="font-size:12px">שמרתי — סגור</button>
+    </div>
+  </div>`;
+  w.onclick=e=>{if(e.target===w)w.remove();};
+  document.body.appendChild(w);
+}
 function renderSecurityPanel(){
   const p=document.getElementById('security-panel');if(!p)return;
   const on=!!(D._totp&&D._totp.on);
   p.innerHTML=on
     ?`<span style="font-size:12px;color:var(--teal);font-weight:800">● פעיל</span>
       <span style="font-size:11px;color:var(--text2)">כניסה דורשת סיסמה + קוד מהאפליקציה, בכל המכשירים</span>
+      <button class="btn" onclick="totpNewBackup()" style="font-size:11px;border-color:#f4a261;color:#f4a261">🎫 צור קוד גיבוי חדש</button>
       <button class="btn" onclick="totpDisable()" style="font-size:11px;opacity:.85">🔓 בטל</button>`
     :`<span style="font-size:12px;color:var(--text3);font-weight:800">● כבוי</span>
       <button class="btn btnp" onclick="totpSetupStart()" style="font-size:11px">🔐 הפעל כניסה דו-שלבית</button>`;
