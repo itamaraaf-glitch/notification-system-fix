@@ -2611,8 +2611,24 @@ function _completeLogin(f){
     setTimeout(()=>{ appEl.style.transition=''; },300);
   },180);
 }
+// מאפס את מסך הכניסה למצב נקי — רק כפתור "כניסה למערכת" הראשי מוצג;
+// שדות האימות (טביעת אצבע / קוד) מוסתרים עד שהסיסמה אומתה
+function _resetLoginUI(){
+  try{
+    _pending2FA=null;_2faAtt=0;
+    const bio=document.getElementById('l2fa-bio');if(bio)bio.style.display='none';
+    const code=document.getElementById('l2fa');if(code)code.style.display='none';
+    const uc=document.getElementById('l2fa-usecode');if(uc)uc.style.display='none';
+    const cc=document.getElementById('l2fa-code');if(cc)cc.value='';
+    const lb=document.getElementById('lbtn');if(lb)lb.style.display='';
+    const lu=document.getElementById('lu');if(lu)lu.parentElement.style.display='';
+    const lp=document.getElementById('lp');if(lp)lp.parentElement.parentElement.style.display='';
+    const le=document.getElementById('lerr');if(le)le.textContent='';
+  }catch(e){}
+}
 function doLogout(){
   saveAll();
+  _resetLoginUI();
   // Clean up Firebase listener to prevent memory/connection leaks
   if(typeof _fbRef!=='undefined'&&_fbRef){try{_fbRef.off();}catch(e){}_fbRef=null;}
   if(typeof _fbDB!=='undefined'){_fbDB=null;}
@@ -9613,6 +9629,7 @@ if('serviceWorker' in navigator){
 // ── Login page init: show lockout state if still blocked ────────────────────
 (function(){
   try{
+    if(typeof _resetLoginUI==='function')_resetLoginUI(); // מסך כניסה נקי בכל טעינה
     const lck=parseInt(localStorage.getItem('_hot_lck')||'0',10);
     const rem=lck-Date.now();
     if(rem>0){
