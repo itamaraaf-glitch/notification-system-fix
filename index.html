@@ -601,6 +601,14 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
 .cli-slot .client-card:hover{transform:none!important}
 .cli-slot .card-cta{display:none} /* בקרוסלה אין reveal-hover */
 .cli-slot.cli-far{opacity:.45;filter:brightness(.7) saturate(.8)}
+/* הכרטיס שבחזית — מודגש בזהב */
+.cli-slot.cli-front .client-card{
+  border-color:rgba(200,169,110,.7)!important;
+  box-shadow:0 24px 60px rgba(0,0,0,.6),0 0 46px rgba(200,169,110,.28)!important;
+}
+/* הבהוב הדגשה בלחיצה על כרטיס בקרוסלה */
+.cli-slot.cli-tap .client-card{animation:cliTap .7s ease-out}
+@keyframes cliTap{0%{box-shadow:0 0 0 3px rgba(200,169,110,.95),0 0 60px rgba(200,169,110,.5)}100%{box-shadow:0 24px 60px rgba(0,0,0,.6),0 0 46px rgba(200,169,110,.28)}}
 .item-row{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:11px;margin-bottom:8px;transition:all .18s}
 .item-row:hover{border-color:var(--border2);background:rgba(255,255,255,.05)}
 
@@ -6452,6 +6460,7 @@ function _cliApply(instant){
     const i=+s.dataset.i;
     let d=Math.abs(i-frontIdx);d=Math.min(d,_cliN-d);
     s.classList.toggle('cli-far',d>1);
+    s.classList.toggle('cli-front',i===frontIdx); // הכרטיס הקדמי מודגש
   });
   if(instant)requestAnimationFrame(()=>ring.classList.remove('no-anim'));
 }
@@ -6469,8 +6478,22 @@ function _cliBindDrag(){
   stage.addEventListener('touchstart',e=>{down(e.touches[0].clientX);},{passive:true});
   stage.addEventListener('touchmove',e=>{if(_cliDragging){move(e.touches[0].clientX);}},{passive:true});
   stage.addEventListener('touchend',up);
-  // מניעת פתיחת כרטיס בטעות אחרי גרירה
-  stage.addEventListener('click',e=>{if(_cliMoved){e.preventDefault();e.stopPropagation();_cliMoved=false;}},true);
+  // לחיצה על כרטיס: הדגשה + הבאה לחזית אם לחצו על צדדי; פתיחה רק על הקדמי
+  stage.addEventListener('click',e=>{
+    const slot=e.target.closest('.cli-slot');
+    // אחרי גרירה — חוסמים פתיחה בטעות
+    if(_cliMoved){e.preventDefault();e.stopPropagation();_cliMoved=false;return;}
+    if(!slot)return;
+    // הבהוב הדגשה על הכרטיס שנלחץ
+    slot.classList.remove('cli-tap');void slot.offsetWidth;slot.classList.add('cli-tap');
+    setTimeout(()=>slot.classList.remove('cli-tap'),700);
+    // אם הכרטיס אינו בחזית — מסובבים אליו במקום לפתוח (הלחיצה הבאה תפתח)
+    if(!slot.classList.contains('cli-front')){
+      e.preventDefault();e.stopPropagation();
+      const i=+slot.dataset.i;
+      _cliRot=-i*_cliStep;_cliApply(false);
+    }
+  },true);
 }
 
 // ===== EMAIL ======
@@ -9617,7 +9640,8 @@ function nav(s){
   }
 
   function ignore(e){
-    return e.target.closest('button,input,select,textarea,a,.tscroll,th,td,label,.modal,.mw');
+    // #cli-carousel-stage — גרירה בקרוסלה מסובבת אותה, לא מחליפה סעיף
+    return e.target.closest('button,input,select,textarea,a,.tscroll,th,td,label,.modal,.mw,#cli-carousel-stage');
   }
 
   function attach(el){
