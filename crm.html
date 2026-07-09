@@ -700,7 +700,7 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
   transform:translateX(-110%);
 }
 #cin-wipe.wipe-go{
-  animation:cinWipe 520ms cubic-bezier(.77,0,.175,1) forwards;
+  animation:cinWipe 300ms cubic-bezier(.77,0,.175,1) forwards;
 }
 /* Gold light edge on the wipe panel */
 #cin-wipe::before{
@@ -9362,8 +9362,11 @@ let currentSec = 'dashboard';
 let navBusy = false;
 
 // ── CINEMATIC nav() — pure CSS transitions, no D3 ─────────────
+let _navPending=null;
 function nav(s){
-  if(s === currentSec || navBusy) return;
+  if(s === currentSec) return;
+  // לחיצה מהירה בזמן מעבר — לא נזרקת: נזכרת ומתבצעת בסיום המעבר הנוכחי
+  if(navBusy){ _navPending=s; return; }
   navBusy = true;
 
   const fromIdx = SEC_ORDER.indexOf(currentSec);
@@ -9408,14 +9411,14 @@ function nav(s){
       workplan:rWorkPlan, export:updateExportCounts, clients:rClients
     };
     if(renders[s]) renders[s]();
-    setTimeout(initDragScrolls, 80);
+    setTimeout(initDragScrolls, 60);
     currentSec = s;
     if(window.refreshEdges) window.refreshEdges();
 
     // Two rAFs: flush the "none" transition, then animate in
     requestAnimationFrame(()=>{
       requestAnimationFrame(()=>{
-        inSec.style.transition = 'opacity 420ms cubic-bezier(.16,1,.3,1), transform 420ms cubic-bezier(.16,1,.3,1)';
+        inSec.style.transition = 'opacity 200ms cubic-bezier(.16,1,.3,1), transform 200ms cubic-bezier(.16,1,.3,1)';
         inSec.style.opacity    = '1';
         inSec.style.transform  = 'translateX(0)';
 
@@ -9424,14 +9427,17 @@ function nav(s){
           inSec.style.opacity    = '';
           inSec.style.transform  = '';
           navBusy = false;
+          // אם המשתמש לחץ על סעיף אחר תוך כדי המעבר — עוברים אליו עכשיו
+          if(_navPending&&_navPending!==currentSec){const nx=_navPending;_navPending=null;nav(nx);}
+          else _navPending=null;
         };
         inSec.addEventListener('transitionend', onDone, {once:true});
         // Safety fallback
-        setTimeout(()=>{ if(navBusy) onDone(); }, 500);
+        setTimeout(()=>{ if(navBusy) onDone(); }, 240);
       });
     });
 
-  }, 255);
+  }, 110);
 }
 
 // ── SWIPE NAVIGATION — vanilla touch + mouse ───────────────────────
