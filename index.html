@@ -559,6 +559,23 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
   transform:translateY(-5px) scale(1.01);
 }
 .client-card:hover::before{opacity:1}
+/* Bento-style reveal: CTA "פתח כרטיס" slides up on hover (visual only — pointer-events none) */
+.client-card .card-cta{
+  position:absolute;left:0;right:0;bottom:0;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:20px 12px 12px;pointer-events:none;
+  background:linear-gradient(to top,var(--s1) 30%,rgba(16,21,37,.85) 65%,transparent);
+  transform:translateY(100%);opacity:0;
+  transition:transform .32s var(--expo),opacity .28s ease;
+}
+.client-card .card-cta span{
+  font-size:11px;font-weight:800;color:#050508;
+  background:linear-gradient(135deg,var(--gold),#9a7035);
+  padding:6px 16px;border-radius:9999px;white-space:nowrap;
+  box-shadow:0 6px 18px rgba(200,169,110,.4);
+}
+.client-card:hover .card-cta{transform:translateY(0);opacity:1}
+@media(hover:none){.client-card .card-cta{display:none}} /* בלי אפקט ריחוף במגע */
 .item-row{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:11px;margin-bottom:8px;transition:all .18s}
 .item-row:hover{border-color:var(--border2);background:rgba(255,255,255,.05)}
 
@@ -6350,6 +6367,7 @@ function rClients(){
       </div>`:''}
       ${!nextMtg&&lastMtg?`<div style="font-size:10px;color:var(--text3);margin-top:4px">🤝 פגישה אחרונה: ${fmtDate(lastMtg.dt)}</div>`:''}
       ${c.genNotes?`<div style="font-size:10px;color:var(--text2);margin-top:4px;padding-top:4px;border-top:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.genNotes}">${c.genNotes}</div>`:''}
+      <div class="card-cta"><span>פתח כרטיס לקוח ←</span></div>
     </div>`;
   }).join('');
 }
