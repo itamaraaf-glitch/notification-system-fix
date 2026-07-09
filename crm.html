@@ -576,6 +576,31 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
 }
 .client-card:hover .card-cta{transform:translateY(0);opacity:1}
 @media(hover:none){.client-card .card-cta{display:none}} /* בלי אפקט ריחוף במגע */
+
+/* ─── CLIENT 3D CAROUSEL ─── */
+#cli-carousel-stage{
+  position:relative;height:460px;width:100%;
+  perspective:1400px;perspective-origin:50% 45%;
+  overflow:hidden;cursor:grab;touch-action:pan-y;user-select:none;
+}
+#cli-carousel-stage.dragging{cursor:grabbing}
+#cli-carousel-ring{
+  position:absolute;top:24px;left:50%;width:300px;height:400px;
+  margin-left:-150px;transform-style:preserve-3d;
+  transition:transform .5s cubic-bezier(.16,1,.3,1);
+}
+#cli-carousel-ring.no-anim{transition:none}
+.cli-slot{
+  position:absolute;top:0;left:0;width:300px;height:400px;
+  backface-visibility:hidden;transition:opacity .4s,filter .4s;
+}
+.cli-slot .client-card{
+  height:100%;box-sizing:border-box;overflow-y:auto;margin:0;
+  transform:none!important; /* הביטול-3D מטופל ע"י ה-slot */
+}
+.cli-slot .client-card:hover{transform:none!important}
+.cli-slot .card-cta{display:none} /* בקרוסלה אין reveal-hover */
+.cli-slot.cli-far{opacity:.45;filter:brightness(.7) saturate(.8)}
 .item-row{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:11px;margin-bottom:8px;transition:all .18s}
 .item-row:hover{border-color:var(--border2);background:rgba(255,255,255,.05)}
 
@@ -1799,12 +1824,21 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div style="display:flex;gap:6px;align-items:center">
       <input type="text" class="srch" id="client-search" placeholder="חיפוש לקוח..." oninput="filterClients()">
       <button class="btn btnp" onclick="openClientModal(null)">+ לקוח חדש</button>
+      <button class="btn" id="cli-view-btn" onclick="toggleClientsView()" title="החלף בין תצוגת רשת לקרוסלת 3D" style="border-color:#a78bfa;color:#a78bfa">🎠 קרוסלה 3D</button>
       <button class="btn" onclick="manualSyncDeals()" style="background:#7b5ea7;color:#fff;border-color:#7b5ea7" title="סנכרן עסקאות סגורות לכרטיסי לקוח">🔄 סנכרן עסקאות</button>
       <button class="btn btn-excel" onclick="exportExcel('clients')">📥 Excel</button>
       <button class="btn btn-import" onclick="importFromExcel('clients')" title="ייבוא מ-Excel">📤 ייבוא</button>
     </div>
   </div>
   <div id="clients-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px"></div>
+  <div id="clients-carousel" style="display:none">
+    <div id="cli-carousel-hint" style="text-align:center;font-size:11px;color:var(--text3);margin-bottom:6px">🖱️ גרור עם העכבר · 👆 החלק באצבע — לסיבוב הכרטיסים</div>
+    <div id="cli-carousel-stage"><div id="cli-carousel-ring"></div></div>
+    <div style="display:flex;justify-content:center;gap:12px;margin-top:10px">
+      <button class="btn" onclick="cliSpin(-1)" style="border-color:#a78bfa;color:#a78bfa">‹ הקודם</button>
+      <button class="btn" onclick="cliSpin(1)" style="border-color:#a78bfa;color:#a78bfa">הבא ›</button>
+    </div>
+  </div>
 </div>
 
 <!-- EXPORT -->
@@ -6274,7 +6308,9 @@ function saveClient(){
 
 function filterClients(){
   const q=document.getElementById('client-search').value.toLowerCase();
-  document.querySelectorAll('.client-card').forEach(card=>{card.style.display=card.textContent.toLowerCase().includes(q)?'':'none';});
+  // חיפוש הוא פעולת רשת — אם מחפשים בזמן קרוסלה, חוזרים אוטומטית לתצוגת רשת
+  if(q&&_clientsView==='carousel'){toggleClientsView();}
+  document.querySelectorAll('#clients-grid .client-card').forEach(card=>{card.style.display=card.textContent.toLowerCase().includes(q)?'':'none';});
 }
 
 function clientMonthlyRevenue(c){
@@ -6290,7 +6326,7 @@ function rClients(){
     <button class="btn btnp" onclick="openClientModal(null)">+ הוסף לקוח</button>
   </div>`;return;}
   const allTypes=Object.entries(ITEM_CFG).filter(([t])=>t!=='extra');
-  grid.innerHTML=D.clients.map(c=>{
+  const _cardsHtml=D.clients.map(c=>{
     const sc={r:'#e63946',y:'#f4a261',g:'var(--teal)',b:'#4cc9f0'};
     const stCol=c.status==='לקוח פעיל'?sc.g:c.status==='לקוח פוטנציאלי'?sc.b:c.status==='ליד חדש'?sc.y:sc.r;
     const stCls=c.status==='לקוח פעיל'?'cl-active':c.status==='לקוח פוטנציאלי'?'cl-potential':c.status==='ליד חדש'?'cl-lead':'cl-inactive';
@@ -6369,7 +6405,72 @@ function rClients(){
       ${c.genNotes?`<div style="font-size:10px;color:var(--text2);margin-top:4px;padding-top:4px;border-top:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.genNotes}">${c.genNotes}</div>`:''}
       <div class="card-cta"><span>פתח כרטיס לקוח ←</span></div>
     </div>`;
-  }).join('');
+  });
+  // תצוגה: רשת (ברירת מחדל) או קרוסלת 3D
+  const caro=document.getElementById('clients-carousel');
+  if(_clientsView==='carousel'){
+    grid.style.display='none';
+    if(caro)caro.style.display='';
+    renderClientsCarousel(_cardsHtml);
+  }else{
+    if(caro)caro.style.display='none';
+    grid.style.display='grid';
+    grid.innerHTML=_cardsHtml.join('');
+  }
+}
+
+// ===== 3D CLIENT CAROUSEL =====
+let _clientsView='grid';
+let _cliRot=0,_cliN=0,_cliStep=0,_cliRadius=340,_cliDragging=false,_cliMoved=false,_cliStartX=0,_cliStartRot=0;
+function toggleClientsView(){
+  _clientsView=(_clientsView==='grid')?'carousel':'grid';
+  const btn=document.getElementById('cli-view-btn');
+  if(btn)btn.innerHTML=_clientsView==='carousel'?'🔲 תצוגת רשת':'🎠 קרוסלה 3D';
+  rClients();
+}
+function renderClientsCarousel(cardsHtml){
+  const ring=document.getElementById('cli-carousel-ring');
+  const stage=document.getElementById('cli-carousel-stage');
+  if(!ring||!stage)return;
+  _cliN=cardsHtml.length;
+  if(!_cliN){ring.innerHTML='<div style="color:var(--text3);text-align:center;padding:40px;width:300px">אין לקוחות להצגה</div>';return;}
+  _cliStep=360/_cliN;
+  // רדיוס לפי מספר הכרטיסים כדי שלא יתנגשו (מינימום נעים)
+  _cliRadius=Math.max(340,Math.round((150)/Math.tan(Math.PI/Math.max(_cliN,3))));
+  ring.innerHTML=cardsHtml.map((h,i)=>`<div class="cli-slot" data-i="${i}" style="transform:rotateY(${i*_cliStep}deg) translateZ(${_cliRadius}px)">${h}</div>`).join('');
+  _cliRot=0;
+  _cliApply(true);
+  _cliBindDrag();
+}
+function _cliApply(instant){
+  const ring=document.getElementById('cli-carousel-ring');if(!ring)return;
+  ring.classList.toggle('no-anim',!!instant);
+  ring.style.transform=`translateZ(-${_cliRadius}px) rotateY(${_cliRot}deg)`;
+  // עמעום כרטיסים שרחוקים מהחזית
+  const frontIdx=((Math.round(-_cliRot/_cliStep)%_cliN)+_cliN)%_cliN;
+  ring.querySelectorAll('.cli-slot').forEach(s=>{
+    const i=+s.dataset.i;
+    let d=Math.abs(i-frontIdx);d=Math.min(d,_cliN-d);
+    s.classList.toggle('cli-far',d>1);
+  });
+  if(instant)requestAnimationFrame(()=>ring.classList.remove('no-anim'));
+}
+function cliSpin(dir){ _cliRot-=dir*_cliStep; _cliApply(false); }
+function _cliSnap(){ _cliRot=Math.round(_cliRot/_cliStep)*_cliStep; _cliApply(false); }
+function _cliBindDrag(){
+  const stage=document.getElementById('cli-carousel-stage');
+  if(!stage||stage._bound)return;stage._bound=true;
+  const down=x=>{_cliDragging=true;_cliMoved=false;_cliStartX=x;_cliStartRot=_cliRot;stage.classList.add('dragging');document.getElementById('cli-carousel-ring').classList.add('no-anim');};
+  const move=x=>{if(!_cliDragging)return;const dx=x-_cliStartX;if(Math.abs(dx)>4)_cliMoved=true;_cliRot=_cliStartRot+dx*0.25;const r=document.getElementById('cli-carousel-ring');r.style.transform=`translateZ(-${_cliRadius}px) rotateY(${_cliRot}deg)`;};
+  const up=()=>{if(!_cliDragging)return;_cliDragging=false;stage.classList.remove('dragging');document.getElementById('cli-carousel-ring').classList.remove('no-anim');_cliSnap();};
+  stage.addEventListener('mousedown',e=>{down(e.clientX);});
+  window.addEventListener('mousemove',e=>{if(_cliDragging)move(e.clientX);});
+  window.addEventListener('mouseup',up);
+  stage.addEventListener('touchstart',e=>{down(e.touches[0].clientX);},{passive:true});
+  stage.addEventListener('touchmove',e=>{if(_cliDragging){move(e.touches[0].clientX);}},{passive:true});
+  stage.addEventListener('touchend',up);
+  // מניעת פתיחת כרטיס בטעות אחרי גרירה
+  stage.addEventListener('click',e=>{if(_cliMoved){e.preventDefault();e.stopPropagation();_cliMoved=false;}},true);
 }
 
 // ===== EMAIL ======
