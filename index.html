@@ -6475,9 +6475,10 @@ function _cliBindDrag(){
   stage.addEventListener('mousedown',e=>{down(e.clientX);});
   window.addEventListener('mousemove',e=>{if(_cliDragging)move(e.clientX);});
   window.addEventListener('mouseup',up);
-  stage.addEventListener('touchstart',e=>{down(e.touches[0].clientX);},{passive:true});
-  stage.addEventListener('touchmove',e=>{if(_cliDragging){move(e.touches[0].clientX);}},{passive:true});
-  stage.addEventListener('touchend',up);
+  // עצירת בועת האירוע — כדי שניווט-ההחלקה בין הסעיפים לא יזהה את הגרירה בקרוסלה
+  stage.addEventListener('touchstart',e=>{e.stopPropagation();down(e.touches[0].clientX);},{passive:true});
+  stage.addEventListener('touchmove',e=>{e.stopPropagation();if(_cliDragging){move(e.touches[0].clientX);}},{passive:true});
+  stage.addEventListener('touchend',e=>{e.stopPropagation();up();},{passive:true});
   // לחיצה על כרטיס: הדגשה + הבאה לחזית אם לחצו על צדדי; פתיחה רק על הקדמי
   stage.addEventListener('click',e=>{
     const slot=e.target.closest('.cli-slot');
