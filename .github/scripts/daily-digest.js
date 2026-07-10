@@ -22,7 +22,7 @@ function decryptCloud(b64, code) {
 const fmtN = n => !n ? '–' : '₪' + Number(n).toLocaleString('he-IL');
 const fmtD = s => { if (!s) return '–'; const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; };
 
-const VAPID_PUBLIC = 'BFiS4GHvvnyqyKsXa4rjORKb-zSBOQgrHawTs86morznQAijuybe4a2Qr26ysxacJg03g8MYOHIh5boIaXa2TEU';
+const VAPID_PUBLIC = 'BPy0QcdZss3O2bNqA0lXYkj04Xy-4GZWCaDBt5U3P0Y7pL0cewxshdQQaN8Poy59SraiARDf9O7MDbjgnfks9cU';
 
 // שליחת דחיפת Web Push לכל המכשירים הרשומים (המינויים שמורים מוצפנים בענן)
 async function sendPush(title, body, tag) {
