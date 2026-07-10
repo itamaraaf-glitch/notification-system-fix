@@ -2027,6 +2027,26 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   <div id="fb-sync-log" style="margin-top:10px;font-size:11px;color:var(--text3);min-height:18px"></div>
 </div></div>
 
+<!-- SERVER PUSH SETUP -->
+<div class="mw" id="mpushsetup"><div class="modal" style="max-width:600px">
+  <div class="mhdr"><h3>📲 דחיפה לטלפון גם כשהאפליקציה סגורה</h3><button class="mcls" onclick="closeM('mpushsetup')">✕</button></div>
+  <div style="font-size:12px;color:var(--text2);line-height:1.75;margin-bottom:12px">
+    ההתראות שאתה מקבל <b>עכשיו</b> נוצרות בתוך האפליקציה — לכן הן מופיעות רק כשהיא פתוחה.<br>
+    כדי לקבל דחיפות <b>גם כשהאפליקציה סגורה לגמרי</b>, שרת בענן (GitHub Actions) כבר רץ אצלך כל חצי שעה — הוא רק צריך 3 מפתחות סודיים כדי לפעול. הגדרה חד-פעמית של דקה:
+  </div>
+  <div style="background:rgba(76,201,240,.06);border:1px solid rgba(76,201,240,.25);border-radius:10px;padding:10px 14px;font-size:11.5px;color:var(--text2);margin-bottom:14px;line-height:1.8">
+    <b style="color:var(--blue)">איפה מדביקים:</b> GitHub → המאגר שלך →
+    <b style="color:var(--text)">Settings → Secrets and variables → Actions → New repository secret</b>.
+    מוסיפים כל אחד מ-3 המפתחות הבאים (Name בדיוק כמו שכתוב, ו-Value לפי הכפתור להעתקה):
+  </div>
+  <div id="pushsetup-fields" style="display:flex;flex-direction:column;gap:12px"></div>
+  <div style="margin-top:14px;padding:10px 14px;background:rgba(6,214,160,.06);border:1px solid rgba(6,214,160,.25);border-radius:10px;font-size:11.5px;color:var(--text2);line-height:1.75">
+    ✅ אחרי שמדביקים את שלושתם — תוך חצי שעה תתחיל לקבל תקציר בוקר ותזכורות פגישה ישירות לטלפון, בלי לפתוח את המערכת.<br>
+    <span style="color:var(--text3)">רוצה לבדוק מיד? ב-GitHub: Actions → daily-digest → Run workflow.</span>
+  </div>
+  <div id="pushsetup-warn" style="margin-top:10px;font-size:11.5px"></div>
+</div></div>
+
 <!-- WORKPLAN -->
 <div class="sec" id="sec-workplan">
   <div class="shdr">
@@ -3755,7 +3775,7 @@ async function enableNotify(){
   showToast('✅ התראות מחוץ למערכת הופעלו','ok');
 }
 function disableNotify(){const c=notifyCfg();c.on=false;saveNotifyCfg(c);renderNotifyPanel();showToast('🔕 ההתראות כובו','info');}
-const VAPID_PUBLIC='BFiS4GHvvnyqyKsXa4rjORKb-zSBOQgrHawTs86morznQAijuybe4a2Qr26ysxacJg03g8MYOHIh5boIaXa2TEU';
+const VAPID_PUBLIC='BPy0QcdZss3O2bNqA0lXYkj04Xy-4GZWCaDBt5U3P0Y7pL0cewxshdQQaN8Poy59SraiARDf9O7MDbjgnfks9cU';
 function _b64uToBytes(str){const p='='.repeat((4-str.length%4)%4);const b=atob((str+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(b,ch=>ch.charCodeAt(0));}
 function _deviceId(){let id=localStorage.getItem('cem_device_id');if(!id){id=Math.random().toString(36).slice(2,10);localStorage.setItem('cem_device_id',id);}return id;}
 // מינוי לדחיפות אמיתיות מהענן: נרשם מול שירות הדחיפות של הדפדפן, והמינוי
@@ -3880,8 +3900,49 @@ function renderNotifyPanel(){
         <button class="btn" onclick="sysNotify('🔔 התראת ניסיון — HOT CRM','ככה ייראו התקציר והתזכורות שלך');showToast('נשלחה התראת ניסיון','ok')" style="font-size:11px;border-color:#4cc9f0;color:#4cc9f0">🧪 שלח ניסיון</button>`
       :`<button class="btn btnp" onclick="enableNotify()" style="font-size:11px">🔔 הפעל התראות</button>
         ${perm==='denied'?'<span style="font-size:10px;color:var(--text3)">ההרשאה נחסמה — פתח את הגדרות האתר בדפדפן ← התראות ← אפשר</span>':''}`}
+    <button class="btn" onclick="openPushSetup()" title="קבלת דחיפות לטלפון גם כשהאפליקציה סגורה לגמרי" style="font-size:11px;border-color:#4cc9f0;color:#4cc9f0">📲 דחיפה כשהאפליקציה סגורה</button>
   `;
 }
+// מסך הגדרת הדחיפה מהשרת: מציג את 3 המפתחות הסודיים שיש להדביק ב-GitHub Secrets
+// כדי שההתראות יישלחו לטלפון גם כשהמערכת סגורה. הערכים נקראים מהמכשיר הזה.
+function openPushSetup(){
+  const cfg=JSON.parse(localStorage.getItem(FB_CFG_KEY)||'{}');
+  const dbUrl=(cfg.databaseURL||'').replace(/\/+$/,'');
+  const code=cfg.syncCode||'hot-crm';
+  const box=document.getElementById('pushsetup-fields');
+  const warn=document.getElementById('pushsetup-warn');
+  const row=(name,val,desc,missing)=>{
+    const safe=(val||'').replace(/"/g,'&quot;');
+    return `<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:10px 12px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+        <code style="font-size:12px;font-weight:800;color:var(--gold);direction:ltr">${name}</code>
+        <span style="font-size:10.5px;color:var(--text3)">${desc}</span>
+      </div>
+      ${missing
+        ? `<div style="font-size:11.5px;color:#f4a261;direction:rtl">${val}</div>`
+        : `<div style="display:flex;gap:6px;align-items:stretch">
+             <input type="text" readonly value="${safe}" onclick="this.select()" style="flex:1;min-width:0;box-sizing:border-box;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,.25);color:var(--text);font-size:11.5px;direction:ltr;font-family:monospace">
+             <button class="btn" onclick="_pushCopy(${JSON.stringify(name)},${JSON.stringify(val||'')})" style="font-size:11px;border-color:#4cc9f0;color:#4cc9f0;white-space:nowrap">📋 העתק</button>
+           </div>`}
+    </div>`;
+  };
+  box.innerHTML=
+    row('FIREBASE_DB_URL', dbUrl || 'עדיין לא הוגדר סנכרון ענן במכשיר הזה — פתח קודם ☁️ סנכרון וחבר Firebase', 'כתובת מסד הנתונים בענן', !dbUrl)
+    + row('SYNC_CODE', code, 'קוד הסנכרון שלך (זהה בכל המכשירים)', false)
+    + row('VAPID_PRIVATE_KEY', 'הערך הסודי הזה נשלח אליך בשיחה עם קלוד — העתק אותו משם והדבק כאן ב-GitHub (מפתח פרטי, לא נשמר באתר)', 'מפתח החתימה לדחיפות', true);
+  warn.innerHTML = dbUrl
+    ? ''
+    : '<span style="color:#f4a261">⚠️ כדי שהדחיפה מהשרת תעבוד צריך קודם לחבר סנכרון ענן (☁️). בלי זה השרת לא יודע מאיפה לקרוא את הנתונים.</span>';
+  openM_id('mpushsetup');
+}
+function _pushCopy(name,val){
+  const done=()=>showToast('📋 '+name+' הועתק — הדבק ב-GitHub Secrets','ok');
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(val).then(done).catch(()=>{if(typeof _fallbackCopy==='function')_fallbackCopy(val);done();});
+    else{if(typeof _fallbackCopy==='function')_fallbackCopy(val);done();}
+  }catch(e){done();}
+}
+function openM_id(id){const el=document.getElementById(id);if(el)el.classList.add('open');}
 
 // Network reconnect — when going back online, re-init sync
 window.addEventListener('online',()=>{
