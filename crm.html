@@ -2581,6 +2581,7 @@ async function doLogin(){
       bioWrap.style.display='';
       codeWrap.style.display='none';
       if(fallback)fallback.style.display=(_t&&_t.on)?'':'none'; // גיבוי לקוד רק אם מוגדר
+      _bioTriedStored=false; // ניסיון ראשון תמיד לפי המזהה השמור
       setTimeout(()=>loginWithBio(),350);
     }else{
       bioWrap.style.display='none';
@@ -2597,27 +2598,34 @@ function _totpFromStorage(){
   try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'{}');return p._totp||null;}catch(e){return null;}
 }
 function _bioFromStorage(){
+  // מקור האמת הוא ההגדרה המקומית למכשיר (cem_bio_local) — המפתח הביומטרי שייך
+  // למכשיר הזה בלבד ולעולם לא מגיע מהסנכרון, כך ששום מכשיר אחר לא יכול "לכבות"
+  // או להחליף אותו. רק אם אין הגדרה מקומית נופלים חזרה ל-D._bio (תאימות לאחור).
+  try{const bl=_bioLocal();if(bl&&bl.cred)return {on:true,cred:bl.cred};}catch(e){}
   try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'{}');return p._bio||null;}catch(e){return null;}
 }
 // כניסה בטביעת אצבע / Face ID (WebAuthn) — המפתח הפרטי שמור במעבד המאובטח של המכשיר
+let _bioTriedStored=false;
 async function loginWithBio(){
   const errEl=document.getElementById('lerr');
   const b=_bioFromStorage();
-  if(!b||!b.on||!b.cred){errEl.textContent='האימות הביומטרי לא מוגדר במכשיר זה';return;}
+  const localCred=(b&&b.cred)||((_bioLocal()||{}).cred);
+  if(!localCred){errEl.textContent='האימות הביומטרי לא מוגדר במכשיר זה';return;}
   if(!window.PublicKeyCredential||!navigator.credentials){errEl.textContent='המכשיר לא תומך בטביעת אצבע — הזן קוד מהאפליקציה';document.getElementById('l2fa').style.display='';return;}
+  // ניסיון ראשון: לפי המזהה השמור. ניסיון חוזר: מצב "גילוי" (allowCredentials ריק) —
+  // המכשיר מאתר את המפתח שלו בעצמו גם אם המזהה המקומי אבד/התיישן. כך הכניסה שורדת
+  // מחיקת אחסון או סנכרון ישן, כל עוד המפתח הביומטרי עצמו קיים במכשיר.
+  const useDiscoverable=_bioTriedStored;
+  _bioTriedStored=true;
   try{
-    const chal=crypto.getRandomValues(new Uint8Array(32));
-    await navigator.credentials.get({publicKey:{
-      challenge:chal,
-      allowCredentials:[{type:'public-key',id:_b64uToBytes(b.cred)}],
-      userVerification:'required',
-      timeout:60000
-    }});
+    const pub={challenge:crypto.getRandomValues(new Uint8Array(32)),userVerification:'required',timeout:60000};
+    if(!useDiscoverable)pub.allowCredentials=[{type:'public-key',id:_b64uToBytes(localCred)}];
+    await navigator.credentials.get({publicKey:pub});
     // אישור ביומטרי מוצלח = המשתמש אימת את עצמו במכשיר הרשום
     const f=_pending2FA;_pending2FA=null;errEl.textContent='';
     _completeLogin(f);
   }catch(e){
-    errEl.textContent='האימות בוטל או נכשל — נסה שוב'+((_totpFromStorage()||{}).on?' או הזן קוד מהאפליקציה':'');
+    errEl.textContent='האימות בוטל או נכשל — לחץ שוב לזיהוי במכשיר'+((_totpFromStorage()||{}).on?' או הזן קוד מהאפליקציה':'');
     const btn=document.getElementById('l2fa-bio-btn');if(btn)btn.textContent='👆 נסה שוב בטביעת אצבע';
     if((_totpFromStorage()||{}).on)document.getElementById('l2fa').style.display='';
   }
@@ -2927,9 +2935,11 @@ async function cloudExtract(remote){
   if(remote.data&&typeof remote.data==='object')return JSON.parse(JSON.stringify(remote.data));
   return null;
 }
-// המטען שעולה לענן — תמיד מוצפן
+// המטען שעולה לענן — תמיד מוצפן. משמיטים את _bio (טביעת אצבע) — הוא שייך למכשיר
+// הזה בלבד ואסור שיסתנכרן, אחרת מכשיר אחר היה מקבל מזהה מפתח שלא קיים אצלו.
 async function cloudPayload(ts){
-  return {_ts:ts,_baseline:D._baseline||0,enc:1,data:await _cloudEncrypt(D)};
+  const {_bio,...clean}=D;
+  return {_ts:ts,_baseline:D._baseline||0,enc:1,data:await _cloudEncrypt(clean)};
 }
 
 // Smart merge: never overwrites local items — merges by ID, keeps newer _mts per item
@@ -3624,6 +3634,17 @@ async function totpNewBackup(){
 // המפתח הפרטי נשמר במעבד המאובטח של המכשיר ולא עוזב אותו. ההגדרה מקומית
 // למכשיר (לא מסתנכרנת) — כל מכשיר מפעיל טביעת אצבע משלו.
 function _bioLocal(){try{return JSON.parse(localStorage.getItem('cem_bio_local')||'null');}catch(e){return null;}}
+// בקשת אחסון מתמיד — הדפדפן לא ימחק את ה-localStorage (כולל הגדרת טביעת האצבע)
+// כשנגמר מקום, כך שההגדרה שורדת לאורך זמן במקום להימחק אחרי כמה ימים.
+async function _requestPersistentStorage(){
+  try{
+    if(navigator.storage&&navigator.storage.persist){
+      if(navigator.storage.persisted&&await navigator.storage.persisted())return true;
+      return await navigator.storage.persist();
+    }
+  }catch(e){}
+  return false;
+}
 async function bioSupported(){
   try{return !!(window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());}
   catch(e){return false;}
@@ -3631,17 +3652,20 @@ async function bioSupported(){
 async function bioSetup(){
   if(!await bioSupported()){showToast('⚠️ המכשיר הזה לא תומך בטביעת אצבע / Face ID בדפדפן','warn');return;}
   try{
+    await _requestPersistentStorage(); // מונע מהדפדפן למחוק את ההגדרה אחרי כמה ימים
     const uid=crypto.getRandomValues(new Uint8Array(16));
     const cred=await navigator.credentials.create({publicKey:{
       challenge:crypto.getRandomValues(new Uint8Array(32)),
       rp:{name:'HOT CRM'},
       user:{id:uid,name:'hot-crm-user',displayName:'HOT CRM'},
       pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
-      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'preferred'},
+      // residentKey:'required' — מפתח "בר-גילוי": המכשיר יכול לאתר אותו בעצמו גם אם
+      // מזהה המפתח המקומי נמחק, כך שהכניסה בטביעת אצבע ממשיכה לעבוד רציף.
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'required'},
       timeout:60000,attestation:'none'
     }});
     const idB64=_bytesToB64u(new Uint8Array(cred.rawId));
-    // נשמר גם ב-D (לזיהוי שהמכשיר הראשי הפעיל) וגם מקומית (המפתח שייך למכשיר)
+    // נשמר מקומית (המפתח שייך למכשיר) וגם ב-D לצורך תצוגה בלבד
     D._bio={on:true,cred:idB64,since:nd()};
     localStorage.setItem('cem_bio_local',JSON.stringify({cred:idB64}));
     saveAll();renderSecurityPanel();
@@ -4006,7 +4030,7 @@ function _finishLoad(){
   }
   rAll();
   showLoginHealth();
-  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); renderNotifyPanel(); renderSecurityPanel(); const nc=notifyCfg(); if(nc.on&&('Notification' in window)&&Notification.permission==='granted'){_registerPeriodicDigest();_pushSubscribe();_notifyTick();} setTimeout(maybeAskNotifyPermission,2000); setTimeout(checkCloudLock,4500); }catch(e){} }, 2500);
+  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); renderNotifyPanel(); renderSecurityPanel(); if(_bioLocal())_requestPersistentStorage(); const nc=notifyCfg(); if(nc.on&&('Notification' in window)&&Notification.permission==='granted'){_registerPeriodicDigest();_pushSubscribe();_notifyTick();} setTimeout(maybeAskNotifyPermission,2000); setTimeout(checkCloudLock,4500); }catch(e){} }, 2500);
   setTimeout(()=>{ try{ checkEmptyAndRecovery(); }catch(e){} }, 4000);
 }
 function loadAll(){
@@ -4022,7 +4046,11 @@ function loadAll(){
       D._deletedIds=p._deletedIds||{};
       D._metaMts=p._metaMts||0;D._baseline=p._baseline||0; // חותמות סנכרון חייבות לשרוד רענון דף
       D._totp=p._totp||null; // הגדרת האימות הדו-שלבי
-      D._bio=p._bio||null; // טביעת אצבע (מקומי למכשיר)
+      // טביעת אצבע: מקומית למכשיר בלבד. ההגדרה המקומית (cem_bio_local) גוברת תמיד
+      // על מה שהגיע מהסנכרון — כך שיישור-קו / משיכת נתונים ממכשיר אחר לא מכבים
+      // ולא מחליפים את המפתח הביומטרי של המכשיר הזה.
+      {const _bl=_bioLocal();
+       D._bio=(_bl&&_bl.cred)?{on:true,cred:_bl.cred,since:(p._bio&&p._bio.since)||nd()}:null;}
       // Merge with defaults so new goal keys are never undefined in old saves
       D.goals=Object.assign({},_GOAL_DEFAULTS,p.goals||{});
       // Only seed demo data if all tables are empty AND no initialized flag
