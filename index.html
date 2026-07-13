@@ -1867,6 +1867,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <input type="text" class="srch" placeholder="חיפוש מייל (נושא / שולח / תוכן)..." oninput="filt(event,'inboxtb')">
       <button class="btn btnp" onclick="openM('inbox',null)">+ מייל חדש</button>
+      <button class="btn" onclick="pollCloudMail(false)" title="בדוק אם הגיעו מיילים חדשים שהועברו לכתובת המערכת" style="background:rgba(76,201,240,.12);color:#4cc9f0;border-color:rgba(76,201,240,.4)">📬 משוך מיילים</button>
+      <button class="btn" onclick="openMailConnect()" title="הגדרת קליטת מיילים אוטומטית" style="background:rgba(167,139,250,.12);color:#a78bfa;border-color:rgba(167,139,250,.35)">⚙️ חיבור מייל</button>
       <button class="btn btn-excel" onclick="exportExcel('inbox')">📥 Excel</button>
       <button class="btn btnd" onclick="deleteAll('inbox')" title="מחק את כל המיילים">🗑 מחק הכל</button>
     </div>
@@ -2380,6 +2382,15 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   </div>
 </div></div>
 
+<!-- MAIL CONNECT (קליטת מיילים אוטומטית) MODAL -->
+<div class="mw" id="mmailconnect"><div class="modal" style="max-width:640px">
+  <div class="mhdr"><h3>📬 חיבור תיבת מייל — קליטה אוטומטית לכרטיס הלקוח</h3><button class="mcls" onclick="closeM('mmailconnect')">✕</button></div>
+  <div style="font-size:12px;color:var(--text2);line-height:1.8;margin-bottom:12px">
+    הרעיון: מעבירים (Forward) מייל של לקוח אל חשבון <b>Gmail ייעודי</b> — עם <b>שם הלקוח בנושא</b> — וסקריפט קטן וחינמי (Google Apps Script) מזרים אותו למערכת. המערכת מזהה את הלקוח ומתייקת את המייל אוטומטית לכרטיס שלו.
+  </div>
+  <div id="mailconnect-body"></div>
+</div></div>
+
 <!-- TENDER EMAILS CONFIG MODAL -->
 <div class="mw" id="mtemails"><div class="modal" style="max-width:440px">
   <div class="mhdr"><h3>⚙ נמעני מיילים — מכרזים</h3><button class="mcls" onclick="closeM('mtemails')">✕</button></div>
@@ -2449,6 +2460,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   <div id="client-deals-section"></div>
   <div id="client-projects-section"></div>
   <div id="client-meetings-section"></div>
+  <div id="client-emails-section"></div>
   <div class="msec" style="border:1px solid rgba(123,94,167,.4)">
     <div class="msec-hdr">
       <span style="color:#7b5ea7">🎯 מוצרים פוטנציאליים – טרם נרכשו</span>
@@ -3109,6 +3121,7 @@ async function _initFileStorage(){
     if(typeof _buildSyncSnap==='function')_buildSyncSnap(); // איפוס בסיס החתימות אחרי ההידרציה
     if(typeof _cloudFilesFetchMissing==='function')_cloudFilesFetchMissing(); // הורדת קבצים שקיימים בענן ולא אצלנו (מחשב→מובייל)
     if(typeof _cloudFilesPush==='function')setTimeout(_cloudFilesPush,1500);   // העלאת קבצים מקומיים לענן
+    if(typeof pollCloudMail==='function')setTimeout(()=>pollCloudMail(true),2500); // קליטת מיילים נכנסים מהענן
   }catch(e){}
 }
 
@@ -3318,8 +3331,8 @@ async function syncFilesNow(){
   }
   showToast('✅ סנכרון קבצים: '+parts.join(' · '),'ok');
 }
-// רשת ביטחון: כל דקה מנסה להשלים קבצים חסרים ולהעלות חדשים (זול כשאין מה לעשות)
-setInterval(()=>{ try{ if(_cloudCfg()&&document.body.classList.contains('logged-in')){ _cloudFilesFetchMissing(); _cloudFilesPush(); } }catch(e){} }, 60000);
+// רשת ביטחון: כל דקה מנסה להשלים קבצים חסרים, להעלות חדשים, ולקלוט מיילים נכנסים
+setInterval(()=>{ try{ if(_cloudCfg()&&document.body.classList.contains('logged-in')){ _cloudFilesFetchMissing(); _cloudFilesPush(); if(typeof pollCloudMail==='function')pollCloudMail(true); } }catch(e){} }, 60000);
 
 // Smart merge: never overwrites local items — merges by ID, keeps newer _mts per item
 function fbMergeRemote(remote){
@@ -6342,10 +6355,11 @@ function rInbox(){
     const chk=SEL['inbox']&&SEL['inbox'].has(m.id)?'checked':'';
     const clSafe=(m.cl||'').replace(/'/g,'&#39;');
     const subjSafe=(m.subj||'(ללא נושא)').replace(/</g,'&lt;');
+    const fromSafe=(m.from||'–').replace(/</g,'&lt;');
     const nextSt={חדש:'בטיפול',בטיפול:'טופל',טופל:'חדש'};
     const stCell=`<span class="badge-wrap" onclick="event.stopPropagation();cycleInboxStatus('${m.id}')" title="לחץ לשינוי סטטוס" style="cursor:pointer">${stBadge(m.st||'חדש')}</span>`;
     const filesCell=(m.files&&m.files.length)?`<button class="btn btns" onclick="event.stopPropagation();rowFilesMenu('inbox','${m.id}',event)" title="${m.files.length} קבצים" style="border-color:#4cc9f0;color:#4cc9f0">📎${m.files.length>1?m.files.length:''}</button>`:'<span style="color:var(--text3)">–</span>';
-    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-inbox" ${chk} onchange="toggleSel('inbox','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${m.time?'<br><span style="color:var(--gold);font-size:9px">'+m.time+'</span>':''}</td><td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(m.from||'').replace(/"/g,'&quot;')}">${m.from||'–'}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(m.subj||'').replace(/"/g,'&quot;')}">${subjSafe}</td><td style="font-size:11px">${m.cl||'–'}</td><td>${stCell}</td><td>${filesCell}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('inbox','${m.id}')" title="פתח / קרא">👁️</button> <button class="btn btns" onclick="replyInbox('${m.id}')" title="השב במייל" style="border-color:#4cc9f0;color:#4cc9f0">📧</button> <button class="btn btns" onclick="inboxToTask('${m.id}')" title="צור משימה" style="border-color:#f072b6;color:#f072b6">📌</button> <button class="btn btns" onclick="inboxToMeeting('${m.id}')" title="קבע פגישה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns btnd" onclick="dbDelete('inbox','${m.id}')">🗑</button></td></tr>`;
+    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-inbox" ${chk} onchange="toggleSel('inbox','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${m.time?'<br><span style="color:var(--gold);font-size:9px">'+m.time+'</span>':''}</td><td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(m.from||'').replace(/"/g,'&quot;')}">${fromSafe}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(m.subj||'').replace(/"/g,'&quot;')}">${subjSafe}</td><td style="font-size:11px">${m.cl||'–'}</td><td>${stCell}</td><td>${filesCell}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('inbox','${m.id}')" title="פתח / קרא">👁️</button> <button class="btn btns" onclick="replyInbox('${m.id}')" title="השב במייל" style="border-color:#4cc9f0;color:#4cc9f0">📧</button> <button class="btn btns" onclick="inboxToTask('${m.id}')" title="צור משימה" style="border-color:#f072b6;color:#f072b6">📌</button> <button class="btn btns" onclick="inboxToMeeting('${m.id}')" title="קבע פגישה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns btnd" onclick="dbDelete('inbox','${m.id}')">🗑</button></td></tr>`;
   }).join('')||emptyRow(9,'📥',_inboxView==='new'?(all.length?'אין מיילים חדשים — הכול טופל ✅':'אין מיילים עדיין — לחץ "+ מייל חדש"'):'אין מיילים עדיין — לחץ "+ מייל חדש"',"openM('inbox',null)");
   const ft=document.getElementById('inboxft');
   if(ft)ft.innerHTML=`<span class="fi">סה"כ: <b>${all.length}</b></span><span class="fi">חדשים: <b>${unread}</b></span><span class="fi">בטיפול: <b>${inProg}</b></span>`;
@@ -6401,6 +6415,127 @@ function inboxToMeeting(id){
   m.st='בטיפול';m._mts=Date.now();saveAll();
   closeM('minbox');rAll();
   showToastWithAction('📅 נקבעה פגישה מהמייל','עבור לפגישות',()=>nav('meetings'));
+}
+
+// ═══ קליטת מיילים אוטומטית: מייל שהועבר לכתובת המערכת נקלט לכרטיס הלקוח ═══
+// צינור הקליטה (Google Apps Script / GitHub Action) כותב את המייל לענן בנתיב
+// cem_hot_mail_<hash>. כאן קוראים אותו, מזהים את הלקוח, ומתייקים לסעיף המיילים.
+function _mailSeen(){try{return new Set(JSON.parse(localStorage.getItem('cem_mail_seen')||'[]'));}catch(e){return new Set();}}
+function _mailSeenSave(s){try{localStorage.setItem('cem_mail_seen',JSON.stringify([...s].slice(-800)));}catch(e){}}
+// זיהוי הלקוח הרלוונטי למייל: לפי שדה מפורש, שם חברה בנושא/גוף, מס' ח.פ, או כתובת שולח
+function _matchClientForMail(m){
+  if(m.cl){const c=findClientByName(m.cl);if(c)return c.name;}
+  const hay=((m.subj||'')+' '+(m.from||'')+' '+(m.body||'')).toLowerCase();
+  const byName=D.clients.filter(c=>(c.name||'').trim().length>=2)
+    .sort((a,b)=>(b.name||'').length-(a.name||'').length) // שם ארוך יותר קודם (מדויק יותר)
+    .find(c=>hay.includes((c.name||'').trim().toLowerCase()));
+  if(byName)return byName.name;
+  const byCp=D.clients.find(c=>c.cp&&hay.includes(String(c.cp)));
+  if(byCp)return byCp.name;
+  const em=(m.from||'').match(/[\w.+%-]+@[\w.-]+\.[a-z]{2,}/i);
+  if(em){const e=em[0].toLowerCase();const c=D.clients.find(c=>(c.email||'').toLowerCase()===e);if(c)return c.name;}
+  return m.cl||'';
+}
+// קליטת מייל בודד למערכת (עם דה-דופ לפי מזהה) — מחזיר את הרשומה שנוצרה
+function _ingestMail(m){
+  if(!m)return null;
+  const mid=String(m.mid||m.id||((m.dt||'')+'|'+(m.from||'')+'|'+(m.subj||'').slice(0,40)));
+  const seen=_mailSeen();
+  if(seen.has(mid)||(D.inbox||[]).some(x=>x._mid===mid))return null;
+  const cl=_matchClientForMail(m);
+  const rec={_mid:mid,dt:m.dt||nd(),time:m.time||'',from:m.from||'',subj:m.subj||'',body:m.body||'',cl:cl||'',st:'חדש',files:Array.isArray(m.files)?m.files:[]};
+  if(!Array.isArray(D.inbox))D.inbox=[];
+  dbInsert('inbox',rec);
+  seen.add(mid);_mailSeenSave(seen);
+  return rec;
+}
+let _pollingMail=false;
+async function pollCloudMail(silent){
+  const cfg=_cloudCfg();
+  if(!cfg){if(!silent)showToast('⚠️ חבר קודם סנכרון ענן (☁️)','warn');return {got:0};}
+  if(_pollingMail)return {got:0};_pollingMail=true;
+  try{
+    const h=await sha256('cem:'+(cfg.syncCode||'hot-crm'));
+    const base=cfg.databaseURL.replace(/\/+$/,'')+'/cem_hot_mail_'+h.substring(0,16);
+    const r=await fetch(base+'.json',{cache:'no-store'});
+    if(!r.ok){if(!silent)showToast('⚠️ שגיאת ענן '+r.status,'warn');return {got:0};}
+    const j=await r.json();
+    if(!j||typeof j!=='object'){if(!silent)showToast('📭 אין מיילים חדשים','info');return {got:0};}
+    let got=0;const linked=[];
+    for(const key of Object.keys(j)){
+      const entry=j[key];if(!entry)continue;
+      let mail=entry;
+      if(entry.enc===1&&typeof entry.data==='string'){try{mail=await _cloudDecrypt(entry.data);}catch(e){continue;}}
+      const rec=_ingestMail(mail);
+      if(rec){got++;if(rec.cl)linked.push(rec.cl);}
+      try{await fetch(base+'/'+encodeURIComponent(key)+'.json',{method:'DELETE'});}catch(e){} // נקלט — מוחקים מהענן
+    }
+    if(got){rAll();updateNavBadges();if(!silent)showToast('📥 נקלטו '+got+' מיילים'+(linked.length?' — '+[...new Set(linked)].length+' לקוחות':''),'ok');}
+    else if(!silent)showToast('📭 אין מיילים חדשים','info');
+    return {got};
+  }catch(e){if(!silent)showToast('⚠️ שגיאת קליטת מייל: '+(e.message||e),'warn');return {got:0};}
+  finally{_pollingMail=false;}
+}
+// בונה את קוד ה-Google Apps Script עם פרטי ה-Firebase של המשתמש
+function _mailIngestScript(db,code){
+  return [
+"// ===== CRM Mail Ingest — הדבק ב-script.google.com והגדר טריגר כל 5 דקות =====",
+"var DB_URL = '"+db+"';",
+"var SYNC_CODE = '"+code+"';",
+"function ingestCrmMail(){",
+"  var d = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, 'cem:'+SYNC_CODE);",
+"  var hex = d.map(function(b){b=(b<0?b+256:b).toString(16);return b.length==1?'0'+b:b;}).join('');",
+"  var path = DB_URL.replace(/\\/+$/,'') + '/cem_hot_mail_' + hex.substring(0,16);",
+"  var threads = GmailApp.search('is:unread newer_than:14d', 0, 25);",
+"  var n = 0;",
+"  threads.forEach(function(th){",
+"    th.getMessages().forEach(function(m){",
+"      if(!m.isUnread()) return;",
+"      var mail = {",
+"        mid: m.getId(),",
+"        dt: Utilities.formatDate(m.getDate(),'GMT+3','yyyy-MM-dd'),",
+"        time: Utilities.formatDate(m.getDate(),'GMT+3','HH:mm'),",
+"        from: m.getFrom(),",
+"        subj: m.getSubject(),",
+"        body: m.getPlainBody().substring(0,5000)",
+"      };",
+"      var res = UrlFetchApp.fetch(path+'/'+m.getId()+'.json', {method:'put', contentType:'application/json', payload:JSON.stringify(mail), muteHttpExceptions:true});",
+"      if(res.getResponseCode() < 300){ m.markRead(); n++; }",
+"    });",
+"  });",
+"  Logger.log('נשלחו ' + n + ' מיילים למערכת');",
+"}"
+].join("\n");
+}
+function openMailConnect(){
+  const cfg=_cloudCfg();
+  const body=document.getElementById('mailconnect-body');
+  if(!cfg){
+    body.innerHTML='<div style="padding:14px;background:rgba(244,162,97,.1);border:1px solid rgba(244,162,97,.3);border-radius:10px;font-size:12px;color:var(--text2);line-height:1.7">⚠️ כדי לחבר קליטת מיילים צריך קודם לחבר <b>סנכרון ענן</b> (כפתור ☁️ בראש הדף). אחרי החיבור חזור לכאן.</div>';
+    openM_id('mmailconnect');return;
+  }
+  const db=cfg.databaseURL.replace(/\/+$/,''), code=cfg.syncCode||'hot-crm';
+  const script=_mailIngestScript(db,code);
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  body.innerHTML=`
+    <div style="background:rgba(76,201,240,.06);border:1px solid rgba(76,201,240,.2);border-radius:10px;padding:10px 14px;font-size:11.5px;color:var(--text2);line-height:1.9;margin-bottom:12px">
+      <b style="color:#4cc9f0">הגדרה חד-פעמית (~5 דקות):</b><br>
+      1. פתח <b style="color:var(--text)">script.google.com</b> ← New project (בחשבון ה-Gmail שאליו תעביר מיילים).<br>
+      2. מחק את התוכן, <b>הדבק את הקוד למטה</b>, ושמור (💾).<br>
+      3. בתפריט השמאלי ← <b>Triggers</b> (⏰) ← Add Trigger ← בחר פונקציה <code>ingestCrmMail</code>, סוג <b>Time-driven</b> → Every 5 minutes ← Save (אשר הרשאות Gmail).<br>
+      4. זהו! מעכשיו <b>העבר (Forward)</b> מייל של לקוח לאותו Gmail, עם <b>שם הלקוח בנושא</b> — והוא ייקלט אוטומטית לכרטיס הלקוח.
+    </div>
+    <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px">קוד ה-Script (עם הפרטים שלך מוטמעים):</label>
+    <textarea id="mail-script-code" readonly onclick="this.select()" rows="9" style="width:100%;box-sizing:border-box;font-family:monospace;font-size:10px;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,.25);color:var(--text);direction:ltr;resize:vertical">${esc(script)}</textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <button class="btn btnp" onclick="(function(){const t=document.getElementById('mail-script-code');t.select();try{navigator.clipboard.writeText(t.value).then(()=>showToast('📋 הקוד הועתק — הדבק ב-script.google.com','ok'));}catch(e){document.execCommand('copy');showToast('📋 הקוד הועתק','ok');}})()" style="font-size:12px">📋 העתק את הקוד</button>
+      <button class="btn" onclick="pollCloudMail(false)" style="font-size:12px;border-color:#4cc9f0;color:#4cc9f0">📬 משוך מיילים עכשיו</button>
+    </div>
+    <div style="margin-top:12px;padding:9px 12px;background:rgba(6,214,160,.06);border:1px solid rgba(6,214,160,.2);border-radius:9px;font-size:11px;color:var(--text2);line-height:1.7">
+      💡 <b>זיהוי הלקוח:</b> המערכת מקשרת את המייל לכרטיס לפי שם החברה / מס' ח.פ / כתובת מייל שמופיעים בנושא או בתוכן. אם לא זוהה — המייל ייכנס לסעיף "מיילים נכנסים" ותוכל לשייך ידנית.<br>
+      🔒 המיילים נשמרים בענן הפרטי שלך (Firebase), נמחקים ממנו מיד לאחר הקליטה למכשיר.
+    </div>`;
+  openM_id('mmailconnect');
 }
 
 // ===== CLIENTS =====
@@ -6737,6 +6872,38 @@ function renderClientMeetings(id){
   sec.style.display='';
   sec.innerHTML=`<div class="msec" style="border:1px solid rgba(6,214,160,.25)"><div class="msec-hdr"><span style="color:#06d6a0">📅 פגישות (${mtgs.length})</span>${schedBtn}</div>${rows}</div>`;
 }
+// מיילים נכנסים המשויכים ללקוח — מוצגים בכרטיס הלקוח
+function renderClientEmails(id){
+  const sec=document.getElementById('client-emails-section');
+  if(!sec)return;
+  if(!id){sec.style.display='none';sec.innerHTML='';return;}
+  const c=D.clients.find(x=>x.id==id);
+  if(!c){sec.style.display='none';return;}
+  const mails=(D.inbox||[]).filter(m=>sameCo(m.cl,c.name))
+    .sort((a,b)=>((b.dt||'')+(b.time||''))<((a.dt||'')+(a.time||''))?1:-1);
+  const addBtn=`<button class="btn btns" onclick="closeM('mclient');setTimeout(()=>{openM('inbox',null);setTimeout(()=>{const e=document.getElementById('ibcl');if(e)e.value='${(c.name||'').replace(/'/g,"&#39;")}';},120);},100)" style="border-color:#4cc9f0;color:#4cc9f0;font-size:10px">+ צרף מייל</button>`;
+  if(!mails.length){
+    sec.style.display='';
+    sec.innerHTML=`<div class="msec" style="border:1px solid rgba(76,201,240,.2)"><div class="msec-hdr"><span style="color:#4cc9f0">📥 מיילים</span>${addBtn}</div><div style="font-size:11px;color:var(--text3);padding:8px 4px;font-style:italic">אין מיילים משויכים ללקוח זה</div></div>`;
+    return;
+  }
+  const stCol={חדש:'#f4a261',בטיפול:'#4cc9f0',טופל:'#06d6a0'};
+  const rows=mails.map(m=>{
+    const st=m.st||'חדש', stc=stCol[st]||'#4cc9f0';
+    const nFiles=(m.files&&m.files.length)||0;
+    const filesBtn=nFiles?`<button class="btn btns" onclick="rowFilesMenu('inbox','${m.id}',event)" title="${nFiles} קבצים" style="font-size:10px;border-color:#4cc9f0;color:#4cc9f0">📎 ${nFiles}</button>`:'';
+    return`<div class="cmod-row" style="padding:5px 8px;background:${st==='חדש'?'rgba(76,201,240,.07)':'rgba(255,255,255,.03)'};border:1px solid rgba(255,255,255,.07);margin-bottom:4px">
+      <span style="font-size:14px">✉️</span>
+      <span style="font-size:10px;color:var(--text2);white-space:nowrap">${fmtDate(m.dt)}</span>
+      <span style="font-size:10px;color:var(--text3);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(m.from||'').replace(/</g,'&lt;')}</span>
+      <span style="font-size:11px;font-weight:600;flex:1;min-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(m.subj||'(ללא נושא)').replace(/</g,'&lt;')}</span>
+      <span style="font-size:9px;font-weight:800;color:${stc};border:1px solid ${stc}55;border-radius:10px;padding:1px 6px">${st}</span>
+      <div style="display:flex;gap:4px;margin-right:auto;flex-wrap:wrap">${filesBtn}<button class="btn btns" onclick="closeM('mclient');setTimeout(()=>{nav('inbox');setTimeout(()=>openM('inbox','${m.id}'),200);},80)" style="font-size:10px">👁️ פתח</button></div>
+    </div>`;
+  }).join('');
+  sec.style.display='';
+  sec.innerHTML=`<div class="msec" style="border:1px solid rgba(76,201,240,.25)"><div class="msec-hdr"><span style="color:#4cc9f0">📥 מיילים (${mails.length})</span>${addBtn}</div>${rows}</div>`;
+}
 // איתור פגישה בטבלה הפעילה או בארכיון
 function _findMeeting(id){
   let rec=(D.meetings||[]).find(x=>x.id==id);
@@ -6953,6 +7120,7 @@ function openClientModal(id){
   renderClientDeals(id);
   renderClientProjects(id);
   renderClientMeetings(id);
+  renderClientEmails(id);
   document.getElementById('mclient').classList.add('open');
 }
 
