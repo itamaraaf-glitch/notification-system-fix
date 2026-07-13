@@ -6427,14 +6427,35 @@ function _mailSeenSave(s){try{localStorage.setItem('cem_mail_seen',JSON.stringif
 function _matchClientForMail(m){
   if(m.cl){const c=findClientByName(m.cl);if(c)return c.name;}
   const hay=((m.subj||'')+' '+(m.from||'')+' '+(m.body||'')).toLowerCase();
+  const digits=hay.replace(/\D/g,'');
+  // 1) שם חברה בנושא/גוף (שם ארוך יותר קודם — מדויק יותר)
   const byName=D.clients.filter(c=>(c.name||'').trim().length>=2)
-    .sort((a,b)=>(b.name||'').length-(a.name||'').length) // שם ארוך יותר קודם (מדויק יותר)
+    .sort((a,b)=>(b.name||'').length-(a.name||'').length)
     .find(c=>hay.includes((c.name||'').trim().toLowerCase()));
   if(byName)return byName.name;
-  const byCp=D.clients.find(c=>c.cp&&hay.includes(String(c.cp)));
+  // 2) מס' ח.פ
+  const byCp=D.clients.find(c=>c.cp&&String(c.cp).length>=6&&hay.includes(String(c.cp)));
   if(byCp)return byCp.name;
+  // 3) כתובת מייל מדויקת של השולח
   const em=(m.from||'').match(/[\w.+%-]+@[\w.-]+\.[a-z]{2,}/i);
-  if(em){const e=em[0].toLowerCase();const c=D.clients.find(c=>(c.email||'').toLowerCase()===e);if(c)return c.name;}
+  const fromEmail=em?em[0].toLowerCase():'';
+  if(fromEmail){const c=D.clients.find(c=>(c.email||'').toLowerCase()===fromEmail);if(c)return c.name;}
+  // 4) שם איש הקשר בנושא/גוף
+  const byContact=D.clients.filter(c=>(c.contact||'').trim().length>=3)
+    .sort((a,b)=>(b.contact||'').length-(a.contact||'').length)
+    .find(c=>hay.includes((c.contact||'').trim().toLowerCase()));
+  if(byContact)return byContact.name;
+  // 5) מספר טלפון של הלקוח מופיע בתוכן
+  const byPhone=D.clients.find(c=>{const p=(c.phone||'').replace(/\D/g,'');return p.length>=7&&digits.includes(p);});
+  if(byPhone)return byPhone.name;
+  // 6) דומיין המייל של השולח תואם לדומיין הלקוח (חלש יותר — אחרון)
+  if(fromEmail&&fromEmail.indexOf('@')>-1){
+    const dom=fromEmail.split('@')[1];
+    if(dom&&!/gmail|hotmail|outlook|walla|yahoo|icloud|hot\.net|012|013|014/.test(dom)){
+      const c=D.clients.find(c=>{const ce=(c.email||'').toLowerCase();return ce.indexOf('@'+dom)>-1;});
+      if(c)return c.name;
+    }
+  }
   return m.cl||'';
 }
 // קליטת מייל בודד למערכת (עם דה-דופ לפי מזהה) — מחזיר את הרשומה שנוצרה
@@ -6483,15 +6504,17 @@ function _mailIngestScript(db,code){
 "// ===== CRM Mail Ingest — הדבק ב-script.google.com והגדר טריגר כל 5 דקות =====",
 "var DB_URL = '"+db+"';",
 "var SYNC_CODE = '"+code+"';",
+"var CRM_LABEL = 'crm-sent'; // מייל שנשלח למערכת מקבל תווית זו — כדי לא לשלוח פעמיים (לא תלוי בנקרא/לא-נקרא)",
 "function ingestCrmMail(){",
 "  var d = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, 'cem:'+SYNC_CODE);",
 "  var hex = d.map(function(b){b=(b<0?b+256:b).toString(16);return b.length==1?'0'+b:b;}).join('');",
 "  var path = DB_URL.replace(/\\/+$/,'') + '/cem_hot_mail_' + hex.substring(0,16);",
-"  var threads = GmailApp.search('is:unread newer_than:14d', 0, 25);",
+"  var label = GmailApp.getUserLabelByName(CRM_LABEL) || GmailApp.createLabel(CRM_LABEL);",
+"  var threads = GmailApp.search('newer_than:60d -label:' + CRM_LABEL, 0, 40);",
 "  var n = 0;",
 "  threads.forEach(function(th){",
+"    var okAll = true;",
 "    th.getMessages().forEach(function(m){",
-"      if(!m.isUnread()) return;",
 "      var mail = {",
 "        mid: m.getId(),",
 "        dt: Utilities.formatDate(m.getDate(),'GMT+3','yyyy-MM-dd'),",
@@ -6501,8 +6524,9 @@ function _mailIngestScript(db,code){
 "        body: m.getPlainBody().substring(0,5000)",
 "      };",
 "      var res = UrlFetchApp.fetch(path+'/'+m.getId()+'.json', {method:'put', contentType:'application/json', payload:JSON.stringify(mail), muteHttpExceptions:true});",
-"      if(res.getResponseCode() < 300){ m.markRead(); n++; }",
+"      if(res.getResponseCode() < 300){ n++; } else { okAll = false; }",
 "    });",
+"    if(okAll){ th.addLabel(label); } // מסמנים כ'נשלח' רק אם כל ההודעות עלו בהצלחה",
 "  });",
 "  Logger.log('נשלחו ' + n + ' מיילים למערכת');",
 "}"
