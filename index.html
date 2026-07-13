@@ -2121,7 +2121,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <input type="file" id="att-inp-deal" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('deal',event)">
         <button type="button" class="btn btns" onclick="document.getElementById('att-inp-deal').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
-        <span style="font-size:10px;color:var(--text3)">עד 2MB לקובץ</span>
+        <span style="font-size:10px;color:var(--text3)">עד 25MB לקובץ</span>
       </div>
       <div id="att-list-deal"></div>
     </div>
@@ -2159,7 +2159,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <input type="file" id="att-inp-tender" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('tender',event)">
         <button type="button" class="btn btns" onclick="document.getElementById('att-inp-tender').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
-        <span style="font-size:10px;color:var(--text3)">עד 2MB לקובץ</span>
+        <span style="font-size:10px;color:var(--text3)">עד 25MB לקובץ</span>
       </div>
       <div id="att-list-tender"></div>
     </div>
@@ -2197,7 +2197,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <input type="file" id="att-inp-dist" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('dist',event)">
         <button type="button" class="btn btns" onclick="document.getElementById('att-inp-dist').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
-        <span style="font-size:10px;color:var(--text3)">עד 2MB לקובץ</span>
+        <span style="font-size:10px;color:var(--text3)">עד 25MB לקובץ</span>
       </div>
       <div id="att-list-dist"></div>
     </div>
@@ -2227,7 +2227,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <input type="file" id="att-inp-salary" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('salary',event)">
         <button type="button" class="btn btns" onclick="document.getElementById('att-inp-salary').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
-        <span style="font-size:10px;color:var(--text3)">עד 2MB לקובץ</span>
+        <span style="font-size:10px;color:var(--text3)">עד 25MB לקובץ</span>
       </div>
       <div id="att-list-salary"></div>
     </div>
@@ -2254,7 +2254,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <input type="file" id="att-inp-meeting" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('meeting',event)">
         <button type="button" class="btn btns" onclick="document.getElementById('att-inp-meeting').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
-        <span style="font-size:10px;color:var(--text3)">עד 2MB לקובץ</span>
+        <span style="font-size:10px;color:var(--text3)">עד 25MB לקובץ</span>
       </div>
       <div id="att-list-meeting"></div>
     </div>
@@ -2350,7 +2350,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <input type="file" id="att-inp-client" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('client',event)">
         <button type="button" class="btn btns" onclick="document.getElementById('att-inp-client').click()" style="border-color:#06d6a0;color:#06d6a0">+ צרף קבצים</button>
-        <span style="font-size:10px;color:var(--text3)">עד 2MB לקובץ</span>
+        <span style="font-size:10px;color:var(--text3)">עד 25MB לקובץ</span>
       </div>
       <div id="att-list-client"></div>
     </div>
@@ -3086,10 +3086,27 @@ async function cloudExtract(remote){
   if(remote.data&&typeof remote.data==='object')return JSON.parse(JSON.stringify(remote.data));
   return null;
 }
-// המטען שעולה לענן — תמיד מוצפן. משמיטים את _bio (טביעת אצבע) — הוא שייך למכשיר
-// הזה בלבד ואסור שיסתנכרן, אחרת מכשיר אחר היה מקבל מזהה מפתח שלא קיים אצלו.
-async function cloudPayload(ts){
+// גודל מרבי (base64) של קובץ שמסתנכרן דרך הענן. קבצים גדולים מזה נשארים מקומיים
+// (ב-IndexedDB) — כדי שקובץ ענק לא ינפח את כתיבת ה-Firebase ולא ישבור את הסנכרון.
+const CLOUD_FILE_MAX = 7 * 1024 * 1024; // ~5MB קובץ בפועל
+// בונה עותק D לענן: בלי _bio, ובלי בייטים של קבצים גדולים מ-CLOUD_FILE_MAX
+function _cloudClean(){
   const {_bio,...clean}=D;
+  const big=s=>typeof s==='string'&&s.length>CLOUD_FILE_MAX;
+  (typeof _ATT_COLS!=='undefined'?_ATT_COLS:[]).forEach(col=>{
+    if(!Array.isArray(clean[col]))return;
+    clean[col]=clean[col].map(rec=>{
+      let r=rec,cloned=false;const cl=()=>{if(!cloned){r=Object.assign({},rec);cloned=true;}};
+      if(Array.isArray(rec.files)&&rec.files.some(f=>f&&big(f.data))){cl();r.files=rec.files.map(f=>(f&&big(f.data))?{name:f.name,type:f.type,size:f.size,fid:f.fid}:f);}
+      if(rec.quote&&big(rec.quote.data)){cl();r.quote=Object.assign({},rec.quote,{data:undefined});}
+      if(rec.photo&&big(rec.photo)){cl();r.photo=undefined;}
+      return r;
+    });
+  });
+  return clean;
+}
+async function cloudPayload(ts){
+  const clean=_cloudClean();
   return {_ts:ts,_baseline:D._baseline||0,enc:1,data:await _cloudEncrypt(clean)};
 }
 
@@ -3105,6 +3122,7 @@ function fbMergeRemote(remote){
       D=Object.assign(emptyData(),remote);
       D.goals=Object.assign({},_GOAL_DEFAULTS,D.goals||{});
       _buildSyncSnap();
+      if(typeof _hydrateBlobs==='function')setTimeout(_hydrateBlobs,0); // החזרת בייטי קבצים מקומיים שהענן לא נשא
       showToast('🟰 בוצע יישור קו — הנתונים הוחלפו בעותק מהמכשיר הראשי','ok');
       return true;
     }
@@ -3153,6 +3171,8 @@ function fbMergeRemote(remote){
   }
   // רענון חתימות אחרי מיזוג — שינויים שהגיעו מהענן לא ייחתמו מחדש ויוחזרו כהד
   _buildSyncSnap();
+  // אם המיזוג החליף רשומה עם קובץ גדול (שלא נישא בענן) — מחזירים את הבייטים מהחנות המקומית
+  if(changed&&typeof _hydrateBlobs==='function')setTimeout(_hydrateBlobs,0);
   return changed;
 }
 
@@ -6339,7 +6359,7 @@ function clientMeetingAttach(id,ev){
   inp.value='';
   inp.onchange=e=>{
     const f=e.target.files[0];if(!f)return;
-    if(f.size>QUOTE_MAX){toast('⚠️ "'+f.name+'" גדול מדי (מקסימום 2MB)','warn');return;}
+    if(f.size>QUOTE_MAX){toast('⚠️ "'+f.name+'" גדול מדי (מקסימום '+QUOTE_MAX_LABEL+')','warn');return;}
     const found=_findMeeting(id);if(!found){toast('⚠️ הפגישה לא נמצאה','warn');return;}
     const reader=new FileReader();
     reader.onload=ev2=>{
@@ -7720,12 +7740,14 @@ function closeM(id){document.getElementById(id).classList.remove('open');EI=null
 // ===== SAVE FUNCTIONS =====
 // ===== PRICE-QUOTE FILE ATTACHMENT (per deal) =====
 let pendingQuote = null; // {name,type,size,data(base64 dataURL)}
-const QUOTE_MAX = 2 * 1024 * 1024; // 2MB cap (base64 inflates ~33%) to protect localStorage
+// הקבצים נשמרים ב-IndexedDB (מאות MB), לכן המגבלה גבוהה. תווית קריאה לבני-אדם.
+const QUOTE_MAX = 25 * 1024 * 1024; // 25MB לקובץ
+const QUOTE_MAX_LABEL = '25MB';
 function onQuoteFile(ev){
   const f = ev.target.files && ev.target.files[0];
   if(!f) return;
   if(f.size > QUOTE_MAX){
-    toast('⚠️ הקובץ גדול מדי (מקסימום 1MB)','warn');
+    toast('⚠️ הקובץ גדול מדי (מקסימום '+QUOTE_MAX_LABEL+')','warn');
     ev.target.value='';
     return;
   }
@@ -7789,7 +7811,7 @@ function attachAdd(kind,ev){
   if(!_attPending[kind])_attPending[kind]=[];
   let pending=files.length;
   files.forEach(f=>{
-    if(f.size>QUOTE_MAX){toast('⚠️ "'+f.name+'" גדול מדי (מקסימום 2MB)','warn');if(--pending===0)ev.target.value='';return;}
+    if(f.size>QUOTE_MAX){toast('⚠️ "'+f.name+'" גדול מדי (מקסימום '+QUOTE_MAX_LABEL+')','warn');if(--pending===0)ev.target.value='';return;}
     const reader=new FileReader();
     reader.onload=e=>{
       _attPending[kind].push({name:f.name,type:f.type||'',size:f.size,data:e.target.result});
