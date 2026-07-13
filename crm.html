@@ -2653,6 +2653,9 @@ async function submit2FA(){
   errEl.textContent='קוד שגוי — בדוק את האפליקציה ונסה שוב';
 }
 function _completeLogin(f){
+  // שמירת סשן לטאב הזה: רענון דף (כולל רענון אוטומטי של גרסה) לא יזרוק החוצה.
+  // נשמר ב-sessionStorage — שורד רענון אך נמחק כשסוגרים את האפליקציה לגמרי.
+  try{sessionStorage.setItem('cem_sess',f.u);}catch(e){}
   try{
     document.getElementById('l2fa').style.display='none';
     const bw=document.getElementById('l2fa-bio');if(bw)bw.style.display='none';
@@ -2714,6 +2717,7 @@ function _resetLoginUI(){
 }
 function doLogout(){
   saveAll();
+  try{sessionStorage.removeItem('cem_sess');}catch(e){}
   _resetLoginUI();
   // Clean up Firebase listener to prevent memory/connection leaks
   if(typeof _fbRef!=='undefined'&&_fbRef){try{_fbRef.off();}catch(e){}_fbRef=null;}
@@ -9921,19 +9925,23 @@ function refreshEdges(){} // no-op, kept so nav() calls don't throw
 </script>
 <script>
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').then(reg=>{
-    // Auto-reload when a new SW activates so users get fresh HTML immediately
-    reg.addEventListener('updatefound',()=>{
-      const sw=reg.installing;
-      sw.addEventListener('statechange',()=>{
-        if(sw.state==='activated') window.location.reload();
-      });
-    });
-  }).catch(()=>{});
+  // רישום ה-service worker בלבד — בלי רענון-אוטומטי כפוי. ה-HTML ממילא נטען
+  // תמיד מהרשת (fetch network-first), כך שגרסה חדשה מגיעה ברענון הטבעי הבא
+  // בלי "לזרוק" את המשתמש. עדכון גרסה מוצע בעדינות דרך checkAppVersion.
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
 // ── Login page init: show lockout state if still blocked ────────────────────
 (function(){
   try{
+    // שחזור סשן: אם המשתמש כבר התחבר בטאב/אפליקציה הזו — כניסה אוטומטית בלי
+    // מסך התחברות. כך רענון דף (כולל רענון גרסה) לא מחייב להתחבר מחדש.
+    try{
+      const sess=sessionStorage.getItem('cem_sess');
+      if(sess&&typeof USERS!=='undefined'&&typeof _completeLogin==='function'){
+        const f=USERS.find(x=>x.u===sess);
+        if(f){ _completeLogin(f); return; }
+      }
+    }catch(e){}
     if(typeof _resetLoginUI==='function')_resetLoginUI(); // מסך כניסה נקי בכל טעינה
     const lck=parseInt(localStorage.getItem('_hot_lck')||'0',10);
     const rem=lck-Date.now();
