@@ -1203,6 +1203,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 .mn-item.active[data-sec="clients"]::before{background:linear-gradient(90deg,#c8a96e,#dcc498);box-shadow:0 0 10px #c8a96e,0 0 20px rgba(200,169,110,.4);animation:none}
 .mn-item.active[data-sec="tasks"]{color:#f072b6}
 .mn-item.active[data-sec="tasks"]::before{background:linear-gradient(90deg,#f072b6,#f7a8d3);box-shadow:0 0 10px #f072b6,0 0 20px rgba(240,114,182,.4);animation:none}
+.mn-item.active[data-sec="inbox"]{color:#4cc9f0}
+.mn-item.active[data-sec="inbox"]::before{background:linear-gradient(90deg,#4cc9f0,#7de0f8);box-shadow:0 0 10px #4cc9f0,0 0 20px rgba(76,201,240,.4);animation:none}
 .mn-item.active[data-sec="workplan"]{color:#a78bfa}
 .mn-item.active[data-sec="workplan"]::before{background:linear-gradient(90deg,#a78bfa,#c4aefb);box-shadow:0 0 10px #a78bfa,0 0 20px rgba(167,139,250,.4);animation:none}
 .mn-item.active[data-sec="alerts"]{color:#e63946}
@@ -1544,6 +1546,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   <div class="nsec" id="nsec-clients">לקוחות ופגישות</div>
   <div class="ni" id="nv-meetings" onclick="nav('meetings')"><span>🤝</span> <span>יעד פגישות</span></div>
   <div class="ni" id="nv-tasks" onclick="nav('tasks')"><span>✅</span> <span>משימות</span></div>
+  <div class="ni" id="nv-inbox" onclick="nav('inbox')"><span>📥</span> <span>מיילים נכנסים</span></div>
   <div class="ni" id="nv-clients" onclick="nav('clients')"><span>🏢</span> <span>כרטיסי לקוח</span></div>
   <div class="ni" id="nv-workplan" onclick="nav('workplan')"><span>🎯</span> <span>תהליך עבודה</span></div>
   <div class="nsec" id="nsec-tools">כלים</div>
@@ -1854,6 +1857,35 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <span id="selcnt-tasks" style="font-size:11px;color:var(--text)"></span>
     <button onclick="deleteSelected('tasks')" class="cb-del">🗑 מחק</button>
     <button onclick="clearSel('tasks')" class="cb-clr">✕ נקה</button>
+  </div></div>
+</div>
+
+<!-- INBOX (מיילים נכנסים) -->
+<div class="sec" id="sec-inbox">
+  <div class="shdr">
+    <div class="stit">📥 מיילים נכנסים</div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <input type="text" class="srch" placeholder="חיפוש מייל (נושא / שולח / תוכן)..." oninput="filt(event,'inboxtb')">
+      <button class="btn btnp" onclick="openM('inbox',null)">+ מייל חדש</button>
+      <button class="btn btn-excel" onclick="exportExcel('inbox')">📥 Excel</button>
+      <button class="btn btnd" onclick="deleteAll('inbox')" title="מחק את כל המיילים">🗑 מחק הכל</button>
+    </div>
+  </div>
+  <div class="tabs" id="inbox-tabs">
+    <div class="tab active" id="iv-new" onclick="setInboxView('new')">🆕 חדשים</div>
+    <div class="tab" id="iv-all" onclick="setInboxView('all')">כל המיילים</div>
+  </div>
+  <div class="krow" id="inboxkrow"></div>
+  <div class="tw"><div class="thdr" style="border-right:3px solid #4cc9f0">📥 תיבת מיילים נכנסים</div>
+  <div class="tscroll"><table><thead><tr>
+    <th class="cb-th"><input type="checkbox" id="chk-all-inbox" onchange="toggleAll('inbox',this.checked)"></th>
+    <th>#</th><th>תאריך</th><th>שולח</th><th>נושא</th><th>לקוח</th><th>סטטוס</th><th>קבצים</th><th style="min-width:210px">פעולות</th>
+  </tr></thead><tbody id="inboxtb"></tbody></table></div>
+  <div class="tft" id="inboxft"></div>
+  <div class="cb-row" id="selbar-inbox" style="display:none">
+    <span id="selcnt-inbox" style="font-size:11px;color:var(--text)"></span>
+    <button onclick="deleteSelected('inbox')" class="cb-del">🗑 מחק</button>
+    <button onclick="clearSel('inbox')" class="cb-clr">✕ נקה</button>
   </div></div>
 </div>
 
@@ -2319,6 +2351,35 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   </div>
 </div></div>
 
+<!-- INBOX (מייל נכנס) MODAL -->
+<div class="mw" id="minbox"><div class="modal" style="max-width:600px">
+  <div class="mhdr"><h3 id="ibtit">מייל נכנס חדש</h3><button class="mcls" onclick="closeM('minbox')">✕</button></div>
+  <div class="fg">
+    <div class="g"><label>תאריך קבלה</label><input type="date" id="ibdt"></div>
+    <div class="g"><label>שעה (לא חובה)</label><input type="time" id="ibtime"></div>
+    <div class="g"><label>שולח (שם / כתובת מייל)</label><input type="text" id="ibfrom" placeholder="ישראל ישראלי / israel@example.com"></div>
+    <div class="g"><label>לקוח משויך (לא חובה)</label><input type="text" id="ibcl" list="ibcl-list" autocomplete="off"><datalist id="ibcl-list"></datalist></div>
+    <div class="gf"><label>נושא</label><input type="text" id="ibsubj" placeholder="נושא המייל"></div>
+    <div class="gf"><label>תוכן המייל</label><textarea id="ibbody" rows="6" placeholder="הדבק כאן את תוכן המייל..."></textarea></div>
+    <div class="g"><label>סטטוס</label><select id="ibst"><option value="חדש">🆕 חדש</option><option value="בטיפול">🔵 בטיפול</option><option value="טופל">✅ טופל</option></select></div>
+    <div class="gf"><label>📎 קבצים מצורפים (Word / PDF / Excel / תמונה)</label>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <input type="file" id="att-inp-inbox" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.ppt,.pptx,.txt" style="display:none" onchange="attachAdd('inbox',event)">
+        <button type="button" class="btn btns" onclick="document.getElementById('att-inp-inbox').click()" style="border-color:#4cc9f0;color:#4cc9f0">+ צרף קבצים</button>
+        <span style="font-size:10px;color:var(--text3)">עד 25MB לקובץ</span>
+      </div>
+      <div id="att-list-inbox"></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
+    <button class="btn" onclick="closeM('minbox')">ביטול</button>
+    <button id="ib-reply-btn" class="btn" onclick="replyInbox(EI)" style="display:none;border-color:#4cc9f0;color:#4cc9f0" title="השב לשולח במייל">📧 השב</button>
+    <button id="ib-task-btn" class="btn" onclick="inboxToTask(EI)" style="display:none;border-color:#f072b6;color:#f072b6" title="צור משימה מהמייל">📌 למשימה</button>
+    <button id="ib-meet-btn" class="btn" onclick="inboxToMeeting(EI)" style="display:none;border-color:#06d6a0;color:#06d6a0" title="קבע פגישה מהמייל">📅 לפגישה</button>
+    <button class="btn btnp" onclick="saveInbox()">שמור מייל</button>
+  </div>
+</div></div>
+
 <!-- TENDER EMAILS CONFIG MODAL -->
 <div class="mw" id="mtemails"><div class="modal" style="max-width:440px">
   <div class="mhdr"><h3>⚙ נמעני מיילים — מכרזים</h3><button class="mcls" onclick="closeM('mtemails')">✕</button></div>
@@ -2448,7 +2509,7 @@ function handlerEmails(name){
   const h=HANDLERS.find(x=>x.name===name);
   return h?h.emails:[];
 }
-let D = {deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],tasks:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000}};
+let D = {deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],tasks:[],inbox:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000}};
 let EI = null, ET = null;
 const SEL = {};
 
@@ -2883,7 +2944,7 @@ function doLogout(){
 // חותמות סנכרון אוטומטיות: המיזוג בין מכשירים מחיל פריט מרוחק רק אם ה-_mts שלו
 // חדש יותר, ולכן כל שינוי חייב לקבל חותמת — גם בנתיבי שמירה שלא עוברים דרך dbUpdate.
 // משווים כל פריט לחתימה מהשמירה הקודמת ומטביעים _mts רק על מה שבאמת השתנה.
-const SYNC_COLS=['deals','tenders','dists','salary','meetings','clients','tasks','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
+const SYNC_COLS=['deals','tenders','dists','salary','meetings','clients','tasks','inbox','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
 const SYNC_META=['lastCycleMonth','lastMeetCycle','goals','tenderEmails','_totp'];
 let _syncSnap=null;
 // חתימת שינוי לפריט — משמיטים את הבייטים הכבדים (data/photo) כדי שחישוב החתימה
@@ -2913,7 +2974,7 @@ function _stampChanges(){
 const FILES_DB='cem_hot_files', FILES_STORE='blobs';
 const _blobSaved=new Set();   // fids שכבר נשמרו ב-IDB (מותר להסיר את ה-data מ-LS)
 const _photoCache={};         // client.id → תוכן התמונה שנשמר לאחרונה (לזיהוי שינוי)
-const _ATT_COLS=['deals','tenders','dists','salary','meetings','clients','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
+const _ATT_COLS=['deals','tenders','dists','salary','meetings','clients','inbox','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
 function _fid(){return 'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
 function _filesDbOpen(){
   return new Promise((res,rej)=>{
@@ -4365,7 +4426,7 @@ function loadAll(){
       const p=JSON.parse(s);
       parsed=true;
       D.deals=p.deals||[];D.tenders=p.tenders||[];D.dists=p.dists||[];
-      D.salary=p.salary||[];D.meetings=p.meetings||[];D.clients=p.clients||[];D.tasks=p.tasks||[];
+      D.salary=p.salary||[];D.meetings=p.meetings||[];D.clients=p.clients||[];D.tasks=p.tasks||[];D.inbox=p.inbox||[];
       D.archivedDeals=p.archivedDeals||[];D.archivedTenders=p.archivedTenders||[];D.archivedDists=p.archivedDists||[];D.archivedSalary=p.archivedSalary||[];D.archivedMeetings=p.archivedMeetings||[];D.lastCycleMonth=p.lastCycleMonth||'';D.lastMeetCycle=p.lastMeetCycle||'';D.tenderEmails=p.tenderEmails||{};
       D._deletedIds=p._deletedIds||{};
       D._metaMts=p._metaMts||0;D._baseline=p._baseline||0; // חותמות סנכרון חייבות לשרוד רענון דף
@@ -4528,7 +4589,7 @@ function nextDealNum(){
   return (nums.length?Math.max(...nums):0)+1;
 }
 // a complete empty dataset template so restores never drop a section
-function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],tasks:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000},_deletedIds:{}};}
+function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],tasks:[],inbox:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000},_deletedIds:{}};}
 function dbInsert(table,row){row.id=genId();row._mts=Date.now();D[table].push(row);saveAll();return row;}
 function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0)D[table][i]={...D[table][i],...row,_mts:Date.now()};saveAll();}
 // ===== GLOBAL UNDO (for accidental deletes in any section) =====
@@ -4622,7 +4683,7 @@ function nav(s){
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
   document.getElementById('sec-'+s).classList.add('active');
   const el=document.getElementById('nv-'+s);if(el)el.classList.add('active');
-  const fns={dashboard:rDash,alerts:rAlerts,deals:rDeals,tenders:rTenders,dists:rDists,salary:rSalary,meetings:rMeetings,tasks:rTasks,workplan:rWorkPlan,export:updateExportCounts,clients:rClients};
+  const fns={dashboard:rDash,alerts:rAlerts,deals:rDeals,tenders:rTenders,dists:rDists,salary:rSalary,meetings:rMeetings,tasks:rTasks,inbox:rInbox,workplan:rWorkPlan,export:updateExportCounts,clients:rClients};
   if(fns[s])fns[s]();
   setTimeout(initDragScrolls,100);
 }
@@ -4657,7 +4718,7 @@ function filtCards(q,contId){
 // מרנדרים רק את הסעיף הגלוי + תגי הניווט. שאר הסעיפים מרועננים אוטומטית ב-nav
 // (nav ממילא מרנדר מחדש את סעיף היעד), כך שאין טעם לרנדר סעיפים מוסתרים בכל שמירה —
 // זה חסך את עיקר העומס (רינדור כל 10 הסעיפים) והפך את המערכת לחלקה בהרבה.
-const _RALL_MAP={dashboard:rDash,alerts:rAlerts,deals:rDeals,tenders:rTenders,dists:rDists,salary:rSalary,meetings:rMeetings,tasks:rTasks,clients:rClients,workplan:rWorkPlan,export:updateExportCounts};
+const _RALL_MAP={dashboard:rDash,alerts:rAlerts,deals:rDeals,tenders:rTenders,dists:rDists,salary:rSalary,meetings:rMeetings,tasks:rTasks,inbox:rInbox,clients:rClients,workplan:rWorkPlan,export:updateExportCounts};
 function rAll(){
   let cur='dashboard';
   try{ if(typeof currentSec==='string'&&currentSec)cur=currentSec; }catch(e){}
@@ -4688,6 +4749,17 @@ function updateNavBadges(){
     }
     const mobTaskDot=document.getElementById('mob-task-dot');
     if(mobTaskDot){mobTaskDot.textContent=taskCnt||'';mobTaskDot.style.display=taskCnt?'block':'none';}
+    // Unread inbox emails badge
+    const inbCnt=(Array.isArray(D.inbox)?D.inbox:[]).filter(m=>m.st==='חדש').length;
+    const inbNav=document.getElementById('nv-inbox');
+    if(inbNav){
+      let ib=inbNav.querySelector('.nav-badge');
+      if(!ib){ib=document.createElement('span');ib.className='nav-badge';ib.style.cssText='background:#4cc9f0;color:#001';inbNav.querySelector('span:last-child').appendChild(ib);}
+      ib.textContent=inbCnt||'';
+      ib.style.display=inbCnt?'inline-block':'none';
+    }
+    const mobInbDot=document.getElementById('mob-inbox-dot');
+    if(mobInbDot){mobInbDot.textContent=inbCnt||'';mobInbDot.style.display=inbCnt?'block':'none';}
     // Critical alerts badge on alerts nav
     const critCnt=getAlerts().filter(a=>a.type==='crit').length;
     const alNav=document.getElementById('nv-alerts');
@@ -4716,6 +4788,7 @@ function globalSearch(q){
   D.tenders.forEach(t=>{ if(hit(t.name,t.proj,t.handler)) push('📋',t.name||'(ללא שם)','מכרז','tender',t.id); });
   D.meetings.forEach(m=>{ if(hit(m.cl,m.no)) push('🤝',m.cl||'(ללא שם)','פגישה','meeting',m.id); });
   (D.tasks||[]).forEach(t=>{ if(hit(t.t,t.cl,t.no)) push('✅',t.t||'(משימה)','משימה'+(t.cl?' · '+t.cl:''),'task',t.id); });
+  (D.inbox||[]).forEach(m=>{ if(hit(m.subj,m.from,m.body,m.cl)) push('📥',m.subj||'(מייל)','מייל'+(m.from?' · '+m.from:''),'inbox',m.id); });
   // ארכיון — כדי שאיתור מדויק יעבוד גם על רשומות מחודשים קודמים
   (D.archivedDeals||[]).forEach(d=>{ if(hit(d.co,d.srv,d.ct,d.num,d.no)) push('📦',d.co||'(ללא שם)','עסקה בארכיון','deal',d.id,true); });
   (D.archivedTenders||[]).forEach(t=>{ if(hit(t.name,t.proj,t.handler)) push('📦',t.name||'(ללא שם)','מכרז בארכיון','tender',t.id,true); });
@@ -4723,7 +4796,7 @@ function globalSearch(q){
   (D.archivedSalary||[]).forEach(s=>{ if(hit(s.cl,s.pj,s.no)) push('📦',s.cl||'(ללא שם)','שכר בארכיון','salary',s.id,true); });
   (D.archivedMeetings||[]).forEach(m=>{ if(hit(m.cl,m.no)) push('📦',m.cl||'(ללא שם)','פגישה בארכיון','meeting',m.id,true); });
   if(!_gsRes.length){ box.innerHTML='<div class="gsr-empty">לא נמצאו תוצאות</div>'; box.classList.add('show'); return; }
-  const gsClr={deal:'#4cc9f0',client:'#c8a96e',dist:'#a78bfa',salary:'#06d6a0',tender:'#f4a261',meeting:'#06d6a0',task:'#f072b6'};
+  const gsClr={deal:'#4cc9f0',client:'#c8a96e',dist:'#a78bfa',salary:'#06d6a0',tender:'#f4a261',meeting:'#06d6a0',task:'#f072b6',inbox:'#4cc9f0'};
   box.innerHTML=_gsRes.map((r,i)=>{const c=gsClr[r.type]||'var(--gold)';return`<div class="gsr" onclick="gsGo(${i})" style="border-right:2px solid ${c}22"><span class="gsr-ic" style="background:${c}15;border-radius:6px;padding:2px 4px">${r.icon}</span><span class="gsr-lb">${r.label}</span><span class="gsr-sub" style="color:${c}">${r.sub}</span></div>`;}).join('');
   box.classList.add('show');
 }
@@ -4799,6 +4872,7 @@ function gsGo(i){
   const si=document.getElementById('gsi'); if(si)si.value='';
   if(r.type==='client'){ if(typeof openClientModal==='function')openClientModal(r.id); return; }
   if(r.type==='task'){ nav('tasks'); setTimeout(()=>openM('task',r.id),320); return; }
+  if(r.type==='inbox'){ nav('inbox'); setTimeout(()=>openM('inbox',r.id),320); return; }
   const secMap={deal:'deals',dist:'dists',salary:'salary',tender:'tenders',meeting:'meetings'};
   const sec=secMap[r.type]; if(!sec)return;
   nav(sec);
@@ -6239,6 +6313,94 @@ function saveTask(){
   if(EI){dbUpdate('tasks',EI,row);}else{dbInsert('tasks',row);}
   closeM('mtask');rAll();
   showToast('✅ המשימה נשמרה'+(row.dt?' ל-'+fmtDate(row.dt):''),'ok');
+}
+
+// ===== INBOX — מיילים נכנסים =====
+let _inboxView='new';
+function setInboxView(v){
+  _inboxView=v;
+  const n=document.getElementById('iv-new'),a=document.getElementById('iv-all');
+  if(n)n.classList.toggle('active',v==='new');
+  if(a)a.classList.toggle('active',v==='all');
+  rInbox();
+}
+function rInbox(){
+  if(!Array.isArray(D.inbox))D.inbox=[];
+  const all=D.inbox, todayStr=nd();
+  const unread=all.filter(m=>m.st==='חדש').length;
+  const inProg=all.filter(m=>m.st==='בטיפול').length;
+  const todays=all.filter(m=>m.dt===todayStr).length;
+  const krow=document.getElementById('inboxkrow');
+  if(krow)krow.innerHTML=`<div class="kc ${unread?'y':'g'}"><div class="lb">חדשים</div><div class="vl">${unread}</div><div class="sb">לא נקראו</div></div><div class="kc b"><div class="lb">בטיפול</div><div class="vl">${inProg}</div></div><div class="kc"><div class="lb">התקבלו היום</div><div class="vl">${todays}</div></div><div class="kc"><div class="lb">סה"כ מיילים</div><div class="vl">${all.length}</div></div>`;
+  let rows=_inboxView==='new'?all.filter(m=>m.st!=='טופל'):all.slice();
+  rows.sort((a,b)=>{const da=(a.dt||'')+(a.time||''),db2=(b.dt||'')+(b.time||'');return da<db2?1:da>db2?-1:0;}); // חדש למעלה
+  const stBadge=s=>s==='טופל'?'<span class="badge bg">✅ טופל</span>':s==='בטיפול'?'<span class="badge bb">🔵 בטיפול</span>':'<span class="badge by">🆕 חדש</span>';
+  const tb=document.getElementById('inboxtb');
+  if(tb)tb.innerHTML=rows.map((m,i)=>{
+    const isNewM=m.st==='חדש';
+    const rowStyle=isNewM?'background:rgba(76,201,240,.06);font-weight:600;':m.st==='טופל'?'opacity:.6;':'';
+    const chk=SEL['inbox']&&SEL['inbox'].has(m.id)?'checked':'';
+    const clSafe=(m.cl||'').replace(/'/g,'&#39;');
+    const subjSafe=(m.subj||'(ללא נושא)').replace(/</g,'&lt;');
+    const nextSt={חדש:'בטיפול',בטיפול:'טופל',טופל:'חדש'};
+    const stCell=`<span class="badge-wrap" onclick="event.stopPropagation();cycleInboxStatus('${m.id}')" title="לחץ לשינוי סטטוס" style="cursor:pointer">${stBadge(m.st||'חדש')}</span>`;
+    const filesCell=(m.files&&m.files.length)?`<button class="btn btns" onclick="event.stopPropagation();rowFilesMenu('inbox','${m.id}',event)" title="${m.files.length} קבצים" style="border-color:#4cc9f0;color:#4cc9f0">📎${m.files.length>1?m.files.length:''}</button>`:'<span style="color:var(--text3)">–</span>';
+    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-inbox" ${chk} onchange="toggleSel('inbox','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${m.time?'<br><span style="color:var(--gold);font-size:9px">'+m.time+'</span>':''}</td><td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(m.from||'').replace(/"/g,'&quot;')}">${m.from||'–'}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(m.subj||'').replace(/"/g,'&quot;')}">${subjSafe}</td><td style="font-size:11px">${m.cl||'–'}</td><td>${stCell}</td><td>${filesCell}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('inbox','${m.id}')" title="פתח / קרא">👁️</button> <button class="btn btns" onclick="replyInbox('${m.id}')" title="השב במייל" style="border-color:#4cc9f0;color:#4cc9f0">📧</button> <button class="btn btns" onclick="inboxToTask('${m.id}')" title="צור משימה" style="border-color:#f072b6;color:#f072b6">📌</button> <button class="btn btns" onclick="inboxToMeeting('${m.id}')" title="קבע פגישה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns btnd" onclick="dbDelete('inbox','${m.id}')">🗑</button></td></tr>`;
+  }).join('')||emptyRow(9,'📥',_inboxView==='new'?(all.length?'אין מיילים חדשים — הכול טופל ✅':'אין מיילים עדיין — לחץ "+ מייל חדש"'):'אין מיילים עדיין — לחץ "+ מייל חדש"',"openM('inbox',null)");
+  const ft=document.getElementById('inboxft');
+  if(ft)ft.innerHTML=`<span class="fi">סה"כ: <b>${all.length}</b></span><span class="fi">חדשים: <b>${unread}</b></span><span class="fi">בטיפול: <b>${inProg}</b></span>`;
+  updateSelBar('inbox');
+}
+function cycleInboxStatus(id){
+  const m=(D.inbox||[]).find(x=>x.id==id);if(!m)return;
+  const nx={חדש:'בטיפול',בטיפול:'טופל',טופל:'חדש'};
+  m.st=nx[m.st||'חדש']||'בטיפול';m._mts=Date.now();
+  saveAll();rInbox();updateNavBadges();
+  showToast('✉️ הסטטוס עודכן ל: '+m.st,'ok');
+}
+function saveInbox(){
+  const row={
+    dt:document.getElementById('ibdt').value||nd(),
+    time:document.getElementById('ibtime').value,
+    from:document.getElementById('ibfrom').value.trim(),
+    cl:document.getElementById('ibcl').value.trim(),
+    subj:document.getElementById('ibsubj').value.trim(),
+    body:document.getElementById('ibbody').value,
+    st:document.getElementById('ibst').value,
+    files:_attPending['inbox']||[]
+  };
+  if(!row.subj&&!row.from&&!row.body){alert('יש להזין לפחות נושא, שולח או תוכן');return;}
+  if(EI){dbUpdate('inbox',EI,row);}else{dbInsert('inbox',row);}
+  closeM('minbox');rAll();updateNavBadges();
+  showToast('📥 המייל נשמר','ok');
+  // אם אין כרטיס לקוח לשם המשויך — הצע ליצור
+  if(row.cl&&!findClientByName(row.cl)){
+    setTimeout(()=>showToastWithAction(`🏢 אין כרטיס לקוח עבור "${row.cl}"`,'+ צור כרטיס',()=>{openClientModal(null);setTimeout(()=>{const n=document.getElementById('cl-name');if(n)n.value=row.cl;},150);}),800);
+  }
+}
+function _inboxFind(id){return (D.inbox||[]).find(x=>x.id==id);}
+function replyInbox(id){
+  const m=_inboxFind(id);if(!m)return;
+  const to=(m.from||'').match(/[\w.+%-]+@[\w.-]+\.[a-z]{2,}/i);
+  const subject=(m.subj||'').match(/^re:/i)?m.subj:'Re: '+(m.subj||'');
+  const quoted='\n\n----- הודעה מקורית -----\n'+(m.body||'');
+  openMail(to?to[0]:'', subject, quoted);
+}
+function inboxToTask(id){
+  const m=_inboxFind(id);if(!m)return;
+  const row={dt:nd(),time:'',t:'טיפול במייל: '+(m.subj||m.from||''),cl:m.cl||'',pr:'בינונית',st:'פתוח',no:(m.from?'מאת: '+m.from+'\n':'')+(m.body||'').slice(0,300)};
+  dbInsert('tasks',row);
+  m.st='בטיפול';m._mts=Date.now();saveAll();
+  closeM('minbox');rAll();updateNavBadges();
+  showToastWithAction('📌 נוצרה משימה מהמייל','עבור למשימות',()=>nav('tasks'));
+}
+function inboxToMeeting(id){
+  const m=_inboxFind(id);if(!m)return;
+  const row={dt:nd(),time:'',mtype:'פגישה',cl:m.cl||m.from||'',nu:'',hl:'לא',no:'מקור: מייל — '+(m.subj||''),topics:[],files:[]};
+  dbInsert('meetings',row);
+  m.st='בטיפול';m._mts=Date.now();saveAll();
+  closeM('minbox');rAll();
+  showToastWithAction('📅 נקבעה פגישה מהמייל','עבור לפגישות',()=>nav('meetings'));
 }
 
 // ===== CLIENTS =====
@@ -7968,6 +8130,24 @@ function openM(type,id){
     document.getElementById('tkno').value=t.no||'';
     const dl=document.getElementById('tkcl-list');
     if(dl){dl.innerHTML=D.clients.map(c=>`<option value="${(c.name||'').replace(/"/g,'&quot;')}">`).join('');}
+  }else if(type==='inbox'){
+    document.getElementById('ibtit').textContent=isNew?'מייל נכנס חדש':'עריכת מייל';
+    const m=isNew?{}:(D.inbox||[]).find(x=>x.id==id)||{};
+    document.getElementById('ibdt').value=m.dt||nd();
+    document.getElementById('ibtime').value=m.time||'';
+    document.getElementById('ibfrom').value=m.from||'';
+    document.getElementById('ibcl').value=m.cl||'';
+    document.getElementById('ibsubj').value=m.subj||'';
+    document.getElementById('ibbody').value=m.body||'';
+    document.getElementById('ibst').value=m.st||'חדש';
+    const dl=document.getElementById('ibcl-list');
+    if(dl){dl.innerHTML=D.clients.map(c=>`<option value="${(c.name||'').replace(/"/g,'&quot;')}">`).join('');}
+    const rb=document.getElementById('ib-reply-btn'),tb=document.getElementById('ib-task-btn'),mb=document.getElementById('ib-meet-btn');
+    if(rb)rb.style.display=isNew?'none':'';
+    if(tb)tb.style.display=isNew?'none':'';
+    if(mb)mb.style.display=isNew?'none':'';
+    // מסמן כ"נקרא": מייל חדש שנפתח לצפייה עובר ל"בטיפול"
+    if(!isNew&&m.st==='חדש'){setTimeout(()=>{const mm=(D.inbox||[]).find(x=>x.id==id);if(mm&&mm.st==='חדש'){mm.st='בטיפול';mm._mts=Date.now();saveAll();updateNavBadges();}},1200);}
   }
   // טעינת קבצים מצורפים של הרשומה לעריכה
   if(ATT_KINDS[type]){
@@ -8048,7 +8228,7 @@ function downloadDealQuote(id){
 // ===== קבצים מצורפים לכל נושא (Word / PDF / Excel / תמונות ...) =====
 // כל רשומה יכולה לשאת מערך files: [{name,type,size,data}] — נשמר יחד עם הנתונים
 let _attPending={}; // קבצים בעריכה לפי סוג מודל: deal/meeting/tender/dist/client
-const ATT_KINDS={deal:'deals',meeting:'meetings',tender:'tenders',dist:'dists',salary:'salary',client:'clients'};
+const ATT_KINDS={deal:'deals',meeting:'meetings',tender:'tenders',dist:'dists',salary:'salary',client:'clients',inbox:'inbox'};
 function _fileIcon(name){
   const ext=(name||'').split('.').pop().toLowerCase();
   return ext==='pdf'?'📕':['doc','docx'].includes(ext)?'📝':['xls','xlsx','csv'].includes(ext)?'📊':['png','jpg','jpeg','gif','webp'].includes(ext)?'🖼️':['ppt','pptx'].includes(ext)?'📽️':'📄';
@@ -8559,7 +8739,7 @@ function deleteSelected(key){
   },'כן, מחק '+n);
 }
 function deleteAll(section){
-  const map={deals:'deals',tenders:'tenders',dists:'dists',salary:'salary',meetings:'meetings',tasks:'tasks'};
+  const map={deals:'deals',tenders:'tenders',dists:'dists',salary:'salary',meetings:'meetings',tasks:'tasks',inbox:'inbox'};
   const tbl=map[section];if(!tbl)return;
   const n=D[tbl].length;
   if(!n){showToast('אין פריטים למחיקה','warn');return;}
@@ -8730,6 +8910,7 @@ function exportExcel(section){
     case'salary':hdrs=['מס פרויקט','שם לקוח','כמות','יעד','סגירה','יתרה','סטטוס','סוג','הערות'];rows=D.salary.map(s=>[s.pj||'',s.cl||'',s.qt||1,s.tr||0,s.cl2||0,s.pv||0,s.st||'',s.ty==='service'?'שירות':'ציוד',s.no||'']);break;
     case'meetings':hdrs=['תאריך','שם לקוח','מס פגישה','התקיימה','הערות'];rows=D.meetings.map(m=>[m.dt?fmtDate(m.dt):'',m.cl||'',m.nu||'',m.hl||'',m.no||'']);break;
     case'tasks':hdrs=['תאריך','שעה','משימה','לקוח','עדיפות','סטטוס','הערות'];rows=(D.tasks||[]).map(t=>[t.dt?fmtDate(t.dt):'',t.time||'',t.t||'',t.cl||'',t.pr||'',t.st||'',t.no||'']);break;
+    case'inbox':hdrs=['תאריך','שעה','שולח','נושא','לקוח','סטטוס','תוכן'];rows=(D.inbox||[]).map(m=>[m.dt?fmtDate(m.dt):'',m.time||'',m.from||'',m.subj||'',m.cl||'',m.st||'',(m.body||'').replace(/\s+/g,' ').slice(0,500)]);break;
     case'clients':hdrs=['שם חברה','ח.פ','איש קשר','טלפון','אימייל','כתובת','סטטוס','קווים','FORTI','CISCO','M365','STARLINK','הערות'];rows=D.clients.map(c=>[c.name||'',c.cp||'',c.contact||'',c.phone||'',c.email||'',c.address||'',c.status||'',(c.lines||[]).length,(c.forti||[]).length,(c.cisco||[]).length,(c.ms365||[]).length,(c.starlink||[]).length,c.genNotes||'']);break;
     case'workplan':{let allPots=[];D.clients.forEach(c=>{(c.potential||[]).forEach(p=>{allPots.push({...p,clientName:c.name});});});hdrs=['לקוח','סוג מוצר','שם מוצר','שווי משוער','עדיפות','יעד סגירה','סטטוס','הערות'];rows=allPots.map(p=>[p.clientName||'',p.productType||'',p.product||'',p.estimatedValue||0,p.priority||'',p.targetDate?fmtDate(p.targetDate):'',p.status||'',p.notes||'']);break;}
     default:return;
@@ -9991,6 +10172,7 @@ function seedData(){
   <div class="mn-item" data-sec="salary" onclick="nav('salary')"><span class="mn-ic">💰</span><span class="mn-lb">שכר</span></div>
   <div class="mn-item" data-sec="meetings" onclick="nav('meetings')"><span class="mn-ic">🤝</span><span class="mn-lb">פגישות</span></div>
   <div class="mn-item" data-sec="tasks" onclick="nav('tasks')" style="position:relative"><span class="mn-ic">✅</span><span class="mn-lb">משימות</span><span id="mob-task-dot" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;border-radius:8px;background:#f072b6;color:#fff;font-size:9px;font-weight:800;line-height:16px;text-align:center;padding:0 3px;box-shadow:0 0 8px rgba(240,114,182,.7)"></span></div>
+  <div class="mn-item" data-sec="inbox" onclick="nav('inbox')" style="position:relative"><span class="mn-ic">📥</span><span class="mn-lb">מיילים</span><span id="mob-inbox-dot" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;border-radius:8px;background:#4cc9f0;color:#001;font-size:9px;font-weight:800;line-height:16px;text-align:center;padding:0 3px;box-shadow:0 0 8px rgba(76,201,240,.7)"></span></div>
   <div class="mn-item" data-sec="clients" onclick="nav('clients')"><span class="mn-ic">🏢</span><span class="mn-lb">לקוחות</span></div>
   <div class="mn-item" data-sec="workplan" onclick="nav('workplan')"><span class="mn-ic">🎯</span><span class="mn-lb">תכנון</span></div>
   <div class="mn-item" data-sec="export" onclick="nav('export')"><span class="mn-ic">📥</span><span class="mn-lb">ייצוא</span></div>
@@ -10019,7 +10201,7 @@ function seedData(){
 
 <script>
 // ── SECTION ORDER ──────────────────────────────────────────────
-const SEC_ORDER = ['dashboard','alerts','deals','tenders','dists','salary','meetings','tasks','clients','workplan','export'];
+const SEC_ORDER = ['dashboard','alerts','deals','tenders','dists','salary','meetings','tasks','inbox','clients','workplan','export'];
 let currentSec = 'dashboard';
 let navBusy = false;
 
@@ -10069,7 +10251,7 @@ function nav(s){
     // Render new section content
     const renders = {
       dashboard:rDash, alerts:rAlerts, deals:rDeals, tenders:rTenders,
-      dists:rDists, salary:rSalary, meetings:rMeetings, tasks:rTasks,
+      dists:rDists, salary:rSalary, meetings:rMeetings, tasks:rTasks, inbox:rInbox,
       workplan:rWorkPlan, export:updateExportCounts, clients:rClients
     };
     if(renders[s]) renders[s]();
