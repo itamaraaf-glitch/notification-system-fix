@@ -1960,6 +1960,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn" onclick="fbSyncNow()" style="background:rgba(6,214,160,.15);color:#06d6a0;border-color:rgba(6,214,160,.4);font-size:11px;padding:4px 10px">🔄 סנכרן עכשיו</button>
+        <button class="btn" onclick="syncFilesNow()" title="העלאה/הורדה של הקבצים המצורפים בין המכשירים" style="background:rgba(76,201,240,.12);color:#4cc9f0;border-color:rgba(76,201,240,.4);font-size:11px;padding:4px 10px">🗂️ סנכרן קבצים</button>
         <button class="btn" onclick="showSyncShare()" style="background:rgba(167,139,250,.12);color:#a78bfa;border-color:rgba(167,139,250,.35);font-size:11px;padding:4px 10px">📱 שתף למכשיר נוסף</button>
         <button class="btn" onclick="fbBaselineNow()" title="הנתונים במכשיר הזה יחליפו את הנתונים בכל שאר המכשירים" style="background:rgba(251,191,36,.12);color:#fbbf24;border-color:rgba(251,191,36,.4);font-size:11px;padding:4px 10px">🟰 יישור קו מהמכשיר הזה</button>
       </div>
@@ -3121,29 +3122,39 @@ function _allLocalFiles(){
   });});
   return out;
 }
-// העלאת קבצים חדשים לענן (לא חוסם; מדלג על מה שכבר הועלה)
+let _fileSyncLast={up:0,down:0,err:''}; // דיאגנוסטיקה אחרונה לסנכרון קבצים
+// העלאת קבצים חדשים לענן (לא חוסם; מדלג על מה שכבר הועלה). מחזיר {uploaded,total,err}
 let _cloudPushingFiles=false;
 async function _cloudFilesPush(){
-  const cfg=_cloudCfg();if(!cfg)return;
-  if(_cloudPushingFiles)return;_cloudPushingFiles=true;
+  const cfg=_cloudCfg();if(!cfg)return {uploaded:0,total:0,err:'אין הגדרת סנכרון ענן'};
+  if(_cloudPushingFiles)return {uploaded:0,total:0,err:''};
+  _cloudPushingFiles=true;
+  let uploaded=0,err='';
   try{
     const base=await _cloudFileBase(cfg);
     const up=_cloudUploaded();
-    for(const {fid,data} of _allLocalFiles()){
+    const all=_allLocalFiles();
+    for(const {fid,data} of all){
       if(up.has(fid))continue;
       try{
         const body=JSON.stringify({enc:1,data:await _cloudEncrypt(data),_ts:Date.now()});
         const r=await fetch(base+'/'+fid+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body});
-        if(r.ok){up.add(fid);_cloudUploadedSave(up);}
-      }catch(e){}
+        if(r.ok){up.add(fid);_cloudUploadedSave(up);uploaded++;}
+        else{err='שגיאת ענן '+r.status+(r.status===401||r.status===403?' — חוקי הגישה ב-Firebase חוסמים כתיבה':'');}
+      }catch(e){err='שגיאת רשת: '+(e.message||e);}
     }
-  }finally{_cloudPushingFiles=false;}
+  }catch(e){err=String(e.message||e);}
+  finally{_cloudPushingFiles=false;}
+  _fileSyncLast.up=uploaded;if(err)_fileSyncLast.err=err;
+  return {uploaded,err};
 }
-// הורדת קבצים חסרים מהענן (fid שמופיע ברשומה אך אין לו בייטים מקומית)
+// הורדת קבצים חסרים מהענן (fid שמופיע ברשומה אך אין לו בייטים מקומית). מחזיר {downloaded,missing,err}
 let _cloudFetchingFiles=false;
 async function _cloudFilesFetchMissing(){
-  const cfg=_cloudCfg();if(!cfg)return false;
-  if(_cloudFetchingFiles)return false;_cloudFetchingFiles=true;
+  const cfg=_cloudCfg();if(!cfg)return {downloaded:0,missing:0,err:'אין הגדרת סנכרון ענן'};
+  if(_cloudFetchingFiles)return {downloaded:0,missing:0,err:''};
+  _cloudFetchingFiles=true;
+  let downloaded=0,err='';
   try{
     const localBlobs=await _blobGetAll();
     const missing=new Set(),cols=(typeof _ATT_COLS!=='undefined')?_ATT_COLS:[];
@@ -3152,24 +3163,48 @@ async function _cloudFilesFetchMissing(){
       if(rec.quote&&rec.quote.fid&&!rec.quote.data&&localBlobs[rec.quote.fid]==null)missing.add(rec.quote.fid);
       if(col==='clients'&&rec.photoFid&&!rec.photo&&localBlobs[rec.photoFid]==null)missing.add(rec.photoFid);
     });});
-    if(!missing.size)return false;
+    const missCount=missing.size;
+    if(!missCount){_cloudFetchingFiles=false;return {downloaded:0,missing:0,err:''};}
     const base=await _cloudFileBase(cfg);
     const up=_cloudUploaded();
-    let got=false;
     for(const fid of missing){
       try{
         const r=await fetch(base+'/'+fid+'.json',{cache:'no-store'});
-        if(!r.ok)continue;
+        if(!r.ok){err='שגיאת ענן '+r.status;continue;}
         const j=await r.json();
-        if(j&&j.enc===1){const data=await _cloudDecrypt(j.data);if(typeof data==='string'){await _blobPut(fid,data);_blobSaved.add(fid);up.add(fid);got=true;}}
-      }catch(e){}
+        if(j&&j.enc===1){const data=await _cloudDecrypt(j.data);if(typeof data==='string'){await _blobPut(fid,data);_blobSaved.add(fid);up.add(fid);downloaded++;}}
+        // j===null → הקובץ עדיין לא הועלה מהמכשיר השני
+      }catch(e){err='שגיאת רשת: '+(e.message||e);}
     }
-    if(got){_cloudUploadedSave(up);await _hydrateBlobs();} // כבר בענן — לא מעלים שוב; מכניס ל-D ומרענן
-    return got;
-  }finally{_cloudFetchingFiles=false;}
+    if(downloaded){_cloudUploadedSave(up);await _hydrateBlobs();}
+    _fileSyncLast.down=downloaded;if(err)_fileSyncLast.err=err;
+    return {downloaded,missing:missCount,err};
+  }catch(e){return {downloaded,missing:0,err:String(e.message||e)};}
+  finally{_cloudFetchingFiles=false;}
 }
 // איחוד: משלים בייטים מקומית ומהענן (נקרא אחרי מיזוג ובטעינה)
 async function _reconcileFiles(){try{await _hydrateBlobs();await _cloudFilesFetchMissing();}catch(e){}}
+// סנכרון קבצים ידני עם דו"ח למשתמש (כפתור בחלון הסנכרון)
+async function syncFilesNow(){
+  const cfg=_cloudCfg();
+  if(!cfg){showToast('⚠️ אין סנכרון ענן מוגדר — חבר קודם Firebase','warn');return;}
+  showToast('🗂️ מסנכרן קבצים...','info');
+  const pushRes=await _cloudFilesPush();
+  const fetchRes=await _cloudFilesFetchMissing();
+  const parts=[];
+  if(pushRes.uploaded)parts.push('⬆️ הועלו '+pushRes.uploaded);
+  if(fetchRes.downloaded)parts.push('⬇️ ירדו '+fetchRes.downloaded);
+  const errMsg=pushRes.err||fetchRes.err;
+  if(errMsg){showToast('⚠️ סנכרון קבצים: '+errMsg,'warn');return;}
+  if(!parts.length){
+    const stillMissing=fetchRes.missing||0;
+    showToast(stillMissing?('⏳ '+stillMissing+' קבצים ממתינים — ודא שהמכשיר השני מחובר ומסונכרן'):'✅ כל הקבצים מסונכרנים','ok');
+    return;
+  }
+  showToast('✅ סנכרון קבצים: '+parts.join(' · '),'ok');
+}
+// רשת ביטחון: כל דקה מנסה להשלים קבצים חסרים ולהעלות חדשים (זול כשאין מה לעשות)
+setInterval(()=>{ try{ if(_cloudCfg()&&document.body.classList.contains('logged-in')){ _cloudFilesFetchMissing(); _cloudFilesPush(); } }catch(e){} }, 60000);
 
 // Smart merge: never overwrites local items — merges by ID, keeps newer _mts per item
 function fbMergeRemote(remote){
