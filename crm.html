@@ -4654,15 +4654,16 @@ function filtCards(q,contId){
 }
 
 // ===== RENDER ALL =====
+// מרנדרים רק את הסעיף הגלוי + תגי הניווט. שאר הסעיפים מרועננים אוטומטית ב-nav
+// (nav ממילא מרנדר מחדש את סעיף היעד), כך שאין טעם לרנדר סעיפים מוסתרים בכל שמירה —
+// זה חסך את עיקר העומס (רינדור כל 10 הסעיפים) והפך את המערכת לחלקה בהרבה.
+const _RALL_MAP={dashboard:rDash,alerts:rAlerts,deals:rDeals,tenders:rTenders,dists:rDists,salary:rSalary,meetings:rMeetings,tasks:rTasks,clients:rClients,workplan:rWorkPlan,export:updateExportCounts};
 function rAll(){
-  // Render the visible section immediately, defer the rest to next idle tick
-  rDash(); rAlerts();
-  const ric = window.requestIdleCallback || (fn => setTimeout(fn, 80));
-  ric(() => { rDeals(); rTenders(); });
-  ric(() => { rDists(); rSalary(); });
-  ric(() => { rMeetings(); rTasks(); rClients(); rWorkPlan(); updateExportCounts(); });
-  ric(() => { updateNavBadges(); });
-  setTimeout(initDragScrolls, 150);
+  let cur='dashboard';
+  try{ if(typeof currentSec==='string'&&currentSec)cur=currentSec; }catch(e){}
+  try{ (_RALL_MAP[cur]||rDash)(); }catch(e){}
+  try{ updateNavBadges(); }catch(e){} // תגי היום (פגישות/משימות/התראות) — זול, תמיד מעודכן
+  setTimeout(initDragScrolls, 120);
 }
 
 function updateNavBadges(){
