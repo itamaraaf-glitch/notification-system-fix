@@ -2992,6 +2992,8 @@ async function _initFileStorage(){
     _ensureFids();                  // מקצה fid לקבצים ישנים שעדיין ב-LS
     if(await _persistBlobs())_bgSave(); // שומר ל-IDB ומנקה את localStorage
     if(typeof _buildSyncSnap==='function')_buildSyncSnap(); // איפוס בסיס החתימות אחרי ההידרציה
+    if(typeof _cloudFilesFetchMissing==='function')_cloudFilesFetchMissing(); // הורדת קבצים שקיימים בענן ולא אצלנו (מחשב→מובייל)
+    if(typeof _cloudFilesPush==='function')setTimeout(_cloudFilesPush,1500);   // העלאת קבצים מקומיים לענן
   }catch(e){}
 }
 
@@ -3086,29 +3088,88 @@ async function cloudExtract(remote){
   if(remote.data&&typeof remote.data==='object')return JSON.parse(JSON.stringify(remote.data));
   return null;
 }
-// גודל מרבי (base64) של קובץ שמסתנכרן דרך הענן. קבצים גדולים מזה נשארים מקומיים
-// (ב-IndexedDB) — כדי שקובץ ענק לא ינפח את כתיבת ה-Firebase ולא ישבור את הסנכרון.
-const CLOUD_FILE_MAX = 7 * 1024 * 1024; // ~5MB קובץ בפועל
-// בונה עותק D לענן: בלי _bio, ובלי בייטים של קבצים גדולים מ-CLOUD_FILE_MAX
+// המטען הראשי לענן: בלי _bio ובלי בייטי קבצים (מטא-דאטה + fid בלבד). הקבצים עצמם
+// מסתנכרנים בנפרד, כל אחד כצומת מוצפן משלו — כך המטען הראשי קטן ומהיר, וקבצים
+// בכל גודל מסתנכרנים מחשב↔מובייל בלי לנפח כל סנכרון ובלי לשבור את כתיבת Firebase.
 function _cloudClean(){
-  const {_bio,...clean}=D;
-  const big=s=>typeof s==='string'&&s.length>CLOUD_FILE_MAX;
-  (typeof _ATT_COLS!=='undefined'?_ATT_COLS:[]).forEach(col=>{
-    if(!Array.isArray(clean[col]))return;
-    clean[col]=clean[col].map(rec=>{
-      let r=rec,cloned=false;const cl=()=>{if(!cloned){r=Object.assign({},rec);cloned=true;}};
-      if(Array.isArray(rec.files)&&rec.files.some(f=>f&&big(f.data))){cl();r.files=rec.files.map(f=>(f&&big(f.data))?{name:f.name,type:f.type,size:f.size,fid:f.fid}:f);}
-      if(rec.quote&&big(rec.quote.data)){cl();r.quote=Object.assign({},rec.quote,{data:undefined});}
-      if(rec.photo&&big(rec.photo)){cl();r.photo=undefined;}
-      return r;
-    });
-  });
+  const L=(typeof _lightD==='function')?_lightD():D; // כבר מסיר בייטי קבצים לפי fid
+  const {_bio,...clean}=L;
   return clean;
 }
 async function cloudPayload(ts){
   const clean=_cloudClean();
   return {_ts:ts,_baseline:D._baseline||0,enc:1,data:await _cloudEncrypt(clean)};
 }
+
+// ═══ סנכרון קבצים בין מכשירים — כל קובץ כצומת מוצפן נפרד בענן (לפי fid) ═══
+// נתיב: {DB_URL}/cem_hot_cf_<hash16>/<fid>. המטען הראשי נשאר קטן; הקבצים
+// מסתנכרנים בנפרד, כך שקובץ בכל גודל מגיע מהמחשב למובייל.
+function _cloudCfg(){try{const c=JSON.parse(localStorage.getItem(FB_CFG_KEY)||'{}');return c&&c.databaseURL?c:null;}catch(e){return null;}}
+async function _cloudFileBase(cfg){
+  const h=await sha256('cem:'+(cfg.syncCode||'hot-crm'));
+  return cfg.databaseURL.replace(/\/+$/,'')+'/cem_hot_cf_'+h.substring(0,16);
+}
+function _cloudUploaded(){try{return new Set(JSON.parse(localStorage.getItem('cem_cloud_files')||'[]'));}catch(e){return new Set();}}
+function _cloudUploadedSave(set){try{localStorage.setItem('cem_cloud_files',JSON.stringify([...set]));}catch(e){}}
+// כל הקבצים שיש להם בייטים בזיכרון: [{fid,data}]
+function _allLocalFiles(){
+  const out=[],cols=(typeof _ATT_COLS!=='undefined')?_ATT_COLS:[];
+  cols.forEach(col=>{(Array.isArray(D[col])?D[col]:[]).forEach(rec=>{
+    if(Array.isArray(rec.files))rec.files.forEach(f=>{if(f&&f.fid&&f.data)out.push({fid:f.fid,data:f.data});});
+    if(rec.quote&&rec.quote.fid&&rec.quote.data)out.push({fid:rec.quote.fid,data:rec.quote.data});
+    if(col==='clients'&&rec.photoFid&&rec.photo)out.push({fid:rec.photoFid,data:rec.photo});
+  });});
+  return out;
+}
+// העלאת קבצים חדשים לענן (לא חוסם; מדלג על מה שכבר הועלה)
+let _cloudPushingFiles=false;
+async function _cloudFilesPush(){
+  const cfg=_cloudCfg();if(!cfg)return;
+  if(_cloudPushingFiles)return;_cloudPushingFiles=true;
+  try{
+    const base=await _cloudFileBase(cfg);
+    const up=_cloudUploaded();
+    for(const {fid,data} of _allLocalFiles()){
+      if(up.has(fid))continue;
+      try{
+        const body=JSON.stringify({enc:1,data:await _cloudEncrypt(data),_ts:Date.now()});
+        const r=await fetch(base+'/'+fid+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body});
+        if(r.ok){up.add(fid);_cloudUploadedSave(up);}
+      }catch(e){}
+    }
+  }finally{_cloudPushingFiles=false;}
+}
+// הורדת קבצים חסרים מהענן (fid שמופיע ברשומה אך אין לו בייטים מקומית)
+let _cloudFetchingFiles=false;
+async function _cloudFilesFetchMissing(){
+  const cfg=_cloudCfg();if(!cfg)return false;
+  if(_cloudFetchingFiles)return false;_cloudFetchingFiles=true;
+  try{
+    const localBlobs=await _blobGetAll();
+    const missing=new Set(),cols=(typeof _ATT_COLS!=='undefined')?_ATT_COLS:[];
+    cols.forEach(col=>{(Array.isArray(D[col])?D[col]:[]).forEach(rec=>{
+      if(Array.isArray(rec.files))rec.files.forEach(f=>{if(f&&f.fid&&!f.data&&localBlobs[f.fid]==null)missing.add(f.fid);});
+      if(rec.quote&&rec.quote.fid&&!rec.quote.data&&localBlobs[rec.quote.fid]==null)missing.add(rec.quote.fid);
+      if(col==='clients'&&rec.photoFid&&!rec.photo&&localBlobs[rec.photoFid]==null)missing.add(rec.photoFid);
+    });});
+    if(!missing.size)return false;
+    const base=await _cloudFileBase(cfg);
+    const up=_cloudUploaded();
+    let got=false;
+    for(const fid of missing){
+      try{
+        const r=await fetch(base+'/'+fid+'.json',{cache:'no-store'});
+        if(!r.ok)continue;
+        const j=await r.json();
+        if(j&&j.enc===1){const data=await _cloudDecrypt(j.data);if(typeof data==='string'){await _blobPut(fid,data);_blobSaved.add(fid);up.add(fid);got=true;}}
+      }catch(e){}
+    }
+    if(got){_cloudUploadedSave(up);await _hydrateBlobs();} // כבר בענן — לא מעלים שוב; מכניס ל-D ומרענן
+    return got;
+  }finally{_cloudFetchingFiles=false;}
+}
+// איחוד: משלים בייטים מקומית ומהענן (נקרא אחרי מיזוג ובטעינה)
+async function _reconcileFiles(){try{await _hydrateBlobs();await _cloudFilesFetchMissing();}catch(e){}}
 
 // Smart merge: never overwrites local items — merges by ID, keeps newer _mts per item
 function fbMergeRemote(remote){
@@ -3122,7 +3183,7 @@ function fbMergeRemote(remote){
       D=Object.assign(emptyData(),remote);
       D.goals=Object.assign({},_GOAL_DEFAULTS,D.goals||{});
       _buildSyncSnap();
-      if(typeof _hydrateBlobs==='function')setTimeout(_hydrateBlobs,0); // החזרת בייטי קבצים מקומיים שהענן לא נשא
+      if(typeof _hydrateBlobs==='function')setTimeout(_reconcileFiles,0); // החזרת בייטי קבצים (מקומית + הורדה מהענן)
       showToast('🟰 בוצע יישור קו — הנתונים הוחלפו בעותק מהמכשיר הראשי','ok');
       return true;
     }
@@ -3172,7 +3233,7 @@ function fbMergeRemote(remote){
   // רענון חתימות אחרי מיזוג — שינויים שהגיעו מהענן לא ייחתמו מחדש ויוחזרו כהד
   _buildSyncSnap();
   // אם המיזוג החליף רשומה עם קובץ גדול (שלא נישא בענן) — מחזירים את הבייטים מהחנות המקומית
-  if(changed&&typeof _hydrateBlobs==='function')setTimeout(_hydrateBlobs,0);
+  if(changed&&typeof _reconcileFiles==='function')setTimeout(_reconcileFiles,0);
   return changed;
 }
 
@@ -3333,6 +3394,7 @@ function fbPush(){
         localStorage.setItem('cem_sync_ts',String(ts));
         _lastSyncTs=Date.now();
         fbStatus('connected');
+        if(typeof _cloudFilesPush==='function')_cloudFilesPush(); // העלאת הקבצים שמלווים את הדחיפה
       })
       .catch(e=>{console.error('fbPush:',e);fbStatus('error');});
   },1000);
@@ -3530,6 +3592,7 @@ async function _ssPushNow(){
     _lastSyncTs=Date.now();
     _ssDirty=false;
     fbStatus('connected');
+    if(typeof _cloudFilesPush==='function')_cloudFilesPush(); // העלאת הקבצים שמלווים את הדחיפה
   }catch(e){console.error('ssPush:',e);_ssDirty=true;fbStatus('error');}
 }
 
