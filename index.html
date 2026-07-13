@@ -750,7 +750,7 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
   transform:translateX(-110%);
 }
 #cin-wipe.wipe-go{
-  animation:cinWipe 300ms cubic-bezier(.77,0,.175,1) forwards;
+  animation:cinWipe 150ms cubic-bezier(.77,0,.175,1) forwards;
 }
 /* Gold light edge on the wipe panel */
 #cin-wipe::before{
@@ -2886,7 +2886,10 @@ function doLogout(){
 const SYNC_COLS=['deals','tenders','dists','salary','meetings','clients','tasks','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
 const SYNC_META=['lastCycleMonth','lastMeetCycle','goals','tenderEmails','_totp'];
 let _syncSnap=null;
-function _syncSig(x){return JSON.stringify(x,(k,v)=>k==='_mts'?undefined:v);}
+// חתימת שינוי לפריט — משמיטים את הבייטים הכבדים (data/photo) כדי שחישוב החתימה
+// יהיה מהיר (בלי לעבד base64 של קבצים). מזהי הקבצים (fid/photoFid) נשארים, כך
+// שהוספת/החלפת קובץ עדיין מזוהה כשינוי ומסתנכרנת.
+function _syncSig(x){return JSON.stringify(x,(k,v)=>(k==='_mts'||k==='data'||k==='photo')?undefined:v);}
 function _metaSig(){return JSON.stringify(SYNC_META.map(k=>D[k]===undefined?null:D[k]));}
 function _buildSyncSnap(){
   _syncSnap={'::meta':_metaSig()};
@@ -3061,8 +3064,9 @@ function saveAll(){
     if(!verify||verify!==snap)throw new Error('אימות כתיבה נכשל');
     _quotaAlerted=false;
     showSaved();
-    // גיבוי IDB מלא (כולל הקבצים) — מיידי, כדי שסגירת הדפדפן מיד לא תאבד נתונים
-    if(typeof idbBackup==='function') idbBackup(JSON.stringify(D));
+    // גיבוי IDB — גרסה קלה (בלי בייטי קבצים); הבייטים שמורים בחנות הקבצים הייעודית.
+    // שימוש חוזר ב-snap הקל מונע JSON.stringify כבד של כל הקבצים בכל שמירה (שיפור מהירות).
+    if(typeof idbBackup==='function') idbBackup(snap);
     _schedulePersist(); // שמירת בייטי הקבצים ל-IDB וניקויָם מ-localStorage
     fbPush();
     bcNotify();
@@ -4390,6 +4394,7 @@ function loadAll(){
                   D=Object.assign(emptyData(),latestD);
                   localStorage.setItem(LS_KEY+'_init','1');
                   saveAll();rAll();
+                  if(typeof _reconcileFiles==='function')_reconcileFiles(); // החזרת בייטי הקבצים (הגיבוי קל)
                   showToast('✅ נתונים שוחזרו בהצלחה מהגיבוי האוטומטי','ok');
                 });
               }else{seedData();}
@@ -4448,8 +4453,8 @@ function _bgSave(){
     if(typeof _ensureFids==='function')_ensureFids();
     const snap=JSON.stringify(typeof _lightD==='function'?_lightD():D);
     localStorage.setItem(LS_KEY,snap);
-    // Also push FULL data (with files) to IDB so browser-close doesn't lose the latest state
-    if(typeof idbBackup==='function') idbBackup(JSON.stringify(D));
+    // גיבוי IDB קל (הבייטים בחנות הקבצים) — שימוש חוזר ב-snap מונע stringify כבד
+    if(typeof idbBackup==='function') idbBackup(snap);
     if(typeof _schedulePersist==='function')_schedulePersist();
   }catch(e){
     const quota=e&&(e.name==='QuotaExceededError'||e.code===22||e.code===1014||/quota|exceed/i.test(e.message||''));
@@ -9473,7 +9478,7 @@ async function idbDailyBackup(){
     if(totalRec===0)return; // never save empty daily snapshot
     const day=nd(); // YYYY-MM-DD
     const db=await idbOpen();
-    const snap={day, ts:Date.now(), date:new Date().toISOString(), data:JSON.stringify(D)};
+    const snap={day, ts:Date.now(), date:new Date().toISOString(), data:JSON.stringify(typeof _lightD==='function'?_lightD():D)};
     await new Promise((res,rej)=>{const tx=db.transaction(IDB_DAILY_STORE,'readwrite');tx.objectStore(IDB_DAILY_STORE).put(snap);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});
     // Prune to last IDB_DAILY_KEEP days
     const db2=await idbOpen();
@@ -9718,6 +9723,7 @@ async function restoreFromDailyIdb(day){
         D._deletedIds=D._deletedIds||p._deletedIds||{};
       }
       saveAll();rAll();
+      if(typeof _reconcileFiles==='function')_reconcileFiles(); // החזרת בייטי הקבצים (הגיבוי קל)
       const bkModal=document.getElementById('mbackups');
       if(bkModal)bkModal.classList.remove('open');
       const eb=document.getElementById('emergency-recovery-bar');
@@ -9763,6 +9769,7 @@ async function restoreFromIdb(ts){
         D._deletedIds=D._deletedIds||p._deletedIds||{};
       }
       saveAll();rAll();
+      if(typeof _reconcileFiles==='function')_reconcileFiles(); // החזרת בייטי הקבצים (הגיבוי קל)
       const bkModal=document.getElementById('mbackups');
       if(bkModal)bkModal.classList.remove('open');
       const eb=document.getElementById('emergency-recovery-bar');
@@ -10070,7 +10077,7 @@ function nav(s){
     // Two rAFs: flush the "none" transition, then animate in
     requestAnimationFrame(()=>{
       requestAnimationFrame(()=>{
-        inSec.style.transition = 'opacity 200ms cubic-bezier(.16,1,.3,1), transform 200ms cubic-bezier(.16,1,.3,1)';
+        inSec.style.transition = 'opacity 110ms cubic-bezier(.16,1,.3,1), transform 110ms cubic-bezier(.16,1,.3,1)';
         inSec.style.opacity    = '1';
         inSec.style.transform  = 'translateX(0)';
 
@@ -10085,11 +10092,11 @@ function nav(s){
         };
         inSec.addEventListener('transitionend', onDone, {once:true});
         // Safety fallback
-        setTimeout(()=>{ if(navBusy) onDone(); }, 240);
+        setTimeout(()=>{ if(navBusy) onDone(); }, 150);
       });
     });
 
-  }, 110);
+  }, 55);
 }
 
 // ── SWIPE NAVIGATION — vanilla touch + mouse ───────────────────────
