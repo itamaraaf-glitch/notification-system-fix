@@ -6191,9 +6191,9 @@ function rTasks(){
   const openTotal=all.filter(t=>t.st!=='הושלם').length;
   const krow=document.getElementById('tskkrow');
   if(krow)krow.innerHTML=`<div class="kc ${openToday?'y':'g'}"><div class="lb">משימות היום</div><div class="vl">${todays.length}</div><div class="sb">${openToday} פתוחות</div></div><div class="kc g"><div class="lb">הושלמו היום</div><div class="vl">${doneToday}</div></div><div class="kc ${overdue?'r':'g'}"><div class="lb">באיחור</div><div class="vl">${overdue}</div><div class="sb">${overdue?'לפני היום':'✅ נקי'}</div></div><div class="kc"><div class="lb">סה"כ פתוחות</div><div class="vl">${openTotal}</div></div>`;
-  // תצוגת "היום": משימות היום + משימות פתוחות באיחור. תצוגת "הכל": הכול.
+  // תצוגת "היום": משימות היום + משימות ללא תאריך + משימות פתוחות באיחור. "הכל": הכול.
   let rows=_taskView==='today'
-    ? all.filter(t=>t.dt===todayStr||(t.dt&&t.dt<todayStr&&t.st!=='הושלם'))
+    ? all.filter(t=>t.dt===todayStr||!t.dt||(t.dt&&t.dt<todayStr&&t.st!=='הושלם'))
     : all.slice();
   rows.sort((a,b)=>{
     const oa=a.st==='הושלם'?1:0, ob=b.st==='הושלם'?1:0; if(oa!==ob)return oa-ob;
@@ -6211,7 +6211,9 @@ function rTasks(){
     const timeDisp=t.time?`<span style="font-size:10px;color:var(--gold)">${t.time}</span>`:'<span style="color:var(--text3)">–</span>';
     const title=(t.t||'').replace(/</g,'&lt;');
     return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-tasks" ${chk} onchange="toggleSel('tasks','${t.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(t.dt)}${todayBadge}</td><td>${timeDisp}</td><td style="font-weight:600;${done?'text-decoration:line-through':''}">${title}</td><td style="font-size:11px">${t.cl||'–'}</td><td>${prBadge(t.pr)}</td><td>${doneBtn}</td><td><span style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:90px" title="${(t.no||'').replace(/"/g,'&quot;')}">${t.no||'–'}</span></td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('task','${t.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tasks','${t.id}')">🗑</button></td></tr>`;
-  }).join('')||emptyRow(10,'✅',_taskView==='today'?'אין משימות להיום 🎉':'אין משימות עדיין',"openM('task',null)");
+  }).join('')||((_taskView==='today'&&all.length>0)
+    ? `<tr><td colspan="10" style="text-align:center;padding:22px 12px;color:var(--text2)"><div style="font-size:13px;font-weight:700;margin-bottom:6px">אין משימות מתוזמנות להיום ✅</div><div style="font-size:11px;color:var(--text3);margin-bottom:12px">המשימות שלך לא נמחקו — יש ${all.length} משימות (${openTotal} פתוחות) בתאריכים אחרים</div><button class="btn btnp" onclick="setTaskView('all')" style="font-size:12px">📋 הצג את כל המשימות</button></td></tr>`
+    : emptyRow(10,'✅','אין משימות עדיין — לחץ "+ משימה חדשה"',"openM('task',null)"));
   const ft=document.getElementById('tskft');
   if(ft)ft.innerHTML=`<span class="fi">סה"כ: <b>${all.length}</b></span><span class="fi">פתוחות: <b>${openTotal}</b></span><span class="fi">היום: <b>${todays.length}</b></span>`;
   updateSelBar('tasks');
