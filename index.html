@@ -1201,6 +1201,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 .mn-item.active[data-sec="meetings"]::before{background:linear-gradient(90deg,#06d6a0,#3de8b8);box-shadow:0 0 10px #06d6a0,0 0 20px rgba(6,214,160,.4);animation:none}
 .mn-item.active[data-sec="clients"]{color:#c8a96e}
 .mn-item.active[data-sec="clients"]::before{background:linear-gradient(90deg,#c8a96e,#dcc498);box-shadow:0 0 10px #c8a96e,0 0 20px rgba(200,169,110,.4);animation:none}
+.mn-item.active[data-sec="tasks"]{color:#f072b6}
+.mn-item.active[data-sec="tasks"]::before{background:linear-gradient(90deg,#f072b6,#f7a8d3);box-shadow:0 0 10px #f072b6,0 0 20px rgba(240,114,182,.4);animation:none}
 .mn-item.active[data-sec="workplan"]{color:#a78bfa}
 .mn-item.active[data-sec="workplan"]::before{background:linear-gradient(90deg,#a78bfa,#c4aefb);box-shadow:0 0 10px #a78bfa,0 0 20px rgba(167,139,250,.4);animation:none}
 .mn-item.active[data-sec="alerts"]{color:#e63946}
@@ -1541,6 +1543,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   <div class="ni" id="nv-salary" onclick="nav('salary')"><span>💰</span> <span>פרויקטי שכר</span></div>
   <div class="nsec" id="nsec-clients">לקוחות ופגישות</div>
   <div class="ni" id="nv-meetings" onclick="nav('meetings')"><span>🤝</span> <span>יעד פגישות</span></div>
+  <div class="ni" id="nv-tasks" onclick="nav('tasks')"><span>✅</span> <span>משימות</span></div>
   <div class="ni" id="nv-clients" onclick="nav('clients')"><span>🏢</span> <span>כרטיסי לקוח</span></div>
   <div class="ni" id="nv-workplan" onclick="nav('workplan')"><span>🎯</span> <span>תהליך עבודה</span></div>
   <div class="nsec" id="nsec-tools">כלים</div>
@@ -1823,6 +1826,35 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     </div></div>
   </div>
   <div id="archivmtg" style="display:none"><input type="text" class="srch" placeholder="🔍 חיפוש בארכיון הפגישות..." style="margin:6px 0 10px;max-width:280px" oninput="filtArch(this.value,'archive-meetings-content')"><div id="archive-meetings-content" style="padding:4px 0"></div></div>
+</div>
+
+<!-- TASKS -->
+<div class="sec" id="sec-tasks">
+  <div class="shdr">
+    <div class="stit">✅ משימות</div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <input type="text" class="srch" placeholder="חיפוש משימה..." oninput="filt(event,'tsktb')">
+      <button class="btn btnp" onclick="openM('task',null)">+ משימה חדשה</button>
+      <button class="btn btn-excel" onclick="exportExcel('tasks')">📥 Excel</button>
+      <button class="btn btnd" onclick="deleteAll('tasks')" title="מחק את כל המשימות">🗑 מחק הכל</button>
+    </div>
+  </div>
+  <div class="tabs" id="tasks-tabs">
+    <div class="tab active" id="tv-today" onclick="setTaskView('today')">📆 היום</div>
+    <div class="tab" id="tv-all" onclick="setTaskView('all')">כל המשימות</div>
+  </div>
+  <div class="krow" id="tskkrow"></div>
+  <div class="tw"><div class="thdr" style="border-right:3px solid #f072b6">✅ רשימת משימות</div>
+  <div class="tscroll"><table><thead><tr>
+    <th class="cb-th"><input type="checkbox" id="chk-all-tasks" onchange="toggleAll('tasks',this.checked)"></th>
+    <th>#</th><th>תאריך</th><th>שעה</th><th>משימה</th><th>לקוח</th><th>עדיפות</th><th>בוצע?</th><th>הערות</th><th style="min-width:110px">פעולות</th>
+  </tr></thead><tbody id="tsktb"></tbody></table></div>
+  <div class="tft" id="tskft"></div>
+  <div class="cb-row" id="selbar-tasks" style="display:none">
+    <span id="selcnt-tasks" style="font-size:11px;color:var(--text)"></span>
+    <button onclick="deleteSelected('tasks')" class="cb-del">🗑 מחק</button>
+    <button onclick="clearSel('tasks')" class="cb-clr">✕ נקה</button>
+  </div></div>
 </div>
 
 <!-- CLIENTS -->
@@ -2269,6 +2301,24 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   </div>
 </div></div>
 
+<!-- TASK MODAL -->
+<div class="mw" id="mtask"><div class="modal">
+  <div class="mhdr"><h3 id="tktit">משימה חדשה</h3><button class="mcls" onclick="closeM('mtask')">✕</button></div>
+  <div class="fg">
+    <div class="g"><label>תאריך</label><input type="date" id="tkdt"></div>
+    <div class="g"><label>שעה (לא חובה)</label><input type="time" id="tktime"></div>
+    <div class="gf"><label>המשימה</label><input type="text" id="tktitle" placeholder="מה צריך לעשות?"></div>
+    <div class="g"><label>לקוח משויך (לא חובה)</label><input type="text" id="tkcl" list="tkcl-list" autocomplete="off"><datalist id="tkcl-list"></datalist></div>
+    <div class="g"><label>עדיפות</label><select id="tkpr"><option value="גבוהה">🔴 גבוהה</option><option value="בינונית" selected>🟠 בינונית</option><option value="נמוכה">🟢 נמוכה</option></select></div>
+    <div class="g"><label>סטטוס</label><select id="tkst"><option value="פתוח">פתוח</option><option value="הושלם">הושלם</option></select></div>
+    <div class="gf"><label>הערות</label><textarea id="tkno" rows="2"></textarea></div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
+    <button class="btn" onclick="closeM('mtask')">ביטול</button>
+    <button class="btn btnp" onclick="saveTask()">שמור משימה</button>
+  </div>
+</div></div>
+
 <!-- TENDER EMAILS CONFIG MODAL -->
 <div class="mw" id="mtemails"><div class="modal" style="max-width:440px">
   <div class="mhdr"><h3>⚙ נמעני מיילים — מכרזים</h3><button class="mcls" onclick="closeM('mtemails')">✕</button></div>
@@ -2398,7 +2448,7 @@ function handlerEmails(name){
   const h=HANDLERS.find(x=>x.name===name);
   return h?h.emails:[];
 }
-let D = {deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000}};
+let D = {deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],tasks:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000}};
 let EI = null, ET = null;
 const SEL = {};
 
@@ -2833,7 +2883,7 @@ function doLogout(){
 // חותמות סנכרון אוטומטיות: המיזוג בין מכשירים מחיל פריט מרוחק רק אם ה-_mts שלו
 // חדש יותר, ולכן כל שינוי חייב לקבל חותמת — גם בנתיבי שמירה שלא עוברים דרך dbUpdate.
 // משווים כל פריט לחתימה מהשמירה הקודמת ומטביעים _mts רק על מה שבאמת השתנה.
-const SYNC_COLS=['deals','tenders','dists','salary','meetings','clients','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
+const SYNC_COLS=['deals','tenders','dists','salary','meetings','clients','tasks','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
 const SYNC_META=['lastCycleMonth','lastMeetCycle','goals','tenderEmails','_totp'];
 let _syncSnap=null;
 function _syncSig(x){return JSON.stringify(x,(k,v)=>k==='_mts'?undefined:v);}
@@ -4311,7 +4361,7 @@ function loadAll(){
       const p=JSON.parse(s);
       parsed=true;
       D.deals=p.deals||[];D.tenders=p.tenders||[];D.dists=p.dists||[];
-      D.salary=p.salary||[];D.meetings=p.meetings||[];D.clients=p.clients||[];
+      D.salary=p.salary||[];D.meetings=p.meetings||[];D.clients=p.clients||[];D.tasks=p.tasks||[];
       D.archivedDeals=p.archivedDeals||[];D.archivedTenders=p.archivedTenders||[];D.archivedDists=p.archivedDists||[];D.archivedSalary=p.archivedSalary||[];D.archivedMeetings=p.archivedMeetings||[];D.lastCycleMonth=p.lastCycleMonth||'';D.lastMeetCycle=p.lastMeetCycle||'';D.tenderEmails=p.tenderEmails||{};
       D._deletedIds=p._deletedIds||{};
       D._metaMts=p._metaMts||0;D._baseline=p._baseline||0; // חותמות סנכרון חייבות לשרוד רענון דף
@@ -4473,7 +4523,7 @@ function nextDealNum(){
   return (nums.length?Math.max(...nums):0)+1;
 }
 // a complete empty dataset template so restores never drop a section
-function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000},_deletedIds:{}};}
+function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],tasks:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000},_deletedIds:{}};}
 function dbInsert(table,row){row.id=genId();row._mts=Date.now();D[table].push(row);saveAll();return row;}
 function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0)D[table][i]={...D[table][i],...row,_mts:Date.now()};saveAll();}
 // ===== GLOBAL UNDO (for accidental deletes in any section) =====
@@ -4567,7 +4617,7 @@ function nav(s){
   document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
   document.getElementById('sec-'+s).classList.add('active');
   const el=document.getElementById('nv-'+s);if(el)el.classList.add('active');
-  const fns={dashboard:rDash,alerts:rAlerts,deals:rDeals,tenders:rTenders,dists:rDists,salary:rSalary,meetings:rMeetings,workplan:rWorkPlan,export:updateExportCounts,clients:rClients};
+  const fns={dashboard:rDash,alerts:rAlerts,deals:rDeals,tenders:rTenders,dists:rDists,salary:rSalary,meetings:rMeetings,tasks:rTasks,workplan:rWorkPlan,export:updateExportCounts,clients:rClients};
   if(fns[s])fns[s]();
   setTimeout(initDragScrolls,100);
 }
@@ -4605,7 +4655,7 @@ function rAll(){
   const ric = window.requestIdleCallback || (fn => setTimeout(fn, 80));
   ric(() => { rDeals(); rTenders(); });
   ric(() => { rDists(); rSalary(); });
-  ric(() => { rMeetings(); rClients(); rWorkPlan(); updateExportCounts(); });
+  ric(() => { rMeetings(); rTasks(); rClients(); rWorkPlan(); updateExportCounts(); });
   ric(() => { updateNavBadges(); });
   setTimeout(initDragScrolls, 150);
 }
@@ -4621,6 +4671,17 @@ function updateNavBadges(){
       badge.textContent=todayCnt||'';
       badge.style.display=todayCnt?'inline-block':'none';
     }
+    // Today's open tasks badge (desktop nav + mobile dot)
+    const taskCnt=(Array.isArray(D.tasks)?D.tasks:[]).filter(t=>(t.dt===todayStr||(t.dt&&t.dt<todayStr))&&t.st!=='הושלם').length;
+    const tskNav=document.getElementById('nv-tasks');
+    if(tskNav){
+      let tb=tskNav.querySelector('.nav-badge');
+      if(!tb){tb=document.createElement('span');tb.className='nav-badge';tb.style.cssText='background:#f072b6;color:#fff';tskNav.querySelector('span:last-child').appendChild(tb);}
+      tb.textContent=taskCnt||'';
+      tb.style.display=taskCnt?'inline-block':'none';
+    }
+    const mobTaskDot=document.getElementById('mob-task-dot');
+    if(mobTaskDot){mobTaskDot.textContent=taskCnt||'';mobTaskDot.style.display=taskCnt?'block':'none';}
     // Critical alerts badge on alerts nav
     const critCnt=getAlerts().filter(a=>a.type==='crit').length;
     const alNav=document.getElementById('nv-alerts');
@@ -4648,6 +4709,7 @@ function globalSearch(q){
   D.salary.forEach(s=>{ if(hit(s.cl,s.pj,s.no)) push('💰',s.cl||'(ללא שם)','שכר'+(s.pj?' · '+s.pj:''),'salary',s.id); });
   D.tenders.forEach(t=>{ if(hit(t.name,t.proj,t.handler)) push('📋',t.name||'(ללא שם)','מכרז','tender',t.id); });
   D.meetings.forEach(m=>{ if(hit(m.cl,m.no)) push('🤝',m.cl||'(ללא שם)','פגישה','meeting',m.id); });
+  (D.tasks||[]).forEach(t=>{ if(hit(t.t,t.cl,t.no)) push('✅',t.t||'(משימה)','משימה'+(t.cl?' · '+t.cl:''),'task',t.id); });
   // ארכיון — כדי שאיתור מדויק יעבוד גם על רשומות מחודשים קודמים
   (D.archivedDeals||[]).forEach(d=>{ if(hit(d.co,d.srv,d.ct,d.num,d.no)) push('📦',d.co||'(ללא שם)','עסקה בארכיון','deal',d.id,true); });
   (D.archivedTenders||[]).forEach(t=>{ if(hit(t.name,t.proj,t.handler)) push('📦',t.name||'(ללא שם)','מכרז בארכיון','tender',t.id,true); });
@@ -4655,7 +4717,7 @@ function globalSearch(q){
   (D.archivedSalary||[]).forEach(s=>{ if(hit(s.cl,s.pj,s.no)) push('📦',s.cl||'(ללא שם)','שכר בארכיון','salary',s.id,true); });
   (D.archivedMeetings||[]).forEach(m=>{ if(hit(m.cl,m.no)) push('📦',m.cl||'(ללא שם)','פגישה בארכיון','meeting',m.id,true); });
   if(!_gsRes.length){ box.innerHTML='<div class="gsr-empty">לא נמצאו תוצאות</div>'; box.classList.add('show'); return; }
-  const gsClr={deal:'#4cc9f0',client:'#c8a96e',dist:'#a78bfa',salary:'#06d6a0',tender:'#f4a261',meeting:'#06d6a0'};
+  const gsClr={deal:'#4cc9f0',client:'#c8a96e',dist:'#a78bfa',salary:'#06d6a0',tender:'#f4a261',meeting:'#06d6a0',task:'#f072b6'};
   box.innerHTML=_gsRes.map((r,i)=>{const c=gsClr[r.type]||'var(--gold)';return`<div class="gsr" onclick="gsGo(${i})" style="border-right:2px solid ${c}22"><span class="gsr-ic" style="background:${c}15;border-radius:6px;padding:2px 4px">${r.icon}</span><span class="gsr-lb">${r.label}</span><span class="gsr-sub" style="color:${c}">${r.sub}</span></div>`;}).join('');
   box.classList.add('show');
 }
@@ -4730,6 +4792,7 @@ function gsGo(i){
   const box=document.getElementById('gsres'); if(box)box.classList.remove('show');
   const si=document.getElementById('gsi'); if(si)si.value='';
   if(r.type==='client'){ if(typeof openClientModal==='function')openClientModal(r.id); return; }
+  if(r.type==='task'){ nav('tasks'); setTimeout(()=>openM('task',r.id),320); return; }
   const secMap={deal:'deals',dist:'dists',salary:'salary',tender:'tenders',meeting:'meetings'};
   const sec=secMap[r.type]; if(!sec)return;
   nav(sec);
@@ -6101,6 +6164,73 @@ function rMeetings(){
   }).join('')||emptyRow(11,'🤝',"אין פגישות","openM('meeting',null)");
   document.getElementById('mft').innerHTML=`<span class="fi">סה"כ: <b>${D.meetings.length}</b></span><span class="fi">התקיימו: <b>${held}</b></span><span class="fi">לא: <b>${D.meetings.filter(m=>m.hl!=='כן').length}</b></span><span class="fi">יעד: <b style="color:${pct>=100?'var(--teal)':pct>=66?'#f4a261':'#e63946'}">${pct}%</b></span>`;
   updateSelBar('meetings');
+}
+
+// ===== TASKS — משימות (בדומה ליומן פגישות, במיקוד יומי) =====
+let _taskView='today';
+function setTaskView(v){
+  _taskView=v;
+  const tt=document.getElementById('tv-today'),ta=document.getElementById('tv-all');
+  if(tt)tt.classList.toggle('active',v==='today');
+  if(ta)ta.classList.toggle('active',v==='all');
+  rTasks();
+}
+function rTasks(){
+  if(!Array.isArray(D.tasks))D.tasks=[];
+  const todayStr=nd();
+  const all=D.tasks;
+  const todays=all.filter(t=>t.dt===todayStr);
+  const openToday=todays.filter(t=>t.st!=='הושלם').length;
+  const doneToday=todays.filter(t=>t.st==='הושלם').length;
+  const overdue=all.filter(t=>t.dt&&t.dt<todayStr&&t.st!=='הושלם').length;
+  const openTotal=all.filter(t=>t.st!=='הושלם').length;
+  const krow=document.getElementById('tskkrow');
+  if(krow)krow.innerHTML=`<div class="kc ${openToday?'y':'g'}"><div class="lb">משימות היום</div><div class="vl">${todays.length}</div><div class="sb">${openToday} פתוחות</div></div><div class="kc g"><div class="lb">הושלמו היום</div><div class="vl">${doneToday}</div></div><div class="kc ${overdue?'r':'g'}"><div class="lb">באיחור</div><div class="vl">${overdue}</div><div class="sb">${overdue?'לפני היום':'✅ נקי'}</div></div><div class="kc"><div class="lb">סה"כ פתוחות</div><div class="vl">${openTotal}</div></div>`;
+  // תצוגת "היום": משימות היום + משימות פתוחות באיחור. תצוגת "הכל": הכול.
+  let rows=_taskView==='today'
+    ? all.filter(t=>t.dt===todayStr||(t.dt&&t.dt<todayStr&&t.st!=='הושלם'))
+    : all.slice();
+  rows.sort((a,b)=>{
+    const oa=a.st==='הושלם'?1:0, ob=b.st==='הושלם'?1:0; if(oa!==ob)return oa-ob;
+    const da=(a.dt||'9999-99-99')+(a.time||'99:99'), db=(b.dt||'9999-99-99')+(b.time||'99:99');
+    return da<db?-1:da>db?1:0;
+  });
+  const prBadge=p=>p==='גבוהה'?'<span class="badge br">🔴 גבוהה</span>':p==='נמוכה'?'<span class="badge bg">🟢 נמוכה</span>':'<span class="badge by">🟠 בינונית</span>';
+  const tb=document.getElementById('tsktb');
+  if(tb)tb.innerHTML=rows.map((t,i)=>{
+    const isToday=t.dt===todayStr, isOverdue=t.dt&&t.dt<todayStr&&t.st!=='הושלם', done=t.st==='הושלם';
+    const rowStyle=done?'opacity:.55;':isToday?'background:rgba(240,114,182,.06);':isOverdue?'background:rgba(230,57,70,.05);':'';
+    const chk=SEL['tasks']&&SEL['tasks'].has(t.id)?'checked':'';
+    const doneBtn=`<span class="badge ${done?'bg':'by'}" onclick="event.stopPropagation();toggleTaskDone('${t.id}')" title="לחץ לשינוי" style="cursor:pointer">${done?'✓ בוצע':'סמן בוצע'}</span>`;
+    const todayBadge=isToday?'<span class="badge bb" style="font-size:9px;margin-right:2px">היום!</span>':isOverdue?'<span class="badge br" style="font-size:9px;margin-right:2px">באיחור</span>':'';
+    const timeDisp=t.time?`<span style="font-size:10px;color:var(--gold)">${t.time}</span>`:'<span style="color:var(--text3)">–</span>';
+    const title=(t.t||'').replace(/</g,'&lt;');
+    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-tasks" ${chk} onchange="toggleSel('tasks','${t.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(t.dt)}${todayBadge}</td><td>${timeDisp}</td><td style="font-weight:600;${done?'text-decoration:line-through':''}">${title}</td><td style="font-size:11px">${t.cl||'–'}</td><td>${prBadge(t.pr)}</td><td>${doneBtn}</td><td><span style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:90px" title="${(t.no||'').replace(/"/g,'&quot;')}">${t.no||'–'}</span></td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('task','${t.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tasks','${t.id}')">🗑</button></td></tr>`;
+  }).join('')||emptyRow(10,'✅',_taskView==='today'?'אין משימות להיום 🎉':'אין משימות עדיין',"openM('task',null)");
+  const ft=document.getElementById('tskft');
+  if(ft)ft.innerHTML=`<span class="fi">סה"כ: <b>${all.length}</b></span><span class="fi">פתוחות: <b>${openTotal}</b></span><span class="fi">היום: <b>${todays.length}</b></span>`;
+  updateSelBar('tasks');
+}
+function toggleTaskDone(id){
+  const t=D.tasks.find(x=>x.id==id);if(!t)return;
+  t.st=t.st==='הושלם'?'פתוח':'הושלם';t._mts=Date.now();
+  saveAll();rTasks();updateNavBadges();
+  showToast(t.st==='הושלם'?'✅ המשימה סומנה כבוצעה':'↩ המשימה הוחזרה לפתוחה','ok');
+}
+function saveTask(){
+  const row={
+    dt:document.getElementById('tkdt').value||nd(),
+    time:document.getElementById('tktime').value,
+    t:document.getElementById('tktitle').value.trim(),
+    cl:document.getElementById('tkcl').value.trim(),
+    pr:document.getElementById('tkpr').value,
+    st:document.getElementById('tkst').value,
+    no:document.getElementById('tkno').value
+  };
+  if(!row.t){alert('יש להזין תיאור משימה');return;}
+  if(EI){dbUpdate('tasks',EI,row);}else{dbInsert('tasks',row);}
+  closeM('mtask');rAll();
+  showToast('✅ המשימה נשמרה'+(row.dt?' ל-'+fmtDate(row.dt):''),'ok');
 }
 
 // ===== CLIENTS =====
@@ -7818,6 +7948,18 @@ function openM(type,id){
     if(calBtn)calBtn.style.display=isNew?'none':'';
     if(invBtn)invBtn.style.display=isNew?'none':'';
     if(sumBtn)sumBtn.style.display=isNew?'none':'';
+  }else if(type==='task'){
+    document.getElementById('tktit').textContent=isNew?'משימה חדשה':'עריכת משימה';
+    const t=isNew?{}:D.tasks.find(x=>x.id==id)||{};
+    document.getElementById('tkdt').value=t.dt||nd();
+    document.getElementById('tktime').value=t.time||'';
+    document.getElementById('tktitle').value=t.t||'';
+    document.getElementById('tkcl').value=t.cl||'';
+    document.getElementById('tkpr').value=t.pr||'בינונית';
+    document.getElementById('tkst').value=t.st||'פתוח';
+    document.getElementById('tkno').value=t.no||'';
+    const dl=document.getElementById('tkcl-list');
+    if(dl){dl.innerHTML=D.clients.map(c=>`<option value="${(c.name||'').replace(/"/g,'&quot;')}">`).join('');}
   }
   // טעינת קבצים מצורפים של הרשומה לעריכה
   if(ATT_KINDS[type]){
@@ -8409,7 +8551,7 @@ function deleteSelected(key){
   },'כן, מחק '+n);
 }
 function deleteAll(section){
-  const map={deals:'deals',tenders:'tenders',dists:'dists',salary:'salary',meetings:'meetings'};
+  const map={deals:'deals',tenders:'tenders',dists:'dists',salary:'salary',meetings:'meetings',tasks:'tasks'};
   const tbl=map[section];if(!tbl)return;
   const n=D[tbl].length;
   if(!n){showToast('אין פריטים למחיקה','warn');return;}
@@ -8579,6 +8721,7 @@ function exportExcel(section){
     case'dists':hdrs=['מטפל','גורם מטפל','מס פרויקט','שם חברה','לקוח','IT','פתרון','כתובת','הכנסה חודשית','יעד הכנסה','ציוד','חוסרים','סטטוס','תאריך','סוג','סוג מוצר'];rows=D.dists.map(d=>[d.hd||'',d.hp||'',d.no||'',d.co||'',d.cl||'',d.it||'',d.so||'',d.ad||'',d.inc||0,d.tgt||0,d.eq||0,d.mi||'',d.st||'',d.dt?fmtDate(d.dt):'',d.ty==='long'?'ארוך':'קצר',ptypeLabel(d.ptype)]);break;
     case'salary':hdrs=['מס פרויקט','שם לקוח','כמות','יעד','סגירה','יתרה','סטטוס','סוג','הערות'];rows=D.salary.map(s=>[s.pj||'',s.cl||'',s.qt||1,s.tr||0,s.cl2||0,s.pv||0,s.st||'',s.ty==='service'?'שירות':'ציוד',s.no||'']);break;
     case'meetings':hdrs=['תאריך','שם לקוח','מס פגישה','התקיימה','הערות'];rows=D.meetings.map(m=>[m.dt?fmtDate(m.dt):'',m.cl||'',m.nu||'',m.hl||'',m.no||'']);break;
+    case'tasks':hdrs=['תאריך','שעה','משימה','לקוח','עדיפות','סטטוס','הערות'];rows=(D.tasks||[]).map(t=>[t.dt?fmtDate(t.dt):'',t.time||'',t.t||'',t.cl||'',t.pr||'',t.st||'',t.no||'']);break;
     case'clients':hdrs=['שם חברה','ח.פ','איש קשר','טלפון','אימייל','כתובת','סטטוס','קווים','FORTI','CISCO','M365','STARLINK','הערות'];rows=D.clients.map(c=>[c.name||'',c.cp||'',c.contact||'',c.phone||'',c.email||'',c.address||'',c.status||'',(c.lines||[]).length,(c.forti||[]).length,(c.cisco||[]).length,(c.ms365||[]).length,(c.starlink||[]).length,c.genNotes||'']);break;
     case'workplan':{let allPots=[];D.clients.forEach(c=>{(c.potential||[]).forEach(p=>{allPots.push({...p,clientName:c.name});});});hdrs=['לקוח','סוג מוצר','שם מוצר','שווי משוער','עדיפות','יעד סגירה','סטטוס','הערות'];rows=allPots.map(p=>[p.clientName||'',p.productType||'',p.product||'',p.estimatedValue||0,p.priority||'',p.targetDate?fmtDate(p.targetDate):'',p.status||'',p.notes||'']);break;}
     default:return;
@@ -9837,6 +9980,7 @@ function seedData(){
   <div class="mn-item" data-sec="dists" onclick="nav('dists')"><span class="mn-ic">🚀</span><span class="mn-lb">הפצות</span></div>
   <div class="mn-item" data-sec="salary" onclick="nav('salary')"><span class="mn-ic">💰</span><span class="mn-lb">שכר</span></div>
   <div class="mn-item" data-sec="meetings" onclick="nav('meetings')"><span class="mn-ic">🤝</span><span class="mn-lb">פגישות</span></div>
+  <div class="mn-item" data-sec="tasks" onclick="nav('tasks')" style="position:relative"><span class="mn-ic">✅</span><span class="mn-lb">משימות</span><span id="mob-task-dot" style="display:none;position:absolute;top:6px;right:8px;min-width:16px;height:16px;border-radius:8px;background:#f072b6;color:#fff;font-size:9px;font-weight:800;line-height:16px;text-align:center;padding:0 3px;box-shadow:0 0 8px rgba(240,114,182,.7)"></span></div>
   <div class="mn-item" data-sec="clients" onclick="nav('clients')"><span class="mn-ic">🏢</span><span class="mn-lb">לקוחות</span></div>
   <div class="mn-item" data-sec="workplan" onclick="nav('workplan')"><span class="mn-ic">🎯</span><span class="mn-lb">תכנון</span></div>
   <div class="mn-item" data-sec="export" onclick="nav('export')"><span class="mn-ic">📥</span><span class="mn-lb">ייצוא</span></div>
@@ -9865,7 +10009,7 @@ function seedData(){
 
 <script>
 // ── SECTION ORDER ──────────────────────────────────────────────
-const SEC_ORDER = ['dashboard','alerts','deals','tenders','dists','salary','meetings','clients','workplan','export'];
+const SEC_ORDER = ['dashboard','alerts','deals','tenders','dists','salary','meetings','tasks','clients','workplan','export'];
 let currentSec = 'dashboard';
 let navBusy = false;
 
@@ -9915,7 +10059,7 @@ function nav(s){
     // Render new section content
     const renders = {
       dashboard:rDash, alerts:rAlerts, deals:rDeals, tenders:rTenders,
-      dists:rDists, salary:rSalary, meetings:rMeetings,
+      dists:rDists, salary:rSalary, meetings:rMeetings, tasks:rTasks,
       workplan:rWorkPlan, export:updateExportCounts, clients:rClients
     };
     if(renders[s]) renders[s]();
