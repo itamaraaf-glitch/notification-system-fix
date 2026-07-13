@@ -2851,19 +2851,166 @@ function _stampChanges(){
   const m=_metaSig();
   if(_syncSnap['::meta']!==m){D._metaMts=ts;_syncSnap['::meta']=m;}
 }
+
+// ═══ אחסון קבצים ב-IndexedDB — מוציא את הבייטים הכבדים (base64) מ-localStorage ═══
+// localStorage מוגבל ל~5MB ומתמלא מהר מקבצים מצורפים (PDF/תמונות). הבייטים נשמרים
+// כאן ב-IndexedDB (מאות MB עד ג'יגה), ו-localStorage שומר רק מטא-דאטה + מזהה (fid).
+// בזיכרון ובסנכרון הקבצים נשארים מלאים — כך שכל קוד הקריאה/ההורדה/הסנכרון עובד כרגיל.
+const FILES_DB='cem_hot_files', FILES_STORE='blobs';
+const _blobSaved=new Set();   // fids שכבר נשמרו ב-IDB (מותר להסיר את ה-data מ-LS)
+const _photoCache={};         // client.id → תוכן התמונה שנשמר לאחרונה (לזיהוי שינוי)
+const _ATT_COLS=['deals','tenders','dists','salary','meetings','clients','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
+function _fid(){return 'f'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
+function _filesDbOpen(){
+  return new Promise((res,rej)=>{
+    let r;try{r=indexedDB.open(FILES_DB,1);}catch(e){return rej(e);}
+    r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains(FILES_STORE))db.createObjectStore(FILES_STORE,{keyPath:'fid'});};
+    r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);
+  });
+}
+function _blobPut(fid,data){return _filesDbOpen().then(db=>new Promise((res,rej)=>{const tx=db.transaction(FILES_STORE,'readwrite');tx.objectStore(FILES_STORE).put({fid,data});tx.oncomplete=res;tx.onerror=()=>rej(tx.error);}));}
+function _blobGet(fid){return _filesDbOpen().then(db=>new Promise(res=>{const tx=db.transaction(FILES_STORE,'readonly');const rq=tx.objectStore(FILES_STORE).get(fid);rq.onsuccess=()=>res(rq.result?rq.result.data:null);rq.onerror=()=>res(null);})).catch(()=>null);}
+// קריאת כל הבלובים בעסקה אחת → מפת fid→data (מהיר בהרבה מקריאה נפרדת לכל קובץ)
+function _blobGetAll(){return _filesDbOpen().then(db=>new Promise(res=>{const tx=db.transaction(FILES_STORE,'readonly');const rq=tx.objectStore(FILES_STORE).getAll();rq.onsuccess=()=>{const m={};(rq.result||[]).forEach(o=>{if(o&&o.fid)m[o.fid]=o.data;});res(m);};rq.onerror=()=>res({});})).catch(()=>({}));}
+// הקצאת fid (סינכרוני) לכל קובץ/הצעת מחיר/תמונה חדשים
+function _ensureFids(){
+  _ATT_COLS.forEach(col=>{
+    (Array.isArray(D[col])?D[col]:[]).forEach(rec=>{
+      if(Array.isArray(rec.files))rec.files.forEach(f=>{if(f&&f.data&&!f.fid)f.fid=_fid();});
+      if(rec.quote&&rec.quote.data&&!rec.quote.fid)rec.quote.fid=_fid();
+      if(col==='clients'&&rec.photo&&(!rec.photoFid||_photoCache[rec.id]!==rec.photo)){rec.photoFid=_fid();_photoCache[rec.id]=rec.photo;}
+    });
+  });
+}
+// שמירת כל הבלובים שעדיין לא נשמרו ל-IDB (אסינכרוני). מחזיר true אם נשמר משהו.
+let _persistScheduled=false;
+async function _persistBlobs(){
+  const jobs=[];
+  _ATT_COLS.forEach(col=>{
+    (Array.isArray(D[col])?D[col]:[]).forEach(rec=>{
+      if(Array.isArray(rec.files))rec.files.forEach(f=>{if(f&&f.data&&f.fid&&!_blobSaved.has(f.fid))jobs.push([f.fid,f.data]);});
+      if(rec.quote&&rec.quote.data&&rec.quote.fid&&!_blobSaved.has(rec.quote.fid))jobs.push([rec.quote.fid,rec.quote.data]);
+      if(col==='clients'&&rec.photo&&rec.photoFid&&!_blobSaved.has(rec.photoFid))jobs.push([rec.photoFid,rec.photo]);
+    });
+  });
+  if(!jobs.length)return false;
+  let ok=false;
+  for(const [fid,data] of jobs){try{await _blobPut(fid,data);_blobSaved.add(fid);ok=true;}catch(e){}}
+  return ok;
+}
+// אחרי הקצאת fid — שומר בלובים ל-IDB ואז שומר מחדש כדי לנקות אותם מ-localStorage
+function _schedulePersist(){
+  if(_persistScheduled)return;_persistScheduled=true;
+  setTimeout(async()=>{_persistScheduled=false;try{if(await _persistBlobs())_bgSave();}catch(e){}},0);
+}
+// עותק "קל" של רשומה ל-localStorage: מסיר את הבייטים הכבדים של קבצים שיש להם fid.
+// הסרה ללא תנאי → localStorage תמיד קל ולא מתמלא. הבייטים עצמם שמורים ב-IDB (חנות
+// הקבצים) וגם בגיבוי המלא ב-IDB, ומשם נטענים חזרה בפתיחה מחדש.
+function _cloneLight(rec){
+  let r=rec,cloned=false;const cl=()=>{if(!cloned){r=Object.assign({},rec);cloned=true;}};
+  if(Array.isArray(rec.files)&&rec.files.some(f=>f&&f.fid)){cl();r.files=rec.files.map(f=>(f&&f.fid)?{name:f.name,type:f.type,size:f.size,fid:f.fid}:f);}
+  if(rec.quote&&rec.quote.fid){cl();r.quote=Object.assign({},rec.quote,{data:undefined});}
+  if(rec.photo&&rec.photoFid){cl();r.photo=undefined;}
+  return r;
+}
+function _lightD(){
+  const L=Object.assign({},D);
+  _ATT_COLS.forEach(col=>{if(Array.isArray(D[col]))L[col]=D[col].map(_cloneLight);});
+  return L;
+}
+// כתיבה קלה ל-localStorage (בלי בייטי קבצים) + תזמון שמירת הקבצים ל-IDB.
+// משמש את כל נתיבי הסנכרון/שמירה שכתבו קודם את D המלא ל-localStorage.
+function _saveLS(){
+  _ensureFids();
+  localStorage.setItem(LS_KEY,JSON.stringify(_lightD()));
+  _schedulePersist();
+}
+// הסרת בייטים כבדים מעותק D מפוענח (לגיבוי הזהב הקל ב-localStorage)
+function _stripHeavyParsed(o){
+  _ATT_COLS.forEach(col=>{(Array.isArray(o[col])?o[col]:[]).forEach(rec=>{
+    if(Array.isArray(rec.files))rec.files=rec.files.map(f=>({name:f.name,type:f.type,size:f.size,fid:f.fid}));
+    if(rec.quote&&rec.quote.data)rec.quote=Object.assign({},rec.quote,{data:undefined});
+    if(rec.photo)rec.photo=undefined;
+  });});
+  return o;
+}
+// טעינת הבייטים חזרה מ-IDB לתוך D בזיכרון (אחרי טעינת הדף)
+// בונה מפת fid→data מהגיבוי המלא האחרון ב-IDB — רשת ביטחון אם בייט חסר בחנות הקבצים
+// (למשל אם הדף נסגר לפני שהשמירה לחנות הקבצים הספיקה)
+async function _snapshotFidMap(missing){
+  const out={};
+  if(!missing||!missing.size)return out;
+  try{
+    const list=(typeof idbList==='function')?await idbList():[];
+    for(let i=list.length-1;i>=0&&missing.size;i--){
+      let p;try{p=JSON.parse(list[i].data);}catch(e){continue;}
+      _ATT_COLS.forEach(col=>{(Array.isArray(p[col])?p[col]:[]).forEach(rec=>{
+        if(Array.isArray(rec.files))rec.files.forEach(f=>{if(f&&f.fid&&missing.has(f.fid)&&f.data){out[f.fid]=f.data;missing.delete(f.fid);}});
+        if(rec.quote&&rec.quote.fid&&missing.has(rec.quote.fid)&&rec.quote.data){out[rec.quote.fid]=rec.quote.data;missing.delete(rec.quote.fid);}
+        if(col==='clients'&&rec.photoFid&&missing.has(rec.photoFid)&&rec.photo){out[rec.photoFid]=rec.photo;missing.delete(rec.photoFid);}
+      });});
+    }
+  }catch(e){}
+  return out;
+}
+async function _hydrateBlobs(){
+  let M=await _blobGetAll();
+  // בייטים שמופיעים ברשומות אך חסרים בחנות הקבצים — נשלפים מהגיבוי המלא ומוחזרים לחנות
+  const missing=new Set();
+  for(const col of _ATT_COLS)for(const rec of (Array.isArray(D[col])?D[col]:[])){
+    if(Array.isArray(rec.files))rec.files.forEach(f=>{if(f&&f.fid&&!f.data&&M[f.fid]==null)missing.add(f.fid);});
+    if(rec.quote&&rec.quote.fid&&!rec.quote.data&&M[rec.quote.fid]==null)missing.add(rec.quote.fid);
+    if(col==='clients'&&rec.photoFid&&!rec.photo&&M[rec.photoFid]==null)missing.add(rec.photoFid);
+  }
+  if(missing.size){
+    const fb=await _snapshotFidMap(new Set(missing));
+    Object.keys(fb).forEach(fid=>{M[fid]=fb[fid];_blobPut(fid,fb[fid]).catch(()=>{});}); // מחזירים לחנות הקבצים
+  }
+  let any=false;
+  for(const col of _ATT_COLS){
+    for(const rec of (Array.isArray(D[col])?D[col]:[])){
+      if(Array.isArray(rec.files))for(const f of rec.files){
+        if(f&&f.fid&&!f.data){if(M[f.fid]!=null){f.data=M[f.fid];_blobSaved.add(f.fid);any=true;}}
+        else if(f&&f.fid&&f.data){_blobSaved.add(f.fid);}
+      }
+      if(rec.quote&&rec.quote.fid&&!rec.quote.data){if(M[rec.quote.fid]!=null){rec.quote.data=M[rec.quote.fid];_blobSaved.add(rec.quote.fid);any=true;}}
+      else if(rec.quote&&rec.quote.fid&&rec.quote.data){_blobSaved.add(rec.quote.fid);}
+      if(col==='clients'){
+        if(rec.photoFid&&!rec.photo){if(M[rec.photoFid]!=null){rec.photo=M[rec.photoFid];_blobSaved.add(rec.photoFid);_photoCache[rec.id]=rec.photo;any=true;}}
+        else if(rec.photo){_photoCache[rec.id]=rec.photo;if(rec.photoFid)_blobSaved.add(rec.photoFid);}
+      }
+    }
+  }
+  if(any&&typeof rAll==='function')try{rAll();}catch(e){}
+  return any;
+}
+// טעינת קבצים + מיגרציה של פורמט ישן (data בתוך localStorage) → IDB, ושחרור מקום
+async function _initFileStorage(){
+  try{
+    if(typeof _requestPersistentStorage==='function')_requestPersistentStorage(); // שלא ימחק את הקבצים
+    await _hydrateBlobs();          // ממלא data/photo מ-IDB
+    _ensureFids();                  // מקצה fid לקבצים ישנים שעדיין ב-LS
+    if(await _persistBlobs())_bgSave(); // שומר ל-IDB ומנקה את localStorage
+    if(typeof _buildSyncSnap==='function')_buildSyncSnap(); // איפוס בסיס החתימות אחרי ההידרציה
+  }catch(e){}
+}
+
 let _quotaAlerted=false;
 function saveAll(){
   try{
     _stampChanges();
-    const snap=JSON.stringify(D);
+    _ensureFids();
+    // ל-localStorage נשמרת גרסה קלה (בלי בייטים של קבצים) — הקבצים ב-IndexedDB
+    const snap=JSON.stringify(_lightD());
     localStorage.setItem(LS_KEY,snap);
     // Verify write succeeded (read back and compare)
     const verify=localStorage.getItem(LS_KEY);
     if(!verify||verify!==snap)throw new Error('אימות כתיבה נכשל');
     _quotaAlerted=false;
     showSaved();
-    // Immediate IDB backup — don't delay, so closing the browser right away still saves
-    if(typeof idbBackup==='function') idbBackup(snap);
+    // גיבוי IDB מלא (כולל הקבצים) — מיידי, כדי שסגירת הדפדפן מיד לא תאבד נתונים
+    if(typeof idbBackup==='function') idbBackup(JSON.stringify(D));
+    _schedulePersist(); // שמירת בייטי הקבצים ל-IDB וניקויָם מ-localStorage
     fbPush();
     bcNotify();
   }catch(e){
@@ -3043,7 +3190,7 @@ async function fbForcePull(){
     try{
       const changed=fbMergeRemote(plain);
       const newTs=Math.max(remote._ts||0,parseInt(localStorage.getItem('cem_sync_ts')||'0'));
-      localStorage.setItem(LS_KEY,JSON.stringify(D));
+      _saveLS();
       localStorage.setItem('cem_sync_ts',String(newTs));
       _lastSyncTs=Date.now();
       if(changed){rAll();showToast('✅ סונכרן! נתונים חדשים הגיעו מהענן','ok');}
@@ -3068,7 +3215,7 @@ async function fbBaselineNow(){
   D._baseline=ts;
   D._deletedIds={}; // הבסיס החדש שלם — היסטוריית מחיקות ישנה מיותרת ועלולה למחוק בטעות
   _buildSyncSnap();
-  try{localStorage.setItem(LS_KEY,JSON.stringify(D));}catch(e){}
+  try{_saveLS();}catch(e){}
   fbStatus('syncing');
   if(_ssUrl){await _ssPushNow();}
   else if(_fbRef){
@@ -3133,7 +3280,7 @@ async function fbInit(){
       try{
         const changed=fbMergeRemote(parsed);
         const newTs=Math.max(remoteTs,localTs);
-        localStorage.setItem(LS_KEY,JSON.stringify(D));
+        _saveLS();
         localStorage.setItem('cem_sync_ts',String(newTs));
         _lastSyncTs=Date.now();
         if(changed){rAll();showToast('🔄 עודכן מהענן – נתונים חדשים הגיעו','ok');}
@@ -3283,7 +3430,7 @@ async function ssInit(dbUrl,syncCode){
         _fbApplying=true;
         try{
           const changed=fbMergeRemote(plainInit);
-          localStorage.setItem(LS_KEY,JSON.stringify(D));
+          _saveLS();
           localStorage.setItem('cem_sync_ts',String(Math.max(remoteTs,localTs)));
           _lastSyncTs=Date.now();
           if(changed){rAll();showToast('🔄 עודכן מהענן – נתונים חדשים','ok');}
@@ -3319,7 +3466,7 @@ async function ssPoll(){
       _fbApplying=true;
       try{
         const changed=fbMergeRemote(plainPoll);
-        localStorage.setItem(LS_KEY,JSON.stringify(D));
+        _saveLS();
         localStorage.setItem('cem_sync_ts',String(Math.max(remoteTs,localTs)));
         _lastSyncTs=Date.now();
         if(changed){rAll();showToast('🔄 עודכן מהענן','ok');}
@@ -4014,7 +4161,7 @@ async function fbSyncNow(){
       _fbApplying=true;
       try{
         const changed=fbMergeRemote(plain);
-        if(changed){localStorage.setItem(LS_KEY,JSON.stringify(D));rAll();}
+        if(changed){_saveLS();rAll();}
       }finally{_fbApplying=false;}
     }
     fbPush();
@@ -4034,6 +4181,7 @@ function _finishLoad(){
   }
   rAll();
   showLoginHealth();
+  if(typeof _initFileStorage==='function')setTimeout(_initFileStorage,60); // טעינת קבצים מ-IDB + מיגרציה + שחרור מקום
   setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); renderNotifyPanel(); renderSecurityPanel(); if(_bioLocal())_requestPersistentStorage(); const nc=notifyCfg(); if(nc.on&&('Notification' in window)&&Notification.permission==='granted'){_registerPeriodicDigest();_pushSubscribe();_notifyTick();} setTimeout(maybeAskNotifyPermission,2000); setTimeout(checkCloudLock,4500); }catch(e){} }, 2500);
   setTimeout(()=>{ try{ checkEmptyAndRecovery(); }catch(e){} }, 4000);
 }
@@ -4129,10 +4277,12 @@ function loadAll(){
 // Background saves with proper quota detection (no silent failures)
 function _bgSave(){
   try{
-    const snap=JSON.stringify(D);
+    if(typeof _ensureFids==='function')_ensureFids();
+    const snap=JSON.stringify(typeof _lightD==='function'?_lightD():D);
     localStorage.setItem(LS_KEY,snap);
-    // Also push to IDB so browser-close doesn't lose the latest state
-    if(typeof idbBackup==='function') idbBackup(snap);
+    // Also push FULL data (with files) to IDB so browser-close doesn't lose the latest state
+    if(typeof idbBackup==='function') idbBackup(JSON.stringify(D));
+    if(typeof _schedulePersist==='function')_schedulePersist();
   }catch(e){
     const quota=e&&(e.name==='QuotaExceededError'||e.code===22||e.code===1014||/quota|exceed/i.test(e.message||''));
     if(quota&&!_quotaAlerted){_quotaAlerted=true;alert('⚠️ האחסון המקומי מלא — שמירת הרקע נכשלה!\n\nייצא גיבוי עכשיו מסעיף "ייצוא".');showToast('⚠️ האחסון מלא! ייצא גיבוי','warn');}
@@ -4150,7 +4300,7 @@ document.addEventListener('visibilitychange',()=>{
     try{
       const s=localStorage.getItem(LS_KEY);
       if(!s&&D&&(D.deals.length||D.clients.length)){
-        localStorage.setItem(LS_KEY,JSON.stringify(D));
+        localStorage.setItem(LS_KEY,JSON.stringify(typeof _lightD==='function'?_lightD():D));
         showToast('⚠️ אחסון מקומי אופס — הנתונים שוחזרו בזיכרון','warn');
       }
     }catch(e){}
@@ -4170,7 +4320,9 @@ document.addEventListener('visibilitychange',()=>{
             _fbApplying=true;
             try{
               const changed=fbMergeRemote(plain);
-              localStorage.setItem(LS_KEY,JSON.stringify(D));
+              if(typeof _ensureFids==='function')_ensureFids();
+              localStorage.setItem(LS_KEY,JSON.stringify(typeof _lightD==='function'?_lightD():D));
+              if(typeof _schedulePersist==='function')_schedulePersist();
               localStorage.setItem('cem_sync_ts',String(Math.max(remoteTs,localTs)));
               _lastSyncTs=Date.now();
               if(changed){rAll();showToast('🔄 עודכן מהענן','ok');}
@@ -9121,9 +9273,9 @@ async function idbBackup(jsonStr){
       const tx=db2.transaction(IDB_STORE,'readwrite');
       del.forEach(s=>tx.objectStore(IDB_STORE).delete(s.ts));
     }
-    // Update gold backup only when data is non-empty
+    // Update gold backup only when data is non-empty — גרסה קלה (בלי בייטי קבצים)
     if(totalRec>0){
-      try{localStorage.setItem(IDB_GOLD_KEY,dataStr);}catch(e){}
+      try{localStorage.setItem(IDB_GOLD_KEY,JSON.stringify(typeof _stripHeavyParsed==='function'?_stripHeavyParsed(parsed):parsed));}catch(e){}
     }
   }catch(e){console.warn('auto-backup (idb) failed:',e);}
 }
