@@ -6426,9 +6426,10 @@ function _mailSeenSave(s){try{localStorage.setItem('cem_mail_seen',JSON.stringif
 // זיהוי הלקוח הרלוונטי למייל: לפי שדה מפורש, שם חברה בנושא/גוף, מס' ח.פ, או כתובת שולח
 function _matchClientForMail(m){
   if(m.cl){const c=findClientByName(m.cl);if(c)return c.name;}
-  const hay=((m.subj||'')+' '+(m.from||'')+' '+(m.body||'')).toLowerCase();
+  // כולל את הנמענים (אל/עותק) — חשוב למיילים שאתה שולח ללקוח עם המערכת ב-BCC
+  const hay=((m.subj||'')+' '+(m.from||'')+' '+(m.to||'')+' '+(m.cc||'')+' '+(m.body||'')).toLowerCase();
   const digits=hay.replace(/\D/g,'');
-  // 1) שם חברה בנושא/גוף (שם ארוך יותר קודם — מדויק יותר)
+  // 1) שם חברה בנושא/גוף/נמענים (שם ארוך יותר קודם — מדויק יותר)
   const byName=D.clients.filter(c=>(c.name||'').trim().length>=2)
     .sort((a,b)=>(b.name||'').length-(a.name||'').length)
     .find(c=>hay.includes((c.name||'').trim().toLowerCase()));
@@ -6436,10 +6437,10 @@ function _matchClientForMail(m){
   // 2) מס' ח.פ
   const byCp=D.clients.find(c=>c.cp&&String(c.cp).length>=6&&hay.includes(String(c.cp)));
   if(byCp)return byCp.name;
-  // 3) כתובת מייל מדויקת של השולח
-  const em=(m.from||'').match(/[\w.+%-]+@[\w.-]+\.[a-z]{2,}/i);
-  const fromEmail=em?em[0].toLowerCase():'';
-  if(fromEmail){const c=D.clients.find(c=>(c.email||'').toLowerCase()===fromEmail);if(c)return c.name;}
+  // 3) כתובת מייל של הלקוח מופיעה בשולח או בנמענים (אל/עותק)
+  const addrs=(((m.from||'')+' '+(m.to||'')+' '+(m.cc||'')).toLowerCase().match(/[\w.+%-]+@[\w.-]+\.[a-z]{2,}/gi)||[]);
+  const fromEmail=(((m.from||'').match(/[\w.+%-]+@[\w.-]+\.[a-z]{2,}/i)||[])[0]||'').toLowerCase();
+  if(addrs.length){const c=D.clients.find(c=>{const ce=(c.email||'').toLowerCase();return ce&&addrs.indexOf(ce)>-1;});if(c)return c.name;}
   // 4) שם איש הקשר בנושא/גוף
   const byContact=D.clients.filter(c=>(c.contact||'').trim().length>=3)
     .sort((a,b)=>(b.contact||'').length-(a.contact||'').length)
@@ -6465,7 +6466,7 @@ function _ingestMail(m){
   const seen=_mailSeen();
   if(seen.has(mid)||(D.inbox||[]).some(x=>x._mid===mid))return null;
   const cl=_matchClientForMail(m);
-  const rec={_mid:mid,dt:m.dt||nd(),time:m.time||'',from:m.from||'',subj:m.subj||'',body:m.body||'',cl:cl||'',st:'חדש',files:Array.isArray(m.files)?m.files:[]};
+  const rec={_mid:mid,dt:m.dt||nd(),time:m.time||'',from:m.from||'',to:m.to||'',subj:m.subj||'',body:m.body||'',cl:cl||'',st:'חדש',files:Array.isArray(m.files)?m.files:[]};
   if(!Array.isArray(D.inbox))D.inbox=[];
   dbInsert('inbox',rec);
   seen.add(mid);_mailSeenSave(seen);
@@ -6520,6 +6521,8 @@ function _mailIngestScript(db,code){
 "        dt: Utilities.formatDate(m.getDate(),'GMT+3','yyyy-MM-dd'),",
 "        time: Utilities.formatDate(m.getDate(),'GMT+3','HH:mm'),",
 "        from: m.getFrom(),",
+"        to: m.getTo(),",
+"        cc: m.getCc(),",
 "        subj: m.getSubject(),",
 "        body: m.getPlainBody().substring(0,5000)",
 "      };",
