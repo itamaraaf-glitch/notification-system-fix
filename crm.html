@@ -2529,6 +2529,11 @@ const SEL = {};
 // ===== UTILS =====
 const now = () => new Date();
 const nd = () => now().toISOString().split('T')[0];
+// אבטחה: בריחת HTML לכל תוכן שמקורו חיצוני (מיילים, שמות לקוחות, קבצים) לפני הזרקה ל-innerHTML.
+// מונע XSS: תוקף ששולח מייל עם <img src=x onerror=...> בנושא/שולח/גוף לא יוכל להריץ קוד במערכת.
+const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+// בריחה לשימוש בתוך מחרוזת JS בתוך onclick="..." — חוסם גם גרשיים וגם תווי HTML.
+const escJs = s => String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,'\\x27').replace(/"/g,'\\x22').replace(/</g,'\\x3C').replace(/>/g,'\\x3E').replace(/\r?\n/g,' ');
 const fmt = n => (!n || n == 0) ? '–' : '₪' + Number(n).toLocaleString('he-IL');
 const fmtDate = s => {if(!s)return'–';const[y,m,d]=s.split('-');return(d||'?')+'/'+(m||'?')+'/'+(y||'?');}
 const db = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
@@ -4811,7 +4816,7 @@ function globalSearch(q){
   (D.archivedMeetings||[]).forEach(m=>{ if(hit(m.cl,m.no)) push('📦',m.cl||'(ללא שם)','פגישה בארכיון','meeting',m.id,true); });
   if(!_gsRes.length){ box.innerHTML='<div class="gsr-empty">לא נמצאו תוצאות</div>'; box.classList.add('show'); return; }
   const gsClr={deal:'#4cc9f0',client:'#c8a96e',dist:'#a78bfa',salary:'#06d6a0',tender:'#f4a261',meeting:'#06d6a0',task:'#f072b6',inbox:'#4cc9f0'};
-  box.innerHTML=_gsRes.map((r,i)=>{const c=gsClr[r.type]||'var(--gold)';return`<div class="gsr" onclick="gsGo(${i})" style="border-right:2px solid ${c}22"><span class="gsr-ic" style="background:${c}15;border-radius:6px;padding:2px 4px">${r.icon}</span><span class="gsr-lb">${r.label}</span><span class="gsr-sub" style="color:${c}">${r.sub}</span></div>`;}).join('');
+  box.innerHTML=_gsRes.map((r,i)=>{const c=gsClr[r.type]||'var(--gold)';return`<div class="gsr" onclick="gsGo(${i})" style="border-right:2px solid ${c}22"><span class="gsr-ic" style="background:${c}15;border-radius:6px;padding:2px 4px">${r.icon}</span><span class="gsr-lb">${esc(r.label)}</span><span class="gsr-sub" style="color:${c}">${esc(r.sub)}</span></div>`;}).join('');
   box.classList.add('show');
 }
 // מפת הלשוניות של כל סעיף — לניווט מדויק מהחיפוש הגלובלי אל השורה עצמה
@@ -6247,14 +6252,14 @@ function rMeetings(){
     const timeDisp=m.time?`<span style="font-size:10px;color:var(--gold)">${m.time}</span>`:'<span style="color:var(--text3)">–</span>';
     const typeIco={פגישה:'🤝',שיחת_טלפון:'📞','שיחת טלפון':'📞',זום:'🖥',Teams:'🟦',אחר:'📌'}[m.mtype||'פגישה']||'🤝';
     const todayBadge=isToday?'<span class="badge bb" style="font-size:9px;margin-right:2px">היום!</span>':'';
-    const clSafe=(m.cl||'').replace(/'/g,'&#39;');
+    const clSafe=escJs(m.cl||'');
     const hasSummary=!!(m.summary&&m.summary.trim().length>10);
     const sumBtnStyle=hasSummary?'border-color:#06d6a0;color:#06d6a0':'border-color:var(--gold);color:var(--gold)';
     const sumBtnTitle=hasSummary?'סיכום פגישה נשמר — לחץ לצפייה ועריכה':'צור סיכום פגישה';
     const sumBtnLbl=hasSummary?'📝✓':'📝';
     const topicChips=(m.topics&&m.topics.length)?m.topics.slice(0,3).map(k=>{const cfg=ITEM_CFG[k];return cfg?`<span style="font-size:8px;padding:1px 5px;border-radius:10px;background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44;white-space:nowrap">${cfg.label.split(' ')[0]}</span>`:''}).join(''):'';
-    const notesCell=topicChips?`<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px" title="${(m.no||'').replace(/"/g,'&quot;')}">${m.no||'–'}</span><div style="display:flex;gap:2px;flex-wrap:wrap">${topicChips}</div></div>`:`<span style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:80px" title="${(m.no||'').replace(/"/g,'&quot;')}">${m.no||'–'}</span>`;
-    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-meetings" ${chk} onchange="toggleSel('meetings','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${todayBadge}</td><td>${timeDisp}</td><td style="font-size:11px">${typeIco}</td><td style="font-weight:600">${m.cl||''}</td><td style="font-size:10px">${m.nu||'–'}</td><td>${sb2}</td><td>${notesCell}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openMeetingSummary('${m.id}')" title="${sumBtnTitle}" style="${sumBtnStyle}">${sumBtnLbl}</button> ${(m.files&&m.files.length)?`<button class="btn btns" onclick="rowFilesMenu('meetings','${m.id}',event)" title="${m.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${m.files.length>1?m.files.length:''}</button> `:''}<button class="btn btns" onclick="showCalendarMenu('${m.id}',event)" title="הוסף ליומן / שלח הזמנה" style="border-color:#a78bfa;color:#a78bfa">📆</button> <button class="btn btns" onclick="openMeetingFor('${clSafe}')" title="קבע פגישה נוספת עם לקוח זה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns" onclick="openM('meeting','${m.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('meetings','${m.id}')">🗑</button></td></tr>`;
+    const notesCell=topicChips?`<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px" title="${esc(m.no||'')}">${esc(m.no||'–')}</span><div style="display:flex;gap:2px;flex-wrap:wrap">${topicChips}</div></div>`:`<span style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:80px" title="${esc(m.no||'')}">${esc(m.no||'–')}</span>`;
+    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-meetings" ${chk} onchange="toggleSel('meetings','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${todayBadge}</td><td>${timeDisp}</td><td style="font-size:11px">${typeIco}</td><td style="font-weight:600">${esc(m.cl||'')}</td><td style="font-size:10px">${esc(m.nu||'–')}</td><td>${sb2}</td><td>${notesCell}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openMeetingSummary('${m.id}')" title="${sumBtnTitle}" style="${sumBtnStyle}">${sumBtnLbl}</button> ${(m.files&&m.files.length)?`<button class="btn btns" onclick="rowFilesMenu('meetings','${m.id}',event)" title="${m.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${m.files.length>1?m.files.length:''}</button> `:''}<button class="btn btns" onclick="showCalendarMenu('${m.id}',event)" title="הוסף ליומן / שלח הזמנה" style="border-color:#a78bfa;color:#a78bfa">📆</button> <button class="btn btns" onclick="openMeetingFor('${clSafe}')" title="קבע פגישה נוספת עם לקוח זה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns" onclick="openM('meeting','${m.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('meetings','${m.id}')">🗑</button></td></tr>`;
   }).join('')||emptyRow(11,'🤝',"אין פגישות","openM('meeting',null)");
   document.getElementById('mft').innerHTML=`<span class="fi">סה"כ: <b>${D.meetings.length}</b></span><span class="fi">התקיימו: <b>${held}</b></span><span class="fi">לא: <b>${D.meetings.filter(m=>m.hl!=='כן').length}</b></span><span class="fi">יעד: <b style="color:${pct>=100?'var(--teal)':pct>=66?'#f4a261':'#e63946'}">${pct}%</b></span>`;
   updateSelBar('meetings');
@@ -6298,8 +6303,8 @@ function rTasks(){
     const doneBtn=`<span class="badge ${done?'bg':'by'}" onclick="event.stopPropagation();toggleTaskDone('${t.id}')" title="לחץ לשינוי" style="cursor:pointer">${done?'✓ בוצע':'סמן בוצע'}</span>`;
     const todayBadge=isToday?'<span class="badge bb" style="font-size:9px;margin-right:2px">היום!</span>':isOverdue?'<span class="badge br" style="font-size:9px;margin-right:2px">באיחור</span>':'';
     const timeDisp=t.time?`<span style="font-size:10px;color:var(--gold)">${t.time}</span>`:'<span style="color:var(--text3)">–</span>';
-    const title=(t.t||'').replace(/</g,'&lt;');
-    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-tasks" ${chk} onchange="toggleSel('tasks','${t.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(t.dt)}${todayBadge}</td><td>${timeDisp}</td><td style="font-weight:600;${done?'text-decoration:line-through':''}">${title}</td><td style="font-size:11px">${t.cl||'–'}</td><td>${prBadge(t.pr)}</td><td>${doneBtn}</td><td><span style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:90px" title="${(t.no||'').replace(/"/g,'&quot;')}">${t.no||'–'}</span></td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('task','${t.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tasks','${t.id}')">🗑</button></td></tr>`;
+    const title=esc(t.t||'');
+    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-tasks" ${chk} onchange="toggleSel('tasks','${t.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(t.dt)}${todayBadge}</td><td>${timeDisp}</td><td style="font-weight:600;${done?'text-decoration:line-through':''}">${title}</td><td style="font-size:11px">${esc(t.cl||'–')}</td><td>${prBadge(t.pr)}</td><td>${doneBtn}</td><td><span style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:90px" title="${esc(t.no||'')}">${esc(t.no||'–')}</span></td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('task','${t.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tasks','${t.id}')">🗑</button></td></tr>`;
   }).join('')||((_taskView==='today'&&all.length>0)
     ? `<tr><td colspan="10" style="text-align:center;padding:22px 12px;color:var(--text2)"><div style="font-size:13px;font-weight:700;margin-bottom:6px">אין משימות מתוזמנות להיום ✅</div><div style="font-size:11px;color:var(--text3);margin-bottom:12px">המשימות שלך לא נמחקו — יש ${all.length} משימות (${openTotal} פתוחות) בתאריכים אחרים</div><button class="btn btnp" onclick="setTaskView('all')" style="font-size:12px">📋 הצג את כל המשימות</button></td></tr>`
     : emptyRow(10,'✅','אין משימות עדיין — לחץ "+ משימה חדשה"',"openM('task',null)"));
@@ -6354,13 +6359,13 @@ function rInbox(){
     const isNewM=m.st==='חדש';
     const rowStyle=isNewM?'background:rgba(76,201,240,.06);font-weight:600;':m.st==='טופל'?'opacity:.6;':'';
     const chk=SEL['inbox']&&SEL['inbox'].has(m.id)?'checked':'';
-    const clSafe=(m.cl||'').replace(/'/g,'&#39;');
-    const subjSafe=(m.subj||'(ללא נושא)').replace(/</g,'&lt;');
-    const fromSafe=(m.from||'–').replace(/</g,'&lt;');
+    const clSafe=esc(m.cl||'–');
+    const subjSafe=esc(m.subj||'(ללא נושא)');
+    const fromSafe=esc(m.from||'–');
     const nextSt={חדש:'בטיפול',בטיפול:'טופל',טופל:'חדש'};
     const stCell=`<span class="badge-wrap" onclick="event.stopPropagation();cycleInboxStatus('${m.id}')" title="לחץ לשינוי סטטוס" style="cursor:pointer">${stBadge(m.st||'חדש')}</span>`;
     const filesCell=(m.files&&m.files.length)?`<button class="btn btns" onclick="event.stopPropagation();rowFilesMenu('inbox','${m.id}',event)" title="${m.files.length} קבצים" style="border-color:#4cc9f0;color:#4cc9f0">📎${m.files.length>1?m.files.length:''}</button>`:'<span style="color:var(--text3)">–</span>';
-    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-inbox" ${chk} onchange="toggleSel('inbox','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${m.time?'<br><span style="color:var(--gold);font-size:9px">'+m.time+'</span>':''}</td><td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(m.from||'').replace(/"/g,'&quot;')}">${fromSafe}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(m.subj||'').replace(/"/g,'&quot;')}">${subjSafe}</td><td style="font-size:11px">${m.cl||'–'}</td><td>${stCell}</td><td>${filesCell}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('inbox','${m.id}')" title="פתח / קרא">👁️</button> <button class="btn btns" onclick="replyInbox('${m.id}')" title="השב במייל" style="border-color:#4cc9f0;color:#4cc9f0">📧</button> <button class="btn btns" onclick="inboxToTask('${m.id}')" title="צור משימה" style="border-color:#f072b6;color:#f072b6">📌</button> <button class="btn btns" onclick="inboxToMeeting('${m.id}')" title="קבע פגישה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns btnd" onclick="dbDelete('inbox','${m.id}')">🗑</button></td></tr>`;
+    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-inbox" ${chk} onchange="toggleSel('inbox','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${m.time?'<br><span style="color:var(--gold);font-size:9px">'+m.time+'</span>':''}</td><td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(m.from||'')}">${fromSafe}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(m.subj||'')}">${subjSafe}</td><td style="font-size:11px">${clSafe}</td><td>${stCell}</td><td>${filesCell}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('inbox','${m.id}')" title="פתח / קרא">👁️</button> <button class="btn btns" onclick="replyInbox('${m.id}')" title="השב במייל" style="border-color:#4cc9f0;color:#4cc9f0">📧</button> <button class="btn btns" onclick="inboxToTask('${m.id}')" title="צור משימה" style="border-color:#f072b6;color:#f072b6">📌</button> <button class="btn btns" onclick="inboxToMeeting('${m.id}')" title="קבע פגישה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns btnd" onclick="dbDelete('inbox','${m.id}')">🗑</button></td></tr>`;
   }).join('')||emptyRow(9,'📥',_inboxView==='new'?(all.length?'אין מיילים חדשים — הכול טופל ✅':'אין מיילים עדיין — לחץ "+ מייל חדש"'):'אין מיילים עדיין — לחץ "+ מייל חדש"',"openM('inbox',null)");
   const ft=document.getElementById('inboxft');
   if(ft)ft.innerHTML=`<span class="fi">סה"כ: <b>${all.length}</b></span><span class="fi">חדשים: <b>${unread}</b></span><span class="fi">בטיפול: <b>${inProg}</b></span>`;
@@ -6795,7 +6800,7 @@ function renderClientDeals(id){
     <span style="font-size:10px;padding:2px 7px;border-radius:20px;background:${stColor(d.st)}18;color:${stColor(d.st)};border:1px solid ${stColor(d.st)}44;white-space:nowrap">${d.st||''}</span>
     ${isArch?'<span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(139,92,246,.12);color:#a78bfa;border:1px solid rgba(139,92,246,.3);white-space:nowrap">📦 ארכיון</span>':''}
     ${isArch?'':`<button class="btn btns" onclick="sendEmailToDeal('${d.id}')" title="שלח עדכון מייל ללקוח" style="font-size:10px;border-color:#4cc9f0;color:#4cc9f0">📧</button>`}
-    ${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד: ${(d.quote.name||'').replace(/'/g,'&#39;')}" style="font-size:10px;border-color:#06d6a0;color:#06d6a0">📎</button>`:''}
+    ${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד: ${esc(d.quote.name||'')}" style="font-size:10px;border-color:#06d6a0;color:#06d6a0">📎</button>`:''}
     ${isArch?'':`<button class="btn btns" onclick="closeM('mclient');setTimeout(()=>openM('deal','${d.id}'),100)" title="פתח עסקה לעריכה" style="font-size:10px">✏️</button>`}
   </div>`;
   const rows=deals.map(d=>mkDealRow(d,false)).join('')
@@ -6909,7 +6914,7 @@ function renderClientEmails(id){
   if(!c){sec.style.display='none';return;}
   const mails=(D.inbox||[]).filter(m=>sameCo(m.cl,c.name))
     .sort((a,b)=>((b.dt||'')+(b.time||''))<((a.dt||'')+(a.time||''))?1:-1);
-  const addBtn=`<button class="btn btns" onclick="closeM('mclient');setTimeout(()=>{openM('inbox',null);setTimeout(()=>{const e=document.getElementById('ibcl');if(e)e.value='${(c.name||'').replace(/'/g,"&#39;")}';},120);},100)" style="border-color:#4cc9f0;color:#4cc9f0;font-size:10px">+ צרף מייל</button>`;
+  const addBtn=`<button class="btn btns" onclick="closeM('mclient');setTimeout(()=>{openM('inbox',null);setTimeout(()=>{const e=document.getElementById('ibcl');if(e)e.value='${escJs(c.name||'')}';},120);},100)" style="border-color:#4cc9f0;color:#4cc9f0;font-size:10px">+ צרף מייל</button>`;
   if(!mails.length){
     sec.style.display='';
     sec.innerHTML=`<div class="msec" style="border:1px solid rgba(76,201,240,.2)"><div class="msec-hdr"><span style="color:#4cc9f0">📥 מיילים</span>${addBtn}</div><div style="font-size:11px;color:var(--text3);padding:8px 4px;font-style:italic">אין מיילים משויכים ללקוח זה</div></div>`;
@@ -6923,8 +6928,8 @@ function renderClientEmails(id){
     return`<div class="cmod-row" style="padding:5px 8px;background:${st==='חדש'?'rgba(76,201,240,.07)':'rgba(255,255,255,.03)'};border:1px solid rgba(255,255,255,.07);margin-bottom:4px">
       <span style="font-size:14px">✉️</span>
       <span style="font-size:10px;color:var(--text2);white-space:nowrap">${fmtDate(m.dt)}</span>
-      <span style="font-size:10px;color:var(--text3);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(m.from||'').replace(/</g,'&lt;')}</span>
-      <span style="font-size:11px;font-weight:600;flex:1;min-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(m.subj||'(ללא נושא)').replace(/</g,'&lt;')}</span>
+      <span style="font-size:10px;color:var(--text3);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.from||'')}</span>
+      <span style="font-size:11px;font-weight:600;flex:1;min-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.subj||'(ללא נושא)')}</span>
       <span style="font-size:9px;font-weight:800;color:${stc};border:1px solid ${stc}55;border-radius:10px;padding:1px 6px">${st}</span>
       <div style="display:flex;gap:4px;margin-right:auto;flex-wrap:wrap">${filesBtn}<button class="btn btns" onclick="closeM('mclient');setTimeout(()=>{nav('inbox');setTimeout(()=>openM('inbox','${m.id}'),200);},80)" style="font-size:10px">👁️ פתח</button></div>
     </div>`;
@@ -6984,7 +6989,7 @@ function clientMeetingFiles(id,ev){
   files.forEach((f,i)=>{
     const b=document.createElement('button');
     b.style.cssText='display:block;width:100%;background:transparent;border:none;color:var(--text);padding:7px 10px;text-align:right;cursor:pointer;border-radius:7px;font-family:inherit;font-size:11px';
-    b.innerHTML=`${_fileIcon(f.name)} ${f.name} <span style="color:var(--text3);font-size:9px">(${Math.round((f.size||0)/1024)}KB)</span>`;
+    b.innerHTML=`${_fileIcon(f.name)} ${esc(f.name)} <span style="color:var(--text3);font-size:9px">(${Math.round((f.size||0)/1024)}KB)</span>`;
     b.onclick=()=>{dl(f);pop.remove();};
     pop.appendChild(b);
   });
@@ -8455,7 +8460,7 @@ function attachRender(kind){
     const canRead=readable.has(ext);
     return `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-top:4px">
     <span>${_fileIcon(f.name)}</span>
-    <span style="font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(f.name||'').replace(/"/g,'&quot;')}">${f.name}</span>
+    <span style="font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(f.name||'')}">${esc(f.name)}</span>
     <span style="font-size:10px;color:var(--text3)">${Math.round((f.size||0)/1024)}KB</span>
     ${canRead?`<button type="button" class="btn btns" onclick="smartReadFile('${kind}',${i})" title="חלץ נתונים מהקובץ" style="font-size:9px;border-color:#a78bfa;color:#a78bfa">📖</button>`:''}
     <button type="button" class="btn btns" onclick="attachDl('${kind}',${i})" style="font-size:9px;border-color:#4cc9f0;color:#4cc9f0">⬇</button>
@@ -8487,7 +8492,7 @@ function rowFilesMenu(table,id,e){
   const pop=document.createElement('div');
   pop.id='row-files-popup';pop.dataset.k=table+id;
   pop.style.cssText='position:fixed;background:var(--s2,#101525);border:1px solid var(--border);border-radius:10px;padding:6px;z-index:9999;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,.6);direction:rtl';
-  pop.innerHTML=files.map((f,i)=>`<button onclick="(function(){const r=(D['${table}']||[]).find(x=>x.id=='${id}');const f=r&&r.files&&r.files[${i}];if(f){const a=document.createElement('a');a.href=f.data;a.download=f.name;document.body.appendChild(a);a.click();a.remove();}})();this.closest('#row-files-popup').remove()" style="display:block;width:100%;background:transparent;border:none;color:var(--text);padding:7px 10px;text-align:right;cursor:pointer;border-radius:7px;font-family:inherit;font-size:11px">${_fileIcon(f.name)} ${f.name} <span style="color:var(--text3);font-size:9px">(${Math.round((f.size||0)/1024)}KB)</span></button>`).join('');
+  pop.innerHTML=files.map((f,i)=>`<button onclick="(function(){const r=(D['${table}']||[]).find(x=>x.id=='${id}');const f=r&&r.files&&r.files[${i}];if(f){const a=document.createElement('a');a.href=f.data;a.download=f.name;document.body.appendChild(a);a.click();a.remove();}})();this.closest('#row-files-popup').remove()" style="display:block;width:100%;background:transparent;border:none;color:var(--text);padding:7px 10px;text-align:right;cursor:pointer;border-radius:7px;font-family:inherit;font-size:11px">${_fileIcon(f.name)} ${esc(f.name)} <span style="color:var(--text3);font-size:9px">(${Math.round((f.size||0)/1024)}KB)</span></button>`).join('');
   const anchor=(e&&(e.currentTarget||e.target))||document.body;
   const r2=anchor.getBoundingClientRect?anchor.getBoundingClientRect():{bottom:80,right:innerWidth/2};
   pop.style.top=Math.min(r2.bottom+4,innerHeight-200)+'px';
@@ -8961,9 +8966,16 @@ function enableDragScroll(el){
 function initDragScrolls(){document.querySelectorAll('.tscroll').forEach(enableDragScroll);}
 
 // ===== EXPORT =====
+// אבטחה: נטרול "הזרקת נוסחאות" (CSV/Excel formula injection). תא שמתחיל ב-= + - @ tab CR
+// עלול לרוץ כנוסחה ב-Excel/Sheets (למשל מייל עם נושא =HYPERLINK(...) שנשלח מבחוץ). מוסיפים ' מוביל.
+function _csvCell(v){
+  let s=String(v==null?'':v);
+  if(/^[=+\-@\t\r]/.test(s))s="'"+s;
+  return '"'+s.replace(/"/g,'""')+'"';
+}
 function toCSV(hdrs,rows){
-  let out='﻿'+hdrs.join(',')+'\n';
-  rows.forEach(r=>{out+=r.map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')+'\n';});
+  let out='﻿'+hdrs.map(_csvCell).join(',')+'\n';
+  rows.forEach(r=>{out+=r.map(_csvCell).join(',')+'\n';});
   return out;
 }
 function dlCSV(name,csv){
