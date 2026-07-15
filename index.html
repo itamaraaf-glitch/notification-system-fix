@@ -2587,7 +2587,8 @@ function showToastWithAction(msg,btnLabel,fn){
   const t=document.createElement('div');
   t.className='toast toast-ok';
   t.style.cssText='display:flex;align-items:center;gap:10px;min-width:240px;max-width:340px';
-  t.innerHTML=`<span style="flex:1;font-size:12px">${msg}</span><button style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:4px 10px;font-family:inherit;font-size:11px;cursor:pointer;white-space:nowrap">${btnLabel}</button>`;
+  // אבטחה: msg עלול להכיל שדות חיצוניים (שם לקוח/חברה) — בריחה למניעת XSS ב-innerHTML
+  t.innerHTML=`<span style="flex:1;font-size:12px">${esc(msg)}</span><button style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:4px 10px;font-family:inherit;font-size:11px;cursor:pointer;white-space:nowrap">${esc(btnLabel)}</button>`;
   t.querySelector('button').onclick=()=>{t.remove();if(fn)fn();};
   const restack=()=>{document.querySelectorAll('.toast').forEach((el,i)=>{el.style.bottom=(16+i*54)+'px';});};
   document.body.appendChild(t);restack();
@@ -6257,8 +6258,8 @@ function showDayMeetings(dStr,e){
     const hlB=m.hl==='כן'?'<span style="font-size:10px;color:#06d6a0">✓ התקיימה</span>':m.hl==='מבוטל'?'<span style="font-size:10px;color:#e63946">✕ מבוטל</span>':'<span style="font-size:10px;color:#f4a261">⏳ ממתין</span>';
     return`<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin-bottom:5px;flex-wrap:wrap">
       <span>${typeIco[m.mtype||'פגישה']||'🤝'}</span>
-      ${m.time?`<span style="font-size:10px;color:var(--gold);font-weight:700">${m.time}</span>`:''}
-      <span style="font-size:11px;font-weight:600;flex:1">${m.cl||'(ללא שם)'}</span>
+      ${m.time?`<span style="font-size:10px;color:var(--gold);font-weight:700">${esc(m.time)}</span>`:''}
+      <span style="font-size:11px;font-weight:600;flex:1">${esc(m.cl||'(ללא שם)')}</span>
       ${hlB}
       ${arch?'<span style="font-size:9px;color:#a78bfa">📦</span>':`<button class="btn btns" onclick="document.getElementById('day-mtg-popup').remove();openM('meeting','${m.id}')" style="font-size:9px">✏️</button>`}
     </div>`;
