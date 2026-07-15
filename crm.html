@@ -2067,7 +2067,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     </div>
     <div style="margin-bottom:14px">
       <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px">קוד סנכרון <span style="font-weight:400;color:var(--text3)">(השתמש באותו קוד בכל המכשירים)</span>:</label>
-      <input type="text" id="fb-simple-code" value="hot-crm" style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-size:13px;direction:ltr">
+      <input type="text" id="fb-simple-code" value="hot-crm" oninput="_syncHint(this,'fb-simple-hint')" style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-size:13px;direction:ltr">
+      <div id="fb-simple-hint" style="font-size:10px;margin-top:5px;line-height:1.5;color:#e63946">🔴 חלש — זהו קוד ברירת-המחדל שקל לנחש. הקוד הוא מפתח ההצפנה של הנתונים בענן — בחר קוד ארוך וייחודי (10+ תווים).</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btnp" onclick="saveSimpleSync()" style="flex:1">✅ חבר ותתחיל לסנכרן</button>
@@ -2083,7 +2084,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     </div>
     <div style="margin-bottom:14px">
       <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px">קוד סנכרון:</label>
-      <input type="text" id="fb-sync-code" value="hot-crm" style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-size:13px;direction:ltr">
+      <input type="text" id="fb-sync-code" value="hot-crm" oninput="_syncHint(this,'fb-sync-hint')" style="width:100%;box-sizing:border-box;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-size:13px;direction:ltr">
+      <div id="fb-sync-hint" style="font-size:10px;margin-top:5px;line-height:1.5;color:#e63946">🔴 חלש — זהו קוד ברירת-המחדל שקל לנחש. הקוד הוא מפתח ההצפנה של הנתונים בענן — בחר קוד ארוך וייחודי (10+ תווים).</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btnp" onclick="saveFBConfig()" style="flex:1">✅ שמור וחבר</button>
@@ -3696,15 +3698,23 @@ async function saveFBConfig(){
     return;
   }
   if(!cfg.databaseURL){showToast('⚠️ חסר databaseURL — ודא שהפעלת Realtime Database','warn');return;}
-  cfg.syncCode=code;
-  localStorage.setItem(FB_CFG_KEY,JSON.stringify(cfg));
-  if(_fbRef){try{_fbRef.off();}catch(e){}
-    _fbRef=null;}
-  _fbDB=null;_fbListening=false;
-  closeM('msync');
-  showToast('✅ הגדרות סנכרון נשמרו – מתחבר לענן...','ok');
-  await fbInit();
-  fbPush();
+  const proceed=async()=>{
+    cfg.syncCode=code;
+    localStorage.setItem(FB_CFG_KEY,JSON.stringify(cfg));
+    if(_fbRef){try{_fbRef.off();}catch(e){}
+      _fbRef=null;}
+    _fbDB=null;_fbListening=false;
+    closeM('msync');
+    showToast('✅ הגדרות סנכרון נשמרו – מתחבר לענן...','ok');
+    await fbInit();
+    fbPush();
+  };
+  const st=_syncStrength(code);
+  if(st.weak){
+    confirmAct('⚠️ קוד הסנכרון חלש — הוא מפתח ההצפנה של כל הנתונים בענן. '+st.reason+' מומלץ מאוד לבחור קוד ארוך וייחודי (10+ תווים). לשמור בכל זאת?',proceed,'שמור בכל זאת');
+    return;
+  }
+  proceed();
 }
 
 function openSyncModal(){
@@ -3760,17 +3770,44 @@ function switchSyncTab(tab){
 // ===== SIMPLE REST SYNC (just needs database URL, no Firebase SDK) =====
 let _ssUrl=null,_ssTimer=null,_ssPollActive=false;
 
+// אבטחה: קוד הסנכרון הוא מפתח ההצפנה של כל הנתונים בענן (וגם ממנו נגזר נתיב הענן).
+// קוד חלש/ברירת-מחדל = ההצפנה חסרת ערך: כל מי שקורא את הקוד הפומבי של המערכת יכול
+// לגזור את המפתח ולפענח את הנתונים. כאן בודקים חוזק ומזהירים לפני שמירה.
+function _syncStrength(code){
+  const c=String(code||'');
+  const common=['hot-crm','hotcrm','hot','crm','1234','12345678','123456','password','admin','test','000000','111111','qwerty'];
+  if(!c||common.includes(c.toLowerCase()))return{weak:true,reason:'זהו קוד ברירת-המחדל / קוד נפוץ שקל לנחש.'};
+  if(c.length<10)return{weak:true,reason:'הקוד קצר מדי (פחות מ-10 תווים).'};
+  const classes=(/[a-z]/.test(c)?1:0)+(/[A-Z]/.test(c)?1:0)+(/[0-9]/.test(c)?1:0)+(/[^a-zA-Z0-9]/.test(c)?1:0);
+  if(classes<2)return{weak:true,reason:'הקוד פשוט מדי — שלב אותיות וספרות.'};
+  return{weak:false,reason:''};
+}
+// רמז חי מתחת לשדה קוד הסנכרון
+function _syncHint(inp,hintId){
+  const el=document.getElementById(hintId);if(!el)return;
+  const st=_syncStrength((inp.value||'').trim()||'hot-crm');
+  if(st.weak){el.textContent='🔴 חלש — '+st.reason+' מומלץ 10+ תווים, שילוב אותיות וספרות.';el.style.color='#e63946';}
+  else{el.textContent='🟢 קוד חזק — הנתונים בענן יהיו מוצפנים היטב.';el.style.color='#06d6a0';}
+}
 async function saveSimpleSync(){
   let url=(document.getElementById('fb-simple-url').value||'').trim().replace(/\/+$/,'');
   const code=(document.getElementById('fb-simple-code').value||'').trim()||'hot-crm';
   if(!url){showToast('⚠️ הזן כתובת Firebase Database URL','warn');return;}
   if(!url.startsWith('https://')){showToast('⚠️ הכתובת חייבת להתחיל ב-https://','warn');return;}
-  const cfg={mode:'simple',databaseURL:url,syncCode:code};
-  localStorage.setItem(FB_CFG_KEY,JSON.stringify(cfg));
-  closeM('msync');
-  showToast('🔄 מתחבר לענן...','info');
-  await ssInit(url,code);
-  if(_ssUrl) _ssPushNow();
+  const proceed=async()=>{
+    const cfg={mode:'simple',databaseURL:url,syncCode:code};
+    localStorage.setItem(FB_CFG_KEY,JSON.stringify(cfg));
+    closeM('msync');
+    showToast('🔄 מתחבר לענן...','info');
+    await ssInit(url,code);
+    if(_ssUrl) _ssPushNow();
+  };
+  const st=_syncStrength(code);
+  if(st.weak){
+    confirmAct('⚠️ קוד הסנכרון חלש — הוא מפתח ההצפנה של כל הנתונים בענן. '+st.reason+' מומלץ מאוד לבחור קוד ארוך וייחודי (10+ תווים). להתחבר בכל זאת?',proceed,'התחבר בכל זאת');
+    return;
+  }
+  proceed();
 }
 
 async function ssInit(dbUrl,syncCode){
