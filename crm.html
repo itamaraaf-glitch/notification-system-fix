@@ -3213,6 +3213,53 @@ async function _cloudDecrypt(b64){
   const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:raw.slice(0,12)},key,raw.slice(12));
   return JSON.parse(new TextDecoder().decode(pt));
 }
+// ── הצפנת מייל נכנס (enc:2) ──────────────────────────────────────────────
+// המייל הנכנס נכתב לענן בידי Google Apps Script, שאין לו WebCrypto (אין AES/PBKDF2
+// מובנים). לכן משתמשים בצופן זרם מאומת הבנוי כולו מ-HMAC-SHA256 — פרימיטיב שגם
+// Apps Script (Utilities.computeHmacSha256Signature) וגם הדפדפן (WebCrypto) מחשבים
+// באופן זהה. תבנית: encrypt-then-MAC. כך המייל מוצפן במנוחה בענן, ולא נקרא בלי קוד הסנכרון.
+let _mailKeyCache={code:null,enc:null,mac:null};
+async function _hmacRaw(keyBytes,dataBytes){
+  const k=await crypto.subtle.importKey('raw',keyBytes,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  return new Uint8Array(await crypto.subtle.sign('HMAC',k,dataBytes));
+}
+async function _mailKeys(){
+  const cfg=JSON.parse(localStorage.getItem(FB_CFG_KEY)||'{}');
+  const code=cfg.syncCode||'hot-crm';
+  if(_mailKeyCache.code===code&&_mailKeyCache.enc)return _mailKeyCache;
+  // גזירת מפתח בסיס מקוד הסנכרון (PBKDF2 קל — נתיב הענן ממילא נגזר מ-SHA-256 של הקוד,
+  // כך שהוא "החוליה החלשה"; מתיחה כבדה כאן לא הייתה מוסיפה ביטחון אמיתי).
+  const km=await crypto.subtle.importKey('raw',new TextEncoder().encode('cem_mail:'+code),'PBKDF2',false,['deriveBits']);
+  const bits=new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode('cem_hot_mail_salt_v1'),iterations:2048,hash:'SHA-256'},km,256));
+  const enc=await _hmacRaw(bits,new TextEncoder().encode('enc'));
+  const mac=await _hmacRaw(bits,new TextEncoder().encode('mac'));
+  const encKey=await crypto.subtle.importKey('raw',enc,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  const macKey=await crypto.subtle.importKey('raw',mac,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  _mailKeyCache={code,enc:encKey,mac:macKey};
+  return _mailKeyCache;
+}
+async function _mailDecrypt(entry){
+  const {enc:encKey,mac:macKey}=await _mailKeys();
+  const b2b=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+  const nonce=b2b(entry.n),ct=b2b(entry.ct),tag=b2b(entry.t);
+  // אימות תקינות (encrypt-then-MAC): tag = HMAC(macKey, nonce||ct), השוואה בזמן קבוע
+  const data=new Uint8Array(nonce.length+ct.length);data.set(nonce);data.set(ct,nonce.length);
+  const expect=new Uint8Array(await crypto.subtle.sign('HMAC',macKey,data));
+  if(expect.length!==tag.length)throw new Error('bad tag len');
+  let diff=0;for(let i=0;i<tag.length;i++)diff|=expect[i]^tag[i];
+  if(diff!==0)throw new Error('mail auth failed');
+  // זרם מפתח: block_i = HMAC(encKey, nonce||uint32be(i)); pt = ct XOR keystream
+  const pt=new Uint8Array(ct.length);
+  let off=0,ctr=0;
+  while(off<ct.length){
+    const blkIn=new Uint8Array(nonce.length+4);blkIn.set(nonce);
+    new DataView(blkIn.buffer).setUint32(nonce.length,ctr,false);
+    const ks=new Uint8Array(await crypto.subtle.sign('HMAC',encKey,blkIn));
+    for(let i=0;i<ks.length&&off<ct.length;i++,off++)pt[off]=ct[off]^ks[i];
+    ctr++;
+  }
+  return JSON.parse(new TextDecoder().decode(pt));
+}
 // חילוץ נתונים מהענן: פורמט מוצפן (enc:1) או הפורמט הישן הלא-מוצפן (מעבר חלק).
 // פענוח כושל (קוד סנכרון שגוי / חבלה בנתונים) — מתעלמים, לא ממזגים זבל.
 async function cloudExtract(remote){
@@ -6493,7 +6540,8 @@ async function pollCloudMail(silent){
     for(const key of Object.keys(j)){
       const entry=j[key];if(!entry)continue;
       let mail=entry;
-      if(entry.enc===1&&typeof entry.data==='string'){try{mail=await _cloudDecrypt(entry.data);}catch(e){continue;}}
+      if(entry.enc===2){try{mail=await _mailDecrypt(entry);}catch(e){continue;}}
+      else if(entry.enc===1&&typeof entry.data==='string'){try{mail=await _cloudDecrypt(entry.data);}catch(e){continue;}}
       const rec=_ingestMail(mail);
       if(rec){got++;if(rec.cl)linked.push(rec.cl);}
       try{await fetch(base+'/'+encodeURIComponent(key)+'.json',{method:'DELETE'});}catch(e){} // נקלט — מוחקים מהענן
@@ -6506,15 +6554,48 @@ async function pollCloudMail(silent){
 }
 // בונה את קוד ה-Google Apps Script עם פרטי ה-Firebase של המשתמש
 function _mailIngestScript(db,code){
+  // אבטחה: בריחה של ערכי המשתמש לתוך מחרוזת JS ('...') בקוד הנוצר — מונע שבירת
+  // הסקריפט או הזרקת קוד אם קוד הסנכרון/הכתובת מכילים גרש, לוכסן אחורי או שורה חדשה.
+  const jl=s=>String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r/g,'\\r').replace(/\n/g,'\\n').replace(/</g,'\\x3C');
   return [
-"// ===== CRM Mail Ingest — הדבק ב-script.google.com והגדר טריגר כל 5 דקות =====",
-"var DB_URL = '"+db+"';",
-"var SYNC_CODE = '"+code+"';",
+"// ===== CRM Mail Ingest (מוצפן) — הדבק ב-script.google.com והגדר טריגר כל 5 דקות =====",
+"// המייל מוצפן לפני העלאה לענן (HMAC-SHA256, encrypt-then-MAC) כך שהוא בלתי-קריא בענן",
+"// ללא קוד הסנכרון. רק המערכת שלך, שמחזיקה את הקוד, יכולה לפענח אותו.",
+"var DB_URL = '"+jl(db)+"';",
+"var SYNC_CODE = '"+jl(code)+"';",
 "var CRM_LABEL = 'crm-sent'; // מייל שנשלח למערכת מקבל תווית זו — כדי לא לשלוח פעמיים (לא תלוי בנקרא/לא-נקרא)",
+"",
+"function _b(s){ return Utilities.newBlob(s).getBytes(); }                 // מחרוזת -> בייטים (UTF-8)",
+"function _hmac(msg,key){ return Utilities.computeHmacSha256Signature(msg,key); }",
+"function _i32(n){ return [(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255].map(function(x){return x>127?x-256:x;}); }",
+"function _pbkdf2(pw,salt,iters){                                          // PBKDF2-HMAC-SHA256, בלוק אחד (32 בייט)",
+"  var u = _hmac(salt.concat([0,0,0,1]), pw), dk = u.slice();",
+"  for(var i=1;i<iters;i++){ u = _hmac(u, pw); for(var j=0;j<dk.length;j++) dk[j] = dk[j]^u[j]; }",
+"  return dk;",
+"}",
+"function _mailKeys(){",
+"  var base = _pbkdf2(_b('cem_mail:'+SYNC_CODE), _b('cem_hot_mail_salt_v1'), 2048);",
+"  return { enc: _hmac(_b('enc'), base), mac: _hmac(_b('mac'), base) };",
+"}",
+"function _encryptMail(obj, keys){",
+"  var seed = String(obj.mid)+':'+(new Date().getTime())+':'+Math.random();",
+"  var nonce = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, seed).slice(0,16);",
+"  var pt = _b(JSON.stringify(obj));",
+"  var ct = [], ctr = 0;",
+"  for(var off=0; off<pt.length; ){",
+"    var ks = _hmac(nonce.concat(_i32(ctr)), keys.enc);",
+"    for(var i=0;i<ks.length && off<pt.length;i++,off++) ct.push(pt[off]^ks[i]);",
+"    ctr++;",
+"  }",
+"  var tag = _hmac(nonce.concat(ct), keys.mac);",
+"  return { enc:2, n:Utilities.base64Encode(nonce), ct:Utilities.base64Encode(ct), t:Utilities.base64Encode(tag) };",
+"}",
+"",
 "function ingestCrmMail(){",
 "  var d = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, 'cem:'+SYNC_CODE);",
 "  var hex = d.map(function(b){b=(b<0?b+256:b).toString(16);return b.length==1?'0'+b:b;}).join('');",
 "  var path = DB_URL.replace(/\\/+$/,'') + '/cem_hot_mail_' + hex.substring(0,16);",
+"  var keys = _mailKeys();",
 "  var label = GmailApp.getUserLabelByName(CRM_LABEL) || GmailApp.createLabel(CRM_LABEL);",
 "  var threads = GmailApp.search('newer_than:60d -label:' + CRM_LABEL, 0, 40);",
 "  var n = 0;",
@@ -6531,12 +6612,13 @@ function _mailIngestScript(db,code){
 "        subj: m.getSubject(),",
 "        body: m.getPlainBody().substring(0,5000)",
 "      };",
-"      var res = UrlFetchApp.fetch(path+'/'+m.getId()+'.json', {method:'put', contentType:'application/json', payload:JSON.stringify(mail), muteHttpExceptions:true});",
+"      var enc = _encryptMail(mail, keys);",
+"      var res = UrlFetchApp.fetch(path+'/'+m.getId()+'.json', {method:'put', contentType:'application/json', payload:JSON.stringify(enc), muteHttpExceptions:true});",
 "      if(res.getResponseCode() < 300){ n++; } else { okAll = false; }",
 "    });",
 "    if(okAll){ th.addLabel(label); } // מסמנים כ'נשלח' רק אם כל ההודעות עלו בהצלחה",
 "  });",
-"  Logger.log('נשלחו ' + n + ' מיילים למערכת');",
+"  Logger.log('נשלחו ' + n + ' מיילים מוצפנים למערכת');",
 "}"
 ].join("\n");
 }
@@ -6566,7 +6648,7 @@ function openMailConnect(){
     </div>
     <div style="margin-top:12px;padding:9px 12px;background:rgba(6,214,160,.06);border:1px solid rgba(6,214,160,.2);border-radius:9px;font-size:11px;color:var(--text2);line-height:1.7">
       💡 <b>זיהוי הלקוח:</b> המערכת מקשרת את המייל לכרטיס לפי שם החברה / מס' ח.פ / כתובת מייל שמופיעים בנושא או בתוכן. אם לא זוהה — המייל ייכנס לסעיף "מיילים נכנסים" ותוכל לשייך ידנית.<br>
-      🔒 המיילים נשמרים בענן הפרטי שלך (Firebase), נמחקים ממנו מיד לאחר הקליטה למכשיר.
+      🔒 <b>הצפנה מקצה-לקצה:</b> המייל <b>מוצפן</b> (HMAC-SHA256) עוד לפני שהוא עולה לענן — בלתי-קריא בלי קוד הסנכרון שלך — ונמחק מהענן מיד לאחר הקליטה למכשיר.
     </div>`;
   openM_id('mmailconnect');
 }
