@@ -2503,7 +2503,9 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 <script>
 // ===== CONSTANTS & STATE =====
 const LS_KEY = 'cem_hot_v3';
-const USERS = [{u:'a807c84541e2426c4bc9695945a4e10180ce457d026c83b4436f9e70aa513a0c',p:'8f08a4a7d32e40da3d3cfe97780bdfb87be8fecf57a4acdd88c30797fb162023',n:'איתמר ונדן'}];
+// סיסמה: מאוחסנת כגיבוב מָתוּחַ (PBKDF2-HMAC-SHA256, 210K סבבים) ולא כ-SHA-256 פשוט —
+// ראה _pwHash(). מייקר משמעותית פיצוח לא-מקוון גם אם הקוד הפומבי נקרא.
+const USERS = [{u:'a807c84541e2426c4bc9695945a4e10180ce457d026c83b4436f9e70aa513a0c',p:'226926cfadd8f5c581c098e6329400e8897c802254888e2977716e0eb6766225',n:'איתמר ונדן'}];
 const MEETING_GOAL = 15;
 const GOAL_DEALS = 15000;
 const GOAL_DISTS = 14000;
@@ -2668,6 +2670,17 @@ function _showLockMsg(sec){
 }
 // Disable/enable login button visually
 function _setBusy(on){const b=document.getElementById('lbtn');if(b){b.disabled=on;b.style.opacity=on?'.5':'';}}
+// אבטחה: מתיחת סיסמה. גיבוב הסיסמה מאוחסן בקוד המערכת שמתארח ב-GitHub Pages (פומבי),
+// ולכן הוא קריא לכולם. מתיחת PBKDF2-HMAC-SHA256 ב-210,000 סבבים מייקרת מאוד כל ניסיון
+// פיצוח לא-מקוון (במקום SHA-256 בודד ומהיר) — כך שגם אם התוקף קורא את הגיבוב, פיצוח
+// הסיסמה איטי בסדרי-גודל. הקלט הוא ה-SHA-256 של הסיסמה, כדי שנוכל לגזור את הערך המאוחסן.
+async function _pwHash(pw){
+  const ph=await sha256(pw);
+  if(!(crypto&&crypto.subtle&&crypto.subtle.deriveBits))return ph; // הקשר לא-מאובטח (HTTP מקומי) — נפילה חלקה
+  const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(ph),'PBKDF2',false,['deriveBits']);
+  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode('cem_hot_pw_salt_v1'),iterations:210000,hash:'SHA-256'},km,256);
+  return Array.from(new Uint8Array(bits)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 
 async function doLogin(){
   const errEl=document.getElementById('lerr');
@@ -2681,7 +2694,7 @@ async function doLogin(){
   // ── hash ──────────────────────────────────────────────────────────────────
   _setBusy(true);errEl.textContent='';
   let uh,ph;
-  try{[uh,ph]=await Promise.all([sha256(u),sha256(p)]);}
+  try{[uh,ph]=await Promise.all([sha256(u),_pwHash(p)]);}
   catch(e){errEl.textContent='שגיאה פנימית – נסה שוב';_setBusy(false);return;}
   // ── compare ───────────────────────────────────────────────────────────────
   const f=USERS.find(x=>x.u===uh&&x.p===ph);
@@ -2738,6 +2751,33 @@ function _bioFromStorage(){
   try{const bl=_bioLocal();if(bl&&bl.cred)return {on:true,cred:bl.cred};}catch(e){}
   try{const p=JSON.parse(localStorage.getItem(LS_KEY)||'{}');return p._bio||null;}catch(e){return null;}
 }
+// אבטחה: אימות חתימת ה-WebAuthn מול המפתח הציבורי הרשום. הופך את הכניסה הביומטרית
+// מ"מחווה שהצליחה" לאימות קריפטוגרפי אמיתי — התגובה נחתמה במפתח הפרטי שבמעבד המאובטח,
+// ורק הוא (יחד עם המפתח הציבורי השמור) יכול לייצר חתימה תקפה. מומר DER→raw עבור ECDSA.
+function _derToRawEcdsa(der,size){
+  let o=0;
+  if(der[o++]!==0x30)throw new Error('der seq');
+  let sl=der[o++]; if(sl&0x80){let n=sl&0x7f;sl=0;while(n--)sl=(sl<<8)|der[o++];}
+  if(der[o++]!==0x02)throw new Error('der r'); let rl=der[o++]; let r=der.slice(o,o+rl); o+=rl;
+  if(der[o++]!==0x02)throw new Error('der s'); let sll=der[o++]; let s=der.slice(o,o+sll); o+=sll;
+  const norm=x=>{let i=0;while(i<x.length-1&&x[i]===0)i++;x=x.slice(i);if(x.length>size)x=x.slice(x.length-size);const out=new Uint8Array(size);out.set(x,size-x.length);return out;};
+  const raw=new Uint8Array(size*2);raw.set(norm(r),0);raw.set(norm(s),size);return raw;
+}
+async function _verifyAssertion(assertion,pkB64u,alg){
+  if(!pkB64u||!assertion||!assertion.response)return null; // אין מפתח שמור (רישום ישן) — לא ניתן לאמת
+  const spki=_b64uToBytes(pkB64u);
+  const ad=new Uint8Array(assertion.response.authenticatorData);
+  const cd=new Uint8Array(assertion.response.clientDataJSON);
+  const cdHash=new Uint8Array(await crypto.subtle.digest('SHA-256',cd));
+  const signed=new Uint8Array(ad.length+cdHash.length);signed.set(ad);signed.set(cdHash,ad.length);
+  let sig=new Uint8Array(assertion.response.signature);
+  if(alg===-257){
+    const key=await crypto.subtle.importKey('spki',spki,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['verify']);
+    return crypto.subtle.verify('RSASSA-PKCS1-v1_5',key,sig,signed);
+  }
+  const key=await crypto.subtle.importKey('spki',spki,{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
+  return crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},key,_derToRawEcdsa(sig,32),signed);
+}
 // כניסה בטביעת אצבע / Face ID (WebAuthn) — המפתח הפרטי שמור במעבד המאובטח של המכשיר
 let _bioTriedStored=false;
 async function loginWithBio(){
@@ -2754,7 +2794,23 @@ async function loginWithBio(){
   try{
     const pub={challenge:crypto.getRandomValues(new Uint8Array(32)),userVerification:'required',timeout:60000};
     if(!useDiscoverable)pub.allowCredentials=[{type:'public-key',id:_b64uToBytes(localCred)}];
-    await navigator.credentials.get({publicKey:pub});
+    const assertion=await navigator.credentials.get({publicKey:pub});
+    // אבטחה: קשירת מזהה — בניסיון הראשון (עם allowCredentials) מוודאים שהמפתח שהוחזר
+    // הוא בדיוק המפתח הרשום למכשיר, ולא מפתח אחר. במצב "גילוי" (שחזור) לא אוכפים, כדי
+    // שהכניסה תשרוד אובדן/התיישנות של המזהה המקומי — עדיפות רציפות שנקבעה במפורש.
+    if(!useDiscoverable&&assertion&&assertion.rawId){
+      const gotId=_bytesToB64u(new Uint8Array(assertion.rawId));
+      if(gotId!==localCred)throw new Error('credential id mismatch');
+      // אימות חתימה קריפטוגרפי — רק אם נשמר מפתח ציבורי (רישום חדש). אימות שנכשל =
+      // דחייה. שגיאת פענוח בלתי-צפויה לא נועלת את המשתמש (עדיפות רציפות): נשענים על
+      // קשירת המזהה + אישור ביומטרי מוצלח. במצב שחזור (discoverable) לא מאמתים.
+      const bl=_bioLocal()||{};
+      if(bl.pk){
+        let ok;
+        try{ok=await _verifyAssertion(assertion,bl.pk,bl.alg||-7);}catch(e){ok='err';}
+        if(ok===false)throw new Error('signature verification failed');
+      }
+    }
     // אישור ביומטרי מוצלח = המשתמש אימת את עצמו במכשיר הרשום
     const f=_pending2FA;_pending2FA=null;errEl.textContent='';
     _completeLogin(f);
@@ -2780,6 +2836,13 @@ async function submit2FA(){
     return;
   }
   if(t&&t.secret&&await totpVerify(t.secret,inp)){
+    // הגנה מפני שימוש-חוזר (replay): קוד TOTP תקף ~90 שניות; דוחים ניצול חוזר של
+    // אותו קוד בחלון הזה, כדי שקוד שנצפה/יורט לא ישמש כניסה שנייה.
+    let usedObj=null;try{usedObj=JSON.parse(localStorage.getItem('cem_totp_used')||'null');}catch(e){}
+    if(usedObj&&usedObj.exp>Date.now()&&usedObj.code===inp){
+      errEl.textContent='קוד זה כבר נוצל — המתן לקוד הבא באפליקציה';return;
+    }
+    try{localStorage.setItem('cem_totp_used',JSON.stringify({code:inp,exp:Date.now()+90000}));}catch(e){}
     const f=_pending2FA;_pending2FA=null;errEl.textContent='';
     _completeLogin(f);
     return;
@@ -4119,9 +4182,12 @@ async function bioSetup(){
       timeout:60000,attestation:'none'
     }});
     const idB64=_bytesToB64u(new Uint8Array(cred.rawId));
+    // שמירת המפתח הציבורי (SPKI) לצורך אימות חתימה עתידי — לא נחשף, ומאפשר לאמת
+    // שהתגובה מגיעה באמת מהמפתח הרשום. תוסף בלבד: כניסה קיימת אינה מושפעת.
+    let pkB64='',alg=-7;try{if(cred.response&&cred.response.getPublicKey){const pk=cred.response.getPublicKey();if(pk)pkB64=_bytesToB64u(new Uint8Array(pk));}if(cred.response&&cred.response.getPublicKeyAlgorithm)alg=cred.response.getPublicKeyAlgorithm();}catch(e){}
     // נשמר מקומית (המפתח שייך למכשיר) וגם ב-D לצורך תצוגה בלבד
-    D._bio={on:true,cred:idB64,since:nd()};
-    localStorage.setItem('cem_bio_local',JSON.stringify({cred:idB64}));
+    D._bio={on:true,cred:idB64,pk:pkB64,alg,since:nd()};
+    localStorage.setItem('cem_bio_local',JSON.stringify({cred:idB64,pk:pkB64,alg}));
     saveAll();renderSecurityPanel();
     showToast('👆 כניסה בטביעת אצבע הופעלה — מהכניסה הבאה תזוהה במכשיר הזה','ok');
   }catch(e){
