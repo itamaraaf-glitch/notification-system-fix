@@ -2018,6 +2018,9 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 <div class="mw" id="msync"><div class="modal" style="max-width:580px">
   <div class="mhdr"><h3>☁️ סנכרון ענן בין מכשירים</h3><button class="mcls" onclick="closeM('msync')">✕</button></div>
 
+  <!-- Cloud security status (reflects the saved sync-code strength) -->
+  <div id="cloud-sec-status" style="display:none;padding:10px 14px;border-radius:10px;margin-bottom:12px;border:1px solid"></div>
+
   <!-- Status bar (shown when connected) -->
   <div id="sync-status-bar" style="display:none;padding:10px 14px;border-radius:10px;margin-bottom:12px;background:rgba(6,214,160,.1);border:1px solid rgba(6,214,160,.3)">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
@@ -3717,9 +3720,27 @@ async function saveFBConfig(){
   proceed();
 }
 
+// אינדיקטור סטטוס אבטחת הענן — משקף את חוזק קוד הסנכרון השמור (מפתח ההצפנה).
+function _renderCloudSecStatus(){
+  const el=document.getElementById('cloud-sec-status');if(!el)return;
+  let cfg=null;try{cfg=JSON.parse(localStorage.getItem(FB_CFG_KEY)||'null');}catch(e){}
+  if(!cfg||!cfg.databaseURL){el.style.display='none';return;}
+  const st=_syncStrength(cfg.syncCode||'hot-crm');
+  el.style.display='';
+  if(st.weak){
+    el.style.background='rgba(230,57,70,.1)';el.style.borderColor='rgba(230,57,70,.4)';
+    el.innerHTML='<div style="font-size:13px;font-weight:800;color:#e63946">🔴 אבטחת הענן: חלשה</div>'+
+      '<div style="font-size:11px;color:var(--text2);margin-top:3px;line-height:1.6">קוד הסנכרון הנוכחי חלש — '+esc(st.reason)+' הקוד הוא מפתח ההצפנה של הנתונים בענן. <b>מומלץ מאוד להחליף אותו לקוד ארוך וייחודי (10+ תווים), באותו קוד בכל המכשירים.</b></div>';
+  }else{
+    el.style.background='rgba(6,214,160,.1)';el.style.borderColor='rgba(6,214,160,.35)';
+    el.innerHTML='<div style="font-size:13px;font-weight:800;color:#06d6a0">🔒 אבטחת הענן: חזקה</div>'+
+      '<div style="font-size:11px;color:var(--text2);margin-top:3px;line-height:1.6">הנתונים מוצפנים מקצה-לקצה (AES-256) עם קוד סנכרון חזק. ✅</div>';
+  }
+}
 function openSyncModal(){
   const cfgStr=localStorage.getItem(FB_CFG_KEY);
   const isConnected=_fbListening||!!_ssUrl;
+  _renderCloudSecStatus();
   const statusBar=document.getElementById('sync-status-bar');
   if(statusBar)statusBar.style.display=isConnected?'':'none';
   if(isConnected){
@@ -4254,8 +4275,24 @@ function renderSecurityPanel(){
       <button class="btn" onclick="bioDisable()" style="font-size:11px;opacity:.85">בטל טביעת אצבע</button>`
     :`<span style="font-size:12px;color:var(--text3);font-weight:800">👆 טביעת אצבע כבויה</span>
       <button class="btn btnp" onclick="bioSetup()" style="font-size:11px">👆 הפעל טביעת אצבע / Face ID</button>`;
+  // סטטוס אבטחת ענן — חוזק קוד הסנכרון (מפתח ההצפנה של הנתונים בענן)
+  let _scfg=null;try{_scfg=JSON.parse(localStorage.getItem(FB_CFG_KEY)||'null');}catch(e){}
+  let cloudRow;
+  if(!_scfg||!_scfg.databaseURL){
+    cloudRow=`<span style="font-size:12px;color:var(--text3);font-weight:800">☁️ סנכרון ענן לא מחובר</span>
+      <button class="btn btnp" onclick="openSyncModal()" style="font-size:11px">☁️ חבר סנכרון</button>`;
+  }else{
+    const st=_syncStrength(_scfg.syncCode||'hot-crm');
+    cloudRow=st.weak
+      ?`<span style="font-size:12px;color:#e63946;font-weight:800">🔴 אבטחת ענן: חלשה</span>
+        <span style="font-size:11px;color:var(--text2)">קוד הסנכרון חלש — הוא מפתח ההצפנה. החלף לקוד חזק בכל המכשירים.</span>
+        <button class="btn btnp" onclick="openSyncModal()" style="font-size:11px;border-color:#e63946;color:#e63946">🔑 החלף קוד</button>`
+      :`<span style="font-size:12px;color:var(--teal);font-weight:800">🔒 אבטחת ענן: חזקה</span>
+        <span style="font-size:11px;color:var(--text2)">הנתונים מוצפנים מקצה-לקצה (AES-256) עם קוד חזק ✅</span>`;
+  }
   p.innerHTML=`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%">${totpRow}</div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">${bioRow}</div>`;
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">${bioRow}</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">${cloudRow}</div>`;
 }
 
 // ═══ בודק אבטחת ענן: מזהה בסיס נתונים פתוח, מנחה לנעילה ומוודא שבוצעה ═══
