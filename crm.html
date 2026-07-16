@@ -3984,20 +3984,30 @@ function checkUrlSyncImport(){
     const enc=params.get('sync_import');
     if(!enc)return;
     const decoded=decodeURIComponent(escape(atob(decodeURIComponent(enc))));
-    JSON.parse(decoded); // validate
+    const c=JSON.parse(decoded); // validate + parse
     // Clean URL
     const clean=window.location.origin+window.location.pathname;
     history.replaceState({},'',clean);
-    // Ask user
+    // אבטחה: קישור sync_import מפנה את הסנכרון לענן שבקישור. תוקף עלול לשלוח קישור
+    // שמפנה את הנתונים לענן שלו. לכן מציגים את כתובת היעד ומזהירים לפני החלה, ובמיוחד
+    // כשזה מחליף הגדרות קיימות — כדי שהמשתמש יוכל לזהות ניסיון חטיפה.
+    let host='(כתובת לא תקינה)';
+    try{host=new URL(c.databaseURL).host;}catch(e){host=String(c.databaseURL||'').slice(0,60);}
+    const existing=localStorage.getItem(FB_CFG_KEY);
     setTimeout(()=>{
-      showToastWithAction('📱 הגדרות סנכרון נמצאו בקישור – להפעיל?','✅ הפעל',async()=>{
-        localStorage.setItem(FB_CFG_KEY,decoded);
-        const c=JSON.parse(decoded);
-        if(c.mode==='simple'){await ssInit(c.databaseURL,c.syncCode);if(_ssUrl)ssPush();}
-        else{await fbInit();if(_fbRef)fbPush();}
-        showToast('✅ הסנכרון הופעל בהצלחה!','ok');
-      });
-    },2000);
+      confirmAct(
+        '⚠️ קישור זה מבקש לחבר את הסנכרון שלך לענן בכתובת: '+host+'. '+
+        (existing?'שים לב — פעולה זו תחליף את הגדרות הסנכרון הקיימות שלך! ':'')+
+        'חבר רק אם אתה מזהה את הכתובת ובוטח במקור הקישור.',
+        async()=>{
+          localStorage.setItem(FB_CFG_KEY,decoded);
+          if(c.mode==='simple'){await ssInit(c.databaseURL,c.syncCode);if(_ssUrl)ssPush();}
+          else{await fbInit();if(_fbRef)fbPush();}
+          showToast('✅ הסנכרון הופעל','ok');
+        },
+        '✅ מזהה את הכתובת – חבר'
+      );
+    },1500);
   }catch(e){console.warn('sync import check:',e);}
 }
 
