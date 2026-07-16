@@ -1,4 +1,4 @@
-const CACHE = 'hot-crm-v11';
+const CACHE = 'hot-crm-v12';
 const META_CACHE = 'hot-crm-meta';
 const ASSETS = ['./manifest.json', './office-bg.jpg', './mountains-bg.mp4', './icon-192.png', './icon-512.png', './badge-96.png'];
 
@@ -18,14 +18,20 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  // אבטחה/פרטיות: מטפלים אך ורק בבקשות מאותו מקור (same-origin). בקשות חוצות-מקור
+  // (Firebase API עם נתונים מוצפנים, ספריות CDN) עוברות ישירות לרשת ולא נשמרות
+  // ב-CacheStorage — כדי לא לשמר תגובות API רגישות/דינמיות או קוד חיצוני במטמון.
+  let url;
+  try { url = new URL(e.request.url); } catch (err) { return; }
+  if (url.origin !== self.location.origin) return;
   // HTML pages: always network — never serve from cache so updates always load
   if (e.request.mode === 'navigate' ||
-      e.request.url.endsWith('.html') ||
-      e.request.url.endsWith('/')) {
+      url.pathname.endsWith('.html') ||
+      url.pathname.endsWith('/')) {
     e.respondWith(fetch(e.request));
     return;
   }
-  // Assets: cache-first
+  // Same-origin assets: cache-first
   e.respondWith(
     caches.match(e.request).then(cached => {
       const network = fetch(e.request).then(res => {
