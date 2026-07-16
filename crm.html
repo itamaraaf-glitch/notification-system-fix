@@ -3339,7 +3339,14 @@ async function cloudExtract(remote){
   if(remote.enc===1&&typeof remote.data==='string'){
     try{return await _cloudDecrypt(remote.data);}catch(e){console.warn('cloud decrypt failed — ignoring remote');return null;}
   }
-  if(remote.data&&typeof remote.data==='object')return JSON.parse(JSON.stringify(remote.data));
+  // אבטחה: כל דחיפה מהמערכת מוצפנת (enc:1). מטען ראשי לא-מוצפן משמעו שגורם שמכיר
+  // את נתיב הענן (אך לא את מפתח ההצפנה) מנסה להזריק/להחליף נתונים — נדחה ומתעלמים.
+  // חוקי ה-Firebase פתוחים לכתיבה, ולכן זהו קו ההגנה בצד-הלקוח מפני ענן עוין.
+  if(remote.data!==undefined||remote._baseline!==undefined||remote._ts!==undefined||
+     ['deals','tenders','dists','salary','meetings','clients'].some(k=>remote[k]!==undefined)){
+    console.warn('rejected unauthenticated (unencrypted) cloud payload');
+    return null;
+  }
   return null;
 }
 // המטען הראשי לענן: בלי _bio ובלי בייטי קבצים (מטא-דאטה + fid בלבד). הקבצים עצמם
