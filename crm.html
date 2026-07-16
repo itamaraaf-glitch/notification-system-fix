@@ -6440,7 +6440,7 @@ function rMeetings(){
       :`<span class="badge ${isMissed?'br':'by'}" onclick="event.stopPropagation();toggleMeetingHeld('${m.id}')" title="לחץ לסימון כהתקיימה" style="cursor:pointer">${isMissed?'⚠ לא':'לא'}</span>`;
     const chk=SEL['meetings']&&SEL['meetings'].has(m.id)?'checked':'';
     const rowStyle=isToday?'background:rgba(6,214,160,.06);':isMissed?'background:rgba(230,57,70,.04);':'';
-    const timeDisp=m.time?`<span style="font-size:10px;color:var(--gold)">${m.time}</span>`:'<span style="color:var(--text3)">–</span>';
+    const timeDisp=m.time?`<span style="font-size:10px;color:var(--gold)">${esc(m.time)}</span>`:'<span style="color:var(--text3)">–</span>';
     const typeIco={פגישה:'🤝',שיחת_טלפון:'📞','שיחת טלפון':'📞',זום:'🖥',Teams:'🟦',אחר:'📌'}[m.mtype||'פגישה']||'🤝';
     const todayBadge=isToday?'<span class="badge bb" style="font-size:9px;margin-right:2px">היום!</span>':'';
     const clSafe=escJs(m.cl||'');
@@ -6493,7 +6493,7 @@ function rTasks(){
     const chk=SEL['tasks']&&SEL['tasks'].has(t.id)?'checked':'';
     const doneBtn=`<span class="badge ${done?'bg':'by'}" onclick="event.stopPropagation();toggleTaskDone('${t.id}')" title="לחץ לשינוי" style="cursor:pointer">${done?'✓ בוצע':'סמן בוצע'}</span>`;
     const todayBadge=isToday?'<span class="badge bb" style="font-size:9px;margin-right:2px">היום!</span>':isOverdue?'<span class="badge br" style="font-size:9px;margin-right:2px">באיחור</span>':'';
-    const timeDisp=t.time?`<span style="font-size:10px;color:var(--gold)">${t.time}</span>`:'<span style="color:var(--text3)">–</span>';
+    const timeDisp=t.time?`<span style="font-size:10px;color:var(--gold)">${esc(t.time)}</span>`:'<span style="color:var(--text3)">–</span>';
     const title=esc(t.t||'');
     return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-tasks" ${chk} onchange="toggleSel('tasks','${t.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(t.dt)}${todayBadge}</td><td>${timeDisp}</td><td style="font-weight:600;${done?'text-decoration:line-through':''}">${title}</td><td style="font-size:11px">${esc(t.cl||'–')}</td><td>${prBadge(t.pr)}</td><td>${doneBtn}</td><td><span style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;max-width:90px" title="${esc(t.no||'')}">${esc(t.no||'–')}</span></td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('task','${t.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tasks','${t.id}')">🗑</button></td></tr>`;
   }).join('')||((_taskView==='today'&&all.length>0)
@@ -6556,7 +6556,7 @@ function rInbox(){
     const nextSt={חדש:'בטיפול',בטיפול:'טופל',טופל:'חדש'};
     const stCell=`<span class="badge-wrap" onclick="event.stopPropagation();cycleInboxStatus('${m.id}')" title="לחץ לשינוי סטטוס" style="cursor:pointer">${stBadge(m.st||'חדש')}</span>`;
     const filesCell=(m.files&&m.files.length)?`<button class="btn btns" onclick="event.stopPropagation();rowFilesMenu('inbox','${m.id}',event)" title="${m.files.length} קבצים" style="border-color:#4cc9f0;color:#4cc9f0">📎${m.files.length>1?m.files.length:''}</button>`:'<span style="color:var(--text3)">–</span>';
-    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-inbox" ${chk} onchange="toggleSel('inbox','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${m.time?'<br><span style="color:var(--gold);font-size:9px">'+m.time+'</span>':''}</td><td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(m.from||'')}">${fromSafe}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(m.subj||'')}">${subjSafe}</td><td style="font-size:11px">${clSafe}</td><td>${stCell}</td><td>${filesCell}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('inbox','${m.id}')" title="פתח / קרא">👁️</button> <button class="btn btns" onclick="replyInbox('${m.id}')" title="השב במייל" style="border-color:#4cc9f0;color:#4cc9f0">📧</button> <button class="btn btns" onclick="inboxToTask('${m.id}')" title="צור משימה" style="border-color:#f072b6;color:#f072b6">📌</button> <button class="btn btns" onclick="inboxToMeeting('${m.id}')" title="קבע פגישה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns btnd" onclick="dbDelete('inbox','${m.id}')">🗑</button></td></tr>`;
+    return`<tr style="${rowStyle}"><td class="cb-td"><input type="checkbox" class="cb-item-inbox" ${chk} onchange="toggleSel('inbox','${m.id}')"></td><td>${i+1}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(m.dt)}${m.time?'<br><span style="color:var(--gold);font-size:9px">'+esc(m.time)+'</span>':''}</td><td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(m.from||'')}">${fromSafe}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(m.subj||'')}">${subjSafe}</td><td style="font-size:11px">${clSafe}</td><td>${stCell}</td><td>${filesCell}</td><td style="white-space:nowrap"><button class="btn btns" onclick="openM('inbox','${m.id}')" title="פתח / קרא">👁️</button> <button class="btn btns" onclick="replyInbox('${m.id}')" title="השב במייל" style="border-color:#4cc9f0;color:#4cc9f0">📧</button> <button class="btn btns" onclick="inboxToTask('${m.id}')" title="צור משימה" style="border-color:#f072b6;color:#f072b6">📌</button> <button class="btn btns" onclick="inboxToMeeting('${m.id}')" title="קבע פגישה" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns btnd" onclick="dbDelete('inbox','${m.id}')">🗑</button></td></tr>`;
   }).join('')||emptyRow(9,'📥',_inboxView==='new'?(all.length?'אין מיילים חדשים — הכול טופל ✅':'אין מיילים עדיין — לחץ "+ מייל חדש"'):'אין מיילים עדיין — לחץ "+ מייל חדש"',"openM('inbox',null)");
   const ft=document.getElementById('inboxft');
   if(ft)ft.innerHTML=`<span class="fi">סה"כ: <b>${all.length}</b></span><span class="fi">חדשים: <b>${unread}</b></span><span class="fi">בטיפול: <b>${inProg}</b></span>`;
@@ -7464,7 +7464,7 @@ function rClients(){
     return`<div class="client-card ${stCls}" style="border-right:3px solid ${stCol}" onclick="openClientModal('${c.id}')">
       <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:8px">
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:38px;height:38px;border-radius:50%;flex-shrink:0;border:2px solid ${stCol}55;background:${c.photo?`url(${c.photo}) center/cover no-repeat`:'rgba(200,169,110,.1)'};display:flex;align-items:center;justify-content:center;font-size:16px">${c.photo?'':'🏢'}</div>
+          <div style="width:38px;height:38px;border-radius:50%;flex-shrink:0;border:2px solid ${stCol}55;background:${(c.photo&&/^(data:image\/|https?:\/\/)/i.test(c.photo))?`url("${esc(c.photo)}") center/cover no-repeat`:'rgba(200,169,110,.1)'};display:flex;align-items:center;justify-content:center;font-size:16px">${c.photo?'':'🏢'}</div>
           <div>
           <div style="font-size:13px;font-weight:700">${esc(c.name||'')}</div>
           <div style="font-size:10px;color:var(--text2)">${esc(c.contact||'')}${c.phone?' · '+esc(c.phone):''}</div>
@@ -7497,7 +7497,7 @@ function rClients(){
       ${potActive.length?(()=>{const late=potActive.filter(p=>{const cl2=contactLight(p);return cl2&&cl2.lvl===3;}).length;return`<div class="pot-chip" style="${late?'border-color:rgba(230,57,70,.55)':''}">🎯 ${potActive.length} בתהליך עבודה לקוחות${potVal?` · ${fmt(potVal)}`:''}${late?` · <b style="color:#e63946">🔴 ${late} ללא קשר!</b>`:''}</div>`;})():''}
       ${warns.length?`<div class="exp-warn">⚠ ${warns.slice(0,2).join(' | ')}</div>`:''}
       ${nextMtg?`<div class="next-mtg-chip" style="margin-top:4px">
-        <span>📅</span><span style="color:#06d6a0;font-weight:700">${nextMtg.dt===todayStrC?'פגישה היום!':'פגישה ב-'+fmtDate(nextMtg.dt)}</span>${nextMtg.time?`<span style="color:var(--text3)">${nextMtg.time}</span>`:''}
+        <span>📅</span><span style="color:#06d6a0;font-weight:700">${nextMtg.dt===todayStrC?'פגישה היום!':'פגישה ב-'+fmtDate(nextMtg.dt)}</span>${nextMtg.time?`<span style="color:var(--text3)">${esc(nextMtg.time)}</span>`:''}
       </div>`:''}
       ${!nextMtg&&lastMtg?`<div style="font-size:10px;color:var(--text3);margin-top:4px">🤝 פגישה אחרונה: ${fmtDate(lastMtg.dt)}</div>`:''}
       ${c.genNotes?`<div style="font-size:10px;color:var(--text2);margin-top:4px;padding-top:4px;border-top:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(c.genNotes)}">${esc(c.genNotes)}</div>`:''}
@@ -8439,16 +8439,16 @@ function rWorkPlan(){
     const rc=p.priority==='גבוהה'?'pr':p.priority==='בינונית'?'po':'pg';
     const isThisM=p.targetDate&&p.targetDate.substring(0,7)===curM&&p.status!=='נסגר';
     return`<tr class="${rc}"${isThisM?' style="background:rgba(76,201,240,.05)"':''}>
-      <td style="text-align:center;color:var(--text3)">${isThisM?'<span class="badge bb" style="font-size:8px;padding:1px 6px">🎯</span>':'↳'}<span style="display:none">${p.clientName||''}</span></td>
-      <td style="white-space:nowrap;font-size:11px">${p.productType||'–'}</td>
-      <td style="font-weight:600">${p.product||'–'}</td>
+      <td style="text-align:center;color:var(--text3)">${isThisM?'<span class="badge bb" style="font-size:8px;padding:1px 6px">🎯</span>':'↳'}<span style="display:none">${esc(p.clientName||'')}</span></td>
+      <td style="white-space:nowrap;font-size:11px">${esc(p.productType||'–')}</td>
+      <td style="font-weight:600">${esc(p.product||'–')}</td>
       <td class="nb">${p.estimatedValue?fmt(+p.estimatedValue):'–'}</td>
       <td><select style="font-size:10px;padding:2px 4px;border-radius:6px;min-width:70px" onchange="updatePotentialPriority('${p.clientId}',${p.potIdx},this.value)">${priOpts(p.priority)}</select></td>
       <td style="font-size:10px;white-space:nowrap">${fmtDate(p.targetDate)}</td>
       <td>${dH}</td>
       <td>${(()=>{const cl2=contactLight(p);if(!cl2)return'<span style="color:var(--text3)">–</span>';return`<span title="יעד יצירת קשר: ${fmtDate(p.contactBy)}" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;background:${cl2.bg};color:${cl2.clr};border:1px solid ${cl2.clr}55;white-space:nowrap"><span style="width:8px;height:8px;border-radius:50%;background:${cl2.clr};box-shadow:0 0 6px ${cl2.clr}"></span>${cl2.l}</span>`;})()}</td>
       <td><select style="font-size:10px;padding:2px 4px;border-radius:6px;min-width:110px" onchange="updatePotentialStatus('${p.clientId}',${p.potIdx},this.value)">${stOpts(p.status)}</select></td>
-      <td style="font-size:10px;max-width:130px;overflow:hidden;text-overflow:ellipsis">${p.notes||'–'}</td>
+      <td style="font-size:10px;max-width:130px;overflow:hidden;text-overflow:ellipsis">${esc(p.notes||'–')}</td>
       <td style="white-space:nowrap">
         <button class="btn btns" onclick="openClientModal('${p.clientId}')" title="ערוך כרטיס לקוח">✏️</button>
         <button class="btn btns btnd" onclick="removePotential('${p.clientId}',${p.potIdx})" title="מחק">🗑</button>
@@ -8457,7 +8457,7 @@ function rWorkPlan(){
   };
   let wpHtml='';
   groupArr.forEach(g=>{
-    wpHtml+=`<tr class="mdiv mdiv-client"><td colspan="11" onclick="openClientModal('${g.id}')">🏢 ${g.name} <span style="font-weight:400;opacity:.85">(${g.items.length} פעילויות · שווי ${fmt(g.total)})</span></td></tr>`;
+    wpHtml+=`<tr class="mdiv mdiv-client"><td colspan="11" onclick="openClientModal('${g.id}')">🏢 ${esc(g.name)} <span style="font-weight:400;opacity:.85">(${g.items.length} פעילויות · שווי ${fmt(g.total)})</span></td></tr>`;
     wpHtml+=g.items.map(rowHtml).join('');
   });
   if(tbEl)tbEl.innerHTML=wpHtml||'<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text2)">אין מוצרים פוטנציאליים – פתח כרטיס לקוח והוסף, או סגור עסקה כדי לקבל הצעות אוטומטיות</td></tr>';
