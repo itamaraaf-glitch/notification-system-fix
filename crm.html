@@ -6720,11 +6720,15 @@ function _mailIngestScript(db,code){
   const jl=s=>String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r/g,'\\r').replace(/\n/g,'\\n').replace(/</g,'\\x3C');
   return [
 "// ===== CRM Mail Ingest (מוצפן) — הדבק ב-script.google.com והגדר טריגר כל 5 דקות =====",
+"// ⭐ נכנסים למערכת רק מיילים שאתה מסמן ב-Gmail בתווית 'CRM' — כך מיילים אישיים",
+"//    ולא-רלוונטיים לעולם לא נקלטים (ואף לא עוזבים את Gmail). כדי להכניס מייל:",
+"//    פתח אותו ב-Gmail ← סמן/הוסף לו את התווית 'CRM' ← תוך כמה דקות הוא ייקלט לכרטיס הלקוח.",
 "// המייל מוצפן לפני העלאה לענן (HMAC-SHA256, encrypt-then-MAC) כך שהוא בלתי-קריא בענן",
 "// ללא קוד הסנכרון. רק המערכת שלך, שמחזיקה את הקוד, יכולה לפענח אותו.",
 "var DB_URL = '"+jl(db)+"';",
 "var SYNC_CODE = '"+jl(code)+"';",
-"var CRM_LABEL = 'crm-sent'; // מייל שנשלח למערכת מקבל תווית זו — כדי לא לשלוח פעמיים (לא תלוי בנקרא/לא-נקרא)",
+"var INTAKE_LABEL = 'CRM'; // ⭐ רק מיילים שאתה מסמן בתווית הזו ב-Gmail נכנסים למערכת — כך מיילים אישיים/לא-רלוונטיים לא נקלטים",
+"var CRM_LABEL = 'crm-sent'; // מייל שכבר נשלח למערכת מקבל תווית זו — כדי לא לשלוח פעמיים (לא תלוי בנקרא/לא-נקרא)",
 "",
 "function _b(s){ return Utilities.newBlob(s).getBytes(); }                 // מחרוזת -> בייטים (UTF-8)",
 "function _hmac(msg,key){ return Utilities.computeHmacSha256Signature(msg,key); }",
@@ -6758,7 +6762,9 @@ function _mailIngestScript(db,code){
 "  var path = DB_URL.replace(/\\/+$/,'') + '/cem_hot_mail_' + hex.substring(0,16);",
 "  var keys = _mailKeys();",
 "  var label = GmailApp.getUserLabelByName(CRM_LABEL) || GmailApp.createLabel(CRM_LABEL);",
-"  var threads = GmailApp.search('newer_than:60d -label:' + CRM_LABEL, 0, 40);",
+"  GmailApp.getUserLabelByName(INTAKE_LABEL) || GmailApp.createLabel(INTAKE_LABEL); // יוצר את תווית הסימון אם עוד לא קיימת",
+"  // רק מיילים שסומנו בתווית INTAKE ('CRM') ועדיין לא נשלחו — כך רק מה שאתה מסמן נכנס",
+"  var threads = GmailApp.search('label:' + INTAKE_LABEL + ' -label:' + CRM_LABEL, 0, 40);",
 "  var n = 0;",
 "  threads.forEach(function(th){",
 "    var okAll = true;",
@@ -6799,7 +6805,10 @@ function openMailConnect(){
       1. פתח <b style="color:var(--text)">script.google.com</b> ← New project (בחשבון ה-Gmail שאליו תעביר מיילים).<br>
       2. מחק את התוכן, <b>הדבק את הקוד למטה</b>, ושמור (💾).<br>
       3. בתפריט השמאלי ← <b>Triggers</b> (⏰) ← Add Trigger ← בחר פונקציה <code>ingestCrmMail</code>, סוג <b>Time-driven</b> → Every 5 minutes ← Save (אשר הרשאות Gmail).<br>
-      4. זהו! מעכשיו <b>העבר (Forward)</b> מייל של לקוח לאותו Gmail, עם <b>שם הלקוח בנושא</b> — והוא ייקלט אוטומטית לכרטיס הלקוח.
+      4. זהו! מעכשיו כדי להכניס מייל למערכת: פתח אותו ב-Gmail וסמן אותו בתווית <b style="color:#06d6a0">CRM</b> (Label → CRM). <b>רק מיילים שסימנת נכנסים</b> — מיילים אישיים ולא-רלוונטיים לא נקלטים כלל.
+    </div>
+    <div style="background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.28);border-radius:9px;padding:9px 12px;font-size:11px;color:var(--text2);line-height:1.7;margin-bottom:12px">
+      🏷️ <b style="color:#06d6a0">איך מסמנים מייל?</b> ב-Gmail: פתח את המייל ← לחץ על אייקון התווית (🏷️) בסרגל העליון ← בחר/צור <b>CRM</b>. אפשר גם לגרור מייל לתווית CRM בתפריט הצד. אחרי הסימון — תוך ~5 דקות המייל נקלט לכרטיס הלקוח. <b>טיפ:</b> אפשר להגדיר ב-Gmail סינון (Filter) שמוסיף אוטומטית תווית CRM למיילים מכתובות של לקוחות.
     </div>
     <label style="font-size:11px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px">קוד ה-Script (עם הפרטים שלך מוטמעים):</label>
     <textarea id="mail-script-code" readonly onclick="this.select()" rows="9" style="width:100%;box-sizing:border-box;font-family:monospace;font-size:10px;padding:10px;border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,.25);color:var(--text);direction:ltr;resize:vertical">${esc(script)}</textarea>
