@@ -1330,8 +1330,13 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     if(!_hidden) requestAnimationFrame(draw);
   });
 
+  // ביצועים: עוצרים לגמרי את אנימציית החלקיקים של מסך הכניסה כשמחוברים (המסך מוסתר) —
+  // כדי לא לבזבז CPU/GPU וסוללה במובייל בזמן העבודה. חוזרים לפעול כשמסך הכניסה מוצג שוב.
+  window._loginFxRunning = true;
+  window._startLoginFx = function(){ if(!window._loginFxRunning){ window._loginFxRunning = true; requestAnimationFrame(draw); } };
   function draw(now){
     if(_hidden) return;
+    if(document.body.classList.contains('logged-in')){ window._loginFxRunning = false; return; } // מחובר → עוצר את הלולאה
     requestAnimationFrame(draw);
     if(now - _lastT < 33) return;
     _lastT = now; T = now * .001;
@@ -2939,6 +2944,7 @@ function doLogout(){
     loginEl.style.opacity='0';
     loginEl.style.display='flex';
     loginEl.style.transition='opacity .4s ease-out';
+    try{ if(window._startLoginFx)window._startLoginFx(); }catch(e){} // חידוש אנימציית מסך הכניסה
     document.getElementById('lu').value='';
     document.getElementById('lp').value='';
     // reset mobile nav to dashboard on logout
