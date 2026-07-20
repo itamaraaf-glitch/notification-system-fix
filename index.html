@@ -10717,6 +10717,8 @@ function nav(s){
     if(renders[s]) renders[s]();
     setTimeout(initDragScrolls, 60);
     currentSec = s;
+    // זוכרים את המסך הנוכחי — כדי שרענון/עדכון גרסה/חזרה לאפליקציה לא יקפיצו ללוח הבקרה
+    try{sessionStorage.setItem('cem_sec',s);}catch(e){}
     if(window.refreshEdges) window.refreshEdges();
 
     // Two rAFs: flush the "none" transition, then animate in
@@ -10742,6 +10744,23 @@ function nav(s){
     });
 
   }, 55);
+}
+
+// מעבר מיידי למסך (בלי אנימציה) — לשחזור המסך האחרון בעת כניסה אוטומטית/רענון,
+// כדי שהמשתמש יישאר במסך שבו היה ולא ייזרק ללוח הבקרה.
+function _gotoSectionInstant(s){
+  const tgt=document.getElementById('sec-'+s); if(!tgt)return;
+  document.querySelectorAll('.sec.active').forEach(x=>x.classList.remove('active'));
+  tgt.classList.add('active');
+  document.querySelectorAll('.ni.active,.mn-item.active').forEach(x=>x.classList.remove('active'));
+  const nvEl=document.getElementById('nv-'+s); if(nvEl)nvEl.classList.add('active');
+  const mnEl=document.querySelector('#mob-nav [data-sec="'+s+'"]'); if(mnEl)mnEl.classList.add('active');
+  const renders={dashboard:rDash,alerts:rAlerts,deals:rDeals,tenders:rTenders,dists:rDists,
+    salary:rSalary,meetings:rMeetings,tasks:rTasks,inbox:rInbox,workplan:rWorkPlan,
+    export:updateExportCounts,clients:rClients};
+  try{ if(renders[s])renders[s](); }catch(e){}
+  currentSec=s;
+  try{sessionStorage.setItem('cem_sec',s);}catch(e){}
 }
 
 // ── SWIPE NAVIGATION — vanilla touch + mouse ───────────────────────
@@ -11007,7 +11026,16 @@ if('serviceWorker' in navigator){
       const sess=sessionStorage.getItem('cem_sess');
       if(sess&&typeof USERS!=='undefined'&&typeof _completeLogin==='function'){
         const f=USERS.find(x=>x.u===sess);
-        if(f){ _completeLogin(f); return; }
+        if(f){
+          // שחזור המסך האחרון לפני חשיפת האפליקציה — כך אין "קפיצה" ללוח הבקרה
+          try{
+            const savedSec=sessionStorage.getItem('cem_sec');
+            if(savedSec&&savedSec!=='dashboard'&&typeof _gotoSectionInstant==='function'&&document.getElementById('sec-'+savedSec)){
+              _gotoSectionInstant(savedSec);
+            }
+          }catch(e){}
+          _completeLogin(f); return;
+        }
       }
     }catch(e){}
     if(typeof _resetLoginUI==='function')_resetLoginUI(); // מסך כניסה נקי בכל טעינה
