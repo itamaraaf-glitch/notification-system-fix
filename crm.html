@@ -811,7 +811,7 @@ select option:checked,select option:hover{background:#2563eb;color:#ffffff}
 
 /* ─── CUSTOM CONFIRM BAR ─── */
 #cbar{
-  position:fixed;bottom:-120px;left:0;right:0;z-index:9999;
+  position:fixed;bottom:-120px;left:0;right:0;z-index:10001;
   background:linear-gradient(135deg,var(--s2),var(--s3));
   border-top:1px solid var(--gold);
   padding:16px 20px;display:flex;align-items:center;gap:12px;
@@ -2585,15 +2585,21 @@ function showSaved(){
   clearTimeout(el._t);
   el._t=setTimeout(()=>{el.classList.remove('show');el.textContent='✦ נשמר';},2200);
 }
+// סידור ההודעות הצפות — כשסרגל האישור (#cbar) פתוח, מרימים אותן *מעליו* כדי שלא
+// יכסו את הכפתורים "כן/ביטול" (הבאג של "נתקע — אי אפשר ללחוץ").
+function _restackToasts(){
+  const cb=document.getElementById('cbar');
+  const base=(cb&&cb.classList.contains('show'))?(cb.offsetHeight+14):16;
+  document.querySelectorAll('.toast').forEach((el,i)=>{el.style.bottom=(base+i*54)+'px';});
+}
 function showToast(msg,type='ok'){
   const t=document.createElement('div');
   t.className=`toast toast-${type}`;t.textContent=msg;
-  const restack=()=>{document.querySelectorAll('.toast').forEach((el,i)=>{el.style.bottom=(16+i*54)+'px';});};
   const existing=document.querySelectorAll('.toast');
   if(existing.length>=3)existing[0].remove();
   document.body.appendChild(t);
-  restack();
-  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>{t.remove();restack();},400);},3500);
+  _restackToasts();
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>{t.remove();_restackToasts();},400);},3500);
 }
 const toast = showToast;
 
@@ -2604,9 +2610,8 @@ function showToastWithAction(msg,btnLabel,fn){
   // אבטחה: msg עלול להכיל שדות חיצוניים (שם לקוח/חברה) — בריחה למניעת XSS ב-innerHTML
   t.innerHTML=`<span style="flex:1;font-size:12px">${esc(msg)}</span><button style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:4px 10px;font-family:inherit;font-size:11px;cursor:pointer;white-space:nowrap">${esc(btnLabel)}</button>`;
   t.querySelector('button').onclick=()=>{t.remove();if(fn)fn();};
-  const restack=()=>{document.querySelectorAll('.toast').forEach((el,i)=>{el.style.bottom=(16+i*54)+'px';});};
-  document.body.appendChild(t);restack();
-  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>{t.remove();restack();},400);},5000);
+  document.body.appendChild(t);_restackToasts();
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>{t.remove();_restackToasts();},400);},5000);
 }
 
 // ── CUSTOM CONFIRM (window.confirm is blocked on iOS standalone / PWA) ──────
@@ -2616,13 +2621,17 @@ function confirmAct(msg, fn, yesLabel){
   document.getElementById('cbar-msg').textContent = msg;
   document.getElementById('cbar-yes').textContent = yesLabel || 'כן, מחק';
   document.getElementById('cbar').classList.add('show');
+  // מרימים הודעות צפות קיימות מעל הסרגל כדי שלא יכסו את הכפתורים
+  requestAnimationFrame(()=>{try{_restackToasts();}catch(e){}});
 }
 function _cYes(){
   document.getElementById('cbar').classList.remove('show');
+  try{_restackToasts();}catch(e){}
   if(_cCb){ const f=_cCb; _cCb=null; f(); }
 }
 function _cNo(){
   document.getElementById('cbar').classList.remove('show');
+  try{_restackToasts();}catch(e){}
   _cCb=null;
 }
 
@@ -3246,6 +3255,8 @@ function saveAll(){
 }
 const _GOAL_DEFAULTS={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000};
 function showLoginHealth(){
+  // הודעת "נטענו X רשומות" — פעם אחת בלבד בכל הפעלה, לא בכל רענון/סנכרון
+  try{ if(sessionStorage.getItem('cem_health_shown'))return; sessionStorage.setItem('cem_health_shown','1'); }catch(e){}
   const total=(D.deals.length||0)+(D.tenders.length||0)+(D.dists.length||0)+(D.salary.length||0)+(D.meetings.length||0)+(D.clients.length||0);
   if(total>0) setTimeout(()=>showToast('✅ '+total+' רשומות נטענו בהצלחה','ok'),600);
 }
@@ -4651,7 +4662,7 @@ async function fbSyncNow(){
 
 function _finishLoad(){
   _buildSyncSnap(); // בסיס החתימות = הנתונים כפי שנטענו; כל שינוי מכאן והלאה יוחתם
-  syncAllDealsToClients();
+  syncAllDealsToClients(true); // בטעינה — בשקט, בלי הודעה צפה מיותרת בכל כניסה
   syncAllDealsToDists();
   syncAllDealsToSalary();
   runMonthlyCycle();
@@ -6558,8 +6569,7 @@ async function recoverTasksFromBackups(){
     showToast('✅ לא נמצאו משימות שנמחקו בגיבויים — הכול תקין','ok');
     return;
   }
-  const preview=recoverable.slice(0,4).map(t=>'• '+(t.t||'(ללא כותרת)')).join('\n');
-  confirmAct(`🔄 נמצאו ${recoverable.length} משימות שנמחקו בגיבויים.\n\n${preview}${recoverable.length>4?'\n• ...ועוד':''}\n\nלשחזר אותן חזרה לרשימת המשימות? (לא ימחק כלום קיים)`,()=>{
+  confirmAct(`🔄 נמצאו ${recoverable.length} משימות שנמחקו. לשחזר אותן לרשימה? (לא ימחק כלום קיים)`,()=>{
     recoverable.forEach(t=>{ t._mts=Date.now(); D.tasks.push(t); });
     saveAll(); rTasks(); updateNavBadges();
     showToast('✅ שוחזרו '+recoverable.length+' משימות!','ok');
@@ -8411,11 +8421,11 @@ function syncDistToClient(dist){
   return true;
 }
 
-function syncAllDealsToClients(){
+function syncAllDealsToClients(silent){
   let count=0;
   const allClosed=[...D.deals,...(D.archivedDeals||[])].filter(d=>d.st==='נסגר');
   allClosed.forEach(d=>{if(syncDealToClient(d,true))count++;});
-  if(count){saveAll();showToast('🔄 '+count+' עסקאות סגורות סונכרנו לכרטיסי לקוח','ok');}
+  if(count){saveAll();if(!silent)showToast('🔄 '+count+' עסקאות סגורות סונכרנו לכרטיסי לקוח','ok');}
   return count;
 }
 
