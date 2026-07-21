@@ -1620,6 +1620,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <button class="btn btnd" onclick="deleteAll('deals')" title="מחק את כל העסקאות">🗑 מחק הכל</button>
     </div>
   </div>
+  <div id="deal-clear-summary"></div>
   <div id="deal-eq-goal-top"></div>
   <div id="month-banner"></div>
   <div class="tabs" id="deals-tabs">
@@ -5563,6 +5564,45 @@ function rDash(){
 // ===== DEALS =====
 function rDeals(){
   const curM=nd().substring(0,7);
+  // ── סיכום עסקאות ברור (לפי "חודש נוכחי" / mv) — כדי לדעת בדיוק כמה נשאר לסגור החודש ──
+  (function(){
+    const box=document.getElementById('deal-clear-summary'); if(!box)return;
+    const openD=D.deals.filter(d=>d.st!=='נסגר');                                   // עסקאות פתוחות (בעבודה)
+    const closedM=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=curM); // נסגרו החודש
+    const totV   =openD.reduce((a,d)=>a+(+d.v||0),0);   // סה"כ שווי עסקאות פתוחות
+    const mvOpen =openD.reduce((a,d)=>a+(+d.mv||0),0);  // חלק החודש שעדיין פתוח = נשאר לסגור
+    const mvClosed=closedM.reduce((a,d)=>a+(+d.mv||0),0); // חלק החודש שכבר נסגר
+    const planM  =mvOpen+mvClosed;                      // סה"כ לתכנון החודש (יעד מהצנרת)
+    const nextM  =openD.reduce((a,d)=>a+(+d.dn||0),0);  // יתרה לחודש הבא
+    const pct    =planM>0?Math.round(mvClosed/planM*100):0;
+    const pc     =pct>=100?'var(--teal)':pct>=66?'#8bd450':pct>=33?'#f4a261':'#e63946';
+    const tile=(lb,val,sub,clr)=>`<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:11px;padding:11px 13px;min-width:0">
+        <div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.3px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lb}</div>
+        <div style="font-size:18px;font-weight:900;color:${clr};line-height:1.1">${fmt(val)}</div>
+        ${sub?`<div style="font-size:9.5px;color:var(--text3);margin-top:2px">${sub}</div>`:''}</div>`;
+    box.innerHTML=`<div style="background:linear-gradient(135deg,rgba(16,21,37,.96),rgba(10,14,28,.99));border:1px solid rgba(6,214,160,.22);border-radius:14px;padding:15px 17px;margin-bottom:14px;box-shadow:0 4px 20px rgba(0,0,0,.35)">
+      <div style="font-size:13px;font-weight:900;color:var(--teal);letter-spacing:-.2px;margin-bottom:11px">📊 סיכום עסקאות · ${curMonthStr()}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px">
+        ${tile('💼 סה"כ עסקאות',totV,openD.length+' עסקאות פתוחות','var(--text)')}
+        ${tile('🎯 לתכנון החודש',planM,'יעד מהצנרת (חודש נוכחי)','#4cc9f0')}
+        ${tile('✅ נסגרו החודש',mvClosed,pct+'% מהתכנון','var(--teal)')}
+        ${tile('⏭ לחודש הבא',nextM,'יתרה שנדחית','#a78bfa')}
+      </div>
+      <div style="margin-top:12px;padding:12px 15px;background:linear-gradient(135deg,${mvOpen>0?'rgba(230,57,70,.10)':'rgba(6,214,160,.10)'},rgba(16,21,37,.5));border:1px solid ${mvOpen>0?'rgba(230,57,70,.32)':'rgba(6,214,160,.32)'};border-radius:12px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px">
+          <span style="font-size:12px;font-weight:800;color:${mvOpen>0?'#e63946':'var(--teal)'}">${mvOpen>0?'💪 נשאר להשלים לסגירת החודש':'🎉 סגרת את כל התכנון לחודש!'}</span>
+          <span style="font-size:22px;font-weight:900;color:${mvOpen>0?'#e63946':'var(--teal)'}">${fmt(mvOpen)}</span>
+        </div>
+        <div style="height:8px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden;margin-top:9px">
+          <div style="height:100%;width:${Math.min(pct,100)}%;background:${pc};border-radius:5px;transition:width .5s"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:5px">
+          <span>נסגר: <b style="color:var(--teal)">${fmt(mvClosed)}</b></span>
+          <span>מתוך תכנון: <b style="color:var(--text2)">${fmt(planM)}</b> · <b style="color:${pc}">${pct}%</b></span>
+        </div>
+      </div>
+    </div>`;
+  })();
   const eqEl=document.getElementById('deal-eq-goal-top');
   if(eqEl){
     const closed=[...D.deals,...(D.archivedDeals||[])].filter(d=>d.st==='נסגר');
