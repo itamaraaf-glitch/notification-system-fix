@@ -1844,6 +1844,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <input type="text" class="srch" placeholder="חיפוש משימה..." oninput="filt(event,'tsktb')">
       <button class="btn btnp" onclick="openM('task',null)">+ משימה חדשה</button>
+      <button class="btn" onclick="recoverTasksFromBackups()" title="סורק את הגיבויים האוטומטיים ומשחזר משימות שנמחקו — בלי לגעת בשאר הנתונים" style="border-color:#06d6a0;color:#06d6a0">🔄 שחזר משימות שנמחקו</button>
       <button class="btn btn-excel" onclick="exportExcel('tasks')">📥 Excel</button>
       <button class="btn btnd" onclick="deleteAll('tasks')" title="מחק את כל המשימות">🗑 מחק הכל</button>
     </div>
@@ -6532,6 +6533,38 @@ function rMeetings(){
 }
 
 // ===== TASKS — משימות (בדומה ליומן פגישות, במיקוד יומי) =====
+// שחזור משימות שנמחקו — סורק את כל הגיבויים האוטומטיים (IndexedDB + גיבוי זהב),
+// אוסף משימות שכבר לא קיימות, וממזג אותן חזרה. פעולה לא-הרסנית: לא נוגעת בשום נתון אחר.
+async function recoverTasksFromBackups(){
+  showToast('🔎 סורק גיבויים אחר משימות שנמחקו...','info');
+  const sources=[];
+  try{ (await idbList()).forEach(s=>sources.push(s.data)); }catch(e){}
+  try{ (await idbDailyList()).forEach(s=>sources.push(s.data)); }catch(e){}
+  try{ const g=localStorage.getItem('cem_gold_backup'); if(g)sources.push(g); }catch(e){}
+  if(!Array.isArray(D.tasks))D.tasks=[];
+  const haveIds=new Set(D.tasks.map(t=>String(t.id)));
+  const delIds=(D._deletedIds&&D._deletedIds.tasks)||{}; // לא משחזרים משימות שנמחקו במפורש
+  const found={}; // id -> task (הגרסה מהגיבוי החדש ביותר שמכיל אותה)
+  sources.forEach(str=>{
+    let d=null; try{ d=JSON.parse(str); }catch(e){ return; }
+    (Array.isArray(d&&d.tasks)?d.tasks:[]).forEach(t=>{
+      const id=String(t&&t.id||''); if(!id||id==='undefined')return;
+      if(haveIds.has(id)||delIds[id])return;               // כבר קיימת / נמחקה במכוון
+      if(!found[id]||(+t._mts||0)>(+found[id]._mts||0))found[id]=t; // הכי עדכנית
+    });
+  });
+  const recoverable=Object.values(found);
+  if(!recoverable.length){
+    showToast('✅ לא נמצאו משימות שנמחקו בגיבויים — הכול תקין','ok');
+    return;
+  }
+  const preview=recoverable.slice(0,4).map(t=>'• '+(t.t||'(ללא כותרת)')).join('\n');
+  confirmAct(`🔄 נמצאו ${recoverable.length} משימות שנמחקו בגיבויים.\n\n${preview}${recoverable.length>4?'\n• ...ועוד':''}\n\nלשחזר אותן חזרה לרשימת המשימות? (לא ימחק כלום קיים)`,()=>{
+    recoverable.forEach(t=>{ t._mts=Date.now(); D.tasks.push(t); });
+    saveAll(); rTasks(); updateNavBadges();
+    showToast('✅ שוחזרו '+recoverable.length+' משימות!','ok');
+  },'✅ כן, שחזר');
+}
 let _taskView='today';
 function setTaskView(v){
   _taskView=v;
