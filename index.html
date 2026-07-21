@@ -3482,8 +3482,20 @@ function fbMergeRemote(remote){
     const total=['deals','tenders','dists','salary','meetings','clients'].reduce((s,c)=>s+(Array.isArray(remote[c])?remote[c].length:0),0);
     if(total>0){
       try{if(typeof idbBackup==='function')idbBackup(JSON.stringify(D));}catch(e){}
+      const _prev=D;                         // הנתונים המקומיים לפני ההחלפה
+      const _rDel=remote._deletedIds||{};    // מה שנמחק במפורש במקור — לא נשחזר
       D=Object.assign(emptyData(),remote);
       D.goals=Object.assign({},_GOAL_DEFAULTS,D.goals||{});
+      // הגנה מאובדן נתונים: יישור-קו מאמץ את גרסת המקור לרשומות משותפות, אבל *לא מוחק*
+      // רשומות שקיימות רק במכשיר הזה (למשל משימות/מיילים שהמקור לא הכיר). כך "יישור קו"
+      // כבר לא יכול למחוק בטעות את המשימות שלך.
+      SYNC_COLS.forEach(col=>{
+        const local=Array.isArray(_prev[col])?_prev[col]:[]; if(!local.length)return;
+        if(!Array.isArray(D[col]))D[col]=[];
+        const have=new Set(D[col].map(x=>String(x.id)));
+        const del=_rDel[col]||{};
+        local.forEach(x=>{const id=String(x&&x.id); if(id&&id!=='undefined'&&!have.has(id)&&!del[id])D[col].push(x);});
+      });
       _buildSyncSnap();
       if(typeof _hydrateBlobs==='function')setTimeout(_reconcileFiles,0); // החזרת בייטי קבצים (מקומית + הורדה מהענן)
       showToast('🟰 בוצע יישור קו — הנתונים הוחלפו בעותק מהמכשיר הראשי','ok');
@@ -3589,7 +3601,7 @@ async function fbBaselineNow(){
   const totalRec=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
   if(totalRec===0){showToast('⚠️ אין נתונים במכשיר הזה — יישור קו בוטל','warn');return;}
   if(!_ssUrl&&!_fbRef){showToast('⚠️ הסנכרון לא מחובר — הגדר סנכרון ענן קודם','warn');return;}
-  if(!confirm('🟰 יישור קו\n\nהנתונים במכשיר הזה ('+totalRec+' רשומות) ייקבעו כמקור האמת ויחליפו את הנתונים בכל שאר המכשירים.\n\nמה שקיים במכשירים אחרים ולא קיים כאן — יימחק שם.\n(נשמר גיבוי אוטומטי בכל מכשיר לפני ההחלפה)\n\nלהמשיך?'))return;
+  if(!confirm('🟰 יישור קו\n\nהנתונים במכשיר הזה ('+totalRec+' רשומות) ייקבעו כמקור האמת לרשומות המשותפות בכל המכשירים.\n\nרשומות שקיימות רק במכשיר אחר (למשל משימות) יישמרו שם ולא יימחקו.\n(בנוסף נשמר גיבוי אוטומטי בכל מכשיר לפני ההחלפה)\n\nלהמשיך?'))return;
   try{if(typeof idbBackup==='function')idbBackup(JSON.stringify(D));}catch(e){}
   const ts=Date.now();
   // חותמת טרייה לכל הפריטים — מיזוגים עתידיים יעדיפו את הגרסה הזו
