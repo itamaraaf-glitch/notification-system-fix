@@ -5155,7 +5155,7 @@ function alertGo(i){
     if(cid&&typeof openClientModal==='function'){openClientModal(cid);return;}
   }
   const secMap={deal:'deals',dist:'dists',salary:'salary',tender:'tenders',meetings:'meetings'};
-  const mtypeMap={deal:'deal',dist:'dist',salary:'salary',tender:'tender'};
+  const mtypeMap={deal:'deal',dist:'dist',salary:'salary',tender:'tender',meetings:'meeting'};
   const sec=secMap[al.kind];
   if(!sec)return;
   nav(sec);
@@ -5242,18 +5242,18 @@ function getAlerts(){
     const paceStr=behindBy>=2?` · מאחרי קצב — צפי ${exp} עד היום`:(behindBy<=0&&held>0?' · בקצב ✅':'');
     a.push({type:alertType,h:`יעד פגישות – ${held}/${MEETING_GOAL}`,s:`${MEETING_GOAL-held} פגישות נדרשות${paceStr}`,kind:'meetings'});
   }
-  // Today's meetings that haven't been marked
-  const todayMtgsAlert=D.meetings.filter(m=>m.dt===t&&m.hl!=='כן'&&m.hl!=='מבוטל');
-  if(todayMtgsAlert.length)a.push({type:'warn',h:`📅 פגישות היום (${todayMtgsAlert.length})`,s:todayMtgsAlert.sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(m=>`${m.time?m.time+' – ':''}${m.cl||''}`).filter(Boolean).join(' | '),kind:'meetings'});
+  // Today's meetings that haven't been marked — הלחיצה מובילה לפגישה הראשונה (לפי שעה)
+  const todayMtgsAlert=D.meetings.filter(m=>m.dt===t&&m.hl!=='כן'&&m.hl!=='מבוטל').sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  if(todayMtgsAlert.length){const m0=todayMtgsAlert[0];a.push({type:'warn',h:`📅 פגישות היום (${todayMtgsAlert.length})`,s:todayMtgsAlert.map(m=>`${m.time?m.time+' – ':''}${m.cl||''}`).filter(Boolean).join(' | '),kind:'meetings',id:m0.id,co:m0.cl});}
   // Tomorrow's meetings reminder
   const tomorrow=new Date(now());tomorrow.setDate(tomorrow.getDate()+1);
   const tomorrowStr=tomorrow.toISOString().split('T')[0];
-  const tomorrowMtgs=D.meetings.filter(m=>m.dt===tomorrowStr&&m.hl!=='מבוטל');
-  if(tomorrowMtgs.length)a.push({type:'info',h:`📅 פגישות מחר (${tomorrowMtgs.length})`,s:tomorrowMtgs.sort((a,b)=>(a.time||'').localeCompare(b.time||'')).map(m=>`${m.time?m.time+' – ':''}${m.cl||''}`).filter(Boolean).join(' | '),kind:'meetings'});
+  const tomorrowMtgs=D.meetings.filter(m=>m.dt===tomorrowStr&&m.hl!=='מבוטל').sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  if(tomorrowMtgs.length){const m0=tomorrowMtgs[0];a.push({type:'info',h:`📅 פגישות מחר (${tomorrowMtgs.length})`,s:tomorrowMtgs.map(m=>`${m.time?m.time+' – ':''}${m.cl||''}`).filter(Boolean).join(' | '),kind:'meetings',id:m0.id,co:m0.cl});}
   // Missed meetings (past, not held) — most recent first, show real total in header
   const allMissedMtgs=D.meetings.filter(m=>m.dt&&m.dt<t&&m.hl!=='כן'&&m.hl!=='מבוטל').sort((a,b)=>b.dt.localeCompare(a.dt));
   const missedMtgs=allMissedMtgs.slice(0,3);
-  if(missedMtgs.length)a.push({type:'warn',h:`🤝 פגישות שלא סומנו (${allMissedMtgs.length})`,s:missedMtgs.map(m=>`${m.cl} ${fmtDate(m.dt)}`).join(', ')+(allMissedMtgs.length>3?` ועוד ${allMissedMtgs.length-3}...`:''),kind:'meetings'});
+  if(missedMtgs.length)a.push({type:'warn',h:`🤝 פגישות שלא סומנו (${allMissedMtgs.length})`,s:missedMtgs.map(m=>`${m.cl} ${fmtDate(m.dt)}`).join(', ')+(allMissedMtgs.length>3?` ועוד ${allMissedMtgs.length-3}...`:''),kind:'meetings',id:missedMtgs[0].id,co:missedMtgs[0].cl});
   a.push(...getClientAlerts());
   document.getElementById('acnt').textContent=a.length;
   const dot=document.getElementById('mob-alert-dot');
