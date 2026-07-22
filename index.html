@@ -5426,11 +5426,12 @@ function sendAlertEmail(idx){
 function renderMonthSummary(){
   const el=document.getElementById('month-summary');if(!el)return;
   const curM=nd().substring(0,7);
-  // עסקאות — נסגרו החודש (כמו בבאנר העסקאות) מול פתוחות שעוברות הלאה
+  // עסקאות — נסגרו החודש מול ממתינות לסגירה, באותה מדידה כמו סיכום העסקאות (חלק החודש mv)
+  // כדי ששני המסכים יראו אותם מספרים ולא יתבלבלו.
   const dClosed=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=curM);
   const dOpen=D.deals.filter(d=>d.st!=='נסגר');
-  const dClosedV=dClosed.reduce((a,d)=>a+(d.v||0),0);
-  const dOpenV=dOpen.reduce((a,d)=>a+(d.v||0),0);
+  const dClosedV=dClosed.reduce((a,d)=>a+(+d.mv||0),0);
+  const dOpenV=dOpen.reduce((a,d)=>a+(+d.mv||0),0);
   // הפצות — הושלמו החודש מול ממתינות שעוברות הלאה
   const iClosed=D.dists.filter(d=>d.st==='הושלם'&&(d.dt||'').substring(0,7)===curM);
   const iOpen=D.dists.filter(d=>d.st!=='הושלם');
@@ -5465,7 +5466,7 @@ function renderMonthSummary(){
   el.innerHTML=`<div class="dpanel" style="padding:15px 16px">
     <h4 style="--h4-accent:var(--gold);--h4-color:var(--gold)">📊 ${curMonthStr()} — נסגר בפועל מול יתרה לחודש הבא</h4>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px">
-      ${card('💼','עסקאות','#4cc9f0','deals','נסגר החודש',dClosedV,dClosed.length,'עובר לחודש הבא',dOpenV,dOpen.length)}
+      ${card('💼','עסקאות','#4cc9f0','deals','נסגר החודש',dClosedV,dClosed.length,'ממתין לסגירה',dOpenV,dOpen.length)}
       ${card('🚀','הפצות','#a78bfa','dists','הושלמו החודש',iClosedV,iClosed.length,'עובר לחודש הבא',iOpenV,iOpen.length)}
       ${card('💰','פרויקטי שכר','#06d6a0','salary','נסגר בפועל',sClosedV,null,'יתרה לגבייה',sOpenV,sOpen.length)}
     </div>
