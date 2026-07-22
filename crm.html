@@ -7587,6 +7587,9 @@ function rClients(){
     <button class="btn btnp" onclick="openClientModal(null)">+ הוסף לקוח</button>
   </div>`;return;}
   const allTypes=Object.entries(ITEM_CFG).filter(([t])=>t!=='extra');
+  // אינדקס פגישות לפי חברה (חד-פעמי) — במקום סריקת כל הפגישות לכל כרטיס לקוח
+  const _mtgByCo=new Map();
+  D.meetings.forEach(m=>{ const k=nrmCo(m.cl); if(!k)return; let a=_mtgByCo.get(k); if(!a){a=[];_mtgByCo.set(k,a);} a.push(m); });
   const _cardsHtml=D.clients.map(c=>{
     const sc={r:'#e63946',y:'#f4a261',g:'var(--teal)',b:'#4cc9f0'};
     const stCol=c.status==='לקוח פעיל'?sc.g:c.status==='לקוח פוטנציאלי'?sc.b:c.status==='ליד חדש'?sc.y:sc.r;
@@ -7621,7 +7624,7 @@ function rClients(){
     const emailBtn=`<button class="btn btns" onclick="event.stopPropagation();sendEmailToClient('${c.id}')" style="font-size:9px;opacity:${c.email?1:.35}" title="${c.email?'שלח מייל ללקוח':'הוסף מייל ללקוח'}">📧</button>`;
     // meeting summary for client card
     const todayStrC=nd();
-    const cMtgs=D.meetings.filter(m=>sameCo(m.cl,c.name));
+    const cMtgs=_mtgByCo.get(nrmCo(c.name))||[];
     const nextMtg=cMtgs.filter(m=>m.dt>=todayStrC&&m.hl!=='מבוטל').sort((a,b)=>(a.dt+(a.time||''))<(b.dt+(b.time||''))?-1:1)[0];
     const lastMtg=cMtgs.filter(m=>m.hl==='כן').sort((a,b)=>(a.dt)<(b.dt)?1:-1)[0];
     return`<div class="client-card ${stCls}" style="border-right:3px solid ${stCol}" onclick="openClientModal('${c.id}')">
