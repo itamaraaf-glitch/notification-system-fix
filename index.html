@@ -2266,6 +2266,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="g"><label>איש קשר IT</label><input type="text" id="diit"></div>
     <div class="g"><label>פתרון</label><input type="text" id="diso"></div>
     <div class="g"><label>כתובת</label><input type="text" id="diad"></div>
+    <div class="g"><label>כתובת אספקה (למשלוח)</label><input type="text" id="dida" placeholder="כתובת למשלוח הציוד/ההתקנה"></div>
+    <div class="g"><label>קטגוריה למייל ללקוח</label><select id="dipcat"><option value="">— אוטומטי (לפי סוג מוצר) —</option><option value="equipment">📦 ציוד</option><option value="ms365">📧 Microsoft 365 (English)</option><option value="lines">📡 קווי תקשורת</option></select></div>
     <div class="g"><label>יעד הכנסה ₪</label><input type="number" id="ditgt" placeholder="0"></div>
     <div class="g"><label>הכנסה בפועל ₪</label><input type="number" id="diin" placeholder="0"></div>
     <div class="g"><label>ציוד ₪</label><input type="number" id="dieq" placeholder="0"></div>
@@ -5288,14 +5290,15 @@ function rtlText(s){ return String(s==null?'':s).split('\n').map(l=>l?('‏'+l):
 // Open an email without navigating the page away (which would unload the app
 // and force a re-login). `to` may be one address or an array; extra addresses
 // go into CC so the To field never contains a comma.
-function openMail(to, subject, body, cc){
+function openMail(to, subject, body, cc, dir){
   let toList = Array.isArray(to) ? to.slice() : [to];
   toList = toList.filter(e=>e && String(e).trim());
   const primary = toList[0] || '';
   const ccList = toList.slice(1).concat(cc ? (Array.isArray(cc)?cc:[cc]) : []).filter(Boolean);
+  const mailBody = dir==='ltr' ? String(body==null?'':body) : rtlText(body);
   let href = 'mailto:' + encodeURIComponent(primary).replace(/%40/g,'@')
     + '?subject=' + encodeURIComponent(subject||'')
-    + '&body=' + encodeURIComponent(rtlText(body));
+    + '&body=' + encodeURIComponent(mailBody);
   if(ccList.length) href += '&cc=' + encodeURIComponent(ccList.join(','));
   const a = document.createElement('a');
   a.href = href; a.target = '_blank'; a.rel = 'noopener'; a.style.display = 'none';
@@ -7957,40 +7960,100 @@ function emailHandlerFromDistForm(){
   const body=buildHandlerEmailBody(d,greet);
   openMail(emails, subject, body);
 }
-// ===== עדכון שלב ללקוח — מייל מקצועי וידידותי לפי שלב ההתקדמות של ההפצה =====
-// שלבי ההפצה מסודרים לתצוגת התקדמות: ממתין להפצה → בהתקנה → הושלם. "בעיה" הוא מצב-צד.
-const DIST_STAGE_ORDER = ['ממתין להפצה','בהתקנה','הושלם'];
+// ===== עדכון שלב ללקוח — מייל בסגנון "מעקב משלוח" (תזרים שלבים) =====
+// כל הזמנה שונה: הטקסט מותאם לקטגוריית המוצר (ציוד / Microsoft 365 / קווי תקשורת),
+// ו-Microsoft 365 יוצא באנגלית מלאה. השאר בעברית.
+// שלבי התזרים: התקבלה ← הועברה למומחים ← בהתקנה/אספקה ← הושלם והופעל.
+// מיפוי סטטוס ההפצה לשלב הנוכחי בתזרים (אינדקס 0..3). "בעיה" נשאר בשלב הביצוע + הערת עיכוב.
+const DIST_FLOW_IDX = {'ממתין להפצה':1,'בהתקנה':2,'הושלם':3,'בעיה':1};
+// קטגוריה: מפורש (pcat) גובר; אחרת נגזר מסוג-המוצר (ptype)
+function _distClientCat(d){
+  if(d.pcat) return d.pcat;
+  const map={ms365:'ms365',lines:'lines',forti:'equipment',cisco:'equipment',hp:'equipment',juniper:'equipment',cybiz:'equipment',starlink:'equipment',pbx:'equipment',helpdesk:'equipment',servers:'equipment'};
+  return map[d.ptype]||'general';
+}
 function buildClientProgressEmailBody(d){
-  const greet = d.cl ? d.cl : 'לקוח יקר';
-  const st = d.st || 'ממתין להפצה';
-  const stPara = {
-    'ממתין להפצה':'הפרויקט שלכם נמצא כעת בשלב ההכנה לקראת הביצוע. אנו מסדרים את כל הפרטים הנדרשים ונעדכן אתכם עם תחילת ההתקנה בשטח.',
-    'בהתקנה':'הפרויקט שלכם נמצא כעת בשלב ההתקנה. הצוות המקצועי שלנו עובד על הביצוע בשטח, ונעדכן אתכם עם השלמת השלב.',
-    'הושלם':'אנו שמחים לעדכן כי הפרויקט שלכם הושלם בהצלחה! תודה על האמון שנתתם בנו — אנו כאן לכל שאלה, בקשה או צורך עתידי.',
-    'בעיה':'חשוב לנו לעדכן אתכם כי חלה עצירה זמנית בתהליך. הצוות שלנו כבר מטפל בכך במלוא תשומת הלב, ונחזור אליכם עם עדכון מלא בהקדם האפשרי. מודים לכם על הסבלנות.'
-  }[st] || 'נמשיך לעדכן אתכם בכל התקדמות בפרויקט. אתם מוזמנים לפנות אליי בכל שאלה.';
-  // שורת התקדמות ויזואלית (מדלגת על "בעיה" שאינו שלב בציר)
-  let progressLine = '';
-  const idx = DIST_STAGE_ORDER.indexOf(st);
-  if(idx >= 0){
-    const bar = DIST_STAGE_ORDER.map((s,i)=> (i<=idx?'●':'○')+' '+s).join('  →  ');
-    progressLine = `📊 שלב נוכחי: ${st} (${idx+1} מתוך ${DIST_STAGE_ORDER.length})\n${bar}`;
-  } else {
-    progressLine = `📊 סטטוס נוכחי: ${st}`;
+  const cat=_distClientCat(d);
+  const st=d.st||'ממתין להפצה';
+  const cur=(st in DIST_FLOW_IDX)?DIST_FLOW_IDX[st]:1;
+  const done=(st==='הושלם');
+  const problem=(st==='בעיה');
+
+  if(cat==='ms365'){
+    // ---- Microsoft 365 — full English ----
+    const stages=['Order received','Assigned to our specialists','In provisioning / deployment','Completed & activated'];
+    const flow=stages.map((s,i)=>{
+      const m = problem&&i===cur ? '⚠️' : ((done||i<cur)?'✅':(i===cur?'🔵':'⚪'));
+      return `${m} ${s}${(i===cur&&!done)?'   ← you are here':''}`;
+    }).join('\n');
+    const intro = done
+      ? "We're pleased to let you know that your Microsoft 365 order has been completed and activated successfully. Thank you for your trust — we're here for any question or future need."
+      : problem
+      ? "We wanted to update you that there is a temporary delay in the process. Our specialists are already working on it and will get back to you with a full update as soon as possible. Thank you for your patience."
+      : "Your Microsoft 365 order has been received and assigned to our specialists for provisioning. We will keep you updated at every stage until your services are fully deployed and active.";
+    const body=[
+      `Hello ${d.cl||'valued customer'},`,
+      ``,
+      `📦 Order status tracking`,
+      `━━━━━━━━━━━━━━━━━━━━━`,
+      flow,
+      ``,
+      intro,
+      ``,
+      `Order details:`,
+      d.no ?`📁 Project no.: ${d.no}`:'',
+      d.co ?`🏢 Company: ${d.co}`:'',
+      d.so ?`🔧 Solution: ${d.so}`:'',
+      d.da ?`📍 Delivery address: ${d.da}`:'',
+      d.dt ?`📅 Updated: ${fmtDate(d.dt)}`:'',
+      ``,
+      `We're happy to assist with any question.`,
+      ``,
+      `Best regards,`,
+      `Itamar Venden`,
+      `HOT Business`,
+      `Itamar.venden@hot.net.il`,
+    ].filter(l=>l!=='').join('\n');
+    return body;
   }
-  const lines=[
-    `שלום ${greet},`,
+
+  // ---- Hebrew (ציוד / קווי תקשורת / כללי) ----
+  const stages=['התקבלה ההזמנה','הועברה למומחים לביצוע','בהתקנה / באספקה','הושלם והופעל'];
+  const flow=stages.map((s,i)=>{
+    const m = problem&&i===cur ? '⚠️' : ((done||i<cur)?'✅':(i===cur?'🔵':'⚪'));
+    return `${m} ${s}${(i===cur&&!done)?'   ← אתם כאן':''}`;
+  }).join('\n');
+  const introByCat={
+    equipment:{
+      active:'הזמנת הציוד שלכם התקבלה במערכת והועברה לצוות המומחים שלנו לביצוע בהקדם האפשרי. נמשיך לעדכן אתכם בכל שלב עד להתקנה והפעלה מלאה.',
+      done:'הציוד שהזמנתם הותקן והופעל בהצלחה! תודה על האמון — אנו כאן לכל שאלה, בקשה או צורך עתידי.'
+    },
+    lines:{
+      active:'הזמנת קווי התקשורת שלכם התקבלה ונמצאת בתהליך הקמה מול הספק. הצוות שלנו מלווה את התהליך עד לחיבור והפעלה מלאים.',
+      done:'קווי התקשורת שלכם חוברו והופעלו בהצלחה! תודה על האמון — אנו כאן לכל שאלה או צורך עתידי.'
+    },
+    general:{
+      active:'הזמנתכם התקבלה והועברה לצוות המקצועי שלנו לביצוע בהקדם האפשרי. נמשיך לעדכן אתכם בכל שלב עד להשלמה.',
+      done:'הזמנתכם הושלמה והופעלה בהצלחה! תודה על האמון — אנו כאן לכל שאלה או צורך עתידי.'
+    }
+  }[cat]||{active:'',done:''};
+  const intro = problem
+    ? '⚠️ נתקלנו בעיכוב זמני בתהליך — הצוות שלנו כבר פועל לפתרון ונחזור אליכם עם עדכון מלא בהקדם האפשרי. מודים לכם על הסבלנות.'
+    : (done?introByCat.done:introByCat.active);
+  const body=[
+    `שלום ${d.cl||'לקוח יקר'},`,
     ``,
-    `ברצוננו לעדכן אתכם בסטטוס ההתקדמות של הפרויקט:`,
+    `📦 מעקב סטטוס ההזמנה`,
+    `━━━━━━━━━━━━━━━━━━━━━`,
+    flow,
     ``,
-    progressLine,
+    intro,
     ``,
-    stPara,
-    ``,
-    `להלן פרטי הפרויקט:`,
+    `פרטי ההזמנה:`,
     d.no ?`📁 מס׳ פרויקט: ${d.no}`:'',
     d.co ?`🏢 חברה: ${d.co}`:'',
     d.so ?`🔧 פתרון: ${d.so}`:'',
+    d.da ?`📍 כתובת אספקה: ${d.da}`:'',
     d.dt ?`📅 עודכן לתאריך: ${fmtDate(d.dt)}`:'',
     ``,
     `נשמח לעמוד לרשותכם בכל שאלה או הבהרה.`,
@@ -8000,7 +8063,7 @@ function buildClientProgressEmailBody(d){
     `HOT Business`,
     `Itamar.venden@hot.net.il`,
   ].filter(l=>l!=='').join('\n');
-  return lines;
+  return body;
 }
 function emailClientFromDistForm(){
   const cle=(document.getElementById('dicle').value||'').trim();
@@ -8011,12 +8074,18 @@ function emailClientFromDistForm(){
     no:document.getElementById('diproj').value,
     cl:document.getElementById('dicl').value,
     so:document.getElementById('diso').value,
+    da:document.getElementById('dida').value.trim(),
     dt:document.getElementById('didt').value,
     st:document.getElementById('dist2').value,
+    ptype:document.getElementById('diptype').value,
+    pcat:document.getElementById('dipcat').value,
   };
-  const subject=`עדכון סטטוס פרויקט – ${d.no||d.co||''}${d.st?` (${d.st})`:''}`;
+  const cat=_distClientCat(d);
+  const subject = cat==='ms365'
+    ? `Order status update – ${d.no||d.co||''}${d.st?` (${d.st})`:''}`
+    : `עדכון סטטוס הזמנה – ${d.no||d.co||''}${d.st?` (${d.st})`:''}`;
   const body=buildClientProgressEmailBody(d);
-  openMail(cle, subject, body);
+  openMail(cle, subject, body, null, cat==='ms365'?'ltr':undefined);
 }
 // ===== תיאום פ.ע (פגישת עבודה) — סנכרון מלא מול מנהל פרויקט / גורם מטפל =====
 // לחיצה אחת מייצרת מייל מקצועי עם כל הפרויקטים של אותו גורם: מס׳ פרויקט + שם לקוח + סטטוס
@@ -8707,7 +8776,7 @@ function openM(type,id){
   }else if(type==='dist'){
     document.getElementById('ditit').textContent=isNew?'הפצה חדשה':'עריכת הפצה';
     const d=isNew?{}:D.dists.find(x=>x.id==id)||{};
-    document.getElementById('dico').value=d.co||'';document.getElementById('diproj').value=d.no||'';document.getElementById('dicl').value=d.cl||'';document.getElementById('dicle').value=d.cle||'';document.getElementById('dih').value=d.hd||'';document.getElementById('dihp').value=d.hp||'';document.getElementById('diit').value=d.it||'';document.getElementById('diso').value=d.so||'';document.getElementById('diad').value=d.ad||'';document.getElementById('ditgt').value=d.tgt||0;document.getElementById('diin').value=d.inc||0;document.getElementById('dieq').value=d.eq||0;document.getElementById('didt').value=d.dt||'';document.getElementById('dist2').value=d.st||'ממתין להפצה';document.getElementById('dity').value=d.ty||'short';document.getElementById('diptype').value=d.ptype||'';document.getElementById('dimi').value=d.mi||'';
+    document.getElementById('dico').value=d.co||'';document.getElementById('diproj').value=d.no||'';document.getElementById('dicl').value=d.cl||'';document.getElementById('dicle').value=d.cle||'';document.getElementById('dih').value=d.hd||'';document.getElementById('dihp').value=d.hp||'';document.getElementById('diit').value=d.it||'';document.getElementById('diso').value=d.so||'';document.getElementById('diad').value=d.ad||'';document.getElementById('dida').value=d.da||'';document.getElementById('dipcat').value=d.pcat||'';document.getElementById('ditgt').value=d.tgt||0;document.getElementById('diin').value=d.inc||0;document.getElementById('dieq').value=d.eq||0;document.getElementById('didt').value=d.dt||'';document.getElementById('dist2').value=d.st||'ממתין להפצה';document.getElementById('dity').value=d.ty||'short';document.getElementById('diptype').value=d.ptype||'';document.getElementById('dimi').value=d.mi||'';
   }else if(type==='salary'){
     document.getElementById('sttit').textContent=isNew?'פרויקט לשכר':'עריכת פרויקט';
     const s=isNew?{}:D.salary.find(x=>x.id==id)||{};
@@ -9323,7 +9392,7 @@ function syncDistToSalary(dist){
   return updated>0;
 }
 function saveDist(){
-  const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,cle:document.getElementById('dicle').value.trim(),hd:document.getElementById('dih').value,hp:document.getElementById('dihp').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,tgt:+document.getElementById('ditgt').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,ptype:document.getElementById('diptype').value,mi:document.getElementById('dimi').value,files:_attPending['dist']||[]};
+  const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,cle:document.getElementById('dicle').value.trim(),hd:document.getElementById('dih').value,hp:document.getElementById('dihp').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,da:document.getElementById('dida').value.trim(),pcat:document.getElementById('dipcat').value,tgt:+document.getElementById('ditgt').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,ptype:document.getElementById('diptype').value,mi:document.getElementById('dimi').value,files:_attPending['dist']||[]};
   if(!row.co){alert('יש להזין שם חברה');return;}
   if(isNaN(row.tgt)||row.tgt<0||isNaN(row.inc)||row.inc<0||isNaN(row.eq)||row.eq<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}
   let savedDist;
