@@ -5426,11 +5426,12 @@ function sendAlertEmail(idx){
 function renderMonthSummary(){
   const el=document.getElementById('month-summary');if(!el)return;
   const curM=nd().substring(0,7);
-  // עסקאות — נסגרו החודש (כמו בבאנר העסקאות) מול פתוחות שעוברות הלאה
+  // עסקאות — נסגרו החודש מול ממתינות לסגירה, באותה מדידה כמו סיכום העסקאות (חלק החודש mv)
+  // כדי ששני המסכים יראו אותם מספרים ולא יתבלבלו.
   const dClosed=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=curM);
   const dOpen=D.deals.filter(d=>d.st!=='נסגר');
-  const dClosedV=dClosed.reduce((a,d)=>a+(d.v||0),0);
-  const dOpenV=dOpen.reduce((a,d)=>a+(d.v||0),0);
+  const dClosedV=dClosed.reduce((a,d)=>a+(+d.mv||0),0);
+  const dOpenV=dOpen.reduce((a,d)=>a+(+d.mv||0),0);
   // הפצות — הושלמו החודש מול ממתינות שעוברות הלאה
   const iClosed=D.dists.filter(d=>d.st==='הושלם'&&(d.dt||'').substring(0,7)===curM);
   const iOpen=D.dists.filter(d=>d.st!=='הושלם');
@@ -5463,9 +5464,9 @@ function renderMonthSummary(){
     </div>`;
   };
   el.innerHTML=`<div class="dpanel" style="padding:15px 16px">
-    <h4 style="--h4-accent:var(--gold);--h4-color:var(--gold)">📊 ${curMonthStr()} — נסגר בפועל מול יתרה לחודש הבא</h4>
+    <h4 style="--h4-accent:var(--gold);--h4-color:var(--gold)">📊 ${curMonthStr()} — נסגר בפועל מול מה שנותר</h4>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px">
-      ${card('💼','עסקאות','#4cc9f0','deals','נסגר החודש',dClosedV,dClosed.length,'עובר לחודש הבא',dOpenV,dOpen.length)}
+      ${card('💼','עסקאות','#4cc9f0','deals','נסגר החודש',dClosedV,dClosed.length,'ממתין לסגירה',dOpenV,dOpen.length)}
       ${card('🚀','הפצות','#a78bfa','dists','הושלמו החודש',iClosedV,iClosed.length,'עובר לחודש הבא',iOpenV,iOpen.length)}
       ${card('💰','פרויקטי שכר','#06d6a0','salary','נסגר בפועל',sClosedV,null,'יתרה לגבייה',sOpenV,sOpen.length)}
     </div>
@@ -5607,20 +5608,29 @@ function rDeals(){
     const mvOpen =openD.reduce((a,d)=>a+(+d.mv||0),0);  // חלק החודש שעדיין פתוח = נשאר לסגור
     const mvClosed=closedM.reduce((a,d)=>a+(+d.mv||0),0); // חלק החודש שכבר נסגר
     const planM  =mvOpen+mvClosed;                      // סה"כ לתכנון החודש (יעד מהצנרת)
-    const nextM  =openD.reduce((a,d)=>a+(+d.dn||0),0);  // יתרה לחודש הבא
+    // יתרה לחודש הבא = חלק "חודש הבא" (dn) מכל העסקאות הרלוונטיות: פתוחות (עדיין בצנרת)
+    // + כאלה שנסגרו החודש (הכנסה מחויבת שתיכנס בחודש הבא). עקבי עם ספירת mv של עסקאות סגורות.
+    const nextM  =openD.reduce((a,d)=>a+(+d.dn||0),0)+closedM.reduce((a,d)=>a+(+d.dn||0),0);
+    // עסקאות פתוחות עם שווי אך ללא שיוך לחודש (mv+di+dn=0) — לא נספרות בממתין/הבא ולכן "המספרים לא מסתדרים"
+    const unalloc =openD.filter(d=>(+d.v||0)>0 && ((+d.mv||0)+(+d.di||0)+(+d.dn||0))===0);
+    const unallocV=unalloc.reduce((a,d)=>a+(+d.v||0),0);
+    // שמות החברות של העסקאות היתומות (עד 3) — כדי שאפשר יהיה לאתר ולתקן מיד
+    const unallocNames=unalloc.slice(0,3).map(d=>esc(d.co||'ללא שם')).join(', ')+(unalloc.length>3?` ועוד ${unalloc.length-3}`:'');
     const pct    =planM>0?Math.round(mvClosed/planM*100):0;
     const pc     =pct>=100?'var(--teal)':pct>=66?'#8bd450':pct>=33?'#f4a261':'#e63946';
-    const tile=(lb,val,sub,clr)=>`<div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:11px;padding:11px 13px;min-width:0">
-        <div style="font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.3px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lb}</div>
-        <div style="font-size:18px;font-weight:900;color:${clr};line-height:1.1">${fmt(val)}</div>
+    const closedN=closedM.length, openN=openD.length;
+    // שלושת המספרים שחשוב לדעת — כולם באותה מדידה (חלק החודש הנוכחי, mv) כדי שיסתדרו:
+    // נסגר + ממתין = יעד החודש. לחודש הבא = יתרה שתיכנס בחודש הבא (dn).
+    const tile=(lb,val,sub,clr,bd)=>`<div style="background:rgba(255,255,255,.03);border:1px solid ${bd||'var(--border)'};border-radius:11px;padding:11px 13px;min-width:0">
+        <div style="font-size:10.5px;color:var(--text3);font-weight:700;letter-spacing:.3px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lb}</div>
+        <div style="font-size:19px;font-weight:900;color:${clr};line-height:1.1">${fmt(val)}</div>
         ${sub?`<div style="font-size:9.5px;color:var(--text3);margin-top:2px">${sub}</div>`:''}</div>`;
     box.innerHTML=`<div style="background:linear-gradient(135deg,rgba(16,21,37,.96),rgba(10,14,28,.99));border:1px solid rgba(6,214,160,.22);border-radius:14px;padding:15px 17px;margin-bottom:14px;box-shadow:0 4px 20px rgba(0,0,0,.35)">
       <div style="font-size:13px;font-weight:900;color:var(--teal);letter-spacing:-.2px;margin-bottom:11px">📊 סיכום עסקאות · ${curMonthStr()}</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px">
-        ${tile('💼 סה"כ עסקאות',totV,openD.length+' עסקאות פתוחות','var(--text)')}
-        ${tile('🎯 לתכנון החודש',planM,'יעד מהצנרת (חודש נוכחי)','#4cc9f0')}
-        ${tile('✅ נסגרו החודש',mvClosed,pct+'% מהתכנון','var(--teal)')}
-        ${tile('⏭ לחודש הבא',nextM,'יתרה שנדחית','#a78bfa')}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px">
+        ${tile('✅ נסגר החודש',mvClosed,closedN+(closedN===1?' עסקה':' עסקאות'),'var(--teal)','rgba(6,214,160,.28)')}
+        ${tile('⏳ ממתין לסגירה',mvOpen,openN+(openN===1?' עסקה פתוחה':' עסקאות פתוחות'),mvOpen>0?'#f4a261':'var(--teal)','rgba(244,162,97,.28)')}
+        ${tile('⏭ לחודש הבא',nextM,'יתרה שתיכנס בהבא','#a78bfa','rgba(167,139,250,.28)')}
       </div>
       <div style="margin-top:12px;padding:12px 15px;background:linear-gradient(135deg,${mvOpen>0?'rgba(230,57,70,.10)':'rgba(6,214,160,.10)'},rgba(16,21,37,.5));border:1px solid ${mvOpen>0?'rgba(230,57,70,.32)':'rgba(6,214,160,.32)'};border-radius:12px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px">
@@ -5630,11 +5640,17 @@ function rDeals(){
         <div style="height:8px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden;margin-top:9px">
           <div style="height:100%;width:${Math.min(pct,100)}%;background:${pc};border-radius:5px;transition:width .5s"></div>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:5px">
-          <span>נסגר: <b style="color:var(--teal)">${fmt(mvClosed)}</b></span>
-          <span>מתוך תכנון: <b style="color:var(--text2)">${fmt(planM)}</b> · <b style="color:${pc}">${pct}%</b></span>
+        <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--text3);margin-top:6px">
+          <span>🎯 יעד החודש: <b style="color:#4cc9f0">${fmt(planM)}</b></span>
+          <span><b style="color:var(--teal)">${fmt(mvClosed)}</b> נסגר + <b style="color:#f4a261">${fmt(mvOpen)}</b> ממתין · <b style="color:${pc}">${pct}%</b></span>
         </div>
       </div>
+      <div style="margin-top:9px;padding-top:9px;border-top:1px dashed var(--border);display:flex;justify-content:space-between;align-items:baseline;font-size:10.5px;color:var(--text3)">
+        <span>💼 שווי צנרת מלא (${openN} ${openN===1?'עסקה פתוחה':'עסקאות פתוחות'})</span>
+        <span style="font-size:14px;font-weight:800;color:var(--text2)">${fmt(totV)}</span>
+      </div>
+      ${unalloc.length?`<div style="margin-top:8px;padding:8px 11px;background:rgba(244,162,97,.09);border:1px solid rgba(244,162,97,.28);border-radius:9px;font-size:10.5px;color:#f4a261;line-height:1.5">
+        ⚠️ <b>${unalloc.length} ${unalloc.length===1?'עסקה בשווי':'עסקאות בשווי'} ${fmt(unallocV)}</b> ללא שיוך לחודש — לא נספרות ב"ממתין" או ב"לחודש הבא".<br><span style="color:var(--text2)">📋 ${unallocNames}</span> · פתחו ומלאו "חודש נוכחי" / "חודש הבא" כדי שהמספרים יסתדרו.</div>`:''}
     </div>`;
   })();
   const eqEl=document.getElementById('deal-eq-goal-top');
