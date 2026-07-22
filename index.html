@@ -2260,6 +2260,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="g"><label>שם חברה</label><input type="text" id="dico" list="co-list" autocomplete="off"></div>
     <div class="g"><label>מס׳ פרויקט</label><input type="text" id="diproj"></div>
     <div class="g"><label>שם לקוח</label><input type="text" id="dicl"></div>
+    <div class="g"><label>אימייל לקוח</label><input type="email" id="dicle" autocomplete="off" placeholder="client@example.com" dir="ltr"></div>
     <div class="g"><label>מנהל פרויקט</label><select id="dih"><option value="">-- בחר --</option><option>בת אל</option><option>גל</option><option>אדי</option></select></div>
     <div class="g"><label>גורם מטפל</label><select id="dihp"><option value="">-- בחר --</option><option>אביבית</option><option>חנה</option><option>כולם</option></select></div>
     <div class="g"><label>איש קשר IT</label><input type="text" id="diit"></div>
@@ -2286,6 +2287,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <button class="btn" onclick="closeM('mdist')">ביטול</button>
     <button class="btn btns" onclick="emailFromDistForm()" style="border-color:#0078d4;color:#4cc9f0">📧 שלח למנהל פרויקט</button>
     <button class="btn btns" onclick="emailHandlerFromDistForm()" style="border-color:#06d6a0;color:#06d6a0">📧 שלח לגורם מטפל</button>
+    <button class="btn btns" onclick="emailClientFromDistForm()" style="border-color:#ffd166;color:#ffd166">📧 עדכן לקוח בשלב</button>
     <button class="btn btnp" onclick="saveDist()">שמור הפצה</button>
   </div>
 </div></div>
@@ -7955,6 +7957,67 @@ function emailHandlerFromDistForm(){
   const body=buildHandlerEmailBody(d,greet);
   openMail(emails, subject, body);
 }
+// ===== עדכון שלב ללקוח — מייל מקצועי וידידותי לפי שלב ההתקדמות של ההפצה =====
+// שלבי ההפצה מסודרים לתצוגת התקדמות: ממתין להפצה → בהתקנה → הושלם. "בעיה" הוא מצב-צד.
+const DIST_STAGE_ORDER = ['ממתין להפצה','בהתקנה','הושלם'];
+function buildClientProgressEmailBody(d){
+  const greet = d.cl ? d.cl : 'לקוח יקר';
+  const st = d.st || 'ממתין להפצה';
+  const stPara = {
+    'ממתין להפצה':'הפרויקט שלכם נמצא כעת בשלב ההכנה לקראת הביצוע. אנו מסדרים את כל הפרטים הנדרשים ונעדכן אתכם עם תחילת ההתקנה בשטח.',
+    'בהתקנה':'הפרויקט שלכם נמצא כעת בשלב ההתקנה. הצוות המקצועי שלנו עובד על הביצוע בשטח, ונעדכן אתכם עם השלמת השלב.',
+    'הושלם':'אנו שמחים לעדכן כי הפרויקט שלכם הושלם בהצלחה! תודה על האמון שנתתם בנו — אנו כאן לכל שאלה, בקשה או צורך עתידי.',
+    'בעיה':'חשוב לנו לעדכן אתכם כי חלה עצירה זמנית בתהליך. הצוות שלנו כבר מטפל בכך במלוא תשומת הלב, ונחזור אליכם עם עדכון מלא בהקדם האפשרי. מודים לכם על הסבלנות.'
+  }[st] || 'נמשיך לעדכן אתכם בכל התקדמות בפרויקט. אתם מוזמנים לפנות אליי בכל שאלה.';
+  // שורת התקדמות ויזואלית (מדלגת על "בעיה" שאינו שלב בציר)
+  let progressLine = '';
+  const idx = DIST_STAGE_ORDER.indexOf(st);
+  if(idx >= 0){
+    const bar = DIST_STAGE_ORDER.map((s,i)=> (i<=idx?'●':'○')+' '+s).join('  →  ');
+    progressLine = `📊 שלב נוכחי: ${st} (${idx+1} מתוך ${DIST_STAGE_ORDER.length})\n${bar}`;
+  } else {
+    progressLine = `📊 סטטוס נוכחי: ${st}`;
+  }
+  const lines=[
+    `שלום ${greet},`,
+    ``,
+    `ברצוננו לעדכן אתכם בסטטוס ההתקדמות של הפרויקט:`,
+    ``,
+    progressLine,
+    ``,
+    stPara,
+    ``,
+    `להלן פרטי הפרויקט:`,
+    d.no ?`📁 מס׳ פרויקט: ${d.no}`:'',
+    d.co ?`🏢 חברה: ${d.co}`:'',
+    d.so ?`🔧 פתרון: ${d.so}`:'',
+    d.dt ?`📅 עודכן לתאריך: ${fmtDate(d.dt)}`:'',
+    ``,
+    `נשמח לעמוד לרשותכם בכל שאלה או הבהרה.`,
+    ``,
+    `בברכה,`,
+    `איתמר ונדן`,
+    `HOT Business`,
+    `Itamar.venden@hot.net.il`,
+  ].filter(l=>l!=='').join('\n');
+  return lines;
+}
+function emailClientFromDistForm(){
+  const cle=(document.getElementById('dicle').value||'').trim();
+  if(!cle){ toast('⚠️ הזן אימייל לקוח כדי לשלוח עדכון שלב','warn'); document.getElementById('dicle').focus(); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cle)){ toast('⚠️ כתובת אימייל לקוח אינה תקינה','warn'); document.getElementById('dicle').focus(); return; }
+  const d={
+    co:document.getElementById('dico').value,
+    no:document.getElementById('diproj').value,
+    cl:document.getElementById('dicl').value,
+    so:document.getElementById('diso').value,
+    dt:document.getElementById('didt').value,
+    st:document.getElementById('dist2').value,
+  };
+  const subject=`עדכון סטטוס פרויקט – ${d.no||d.co||''}${d.st?` (${d.st})`:''}`;
+  const body=buildClientProgressEmailBody(d);
+  openMail(cle, subject, body);
+}
 // ===== תיאום פ.ע (פגישת עבודה) — סנכרון מלא מול מנהל פרויקט / גורם מטפל =====
 // לחיצה אחת מייצרת מייל מקצועי עם כל הפרויקטים של אותו גורם: מס׳ פרויקט + שם לקוח + סטטוס
 function _paProjects(name,role){
@@ -8644,7 +8707,7 @@ function openM(type,id){
   }else if(type==='dist'){
     document.getElementById('ditit').textContent=isNew?'הפצה חדשה':'עריכת הפצה';
     const d=isNew?{}:D.dists.find(x=>x.id==id)||{};
-    document.getElementById('dico').value=d.co||'';document.getElementById('diproj').value=d.no||'';document.getElementById('dicl').value=d.cl||'';document.getElementById('dih').value=d.hd||'';document.getElementById('dihp').value=d.hp||'';document.getElementById('diit').value=d.it||'';document.getElementById('diso').value=d.so||'';document.getElementById('diad').value=d.ad||'';document.getElementById('ditgt').value=d.tgt||0;document.getElementById('diin').value=d.inc||0;document.getElementById('dieq').value=d.eq||0;document.getElementById('didt').value=d.dt||'';document.getElementById('dist2').value=d.st||'ממתין להפצה';document.getElementById('dity').value=d.ty||'short';document.getElementById('diptype').value=d.ptype||'';document.getElementById('dimi').value=d.mi||'';
+    document.getElementById('dico').value=d.co||'';document.getElementById('diproj').value=d.no||'';document.getElementById('dicl').value=d.cl||'';document.getElementById('dicle').value=d.cle||'';document.getElementById('dih').value=d.hd||'';document.getElementById('dihp').value=d.hp||'';document.getElementById('diit').value=d.it||'';document.getElementById('diso').value=d.so||'';document.getElementById('diad').value=d.ad||'';document.getElementById('ditgt').value=d.tgt||0;document.getElementById('diin').value=d.inc||0;document.getElementById('dieq').value=d.eq||0;document.getElementById('didt').value=d.dt||'';document.getElementById('dist2').value=d.st||'ממתין להפצה';document.getElementById('dity').value=d.ty||'short';document.getElementById('diptype').value=d.ptype||'';document.getElementById('dimi').value=d.mi||'';
   }else if(type==='salary'){
     document.getElementById('sttit').textContent=isNew?'פרויקט לשכר':'עריכת פרויקט';
     const s=isNew?{}:D.salary.find(x=>x.id==id)||{};
@@ -9260,7 +9323,7 @@ function syncDistToSalary(dist){
   return updated>0;
 }
 function saveDist(){
-  const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,hd:document.getElementById('dih').value,hp:document.getElementById('dihp').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,tgt:+document.getElementById('ditgt').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,ptype:document.getElementById('diptype').value,mi:document.getElementById('dimi').value,files:_attPending['dist']||[]};
+  const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,cle:document.getElementById('dicle').value.trim(),hd:document.getElementById('dih').value,hp:document.getElementById('dihp').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,tgt:+document.getElementById('ditgt').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,ptype:document.getElementById('diptype').value,mi:document.getElementById('dimi').value,files:_attPending['dist']||[]};
   if(!row.co){alert('יש להזין שם חברה');return;}
   if(isNaN(row.tgt)||row.tgt<0||isNaN(row.inc)||row.inc<0||isNaN(row.eq)||row.eq<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}
   let savedDist;
