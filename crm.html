@@ -5747,6 +5747,13 @@ function rDeals(){
         </div>
       </div>
     </div>`;
+  // ── אינדקסים חד-פעמיים לביצועים: במקום חיפוש O(n) בכל שורה (לקוח + פגישה קרובה) ──
+  // חוסך אלפי סריקות כשיש הרבה עסקאות/לקוחות/פגישות. שומר על סמנטיקת ההתאמה (nrmCo).
+  const _curDateStr=nd();
+  const _clientByCo=new Map();
+  D.clients.forEach(c=>{const k=nrmCo(c.name); if(k&&!_clientByCo.has(k))_clientByCo.set(k,c);});
+  const _upMtgByCo=new Map();
+  D.meetings.forEach(m=>{ if((m.dt||'')>=_curDateStr&&m.hl!=='מבוטל'){ const k=nrmCo(m.cl); if(k&&!_upMtgByCo.has(k))_upMtgByCo.set(k,m); }});
   ['long','short'].forEach(ty=>{
     const tbId=ty==='long'?'ltb':'stb',ftId=ty==='long'?'lft':'sft';
     const items=D.deals.filter(d=>d.ty===ty);
@@ -5760,15 +5767,15 @@ function rDeals(){
       const ib=d.inf&&d.inf.includes('הוט')?`<span class="badge bb">HOT</span>`:d.inf==='365'?`<span class="badge bgr">365</span>`:`<span class="badge bgr">${esc(d.inf||'–')}</span>`;
       const cc=d.ch>=1?'ng':d.ch>=0.75?'ny':'nr';
       const chk=SEL[sk]&&SEL[sk].has(d.id)?'checked':'';
-      const _dcl=findClientByName(d.co);
+      const _coKey=nrmCo(d.co);
+      const _dcl=_clientByCo.get(_coKey);
       const _hse=!!(_dcl&&_dcl.email&&_dcl.email.trim());
       const deBtn=`<button class="btn btns" onclick="sendEmailToDeal('${d.id}')" title="${_hse?'שלח עדכון מייל ללקוח':'הוסף מייל ללקוח'}" style="font-size:9px;opacity:${_hse?1:0.45}">📧</button> `;
       const coSafe=escJs(d.co||'');
       const schedBtn=`<button class="btn btns" onclick="openMeetingFor('${coSafe}')" title="קבע פגישה עם ${esc(d.co||'לקוח')}" style="border-color:#06d6a0;color:#06d6a0;font-size:9px">📅</button> `;
-      // Check for upcoming meeting with this company
-      const curDateStr=nd();
-      const upcomingForDeal=D.meetings.find(m=>sameCo(m.cl,d.co)&&m.dt>=curDateStr&&m.hl!=='מבוטל');
-      const mtgChip=upcomingForDeal?`<span class="next-mtg-chip" title="פגישה ב-${fmtDate(upcomingForDeal.dt)}${upcomingForDeal.time?' '+upcomingForDeal.time:''}" style="font-size:9px;padding:1px 5px;cursor:default;color:#06d6a0">📅${upcomingForDeal.dt===curDateStr?' היום':' '+fmtDate(upcomingForDeal.dt)}</span> `:'';
+      // Check for upcoming meeting with this company (מאינדקס — O(1))
+      const upcomingForDeal=_upMtgByCo.get(_coKey);
+      const mtgChip=upcomingForDeal?`<span class="next-mtg-chip" title="פגישה ב-${fmtDate(upcomingForDeal.dt)}${upcomingForDeal.time?' '+upcomingForDeal.time:''}" style="font-size:9px;padding:1px 5px;cursor:default;color:#06d6a0">📅${upcomingForDeal.dt===_curDateStr?' היום':' '+fmtDate(upcomingForDeal.dt)}</span> `:'';
       return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px;white-space:nowrap">${fmtDate(d.date)}</td><td style="color:var(--text2)">${esc(d.num||'–')}</td><td style="font-weight:600">${esc(d.co||'')}${mtgChip?'<br>'+mtgChip:''}</td><td>${ib}</td><td>${esc(d.srv||'')}</td><td class="nb">${fmt(d.v)}</td><td class="ny">${fmt(d.mv)}</td><td class="ng">${fmt(d.di)}</td><td>${fmt(d.dn)}</td><td class="nb">${fmt(d.ot)}</td><td class="ng">${fmt(d.otc)}</td><td style="font-size:10px">${esc(d.ct||'–')}</td><td><span class="${cc}">${Math.round((d.ch||0)*100)}%</span></td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${esc(d.no||'–')}</td><td style="white-space:nowrap">${schedBtn}${deBtn}${d.quote?`<button class="btn btns" onclick="downloadDealQuote('${d.id}')" title="הורד הצעת מחיר: ${esc(d.quote.name||'')}" style="border-color:#4cc9f0;color:#4cc9f0">💲</button> `:''}${(d.files&&d.files.length)?`<button class="btn btns" onclick="rowFilesMenu('deals','${d.id}',event)" title="${d.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${d.files.length>1?d.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('deal','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('deals','${d.id}')">🗑</button></td></tr>`;
     };
     const div=(cls,icon,lbl,n)=>`<tr class="mdiv ${cls}"><td colspan="18">${icon} ${lbl} <span style="font-weight:400;opacity:.8">(${n})</span></td></tr>`;
