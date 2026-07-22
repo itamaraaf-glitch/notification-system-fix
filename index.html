@@ -1534,7 +1534,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       </div>
     </div>
     <button class="abtn" onclick="nav('alerts')">⚠ <span id="acnt">0</span></button>
-    <button class="lout" onclick="doLogout()">יציאה</button>
+    <button class="lout" onclick="askLogout()">יציאה</button>
   </div>
 </div>
 
@@ -2932,6 +2932,10 @@ function _resetLoginUI(){
     const lp=document.getElementById('lp');if(lp)lp.parentElement.parentElement.style.display='';
     const le=document.getElementById('lerr');if(le)le.textContent='';
   }catch(e){}
+}
+// יציבות: אישור לפני יציאה — כדי שלחיצה לא-מכוונת על "יציאה" לא תזרוק החוצה.
+function askLogout(){
+  confirmAct('לצאת מהמערכת? הנתונים נשמרים אוטומטית.',()=>doLogout(),'כן, צא');
 }
 function doLogout(){
   saveAll();
@@ -8719,6 +8723,48 @@ function openM(type,id){
 }
 function closeM(id){document.getElementById(id).classList.remove('open');EI=null;ET=null;}
 
+// ===== BACK-BUTTON / SWIPE-BACK → סוגר חלון-קופץ במקום לצאת מהאפליקציה =====
+// יציבות: לחיצה על "אחורה" (אנדרואיד/מחוות דפדפן) כשמסך-קופץ פתוח סוגרת אותו
+// בלבד — ולא מוציאה מהמערכת ולא מקפיצה למסך אחר.
+(function(){
+  var guardActive=false;
+  function anyOverlayOpen(){
+    if(document.querySelector('.mw.open')) return true;
+    var cb=document.getElementById('cbar');
+    return !!(cb && cb.classList.contains('show'));
+  }
+  function armGuard(){
+    if(guardActive || !anyOverlayOpen()) return;
+    guardActive=true;
+    try{ history.pushState({crmOverlay:1},''); }catch(e){ guardActive=false; }
+  }
+  function closeTop(){
+    // סרגל-האישור הוא ה"מודאלי" ביותר — נסגור אותו ראשון
+    var cb=document.getElementById('cbar');
+    if(cb && cb.classList.contains('show')){ if(typeof _cNo==='function')_cNo(); else cb.classList.remove('show'); return true; }
+    var open=document.querySelectorAll('.mw.open');
+    if(open.length){ open.forEach(function(m){m.classList.remove('open');}); try{EI=null;ET=null;}catch(e){} var gb=document.getElementById('gsres'); if(gb)gb.classList.remove('show'); return true; }
+    return false;
+  }
+  // מיישר את מצב ה-history למצב החלונות הפתוחים: אם נפתח חלון — שומר "שומר",
+  // אם נסגר ידנית (✕/Escape) — צורך את ה"שומר" כדי שלא יצטבר בהיסטוריה.
+  function syncGuard(){
+    if(anyOverlayOpen()){ armGuard(); }
+    else if(guardActive){ guardActive=false; try{ history.back(); }catch(e){} }
+  }
+  window.addEventListener('popstate',function(){
+    guardActive=false; // הרשומה שלנו זה עתה הוצאה מהמחסנית
+    if(anyOverlayOpen()){ closeTop(); if(anyOverlayOpen()) requestAnimationFrame(armGuard); }
+  });
+  function start(){
+    var mo=new MutationObserver(function(){ syncGuard(); });
+    document.querySelectorAll('.mw').forEach(function(m){ mo.observe(m,{attributes:true,attributeFilter:['class']}); });
+    var cb=document.getElementById('cbar');
+    if(cb) mo.observe(cb,{attributes:true,attributeFilter:['class']});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start); else start();
+})();
+
 // ===== SAVE FUNCTIONS =====
 // ===== PRICE-QUOTE FILE ATTACHMENT (per deal) =====
 let pendingQuote = null; // {name,type,size,data(base64 dataURL)}
@@ -10589,12 +10635,8 @@ setInterval(()=>{ const app=document.getElementById('app'); if(app&&app.style.di
 // daily IDB snapshot — check every 30 minutes if a new day started
 setInterval(()=>{ const app=document.getElementById('app'); if(app&&app.style.display!=='none') maybeDailyIdbBackup(); }, 30*60*1000);
 
-// Close modal when tapping the dark backdrop (mobile-friendly)
-document.addEventListener('click',e=>{
-  if(e.target.classList.contains('mw')&&e.target.classList.contains('open')){
-    e.target.classList.remove('open');EI=null;ET=null;
-  }
-},{passive:true});
+// יציבות: לחיצה על הרקע הכהה כבר לא סוגרת חלון — כדי שמגע לא-מכוון בזמן מילוי טופס
+// לא יסגור אותו ויאבד את מה שהוקלד. סוגרים חלון רק בכפתור ✕ או במקש Escape.
 
 // ===== KEYBOARD SHORTCUTS =====
 document.addEventListener('keydown',e=>{
@@ -10866,6 +10908,10 @@ function _gotoSectionInstant(s){
 
 // ── SWIPE NAVIGATION — vanilla touch + mouse ───────────────────────
 (function(){
+  // יציבות: ניווט-החלקה (swipe) בין מסכים כובה — הוא היה נכנס לפעולה בתנועה אלכסונית
+  // קטנה וגרם למעבר-מסך לא-מכוון ("כל תזוזה מעבירה מסך"). מחליפים מסך רק בלחיצה
+  // מכוונת על סרגל הניווט. כדי להחזיר את ההחלקה — שנה ל-true.
+  const SWIPE_NAV_ENABLED = false;
   const THRESHOLD = 85;
   let startX = 0, startY = 0, tracking = false, horizontal = false, delta = 0;
   let hintTimer;
@@ -10883,7 +10929,7 @@ function _gotoSectionInstant(s){
   function onMove(x, y){
     if(!tracking) return;
     const dx = x - startX, dy = y - startY;
-    if(!horizontal && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.5){
+    if(SWIPE_NAV_ENABLED && !horizontal && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.5){
       horizontal = true;
       showHint();
     }
