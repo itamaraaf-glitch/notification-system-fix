@@ -5608,7 +5608,9 @@ function rDeals(){
     const mvOpen =openD.reduce((a,d)=>a+(+d.mv||0),0);  // חלק החודש שעדיין פתוח = נשאר לסגור
     const mvClosed=closedM.reduce((a,d)=>a+(+d.mv||0),0); // חלק החודש שכבר נסגר
     const planM  =mvOpen+mvClosed;                      // סה"כ לתכנון החודש (יעד מהצנרת)
-    const nextM  =openD.reduce((a,d)=>a+(+d.dn||0),0);  // יתרה לחודש הבא
+    // יתרה לחודש הבא = חלק "חודש הבא" (dn) מכל העסקאות הרלוונטיות: פתוחות (עדיין בצנרת)
+    // + כאלה שנסגרו החודש (הכנסה מחויבת שתיכנס בחודש הבא). עקבי עם ספירת mv של עסקאות סגורות.
+    const nextM  =openD.reduce((a,d)=>a+(+d.dn||0),0)+closedM.reduce((a,d)=>a+(+d.dn||0),0);
     // עסקאות פתוחות עם שווי אך ללא שיוך לחודש (mv+di+dn=0) — לא נספרות בממתין/הבא ולכן "המספרים לא מסתדרים"
     const unalloc =openD.filter(d=>(+d.v||0)>0 && ((+d.mv||0)+(+d.di||0)+(+d.dn||0))===0);
     const unallocV=unalloc.reduce((a,d)=>a+(+d.v||0),0);
