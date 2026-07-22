@@ -5464,7 +5464,7 @@ function renderMonthSummary(){
     </div>`;
   };
   el.innerHTML=`<div class="dpanel" style="padding:15px 16px">
-    <h4 style="--h4-accent:var(--gold);--h4-color:var(--gold)">📊 ${curMonthStr()} — נסגר בפועל מול יתרה לחודש הבא</h4>
+    <h4 style="--h4-accent:var(--gold);--h4-color:var(--gold)">📊 ${curMonthStr()} — נסגר בפועל מול מה שנותר</h4>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px">
       ${card('💼','עסקאות','#4cc9f0','deals','נסגר החודש',dClosedV,dClosed.length,'ממתין לסגירה',dOpenV,dOpen.length)}
       ${card('🚀','הפצות','#a78bfa','dists','הושלמו החודש',iClosedV,iClosed.length,'עובר לחודש הבא',iOpenV,iOpen.length)}
