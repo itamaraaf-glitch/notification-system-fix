@@ -5612,6 +5612,8 @@ function rDeals(){
     // עסקאות פתוחות עם שווי אך ללא שיוך לחודש (mv+di+dn=0) — לא נספרות בממתין/הבא ולכן "המספרים לא מסתדרים"
     const unalloc =openD.filter(d=>(+d.v||0)>0 && ((+d.mv||0)+(+d.di||0)+(+d.dn||0))===0);
     const unallocV=unalloc.reduce((a,d)=>a+(+d.v||0),0);
+    // שמות החברות של העסקאות היתומות (עד 3) — כדי שאפשר יהיה לאתר ולתקן מיד
+    const unallocNames=unalloc.slice(0,3).map(d=>esc(d.co||'ללא שם')).join(', ')+(unalloc.length>3?` ועוד ${unalloc.length-3}`:'');
     const pct    =planM>0?Math.round(mvClosed/planM*100):0;
     const pc     =pct>=100?'var(--teal)':pct>=66?'#8bd450':pct>=33?'#f4a261':'#e63946';
     const closedN=closedM.length, openN=openD.length;
@@ -5646,7 +5648,7 @@ function rDeals(){
         <span style="font-size:14px;font-weight:800;color:var(--text2)">${fmt(totV)}</span>
       </div>
       ${unalloc.length?`<div style="margin-top:8px;padding:8px 11px;background:rgba(244,162,97,.09);border:1px solid rgba(244,162,97,.28);border-radius:9px;font-size:10.5px;color:#f4a261;line-height:1.5">
-        ⚠️ <b>${unalloc.length} ${unalloc.length===1?'עסקה בשווי':'עסקאות בשווי'} ${fmt(unallocV)}</b> ללא שיוך לחודש — לא נספרות ב"ממתין" או ב"לחודש הבא". פתחו את העסקה ומלאו "חודש נוכחי" / "חודש הבא" כדי שהמספרים יסתדרו.</div>`:''}
+        ⚠️ <b>${unalloc.length} ${unalloc.length===1?'עסקה בשווי':'עסקאות בשווי'} ${fmt(unallocV)}</b> ללא שיוך לחודש — לא נספרות ב"ממתין" או ב"לחודש הבא".<br><span style="color:var(--text2)">📋 ${unallocNames}</span> · פתחו ומלאו "חודש נוכחי" / "חודש הבא" כדי שהמספרים יסתדרו.</div>`:''}
     </div>`;
   })();
   const eqEl=document.getElementById('deal-eq-goal-top');
