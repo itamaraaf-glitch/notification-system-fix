@@ -5655,7 +5655,9 @@ function rDeals(){
   })();
   const eqEl=document.getElementById('deal-eq-goal-top');
   if(eqEl){
-    const closed=[...D.deals,...(D.archivedDeals||[])].filter(d=>d.st==='נסגר');
+    // יעד חודשי: סופרים רק את הסגירות של התקופה הפעילה (D.deals), לא מצטבר עם הארכיון,
+    // כדי שהאחוזים יהיו הגיוניים ותואמים לאריח "נסגרו".
+    const closed=D.deals.filter(d=>d.st==='נסגר');
     const vClosed  =closed.reduce((a,d)=>a+(d.v||0),0);
     const otcClosed=closed.reduce((a,d)=>a+(d.otc||0),0);
     eqEl.innerHTML=goalBannerInline('💰 יעד שירות','deals',vClosed,15000,'#06d6a0')
@@ -6247,7 +6249,8 @@ function rTenders(){
 function rDists(){
   const gt=document.getElementById('dist-goal-top');
   if(gt){
-    const allD=[...D.dists,...(D.archivedDists||[])];
+    // יעד חודשי: רק ההפצות של התקופה הפעילה (ללא ארכיון), עקבי עם יעדי העסקאות.
+    const allD=D.dists;
     const incActual=allD.reduce((a,d)=>a+(d.inc||0),0);
     const tgtIncome=allD.reduce((a,d)=>a+(d.tgt||0),0);
     const eqActual =allD.reduce((a,d)=>a+(d.eq||0),0);
