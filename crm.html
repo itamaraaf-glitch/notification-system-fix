@@ -5284,9 +5284,16 @@ function rAlerts(){
   </div>`;
   window._alertsCache=a; // for the email sender to read the alert text
 }
-// Prefix every non-empty line with an RTL mark (U+200F) so the whole email
-// body renders right-to-left and correctly ordered in the recipient's client.
-function rtlText(s){ return String(s==null?'':s).split('\n').map(l=>l?('‏'+l):l).join('\n'); }
+// גורם לגוף המייל להיות מיושר לימין ומסודר נכון (עברית + מספרים/פסיקים/סימנים)
+// בכל תוכנת דואר, כולל Outlook Desktop. לכל שורה לא-ריקה:
+//  • U+200F (RLM) בתחילת השורה — תו "חזק" מימין-לשמאל שקובע יישור-פסקה לימין.
+//  • U+202B (RLE) … U+202C (PDF) — עוטף את השורה כ"הטמעה מימין-לשמאל" כדי
+//    שהעברית תזרום ימינה, ומספרים/כתובות-מייל/פסיקים/נקודתיים ישבו במקום הנכון.
+function rtlText(s){
+  return String(s==null?'':s).split('\n')
+    .map(l=> l ? ('‏‫'+l+'‬') : l)
+    .join('\n');
+}
 
 // Open an email without navigating the page away (which would unload the app
 // and force a re-login). `to` may be one address or an array; extra addresses
