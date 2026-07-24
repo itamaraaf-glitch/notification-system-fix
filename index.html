@@ -6287,7 +6287,13 @@ function rDists(){
       const dpct=d.tgt?Math.round(((d.inc||0)/d.tgt)*100):0;
       const dpc=dpct>=100?'var(--teal)':dpct>=50?'#f4a261':'#e63946';
       const pctCell=d.tgt?`<div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(dpct,100)}%;background:${dpc}"></div></div><span style="font-size:10px;font-weight:600;color:${dpc}">${dpct}%</span></div>`:'–';
-      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${esc(d.hd||'–')}</td><td style="font-size:10px;color:var(--blue);font-weight:600">${esc(d.no||'–')}</td><td style="font-weight:600">${esc(d.co||'')}</td><td style="font-size:10px">${esc(d.cl||'–')}</td><td style="font-size:10px">${esc(d.it||'–')}</td><td>${esc(d.so||'–')}</td><td style="font-size:10px">${esc(d.ad||'–')}</td><td class="nb">${d.tgt?fmt(d.tgt):'–'}</td><td class="ng">${fmt(d.inc)}</td><td>${pctCell}</td><td class="nb">${fmt(d.eq)}</td><td style="font-size:10px;color:${d.mi?'#f4a261':'var(--text3)'}">${esc(d.mi||'אין')}</td><td>${sB(d.st)}</td><td style="font-size:10px">${fmtDate(d.dt)}</td><td>${days}</td><td style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">${esc(d.notes||'–')}</td><td style="white-space:nowrap">${(d.files&&d.files.length)?`<button class="btn btns" onclick="rowFilesMenu('dists','${d.id}',event)" title="${d.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${d.files.length>1?d.files.length:''}</button> `:''}${emailBtn}<button class="btn btns" onclick="openM('dist','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('dists','${d.id}')">🗑</button></td></tr>`;
+      let cliBadge='';
+      if(d._cliSyncSt){
+        cliBadge = d._cliSyncSt===d.st
+          ? `<br><span title="הלקוח קיבל את הסטטוס הנוכחי${d._cliSyncAt?' ('+fmtDate(new Date(d._cliSyncAt).toISOString().slice(0,10))+')':''}" style="font-size:8.5px;color:var(--teal);font-weight:700">✓ לקוח עודכן</span>`
+          : `<br><span title="הסטטוס השתנה מאז העדכון האחרון ללקוח — שלח קישור מעודכן" style="font-size:8.5px;color:#f4a261;font-weight:700">⚠ ממתין לעדכון</span>`;
+      }
+      return`<tr class="${pC(p)}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${esc(d.hd||'–')}</td><td style="font-size:10px;color:var(--blue);font-weight:600">${esc(d.no||'–')}</td><td style="font-weight:600">${esc(d.co||'')}</td><td style="font-size:10px">${esc(d.cl||'–')}</td><td style="font-size:10px">${esc(d.it||'–')}</td><td>${esc(d.so||'–')}</td><td style="font-size:10px">${esc(d.ad||'–')}</td><td class="nb">${d.tgt?fmt(d.tgt):'–'}</td><td class="ng">${fmt(d.inc)}</td><td>${pctCell}</td><td class="nb">${fmt(d.eq)}</td><td style="font-size:10px;color:${d.mi?'#f4a261':'var(--text3)'}">${esc(d.mi||'אין')}</td><td>${sB(d.st)}${cliBadge}</td><td style="font-size:10px">${fmtDate(d.dt)}</td><td>${days}</td><td style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">${esc(d.notes||'–')}</td><td style="white-space:nowrap">${(d.files&&d.files.length)?`<button class="btn btns" onclick="rowFilesMenu('dists','${d.id}',event)" title="${d.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${d.files.length>1?d.files.length:''}</button> `:''}${emailBtn}<button class="btn btns" onclick="trackDistById('${d.id}')" title="🔗 קישור מעקב ללקוח" style="border-color:#a78bfa;color:#a78bfa">🔗</button> <button class="btn btns" onclick="openM('dist','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('dists','${d.id}')">🗑</button></td></tr>`;
     }).join('')||emptyRow(19,'🚀',"אין הפצות","openM('dist',null)");
     const ti=items.reduce((s,d)=>s+(d.inc||0),0),te=items.reduce((s,d)=>s+(d.eq||0),0),tt=items.reduce((s,d)=>s+(d.tgt||0),0);
     const perf=tt?Math.round(ti/tt*100):0;
@@ -8135,6 +8141,8 @@ function emailClientFromDistForm(){
     : `עדכון סטטוס הזמנה – ${d.no||d.co||''}${d.st?` (${d.st})`:''}`;
   const body=buildClientProgressEmailBody(d);
   openMail(cle, subject, body, null, en?'ltr':undefined);
+  // סימון שהלקוח עודכן בסטטוס הנוכחי (סוגר את הלולאה "עדכנתי את הלקוח?")
+  if(EI){ const dd=D.dists.find(x=>x.id==EI); if(dd){ dd._cliSyncSt=d.st; dd._cliSyncAt=Date.now(); saveAll(); } }
 }
 // ===== קישור מעקב ללקוח (פלטפורמת track.html) =====
 // יוצר קישור עצמאי שכולל את סטטוס ההזמנה מקודד בתוכו (base64url) — ללא ענן,
@@ -8180,6 +8188,7 @@ function trackLinkFromDistForm(){
     pcat:document.getElementById('dipcat').value,
   };
   if(!d.no&&!d.co){ toast('⚠️ מלא מס׳ פרויקט או שם חברה כדי ליצור קישור מעקב','warn'); return; }
+  d.id=EI||null;
   _trackSharePopup(_distTrackURL(d), d);
 }
 // פתיחת חלון-שיתוף קישור-מעקב מתוך אובייקט הפצה (עובד גם כשהטופס סגור, לתזכורת האוטומטית)
@@ -8187,9 +8196,21 @@ function promptTrackShare(dist){
   if(!dist||(!dist.no&&!dist.co)){ toast('⚠️ אין מספיק פרטים לקישור מעקב','warn'); return; }
   _trackSharePopup(_distTrackURL(dist), dist);
 }
+// מסמן שההפצה עודכנה ללקוח (עם הסטטוס ששותף) — לסגירת הלולאה "האם עדכנתי את הלקוח?"
+function _trackMarkSynced(){
+  const c=window._trackShareCtx||{}; if(!c.id)return;
+  const d=D.dists.find(x=>x.id==c.id); if(!d)return;
+  d._cliSyncSt=c.st||d.st; d._cliSyncAt=Date.now();
+  saveAll(); if(currentSec==='dists')rDists();
+}
+// שיתוף מהיר של קישור-מעקב ישירות משורת ההפצה בטבלה (ללא פתיחת חלון העריכה)
+function trackDistById(id){
+  const d=D.dists.find(x=>x.id==id); if(!d){ toast('⚠️ ההפצה לא נמצאה','warn'); return; }
+  promptTrackShare(d);
+}
 function _trackSharePopup(url, d){
   const old=document.getElementById('track-share-popup'); if(old)old.remove();
-  window._trackShareCtx={url,cl:d.cl||'',no:d.no||'',co:d.co||'',cle:(d.cle||'').trim()};
+  window._trackShareCtx={url,cl:d.cl||'',no:d.no||'',co:d.co||'',cle:(d.cle||'').trim(),id:d.id||null,st:d.st||''};
   const qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data='+encodeURIComponent(url);
   const waTxt=`שלום${d.cl?' '+d.cl:''}, למעקב אחר סטטוס ההזמנה שלכם (${d.no||d.co||''}) בזמן אמת:\n${url}`;
   const wa='https://wa.me/?text='+encodeURIComponent(waTxt);
@@ -8207,7 +8228,7 @@ function _trackSharePopup(url, d){
     <input id="track-share-url" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;box-sizing:border-box;padding:9px 11px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text2);font-size:10.5px;direction:ltr;margin-bottom:11px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btnp" onclick="_trackCopy()" style="font-size:12px">📋 העתק קישור</button>
-      <button class="btn btns" onclick="window.open('${wa}','_blank','noopener')" style="border-color:#25d366;color:#25d366;font-size:12px">💬 וואטסאפ</button>
+      <button class="btn btns" onclick="window.open('${wa}','_blank','noopener');_trackMarkSynced()" style="border-color:#25d366;color:#25d366;font-size:12px">💬 וואטסאפ</button>
       ${cle?`<button class="btn btns" onclick="_trackMail()" style="grid-column:1/-1;border-color:#4cc9f0;color:#4cc9f0;font-size:12px">📧 שלח במייל ללקוח (${esc(cle)})</button>`:''}
     </div>
   </div>`;
@@ -8216,7 +8237,7 @@ function _trackSharePopup(url, d){
 }
 function _trackCopy(){
   const i=document.getElementById('track-share-url'); if(!i)return;
-  const done=()=>toast('✅ הקישור הועתק','ok');
+  const done=()=>{toast('✅ הקישור הועתק','ok');_trackMarkSynced();};
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(i.value).then(done).catch(()=>{i.select();document.execCommand('copy');done();}); }
   else{ i.select(); document.execCommand('copy'); done(); }
 }
@@ -8227,6 +8248,7 @@ function _trackMail(){
   const subject=`מעקב הזמנה – ${c.no||c.co||''}`;
   const body=[`שלום ${c.cl||'לקוח יקר'},`,``,`למעקב אחר סטטוס ההזמנה שלכם בזמן אמת, היכנסו לקישור הבא:`,c.url,``,`נשמח לעמוד לרשותכם בכל שאלה.`,``,`בברכה,`,`איתמר ונדן`,`HOT Business`,`Itamar.venden@hot.net.il`].join('\n');
   openMail(cle, subject, body);
+  _trackMarkSynced();
 }
 // ===== תיאום פ.ע (פגישת עבודה) — סנכרון מלא מול מנהל פרויקט / גורם מטפל =====
 // לחיצה אחת מייצרת מייל מקצועי עם כל הפרויקטים של אותו גורם: מס׳ פרויקט + שם לקוח + סטטוס
