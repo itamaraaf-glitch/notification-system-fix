@@ -2291,6 +2291,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <button class="btn btns" onclick="emailFromDistForm()" style="border-color:#0078d4;color:#4cc9f0">📧 שלח למנהל פרויקט</button>
     <button class="btn btns" onclick="emailHandlerFromDistForm()" style="border-color:#06d6a0;color:#06d6a0">📧 שלח לגורם מטפל</button>
     <button class="btn btns" onclick="emailClientFromDistForm()" style="border-color:#ffd166;color:#ffd166">📧 עדכן לקוח בשלב</button>
+    <button class="btn btns" onclick="trackLinkFromDistForm()" style="border-color:#06d6a0;color:#06d6a0">🔗 קישור מעקב ללקוח</button>
     <button class="btn btnp" onclick="saveDist()">שמור הפצה</button>
   </div>
 </div></div>
@@ -8134,6 +8135,91 @@ function emailClientFromDistForm(){
     : `עדכון סטטוס הזמנה – ${d.no||d.co||''}${d.st?` (${d.st})`:''}`;
   const body=buildClientProgressEmailBody(d);
   openMail(cle, subject, body, null, en?'ltr':undefined);
+}
+// ===== קישור מעקב ללקוח (פלטפורמת track.html) =====
+// יוצר קישור עצמאי שכולל את סטטוס ההזמנה מקודד בתוכו (base64url) — ללא ענן,
+// ללא חשיפת מידע. הלקוח פותח → רואה עמוד מעקב בסגנון "המשלוחים שלי".
+// נכללים רק שדות לא-רגישים: מס' פרויקט, חברה/לקוח, מוצר, כתובת אספקה, שלב, זמן.
+function _b64urlEncode(str){
+  const b64=btoa(unescape(encodeURIComponent(str)));
+  return b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function _distTrackPayload(d){
+  const st=d.st||'ממתין להפצה';
+  return {
+    v:1,
+    no:(d.no||'').toString(),
+    co:d.co||'',
+    cl:d.cl||'',
+    so:d.so||'',
+    da:d.da||'',
+    cat:_distClientCat(d),
+    label:_distProductLabel(d,'he'),
+    st,
+    stage:(st in DIST_FLOW_IDX)?DIST_FLOW_IDX[st]:1,
+    done:st==='הושלם',
+    problem:st==='בעיה',
+    ts:Date.now()
+  };
+}
+function _distTrackURL(d){
+  const enc=_b64urlEncode(JSON.stringify(_distTrackPayload(d)));
+  let base; try{ base=new URL('track.html',location.href).href; }catch(e){ base='track.html'; }
+  return base+'#'+enc;
+}
+function trackLinkFromDistForm(){
+  const d={
+    co:document.getElementById('dico').value,
+    no:document.getElementById('diproj').value,
+    cl:document.getElementById('dicl').value,
+    so:document.getElementById('diso').value,
+    da:document.getElementById('dida').value.trim(),
+    st:document.getElementById('dist2').value,
+    ptype:document.getElementById('diptype').value,
+    pcat:document.getElementById('dipcat').value,
+  };
+  if(!d.no&&!d.co){ toast('⚠️ מלא מס׳ פרויקט או שם חברה כדי ליצור קישור מעקב','warn'); return; }
+  _trackSharePopup(_distTrackURL(d), d);
+}
+function _trackSharePopup(url, d){
+  const old=document.getElementById('track-share-popup'); if(old)old.remove();
+  const qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data='+encodeURIComponent(url);
+  const waTxt=`שלום${d.cl?' '+d.cl:''}, למעקב אחר סטטוס ההזמנה שלכם (${d.no||d.co||''}) בזמן אמת:\n${url}`;
+  const wa='https://wa.me/?text='+encodeURIComponent(waTxt);
+  const cle=(document.getElementById('dicle')&&document.getElementById('dicle').value||'').trim();
+  const el=document.createElement('div');
+  el.id='track-share-popup';
+  el.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px';
+  el.innerHTML=`<div style="background:linear-gradient(135deg,#101525,#0a0e1c);border:1px solid rgba(6,214,160,.28);border-radius:16px;max-width:340px;width:100%;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:cardIn .25s ease" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:900;color:var(--teal)">🔗 קישור מעקב ללקוח</div>
+      <button onclick="document.getElementById('track-share-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="text-align:center;margin-bottom:12px"><img src="${qr}" alt="QR" style="width:170px;height:170px;border-radius:10px;background:#fff;padding:6px"></div>
+    <div style="font-size:10.5px;color:var(--text3);margin-bottom:5px">הלקוח סורק את ה-QR או פותח את הקישור — ורואה את שלב ההזמנה. הסטטוס מקודד בקישור, ללא חשיפת מידע בענן.</div>
+    <input id="track-share-url" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;box-sizing:border-box;padding:9px 11px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text2);font-size:10.5px;direction:ltr;margin-bottom:11px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btnp" onclick="_trackCopy()" style="font-size:12px">📋 העתק קישור</button>
+      <button class="btn btns" onclick="window.open('${wa}','_blank','noopener')" style="border-color:#25d366;color:#25d366;font-size:12px">💬 וואטסאפ</button>
+      ${cle?`<button class="btn btns" onclick="_trackMail('${esc(url)}')" style="grid-column:1/-1;border-color:#4cc9f0;color:#4cc9f0;font-size:12px">📧 שלח במייל ללקוח (${esc(cle)})</button>`:''}
+    </div>
+  </div>`;
+  el.addEventListener('click',()=>el.remove());
+  document.body.appendChild(el);
+}
+function _trackCopy(){
+  const i=document.getElementById('track-share-url'); if(!i)return;
+  const done=()=>toast('✅ הקישור הועתק','ok');
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(i.value).then(done).catch(()=>{i.select();document.execCommand('copy');done();}); }
+  else{ i.select(); document.execCommand('copy'); done(); }
+}
+function _trackMail(url){
+  const cle=(document.getElementById('dicle')&&document.getElementById('dicle').value||'').trim();
+  if(!cle){ toast('⚠️ אין אימייל לקוח','warn'); return; }
+  const cl=document.getElementById('dicl').value, no=document.getElementById('diproj').value, co=document.getElementById('dico').value;
+  const subject=`מעקב הזמנה – ${no||co||''}`;
+  const body=[`שלום ${cl||'לקוח יקר'},`,``,`למעקב אחר סטטוס ההזמנה שלכם בזמן אמת, היכנסו לקישור הבא:`,url,``,`נשמח לעמוד לרשותכם בכל שאלה.`,``,`בברכה,`,`איתמר ונדן`,`HOT Business`,`Itamar.venden@hot.net.il`].join('\n');
+  openMail(cle, subject, body);
 }
 // ===== תיאום פ.ע (פגישת עבודה) — סנכרון מלא מול מנהל פרויקט / גורם מטפל =====
 // לחיצה אחת מייצרת מייל מקצועי עם כל הפרויקטים של אותו גורם: מס׳ פרויקט + שם לקוח + סטטוס
