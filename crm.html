@@ -8154,8 +8154,12 @@ function _b64urlEncode(str){
 }
 function _distTrackPayload(d){
   const st=d.st||'ממתין להפצה';
+  // מזהה-הזמנה ייחודי — כדי שכל פרויקט יהיה כרטיס נפרד אצל הלקוח, גם ללא מס' פרויקט
+  // וגם אם שני פרויקטים חולקים מספר. נגזר ממזהה ההפצה, ואם אין — מהרכב שדות יציב.
+  const oid = String(d.id || ('n|'+(d.no||'')+'|'+(d.co||'')+'|'+(d.cl||''))).slice(0,80);
   return {
     v:1,
+    oid,
     no:(d.no||'').toString(),
     co:d.co||'',
     cl:d.cl||'',
