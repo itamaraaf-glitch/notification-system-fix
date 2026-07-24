@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0b1b5c">
+<title>מעקב הזמנות — HOT Business</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --brand:#12235f; --brand2:#2a3f96; --accent:#06d6a0; --gold:#c8a96e;
+    --ok:#06d6a0; --warn:#f4a261; --bad:#e63946; --wait:#4cc9f0;
+    --bg:#eef1f7; --card:#ffffff; --txt:#1b2440; --txt2:#5b6478; --txt3:#9aa2b5; --line:#e6e9f2;
+  }
+  html,body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased}
+  body{max-width:520px;margin:0 auto;min-height:100vh;padding-bottom:90px;overflow-x:hidden}
+  .hdr{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:18px 18px 22px;border-radius:0 0 22px 22px;box-shadow:0 6px 22px rgba(18,35,95,.28);position:sticky;top:0;z-index:20}
+  .hdr-top{display:flex;align-items:center;justify-content:space-between}
+  .logo{display:flex;align-items:center;gap:9px;font-weight:900;font-size:20px;letter-spacing:.3px}
+  .logo .mark{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:19px}
+  .hdr .sub{opacity:.85;font-size:11.5px;margin-top:2px}
+  .iconbtn{width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.14);border:none;color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+  .iconbtn:active{transform:scale(.92)}
+  .title-row{display:flex;align-items:baseline;justify-content:space-between;margin-top:16px}
+  .title-row h1{font-size:22px;font-weight:900;letter-spacing:-.3px}
+  .title-row .upd{font-size:11px;opacity:.82}
+  .wrap{padding:16px 14px 0}
+  .card{background:var(--card);border-radius:18px;box-shadow:0 4px 18px rgba(20,30,70,.08);margin-bottom:16px;overflow:hidden;border:1px solid var(--line);animation:pop .3s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .card-top{display:flex;align-items:center;justify-content:space-between;padding:13px 15px 10px}
+  .cnum{display:flex;align-items:center;gap:8px}
+  .cnum .n{font-size:19px;font-weight:900;letter-spacing:.5px;direction:ltr}
+  .cnum .pen{color:var(--txt3);font-size:13px}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;padding:5px 11px;border-radius:20px;white-space:nowrap}
+  .prod{padding:0 15px 4px;font-size:12.5px;color:var(--txt2);font-weight:600;display:flex;align-items:center;gap:6px}
+  .flow{padding:12px 15px 6px}
+  .step{display:flex;align-items:center;gap:11px;position:relative;padding:6px 0}
+  .step .dot{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;z-index:2}
+  .step .lbl{font-size:13px;font-weight:700;color:var(--txt2)}
+  .step.done .lbl,.step.cur .lbl{color:var(--txt)}
+  .step .here{margin-inline-start:6px;font-size:10px;font-weight:800;color:var(--accent);background:rgba(6,214,160,.12);padding:2px 8px;border-radius:12px;animation:blink 1.6s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
+  .step:not(:last-child)::before{content:'';position:absolute;top:29px;inset-inline-start:12px;width:2px;height:calc(100% - 8px);background:var(--line);z-index:1}
+  .step.done:not(:last-child)::before{background:var(--ok)}
+  .msg{margin:8px 15px 4px;padding:11px 13px;border-radius:12px;font-size:12.5px;line-height:1.55}
+  .details{border-top:1px dashed var(--line);margin:10px 15px 0;padding:11px 0 13px;display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .det{font-size:11.5px;color:var(--txt2)}
+  .det b{display:block;color:var(--txt);font-size:12.5px;font-weight:700;margin-top:1px}
+  .det.full{grid-column:1/-1}
+  .card-foot{display:flex;align-items:center;justify-content:space-between;padding:9px 15px;background:#fafbfe;border-top:1px solid var(--line);font-size:10.5px;color:var(--txt3)}
+  .rm{background:none;border:none;color:var(--txt3);font-size:11px;cursor:pointer;padding:3px 6px}
+  .rm:active{color:var(--bad)}
+  .empty{text-align:center;padding:60px 26px;color:var(--txt3)}
+  .empty .em{font-size:56px;margin-bottom:14px;opacity:.5}
+  .empty h2{font-size:16px;color:var(--txt2);margin-bottom:7px}
+  .empty p{font-size:12.5px;line-height:1.6}
+  .fab{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;max-width:492px;width:calc(100% - 28px);z-index:30}
+  .fab button{width:100%;padding:15px;border:none;border-radius:15px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(18,35,95,.38);display:flex;align-items:center;justify-content:center;gap:9px}
+  .fab button:active{transform:scale(.98)}
+  .modal{position:fixed;inset:0;background:rgba(10,16,40,.55);display:none;align-items:flex-end;justify-content:center;z-index:50}
+  .modal.open{display:flex}
+  .sheet{background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));animation:up .25s ease}
+  @keyframes up{from{transform:translateY(100%)}to{transform:none}}
+  .sheet h3{font-size:16px;font-weight:900;margin-bottom:5px}
+  .sheet p{font-size:12px;color:var(--txt2);margin-bottom:13px;line-height:1.5}
+  .sheet input{width:100%;padding:12px 13px;border:1.5px solid var(--line);border-radius:11px;font-size:13px;margin-bottom:12px;direction:ltr;text-align:left}
+  .sheet .row{display:flex;gap:9px}
+  .sheet .row button{flex:1;padding:12px;border-radius:11px;font-size:13px;font-weight:800;cursor:pointer;border:none}
+  .btn-p{background:var(--brand);color:#fff}
+  .btn-s{background:#eef1f7;color:var(--txt2)}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;background:var(--txt);color:#fff;padding:10px 18px;border-radius:22px;font-size:12.5px;font-weight:600;z-index:60;opacity:0;transition:.25s;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+  .toast.show{opacity:1;bottom:104px}
+</style>
+</head>
+<body>
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="logo"><span class="mark">📦</span><div>HOT Business<div class="sub">מעקב הזמנות ושירות</div></div></div>
+      <button class="iconbtn" onclick="location.reload()" title="רענון">↻</button>
+    </div>
+    <div class="title-row"><h1>המעקבים שלי</h1><span class="upd" id="upd"></span></div>
+  </div>
+  <div class="wrap" id="list"></div>
+
+  <div class="fab"><button onclick="openAdd()">＋ הוסף מעקב</button></div>
+
+  <div class="modal" id="addModal" onclick="if(event.target===this)closeAdd()">
+    <div class="sheet">
+      <h3>הוספת מעקב</h3>
+      <p>הדביקו את קישור המעקב שקיבלתם מ-HOT Business כדי לראות את סטטוס ההזמנה.</p>
+      <input id="addInput" placeholder="הדביקו כאן את קישור המעקב..." autocomplete="off">
+      <div class="row">
+        <button class="btn-s" onclick="closeAdd()">ביטול</button>
+        <button class="btn-p" onclick="addFromInput()">הוסף</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  var LS='hot_track_orders_v1';
+  var STAGES=['התקבלה ההזמנה','הועברה למומחים לביצוע','בהתקנה / באספקה','הושלם והופעל'];
+  var CAT_ICON={ms365:'📧',lines:'📡',equipment:'📦',general:'📦'};
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function b64urlToStr(b){
+    b=b.replace(/-/g,'+').replace(/_/g,'/'); while(b.length%4)b+='=';
+    try{return decodeURIComponent(escape(atob(b)));}catch(e){return null;}
+  }
+  function load(){ try{return JSON.parse(localStorage.getItem(LS)||'[]');}catch(e){return [];} }
+  function save(a){ try{localStorage.setItem(LS,JSON.stringify(a));}catch(e){} }
+  function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(function(){t.classList.remove('show');},2200); }
+
+  function statusMsg(o){
+    var cat=o.cat||'general', label=o.label||'ההזמנה';
+    if(o.problem) return {txt:'⚠️ נתקלנו בעיכוב זמני בתהליך — הצוות שלנו כבר פועל לפתרון ונחזור אליכם עם עדכון מלא בהקדם האפשרי. מודים לכם על הסבלנות.',clr:'var(--bad)',bg:'rgba(230,57,70,.08)'};
+    if(o.done) return {txt:'ההזמנה שלכם עבור '+label+' הושלמה והופעלה בהצלחה! תודה על האמון — אנו כאן לכל שאלה או צורך עתידי.',clr:'var(--ok)',bg:'rgba(6,214,160,.09)'};
+    if(cat==='lines') return {txt:'ההזמנה שלכם עבור '+label+' התקבלה ונמצאת בתהליך הקמה מול הספק. הצוות שלנו מלווה את התהליך עד לחיבור והפעלה מלאים.',clr:'var(--brand)',bg:'rgba(42,63,150,.06)'};
+    return {txt:'ההזמנה שלכם עבור '+label+' התקבלה ונשלחה למומחים לביצוע בהקדם האפשרי. נמשיך לעדכן אתכם בכל שלב עד להתקנה והפעלה מלאה.',clr:'var(--brand)',bg:'rgba(42,63,150,.06)'};
+  }
+  function statusBadge(o){
+    if(o.problem) return '<span class="badge" style="background:rgba(230,57,70,.12);color:var(--bad)">⚠ עיכוב</span>';
+    if(o.done) return '<span class="badge" style="background:rgba(6,214,160,.14);color:var(--ok)">✓ הושלם</span>';
+    var lbl=(o.stage>=2)?'בהתקנה':'בטיפול';
+    return '<span class="badge" style="background:rgba(76,201,240,.14);color:var(--wait)">● '+lbl+'</span>';
+  }
+  function fmtTime(ts){
+    if(!ts) return '';
+    var d=new Date(ts), now=new Date();
+    var sameDay=d.toDateString()===now.toDateString();
+    var t=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+    if(sameDay) return 'היום '+t;
+    return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear()+' '+t;
+  }
+
+  function cardHtml(o,i){
+    var cur=(typeof o.stage==='number')?o.stage:1;
+    var done=!!o.done, problem=!!o.problem;
+    var steps=STAGES.map(function(s,idx){
+      var isDone=done||idx<cur, isCur=(idx===cur&&!done);
+      var mark = problem&&isCur ? '⚠' : (isDone?'✓':(isCur?'●':''));
+      var col = problem&&isCur ? 'var(--bad)' : (isDone?'var(--ok)':(isCur?'var(--wait)':'var(--line)'));
+      var tc = isDone||isCur ? '' : 'color:var(--txt3)';
+      return '<div class="step '+(isDone?'done':'')+(isCur?' cur':'')+'">'
+        +'<div class="dot" style="background:'+col+';'+(!isDone&&!isCur?'color:var(--txt3);border:2px solid var(--line);background:#fff':'')+'">'+mark+'</div>'
+        +'<div class="lbl" style="'+tc+'">'+esc(s)+(isCur?'<span class="here">אתם כאן</span>':'')+'</div></div>';
+    }).join('');
+    var m=statusMsg(o);
+    var ico=CAT_ICON[o.cat||'general']||'📦';
+    return '<div class="card">'
+      +'<div class="card-top"><div class="cnum"><span class="pen">✎</span><span class="n">'+esc(o.no||'—')+'</span></div>'+statusBadge(o)+'</div>'
+      +(o.label?'<div class="prod">'+ico+' '+esc(o.label)+(o.so?' · '+esc(o.so):'')+'</div>':'')
+      +'<div class="flow">'+steps+'</div>'
+      +'<div class="msg" style="color:'+m.clr+';background:'+m.bg+'">'+esc(m.txt)+'</div>'
+      +'<div class="details">'
+        +(o.co?'<div class="det">חברה<b>'+esc(o.co)+'</b></div>':'')
+        +(o.cl?'<div class="det">לקוח<b>'+esc(o.cl)+'</b></div>':'')
+        +(o.da?'<div class="det full">📍 כתובת אספקה<b>'+esc(o.da)+'</b></div>':'')
+      +'</div>'
+      +'<div class="card-foot"><span>עודכן: '+esc(fmtTime(o.ts))+'</span><button class="rm" onclick="removeOrder('+i+')">הסר מהרשימה</button></div>'
+      +'</div>';
+  }
+
+  function render(){
+    var orders=load().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+    var list=document.getElementById('list');
+    var upd=document.getElementById('upd');
+    if(!orders.length){
+      list.innerHTML='<div class="empty"><div class="em">📭</div><h2>אין מעקבים עדיין</h2>'
+        +'<p>קיבלתם קישור מעקב מ-HOT Business?<br>לחצו עליו — או על "הוסף מעקב" והדביקו אותו כאן.</p></div>';
+      upd.textContent=''; return;
+    }
+    upd.textContent='עודכן לאחרונה '+fmtTime(orders[0].ts);
+    list.innerHTML=orders.map(cardHtml).join('');
+  }
+
+  function upsert(o){
+    if(!o||!o.no){ toast('קישור מעקב לא תקין'); return false; }
+    var orders=load();
+    var idx=orders.findIndex(function(x){return String(x.no)===String(o.no);});
+    if(idx>=0){
+      // update only if this snapshot is newer (or same) — never overwrite with older
+      if((o.ts||0)>=(orders[idx].ts||0)) orders[idx]=o;
+    }else orders.push(o);
+    save(orders); return true;
+  }
+
+  // ── parse a tracking payload from a hash/url/code string ──
+  function parsePayload(str){
+    if(!str) return null;
+    str=String(str).trim();
+    var m=str.match(/[#?](?:t=)?([A-Za-z0-9_\-]+)$/); // link with hash/param
+    var enc = m ? m[1] : (/^[A-Za-z0-9_\-]+$/.test(str)?str:null);
+    if(!enc) { // maybe full url with #...
+      var h=str.indexOf('#'); if(h>=0) enc=str.slice(h+1);
+    }
+    if(!enc) return null;
+    var json=b64urlToStr(enc); if(!json) return null;
+    try{ var o=JSON.parse(json); return (o&&o.no!=null)?o:null; }catch(e){ return null; }
+  }
+
+  window.removeOrder=function(i){
+    var orders=load().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+    var o=orders[i]; if(!o)return;
+    var all=load().filter(function(x){return String(x.no)!==String(o.no);});
+    save(all); render(); toast('הוסר מהרשימה');
+  };
+  window.openAdd=function(){ document.getElementById('addModal').classList.add('open'); setTimeout(function(){document.getElementById('addInput').focus();},60); };
+  window.closeAdd=function(){ document.getElementById('addModal').classList.remove('open'); document.getElementById('addInput').value=''; };
+  window.addFromInput=function(){
+    var o=parsePayload(document.getElementById('addInput').value);
+    if(o&&upsert(o)){ closeAdd(); render(); toast('✓ המעקב נוסף'); }
+    else toast('הקישור אינו תקין — ודאו שהעתקתם את כולו');
+  };
+
+  // on load: if the URL carries a tracking payload, ingest it and clean the hash
+  (function init(){
+    var enc = location.hash ? location.hash.replace(/^#/,'').replace(/^t=/,'') : '';
+    if(enc){
+      var o=parsePayload('#'+enc);
+      if(o){ upsert(o); try{history.replaceState(null,'',location.pathname+location.search);}catch(e){} }
+    }
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
