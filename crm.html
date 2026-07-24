@@ -8172,6 +8172,7 @@ function trackLinkFromDistForm(){
     co:document.getElementById('dico').value,
     no:document.getElementById('diproj').value,
     cl:document.getElementById('dicl').value,
+    cle:(document.getElementById('dicle').value||'').trim(),
     so:document.getElementById('diso').value,
     da:document.getElementById('dida').value.trim(),
     st:document.getElementById('dist2').value,
@@ -8181,12 +8182,18 @@ function trackLinkFromDistForm(){
   if(!d.no&&!d.co){ toast('⚠️ מלא מס׳ פרויקט או שם חברה כדי ליצור קישור מעקב','warn'); return; }
   _trackSharePopup(_distTrackURL(d), d);
 }
+// פתיחת חלון-שיתוף קישור-מעקב מתוך אובייקט הפצה (עובד גם כשהטופס סגור, לתזכורת האוטומטית)
+function promptTrackShare(dist){
+  if(!dist||(!dist.no&&!dist.co)){ toast('⚠️ אין מספיק פרטים לקישור מעקב','warn'); return; }
+  _trackSharePopup(_distTrackURL(dist), dist);
+}
 function _trackSharePopup(url, d){
   const old=document.getElementById('track-share-popup'); if(old)old.remove();
+  window._trackShareCtx={url,cl:d.cl||'',no:d.no||'',co:d.co||'',cle:(d.cle||'').trim()};
   const qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data='+encodeURIComponent(url);
   const waTxt=`שלום${d.cl?' '+d.cl:''}, למעקב אחר סטטוס ההזמנה שלכם (${d.no||d.co||''}) בזמן אמת:\n${url}`;
   const wa='https://wa.me/?text='+encodeURIComponent(waTxt);
-  const cle=(document.getElementById('dicle')&&document.getElementById('dicle').value||'').trim();
+  const cle=(d.cle||'').trim();
   const el=document.createElement('div');
   el.id='track-share-popup';
   el.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px';
@@ -8201,7 +8208,7 @@ function _trackSharePopup(url, d){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btnp" onclick="_trackCopy()" style="font-size:12px">📋 העתק קישור</button>
       <button class="btn btns" onclick="window.open('${wa}','_blank','noopener')" style="border-color:#25d366;color:#25d366;font-size:12px">💬 וואטסאפ</button>
-      ${cle?`<button class="btn btns" onclick="_trackMail('${esc(url)}')" style="grid-column:1/-1;border-color:#4cc9f0;color:#4cc9f0;font-size:12px">📧 שלח במייל ללקוח (${esc(cle)})</button>`:''}
+      ${cle?`<button class="btn btns" onclick="_trackMail()" style="grid-column:1/-1;border-color:#4cc9f0;color:#4cc9f0;font-size:12px">📧 שלח במייל ללקוח (${esc(cle)})</button>`:''}
     </div>
   </div>`;
   el.addEventListener('click',()=>el.remove());
@@ -8213,12 +8220,12 @@ function _trackCopy(){
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(i.value).then(done).catch(()=>{i.select();document.execCommand('copy');done();}); }
   else{ i.select(); document.execCommand('copy'); done(); }
 }
-function _trackMail(url){
-  const cle=(document.getElementById('dicle')&&document.getElementById('dicle').value||'').trim();
+function _trackMail(){
+  const c=window._trackShareCtx||{};
+  const cle=(c.cle||'').trim();
   if(!cle){ toast('⚠️ אין אימייל לקוח','warn'); return; }
-  const cl=document.getElementById('dicl').value, no=document.getElementById('diproj').value, co=document.getElementById('dico').value;
-  const subject=`מעקב הזמנה – ${no||co||''}`;
-  const body=[`שלום ${cl||'לקוח יקר'},`,``,`למעקב אחר סטטוס ההזמנה שלכם בזמן אמת, היכנסו לקישור הבא:`,url,``,`נשמח לעמוד לרשותכם בכל שאלה.`,``,`בברכה,`,`איתמר ונדן`,`HOT Business`,`Itamar.venden@hot.net.il`].join('\n');
+  const subject=`מעקב הזמנה – ${c.no||c.co||''}`;
+  const body=[`שלום ${c.cl||'לקוח יקר'},`,``,`למעקב אחר סטטוס ההזמנה שלכם בזמן אמת, היכנסו לקישור הבא:`,c.url,``,`נשמח לעמוד לרשותכם בכל שאלה.`,``,`בברכה,`,`איתמר ונדן`,`HOT Business`,`Itamar.venden@hot.net.il`].join('\n');
   openMail(cle, subject, body);
 }
 // ===== תיאום פ.ע (פגישת עבודה) — סנכרון מלא מול מנהל פרויקט / גורם מטפל =====
@@ -9529,11 +9536,31 @@ function saveDist(){
   const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,cle:document.getElementById('dicle').value.trim(),hd:document.getElementById('dih').value,hp:document.getElementById('dihp').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,da:document.getElementById('dida').value.trim(),pcat:document.getElementById('dipcat').value,lang:document.getElementById('dilang').value,tgt:+document.getElementById('ditgt').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,ptype:document.getElementById('diptype').value,mi:document.getElementById('dimi').value,files:_attPending['dist']||[]};
   if(!row.co){alert('יש להזין שם חברה');return;}
   if(isNaN(row.tgt)||row.tgt<0||isNaN(row.inc)||row.inc<0||isNaN(row.eq)||row.eq<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}
+  // תזכורת אוטומטית: לוכדים את מצב-העריכה והסטטוס הקודם לפני שהמודאל נסגר (closeM מאפס EI)
+  const _wasEdit = !!EI;
+  const _oldStatus = EI ? ((D.dists.find(x=>x.id==EI)||{}).st ?? null) : null;
   let savedDist;
   if(EI){dbUpdate('dists',EI,row);savedDist=D.dists.find(x=>x.id==EI);}else{savedDist=dbInsert('dists',row);}
   if(savedDist&&savedDist.st==='הושלם')syncDistToClient(savedDist);
   if(savedDist&&syncDistToSalary(savedDist))toast('🔗 מספר הפרויקט סונכרן לפרויקטי שכר','ok');
   closeM('mdist');rAll();
+  // תזכורת אוטומטית לשלוח ללקוח קישור מעקב — כשיש לקוח, וגם:
+  //  • בעריכה: רק אם השלב השתנה בפועל, או
+  //  • ביצירת הפצה חדשה עבור לקוח.
+  const _hasClient = !!(savedDist && (String(savedDist.cle||'').trim() || String(savedDist.cl||'').trim()));
+  const _statusChanged = _wasEdit && _oldStatus!==null && savedDist && savedDist.st!==_oldStatus;
+  const _newForClient = !_wasEdit && _hasClient;
+  if(savedDist && _hasClient && (_statusChanged || _newForClient)){
+    _promptSendTrack(savedDist, _statusChanged);
+  }
+}
+// הקפצה אוטומטית בשינוי סטטוס / יצירת הפצה ללקוח — כדי שלא לשכוח לעדכן את הלקוח
+function _promptSendTrack(dist, changed){
+  const who = dist.cl ? ` ל${dist.cl}` : ' ללקוח';
+  const msg = changed
+    ? `📦 הסטטוס עודכן ל"${dist.st}". לשלוח${who} קישור מעקב מעודכן?`
+    : `📦 נוצרה הפצה עבור${who}. לשלוח קישור מעקב אחר הסטטוס?`;
+  confirmAct(msg, ()=>promptTrackShare(dist), '🔗 שלח קישור מעקב');
 }
 function saveSal(){
   const row={pj:document.getElementById('spj').value,cl:document.getElementById('scl').value,qt:+document.getElementById('sqt').value,tr:+document.getElementById('str').value,cl2:+document.getElementById('scl2').value,pv:+document.getElementById('spv').value,st:document.getElementById('sst').value,ty:document.getElementById('sty').value,no:document.getElementById('sno').value,files:_attPending['salary']||[]};
