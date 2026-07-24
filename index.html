@@ -8173,7 +8173,9 @@ function _distTrackPayload(d){
 function _distTrackURL(d){
   const enc=_b64urlEncode(JSON.stringify(_distTrackPayload(d)));
   let base; try{ base=new URL('track.html',location.href).href; }catch(e){ base='track.html'; }
-  return base+'#'+enc;
+  // פרמטר-שאילתה (?t=) ולא עוגן (#) — עוגן נחתך לעיתים ע"י דפדפני-מובנה של וואטסאפ
+  // וכך הנמען לא רואה כלום. פרמטר-שאילתה שורד שיתוף במסנג'רים.
+  return base+'?t='+enc;
 }
 function trackLinkFromDistForm(){
   const d={
@@ -8224,7 +8226,7 @@ function _trackSharePopup(url, d){
       <button onclick="document.getElementById('track-share-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
     <div style="text-align:center;margin-bottom:12px"><img src="${qr}" alt="QR" style="width:170px;height:170px;border-radius:10px;background:#fff;padding:6px"></div>
-    <div style="font-size:10.5px;color:var(--text3);margin-bottom:5px">הלקוח סורק את ה-QR או פותח את הקישור — ורואה את שלב ההזמנה. הסטטוס מקודד בקישור, ללא חשיפת מידע בענן.</div>
+    <div style="font-size:10.5px;color:var(--text3);margin-bottom:5px">הלקוח סורק את ה-QR או פותח את הקישור — ורואה את שלב ההזמנה. הסטטוס מקודד בתוך הקישור עצמו — לא נשמר בבסיס-נתונים בענן.</div>
     <input id="track-share-url" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;box-sizing:border-box;padding:9px 11px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text2);font-size:10.5px;direction:ltr;margin-bottom:11px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btnp" onclick="_trackCopy()" style="font-size:12px">📋 העתק קישור</button>

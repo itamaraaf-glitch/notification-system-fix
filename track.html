@@ -215,12 +215,17 @@
     else toast('הקישור אינו תקין — ודאו שהעתקתם את כולו');
   };
 
-  // on load: if the URL carries a tracking payload, ingest it and clean the hash
+  function getParam(name){
+    try{ var m=location.search.match(new RegExp('[?&]'+name+'=([^&#]+)')); return m?decodeURIComponent(m[1]):''; }catch(e){ return ''; }
+  }
+  // on load: ingest a tracking payload from ?t= (robust for messenger shares) or a #hash
+  // (older links). Then clean the URL so a refresh doesn't re-ingest.
   (function init(){
-    var enc = location.hash ? location.hash.replace(/^#/,'').replace(/^t=/,'') : '';
+    var enc = getParam('t');
+    if(!enc && location.hash) enc = location.hash.replace(/^#/,'').replace(/^t=/,'');
     if(enc){
-      var o=parsePayload('#'+enc);
-      if(o){ upsert(o); try{history.replaceState(null,'',location.pathname+location.search);}catch(e){} }
+      var o=parsePayload(enc);
+      if(o){ upsert(o); try{history.replaceState(null,'',location.pathname);}catch(e){} }
     }
     render();
   })();
