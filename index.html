@@ -286,6 +286,7 @@ td.cell-copied{animation:cellcopied 1s ease-out}
   transition:transform .35s var(--expo),box-shadow .35s;
   animation:cardIn .3s ease;
 }
+.kc[onclick]:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.08)}
 .kc::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,transparent,rgba(200,169,110,.3),transparent);
   opacity:0;transition:opacity .35s}
@@ -5831,12 +5832,12 @@ function rDash(){
   }).catch(()=>{});
   }
   document.getElementById('krow').innerHTML=`
-    <div class="kc r"><div class="lb">התראות</div><div class="vl">${al.length}</div><div class="sb">דורשות טיפול</div></div>
-    <div class="kc"><div class="lb">עסקאות</div><div class="vl">${D.deals.length}</div><div class="sb">${cls} נסגרו</div></div>
-    <div class="kc g"><div class="lb">שווי צבור</div><div class="vl">₪${Math.round(tv/1000)}K</div></div>
-    <div class="kc y"><div class="lb">OTC נסגר</div><div class="vl">₪${Math.round(tot/1000)}K</div></div>
-    <div class="kc p"><div class="lb">מכרזים</div><div class="vl">${D.tenders.length}</div></div>
-    <div class="kc g"><div class="lb">פגישות</div><div class="vl">${held}/${MEETING_GOAL}</div><div class="sb">${pct}%</div></div>`;
+    <div class="kc r" onclick="nav('alerts')" style="cursor:pointer" title="למסך ההתראות"><div class="lb">התראות</div><div class="vl">${al.length}</div><div class="sb">דורשות טיפול</div></div>
+    <div class="kc" onclick="nav('deals')" style="cursor:pointer" title="למסך העסקאות"><div class="lb">עסקאות</div><div class="vl">${D.deals.length}</div><div class="sb">${cls} נסגרו</div></div>
+    <div class="kc g" onclick="nav('deals')" style="cursor:pointer" title="למסך העסקאות"><div class="lb">שווי צבור</div><div class="vl">₪${Math.round(tv/1000)}K</div></div>
+    <div class="kc y" onclick="nav('deals')" style="cursor:pointer" title="למסך העסקאות"><div class="lb">OTC נסגר</div><div class="vl">₪${Math.round(tot/1000)}K</div></div>
+    <div class="kc p" onclick="nav('tenders')" style="cursor:pointer" title="למסך המכרזים"><div class="lb">מכרזים</div><div class="vl">${D.tenders.length}</div></div>
+    <div class="kc g" onclick="nav('meetings')" style="cursor:pointer" title="למסך הפגישות"><div class="lb">פגישות</div><div class="vl">${held}/${MEETING_GOAL}</div><div class="sb">${pct}%</div></div>`;
   const pi=[];const tPri=nd();
   D.deals.filter(d=>d.st!=='נסגר').forEach(d=>{
     const p=pri(d,'deal');if(p!=='r'&&p!=='o')return;
