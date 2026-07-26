@@ -5344,6 +5344,7 @@ function alertGo(i){
   }
   // משימות — מעבר למסך המשימות, ופתיחת המשימה הספציפית אם יש מזהה
   if(al.kind==='task'){ nav('tasks'); if(al.id)setTimeout(()=>openM('task',al.id),340); return; }
+  if(al.kind==='clients-expiry'){ nav('clients'); return; } // מוצרים ללא תפוגה — מעבר למסך הלקוחות
   const secMap={deal:'deals',dist:'dists',salary:'salary',tender:'tenders',meetings:'meetings'};
   const mtypeMap={deal:'deal',dist:'dist',salary:'salary',tender:'tender',meetings:'meeting'};
   const sec=secMap[al.kind];
@@ -5502,6 +5503,14 @@ function getAlerts(){
   if(overdueTasks.length){const top=overdueTasks.slice(0,3);a.push({type:overdueTasks.length>=3?'crit':'warn',h:`📋 משימות באיחור (${overdueTasks.length})`,s:top.map(x=>`${esc(x.t||'משימה')}${x.cl?' · '+x.cl:''} (${fmtDate(x.dt)})`).join(' | ')+(overdueTasks.length>3?` ועוד ${overdueTasks.length-3}...`:''),kind:'task',id:overdueTasks[0].id,co:overdueTasks[0].cl});}
   const todayTasks=_openTasks.filter(x=>x.dt===t).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   if(todayTasks.length){const top=todayTasks.slice(0,4);a.push({type:'info',h:`✅ משימות להיום (${todayTasks.length})`,s:top.map(x=>`${x.time?x.time+' – ':''}${esc(x.t||'משימה')}${x.cl?' · '+x.cl:''}`).join(' | ')+(todayTasks.length>4?` ועוד ${todayTasks.length-4}...`:''),kind:'task',id:todayTasks[0].id,co:todayTasks[0].cl});}
+  // מוצרים שנמכרו ללא תאריך תפוגה שאפשר לגזור מהפרויקט — נקודה עיוורת במעקב החידושים.
+  // מוצג רק כשההשלמה האוטומטית יכולה לתקן (כך שאחרי לחיצה ההתראה נעלמת מעצמה).
+  let _fixableNoExp=0;
+  (D.clients||[]).forEach(c=>{ Object.keys(ITEM_CFG).forEach(type=>{
+    if(!ITEM_CFG[type].fields.some(f=>f.k==='expiry'))return;
+    (c[type]||[]).forEach(it=>{ if(!it.expiry && (typeof _productSourceDate==='function') && _productSourceDate(it))_fixableNoExp++; });
+  }); });
+  if(_fixableNoExp>0)a.push({type:'info',h:`📅 ${_fixableNoExp} מוצרים ללא תאריך תפוגה`,s:`מוצרים שנמכרו מפרויקט שנסגר וטרם קיבלו תפוגה — לא נכנסים למעקב חידושים. לחץ "השלם תפוגות".`,kind:'clients-expiry',meta:{backfill:true}});
   a.push(...getClientAlerts());
   document.getElementById('acnt').textContent=a.length;
   const dot=document.getElementById('mob-alert-dot');
@@ -5534,6 +5543,8 @@ function rAlerts(){
     }else if(x.meta&&x.meta.renewProduct){
       const rp=x.meta.renewProduct;
       renewBtn=`<button class="btn btns" onclick="event.stopPropagation();renewProduct('${rp.cid}','${rp.type}',${rp.idx})" title="חדש את המוצר לשנה נוספת" style="margin-top:8px;border-color:var(--teal);color:var(--teal)">🔄 חדש מוצר</button>`;
+    }else if(x.meta&&x.meta.backfill){
+      renewBtn=`<button class="btn btns" onclick="event.stopPropagation();runBackfillExpiry()" title="קבע תאריך תפוגה למוצרים חסרים לפי הפרויקט שנסגר" style="margin-top:8px;border-color:var(--gold);color:var(--gold)">📅 השלם תפוגות</button>`;
     }
     // לחיצה על הכרטיס = קיצור דרך ישיר לנושא הרלוונטי
     const clickable=!!(x.kind||x.cid);
