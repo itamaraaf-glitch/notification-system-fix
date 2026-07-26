@@ -161,7 +161,8 @@ body{font-family:'Heebo',sans-serif;background:#080c18;color:var(--text);font-si
   max-height:62vh;overflow-y:auto;padding:5px;display:none}
 #gsres.show{display:block}
 .gsr{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:8px;cursor:pointer;transition:background .15s}
-.gsr:hover{background:rgba(200,169,110,.12)}
+.gsr:hover,.gsr.gsr-active{background:rgba(200,169,110,.12)}
+.gsr.gsr-active{box-shadow:inset 2px 0 0 var(--gold)}
 .gsr-ic{font-size:14px;flex-shrink:0}
 .gsr-lb{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gsr-sub{font-size:10px;color:var(--text3);margin-right:auto;white-space:nowrap;flex-shrink:0}
@@ -1517,7 +1518,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   </div>
   <div id="gsearch">
     <input type="text" id="gsi" placeholder="🔍 חיפוש גלובלי – לקוח, עסקה, פרויקט..." autocomplete="off"
-      oninput="globalSearch(this.value)" onkeydown="if(event.key==='Escape'){this.value='';globalSearch('')}">
+      oninput="globalSearch(this.value)" onkeydown="gsKey(event)">
     <div id="gsres"></div>
   </div>
   <div class="tbr">
@@ -5152,10 +5153,12 @@ function updateNavBadges(){
 
 // ===== GLOBAL SEARCH =====
 let _gsRes=[];
+let _gsSel=-1; // התוצאה המסומנת לניווט מקלדת (חצים + Enter)
 function globalSearch(q){
   q=(q||'').trim().toLowerCase();
   const box=document.getElementById('gsres'); if(!box)return;
   _gsRes=[];
+  _gsSel=-1; // אתחול הסימון בכל חיפוש חדש
   if(!q){box.classList.remove('show');box.innerHTML='';return;}
   const hit=(...v)=>v.some(x=>String(x==null?'':x).toLowerCase().includes(q));
   const push=(icon,label,sub,type,id,arch)=>{ if(_gsRes.length<25)_gsRes.push({icon,label,sub,type,id,arch}); };
@@ -5186,8 +5189,24 @@ function globalSearch(q){
   (D.archivedMeetings||[]).forEach(m=>{ if(hit(m.cl,m.no)) push('📦',m.cl||'(ללא שם)','פגישה בארכיון','meeting',m.id,true); });
   if(!_gsRes.length){ box.innerHTML='<div class="gsr-empty">לא נמצאו תוצאות</div>'; box.classList.add('show'); return; }
   const gsClr={deal:'#4cc9f0',client:'#c8a96e',dist:'#a78bfa',salary:'#06d6a0',tender:'#f4a261',meeting:'#06d6a0',task:'#f072b6',inbox:'#4cc9f0'};
-  box.innerHTML=_gsRes.map((r,i)=>{const c=gsClr[r.type]||'var(--gold)';return`<div class="gsr" onclick="gsGo(${i})" style="border-right:2px solid ${c}22"><span class="gsr-ic" style="background:${c}15;border-radius:6px;padding:2px 4px">${r.icon}</span><span class="gsr-lb">${esc(r.label)}</span><span class="gsr-sub" style="color:${c}">${esc(r.sub)}</span></div>`;}).join('');
+  box.innerHTML=_gsRes.map((r,i)=>{const c=gsClr[r.type]||'var(--gold)';return`<div class="gsr" data-gsi="${i}" onclick="gsGo(${i})" style="border-right:2px solid ${c}22"><span class="gsr-ic" style="background:${c}15;border-radius:6px;padding:2px 4px">${r.icon}</span><span class="gsr-lb">${esc(r.label)}</span><span class="gsr-sub" style="color:${c}">${esc(r.sub)}</span></div>`;}).join('');
   box.classList.add('show');
+}
+// ניווט מקלדת בחיפוש הגלובלי: ↑/↓ לבחירה, Enter לפתיחה, Esc לניקוי.
+function gsKey(e){
+  if(e.key==='Escape'){ e.target.value=''; globalSearch(''); return; }
+  if(!_gsRes.length)return;
+  if(e.key==='ArrowDown'){ e.preventDefault(); _gsSel=Math.min(_gsSel+1,_gsRes.length-1); _gsHighlight(); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); _gsSel=Math.max(_gsSel-1,0); _gsHighlight(); }
+  else if(e.key==='Enter'){ e.preventDefault(); gsGo(_gsSel>=0?_gsSel:0); }
+}
+function _gsHighlight(){
+  const box=document.getElementById('gsres'); if(!box)return;
+  box.querySelectorAll('.gsr').forEach(el=>{
+    const on=+el.getAttribute('data-gsi')===_gsSel;
+    el.classList.toggle('gsr-active',on);
+    if(on)el.scrollIntoView({block:'nearest'});
+  });
 }
 // מפת הלשוניות של כל סעיף — לניווט מדויק מהחיפוש הגלובלי אל השורה עצמה
 const SEC_TABS={
