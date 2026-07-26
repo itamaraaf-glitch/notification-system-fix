@@ -9399,6 +9399,7 @@ function rWorkPlan(){
       <td><select style="font-size:10px;padding:2px 4px;border-radius:6px;min-width:110px" onchange="updatePotentialStatus('${p.clientId}',${p.potIdx},this.value)">${stOpts(p.status)}</select></td>
       <td style="font-size:10px;max-width:130px;overflow:hidden;text-overflow:ellipsis">${esc(p.notes||'–')}</td>
       <td style="white-space:nowrap">
+        ${(()=>{const ph=(D.clients.find(x=>x.id==p.clientId)||{}).phone;return ph?`<button class="btn btns" onclick="callClient('${p.clientId}')" title="חייג ${esc(ph)}" style="border-color:#4cc9f0;color:#4cc9f0">📞</button><button class="btn btns" onclick="waClient('${p.clientId}')" title="וואטסאפ ${esc(ph)}" style="border-color:#25D366;color:#25D366">💬</button> `:'';})()}
         <button class="btn btns" onclick="openClientModal('${p.clientId}')" title="ערוך כרטיס לקוח">✏️</button>
         <button class="btn btns btnd" onclick="removePotential('${p.clientId}',${p.potIdx})" title="מחק">🗑</button>
       </td>
