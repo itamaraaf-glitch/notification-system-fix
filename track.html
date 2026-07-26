@@ -76,7 +76,10 @@
   <div class="hdr">
     <div class="hdr-top">
       <div class="logo"><span class="mark">📦</span><div>HOT Business<div class="sub">מעקב הזמנות ושירות</div></div></div>
-      <button class="iconbtn" onclick="location.reload()" title="רענון">↻</button>
+      <div style="display:flex;gap:8px">
+        <button class="iconbtn" onclick="clearAllOrders()" title="נקה הכל" style="font-size:15px">🗑</button>
+        <button class="iconbtn" onclick="location.reload()" title="רענון">↻</button>
+      </div>
     </div>
     <div class="title-row"><h1>המעקבים שלי</h1><span class="upd" id="upd"></span></div>
   </div>
@@ -150,7 +153,7 @@
     var m=statusMsg(o);
     var ico=CAT_ICON[o.cat||'general']||'📦';
     return '<div class="card">'
-      +'<div class="card-top"><div class="cnum"><span class="pen">✎</span><span class="n">'+esc(o.no||'—')+'</span></div>'+statusBadge(o)+'</div>'
+      +'<div class="card-top"><div class="cnum"><span class="pen">✎</span><span class="n">'+esc(o.no||o.co||'הזמנה')+'</span></div>'+statusBadge(o)+'</div>'
       +(o.label?'<div class="prod">'+ico+' '+esc(o.label)+(o.so?' · '+esc(o.so):'')+'</div>':'')
       +'<div class="flow">'+steps+'</div>'
       +'<div class="msg" style="color:'+m.clr+';background:'+m.bg+'">'+esc(m.txt)+'</div>'
@@ -176,10 +179,15 @@
     list.innerHTML=orders.map(cardHtml).join('');
   }
 
+  // מפתח-זהות של הזמנה: מזהה ייחודי (oid) קודם, אחרת מס' פרויקט, אחרת הרכב חברה+לקוח.
+  // כך כל פרויקט הוא כרטיס נפרד — גם ללא מס' פרויקט וגם אם שניים חולקים מספר.
+  function orderKey(o){ return String((o&&(o.oid||o.no))||((o&&o.co||'')+'|'+(o&&o.cl||''))); }
   function upsert(o){
-    if(!o||!o.no){ toast('קישור מעקב לא תקין'); return false; }
+    if(!o){ toast('קישור מעקב לא תקין'); return false; }
+    var key=orderKey(o);
+    if(!key||key==='|'){ toast('קישור מעקב לא תקין'); return false; }
     var orders=load();
-    var idx=orders.findIndex(function(x){return String(x.no)===String(o.no);});
+    var idx=orders.findIndex(function(x){return orderKey(x)===key;});
     if(idx>=0){
       // update only if this snapshot is newer (or same) — never overwrite with older
       if((o.ts||0)>=(orders[idx].ts||0)) orders[idx]=o;
@@ -204,8 +212,13 @@
   window.removeOrder=function(i){
     var orders=load().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
     var o=orders[i]; if(!o)return;
-    var all=load().filter(function(x){return String(x.no)!==String(o.no);});
+    var k=orderKey(o);
+    var all=load().filter(function(x){return orderKey(x)!==k;});
     save(all); render(); toast('הוסר מהרשימה');
+  };
+  window.clearAllOrders=function(){
+    if(!load().length) return;
+    if(window.confirm('לנקות את כל המעקבים מהמכשיר הזה?')){ save([]); render(); toast('הרשימה נוקתה'); }
   };
   window.openAdd=function(){ document.getElementById('addModal').classList.add('open'); setTimeout(function(){document.getElementById('addInput').focus();},60); };
   window.closeAdd=function(){ document.getElementById('addModal').classList.remove('open'); document.getElementById('addInput').value=''; };
@@ -215,12 +228,17 @@
     else toast('הקישור אינו תקין — ודאו שהעתקתם את כולו');
   };
 
-  // on load: if the URL carries a tracking payload, ingest it and clean the hash
+  function getParam(name){
+    try{ var m=location.search.match(new RegExp('[?&]'+name+'=([^&#]+)')); return m?decodeURIComponent(m[1]):''; }catch(e){ return ''; }
+  }
+  // on load: ingest a tracking payload from ?t= (robust for messenger shares) or a #hash
+  // (older links). Then clean the URL so a refresh doesn't re-ingest.
   (function init(){
-    var enc = location.hash ? location.hash.replace(/^#/,'').replace(/^t=/,'') : '';
+    var enc = getParam('t');
+    if(!enc && location.hash) enc = location.hash.replace(/^#/,'').replace(/^t=/,'');
     if(enc){
-      var o=parsePayload('#'+enc);
-      if(o){ upsert(o); try{history.replaceState(null,'',location.pathname+location.search);}catch(e){} }
+      var o=parsePayload(enc);
+      if(o){ upsert(o); try{history.replaceState(null,'',location.pathname);}catch(e){} }
     }
     render();
   })();

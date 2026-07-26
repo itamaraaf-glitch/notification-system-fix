@@ -5680,7 +5680,8 @@ function rDeals(){
   // סיכומים אוטומטיים: חודש נוכחי, הפצות, יתרה (שווי שטרם שובץ), ויתרה לחודש הבא
   const sumMv=D.deals.reduce((a,d)=>a+(+d.mv||0),0);
   const sumDi=D.deals.reduce((a,d)=>a+(+d.di||0),0);
-  const sumRem=D.deals.reduce((a,d)=>a+Math.max(0,(+d.v||0)-(+d.mv||0)-(+d.di||0)),0);
+  // יתרה = חודש נוכחי − הפצות (מה שנשאר להשלים החודש אחרי מה שנסגר בהפצות)
+  const sumRem=Math.max(0, sumMv - sumDi);
   const sumDn=D.deals.reduce((a,d)=>a+(+d.dn||0),0);
   // OTC (ציוד) — מופרד לגמרי מהשירות כדי שלא יתערבב בסיכומים
   const sumOt=D.deals.reduce((a,d)=>a+(+d.ot||0),0);
@@ -5715,27 +5716,6 @@ function rDeals(){
           <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">בארכיון 📦</div>
           <div style="font-size:20px;font-weight:900;color:var(--text3)">${arch}</div>
         </div>`:''}
-      </div>
-      <div style="margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">
-        <div style="font-size:10px;font-weight:800;color:var(--teal);letter-spacing:.7px;margin-bottom:6px">💰 שירות</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">
-          <div class="stat-mini" style="background:rgba(6,214,160,.07);border:1px solid rgba(6,214,160,.15)">
-            <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">📅 סיכום חודש נוכחי</div>
-            <div style="font-size:18px;font-weight:900;color:var(--teal)">${fmt(sumMv)}</div>
-          </div>
-          <div class="stat-mini" style="background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.18)">
-            <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">🚀 סיכום הפצות</div>
-            <div style="font-size:18px;font-weight:900;color:#a78bfa">${fmt(sumDi)}</div>
-          </div>
-          <div class="stat-mini" style="background:rgba(244,162,97,.07);border:1px solid rgba(244,162,97,.18)">
-            <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">⏳ סיכום יתרה</div>
-            <div style="font-size:18px;font-weight:900;color:#f4a261">${fmt(sumRem)}</div>
-          </div>
-          <div class="stat-mini" style="background:rgba(76,201,240,.07);border:1px solid rgba(76,201,240,.15)">
-            <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">⏭ יתרה לחודש הבא</div>
-            <div style="font-size:18px;font-weight:900;color:var(--blue)">${fmt(sumDn)}</div>
-          </div>
-        </div>
       </div>
       <div style="margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">
         <div style="font-size:10px;font-weight:800;color:#f4a261;letter-spacing:.7px;margin-bottom:6px">📦 OTC – ציוד (בנפרד מהשירות)</div>
@@ -5857,7 +5837,9 @@ function rDealSum(){
   const _all=D.deals;
   const _sumMv=_all.reduce((a,d)=>a+(+d.mv||0),0);
   const _sumDn=_all.reduce((a,d)=>a+(+d.dn||0),0);
-  const _sumRem=_all.reduce((a,d)=>a+Math.max(0,(+d.v||0)-(+d.mv||0)-(+d.di||0)),0);
+  const _sumDi=_all.reduce((a,d)=>a+(+d.di||0),0);
+  // יתרה = חודש נוכחי − הפצות (עקבי עם באנר השירות)
+  const _sumRem=Math.max(0, _sumMv - _sumDi);
   const _sumOt=_all.reduce((a,d)=>a+(+d.ot||0),0);
   const _sumOtc=_all.reduce((a,d)=>a+(+d.otc||0),0);
   // שירות בשורה עליונה, OTC (ציוד) בבלוק נפרד — כדי שלא יתערבבו
@@ -8154,8 +8136,12 @@ function _b64urlEncode(str){
 }
 function _distTrackPayload(d){
   const st=d.st||'ממתין להפצה';
+  // מזהה-הזמנה ייחודי — כדי שכל פרויקט יהיה כרטיס נפרד אצל הלקוח, גם ללא מס' פרויקט
+  // וגם אם שני פרויקטים חולקים מספר. נגזר ממזהה ההפצה, ואם אין — מהרכב שדות יציב.
+  const oid = String(d.id || ('n|'+(d.no||'')+'|'+(d.co||'')+'|'+(d.cl||''))).slice(0,80);
   return {
     v:1,
+    oid,
     no:(d.no||'').toString(),
     co:d.co||'',
     cl:d.cl||'',
@@ -8173,7 +8159,9 @@ function _distTrackPayload(d){
 function _distTrackURL(d){
   const enc=_b64urlEncode(JSON.stringify(_distTrackPayload(d)));
   let base; try{ base=new URL('track.html',location.href).href; }catch(e){ base='track.html'; }
-  return base+'#'+enc;
+  // פרמטר-שאילתה (?t=) ולא עוגן (#) — עוגן נחתך לעיתים ע"י דפדפני-מובנה של וואטסאפ
+  // וכך הנמען לא רואה כלום. פרמטר-שאילתה שורד שיתוף במסנג'רים.
+  return base+'?t='+enc;
 }
 function trackLinkFromDistForm(){
   const d={
@@ -8224,7 +8212,7 @@ function _trackSharePopup(url, d){
       <button onclick="document.getElementById('track-share-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
     <div style="text-align:center;margin-bottom:12px"><img src="${qr}" alt="QR" style="width:170px;height:170px;border-radius:10px;background:#fff;padding:6px"></div>
-    <div style="font-size:10.5px;color:var(--text3);margin-bottom:5px">הלקוח סורק את ה-QR או פותח את הקישור — ורואה את שלב ההזמנה. הסטטוס מקודד בקישור, ללא חשיפת מידע בענן.</div>
+    <div style="font-size:10.5px;color:var(--text3);margin-bottom:5px">הלקוח סורק את ה-QR או פותח את הקישור — ורואה את שלב ההזמנה. הסטטוס מקודד בתוך הקישור עצמו — לא נשמר בבסיס-נתונים בענן.</div>
     <input id="track-share-url" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;box-sizing:border-box;padding:9px 11px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text2);font-size:10.5px;direction:ltr;margin-bottom:11px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btnp" onclick="_trackCopy()" style="font-size:12px">📋 העתק קישור</button>
