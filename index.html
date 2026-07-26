@@ -1764,7 +1764,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <button onclick="clearSel('dists-short')" class="cb-clr">✕ נקה</button>
     </div></div>
   </div>
-  <div id="sumdt" style="display:none"><div id="dist-goal-box"></div><div class="krow" id="dstk"></div></div>
+  <div id="sumdt" style="display:none"><div id="dist-goal-box"></div><div class="krow" id="dstk"></div><div id="dist-ops-breakdown"></div></div>
   <div id="archivdist" style="display:none"><input type="text" class="srch" placeholder="🔍 חיפוש בארכיון ההפצות..." style="margin:6px 0 10px;max-width:280px" oninput="filtArch(this.value,'archive-dists-content')"><div id="archive-dists-content" style="padding:4px 0"></div></div>
 </div>
 
@@ -6637,6 +6637,23 @@ function rDistSum(){
   const perfD=totalTgt?Math.round(totalInc/totalTgt*100):0;
   const perfCol=perfD>=100?'var(--teal)':perfD>=50?'#f4a261':'#e63946';
   document.getElementById('dstk').innerHTML=`<div class="kc"><div class="lb">הפצות לטווח ארוך</div><div class="vl">${l.length}</div><div class="sb">${fmt(sm(l,'inc'))} ביצוע</div></div><div class="kc y"><div class="lb">הפצות קצר</div><div class="vl">${s.length}</div><div class="sb">${fmt(sm(s,'inc'))} ביצוע</div></div>${totalTgt?`<div class="kc"><div class="lb">יעד הכנסה</div><div class="vl">${fmt(totalTgt)}</div></div><div class="kc g"><div class="lb">ביצוע הכנסה</div><div class="vl">${fmt(totalInc)}</div></div><div class="kc ${perfD>=100?'g':perfD>=50?'y':'r'}"><div class="lb">עמידה ביעד</div><div class="vl" style="color:${perfCol}">${perfD}%</div></div>`:`<div class="kc g"><div class="lb">הכנסה כוללת</div><div class="vl">₪${Math.round(totalInc/1000)}K</div></div>`}<div class="kc p"><div class="lb">ציוד סה"כ</div><div class="vl">₪${Math.round(totalEq/1000)}K</div></div>`;
+  // פילוח תפעולי: כמה בכל סטטוס + תקועים + חוסרים — תמונת מצב מהירה למנהל ההפצות
+  const ob=document.getElementById('dist-ops-breakdown');
+  if(ob){
+    const cnt=st=>D.dists.filter(d=>d.st===st).length;
+    const stuck=D.dists.filter(d=>d.st!=='הושלם'&&pri(d,'dist')==='r').length;
+    const missing=D.dists.filter(d=>String(d.mi||'').trim()).length;
+    const chip=(lbl,val,clr)=>`<div style="flex:1;min-width:110px;background:${clr}14;border:1px solid ${clr}44;border-radius:11px;padding:9px 13px"><div style="font-size:10px;font-weight:700;color:var(--text3)">${lbl}</div><div style="font-size:19px;font-weight:900;color:${clr}">${val}</div></div>`;
+    ob.innerHTML=`<div class="dpanel" style="padding:13px 16px;margin-top:14px"><h4 style="--h4-accent:#a78bfa;--h4-color:#a78bfa;margin:0 0 9px">📊 פילוח תפעולי</h4>
+      <div style="display:flex;gap:9px;flex-wrap:wrap">
+        ${chip('🕐 ממתין להפצה',cnt('ממתין להפצה'),'#f4a261')}
+        ${chip('🔧 בהתקנה',cnt('בהתקנה'),'#4cc9f0')}
+        ${chip('⚠ בעיה',cnt('בעיה'),'#e63946')}
+        ${chip('✅ הושלם',cnt('הושלם'),'#06d6a0')}
+        ${stuck?chip('🔴 תקועים (מעל שבוע)',stuck,'#e63946'):''}
+        ${missing?chip('📦 עם חוסרים',missing,'#f4a261'):''}
+      </div></div>`;
+  }
 }
 
 // ===== SALARY =====
