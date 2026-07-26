@@ -7198,6 +7198,13 @@ function contactLight(p){
   if(d<=7) return{clr:'#ffd166',bg:'rgba(255,209,102,.12)',l:d+'י',days:d,lvl:1};
   return{clr:'#06d6a0',bg:'rgba(6,214,160,.12)',l:d+'י',days:d,lvl:0};
 }
+// חוזי שכר של לקוח (התאמה לפי שם) שיש להם תאריך תפוגה — לריכוז בכרטיס הלקוח.
+function clientContracts(client){
+  const nm=nrmCo(client&&client.name||''); if(!nm)return [];
+  return (D.salary||[]).map(s=>({s,exp:(typeof salExpiry==='function')?salExpiry(s):''}))
+    .filter(o=>o.exp && nrmCo(o.s.cl||'')===nm)
+    .sort((a,b)=>a.exp<b.exp?-1:1);
+}
 function getExpiryWarnings(client){
   const warns=[];
   Object.keys(ITEM_CFG).forEach(type=>{
@@ -7753,6 +7760,13 @@ function rClients(){
       const abbr=TYPE_ABBR[t]||cfg.label.replace(/^\S+\s*/,'').substring(0,3)||'?';
       return`<span title="${cfg.label}${inPot?' – בתהליך עבודה':''}" style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.04);color:${inPot?'#7b5ea7':'var(--text3)'};border:1px dashed ${inPot?'rgba(123,94,167,.5)':'rgba(255,255,255,.1)'};white-space:nowrap;font-weight:700;letter-spacing:.3px">${inPot?'🎯 ':''}${abbr}</span>`;
     }).join('')+(missingMore>0?`<span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.03);color:var(--text3);border:1px dashed rgba(255,255,255,.08);white-space:nowrap">+${missingMore}</span>`:'');
+    const contracts=clientContracts(c);
+    const contractsHtml=contracts.length?contracts.map(({s,exp})=>{
+      const d=db(nd(),exp);const col=d<0?'#e63946':d<=90?'#f4a261':'var(--teal)';
+      const kindLbl=s.ty==='equipment'?'ציוד':'שירות';
+      const tail=d<0?' · פג':d<=90?` · ${d}י`:'';
+      return`<span title="חוזה ${kindLbl}${s.pj?' · פרויקט '+esc(s.pj):''} · ${s.term} חודשים · התחלה ${fmtDate(s.cstart)}" style="font-size:9px;padding:2px 7px;border-radius:20px;background:${col}18;color:${col};border:1px solid ${col}44;white-space:nowrap;font-weight:700">🔄 ${kindLbl} עד ${fmtDate(exp)}${tail}</span>`;
+    }).join(''):'';
     const mRev=clientMonthlyRevenue(c);
     const mTotal=mRev.reduce((s,x)=>s+x.val,0);
     const mBreakHtml=mRev.length>1?mRev.map(x=>`<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(212,168,71,.1);color:var(--gold);border:1px solid rgba(212,168,71,.25);white-space:nowrap">${x.cfg.label.split(' ')[0]} ${fmt(x.val)}</span>`).join(''):(mRev.length===1?`<span style="font-size:9px;color:var(--text3)">${mRev[0].cfg.label}</span>`:'');
@@ -7795,6 +7809,10 @@ function rClients(){
         <div style="font-size:10px;font-weight:800;color:var(--text3);letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase">⬜ לא קיים</div>
         <div style="display:flex;flex-wrap:wrap;gap:3px">${missingHtml||'<span style="font-size:10px;color:var(--text3)">–</span>'}</div>
       </div>
+      ${contracts.length?`<div style="border-top:1px solid var(--border);padding-top:6px;margin-bottom:6px">
+        <div style="font-size:10px;font-weight:800;color:var(--gold);letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase">📅 חוזים ותאריכי תפוגה</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px">${contractsHtml}</div>
+      </div>`:''}
       ${potActive.length?(()=>{const late=potActive.filter(p=>{const cl2=contactLight(p);return cl2&&cl2.lvl===3;}).length;return`<div class="pot-chip" style="${late?'border-color:rgba(230,57,70,.55)':''}">🎯 ${potActive.length} בתהליך עבודה לקוחות${potVal?` · ${fmt(potVal)}`:''}${late?` · <b style="color:#e63946">🔴 ${late} ללא קשר!</b>`:''}</div>`;})():''}
       ${warns.length?`<div class="exp-warn">⚠ ${warns.slice(0,2).join(' | ')}</div>`:''}
       ${nextMtg?`<div class="next-mtg-chip" style="margin-top:4px">
