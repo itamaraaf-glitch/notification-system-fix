@@ -1736,6 +1736,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="tab" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDistsArchive()">📦 ארכיון</div>
   </div>
   <div class="pf-slot" data-target="sec-dists"></div>
+  <div id="dist-status-filter-bar"></div>
   <div id="ldt">
     <div class="tw"><div class="thdr" style="border-right:3px solid #a78bfa">📦 הפצות לטווח ארוך</div>
     <div class="tscroll"><table><thead><tr>
@@ -6575,8 +6576,32 @@ function rTenders(){
 }
 
 // ===== DISTS =====
+// סינון לפי סטטוס תפעולי (drill-down מהפילוח בסיכום). ריק = ללא סינון.
+window._distStatusFilter='';
+function _matchDistStatus(d,f){
+  if(!f)return true;
+  if(f==='stuck')return d.st!=='הושלם'&&pri(d,'dist')==='r';
+  if(f==='missing')return !!String(d.mi||'').trim();
+  return d.st===f;
+}
+function setDistStatusFilter(f){
+  window._distStatusFilter=(window._distStatusFilter===f)?'':f; // לחיצה חוזרת מנקה
+  const tabs=document.querySelectorAll('#dists-tabs .tab');
+  if(tabs[0])tabs[0].click(); // מעבר לרשימה (טווח ארוך) — שתי הרשימות מסוננות
+  rDists();
+}
+function _distStatusFilterBar(){
+  const bar=document.getElementById('dist-status-filter-bar'); if(!bar)return;
+  const f=window._distStatusFilter;
+  if(!f){ bar.innerHTML=''; return; }
+  const lbl={stuck:'🔴 תקועים (מעל שבוע)',missing:'📦 עם חוסרים'}[f]||('📊 '+f);
+  bar.innerHTML=`<div style="display:flex;align-items:center;gap:10px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);border-radius:10px;padding:7px 12px;margin-bottom:11px">
+    <span style="font-size:12px;font-weight:700;color:#a78bfa">מסונן: ${lbl}</span>
+    <button class="btn btns" onclick="setDistStatusFilter('')" style="font-size:11px;border-color:#a78bfa;color:#a78bfa">✕ נקה סינון</button></div>`;
+}
 function rDists(){
   updatePriChipCounts('sec-dists',D.dists,'dist');
+  _distStatusFilterBar();
   const gt=document.getElementById('dist-goal-top');
   if(gt){
     // יעד חודשי: רק ההפצות של התקופה הפעילה (ללא ארכיון), עקבי עם יעדי העסקאות.
@@ -6591,7 +6616,7 @@ function rDists(){
   }
   ['long','short'].forEach(ty=>{
     const tbId=ty==='long'?'ldtb':'sdtb',ftId=ty==='long'?'ldft':'sdft';
-    const items=_applyPri(D.dists.filter(d=>d.ty===ty),'dists','dist');const t=nd();
+    const items=_applyPri(D.dists.filter(d=>d.ty===ty),'dists','dist').filter(d=>_matchDistStatus(d,window._distStatusFilter));const t=nd();
     const sk=ty==='long'?'dists-long':'dists-short';
     document.getElementById(tbId).innerHTML=items.map(d=>{
       const p=pri(d,'dist');
@@ -6644,15 +6669,15 @@ function rDistSum(){
     const cnt=st=>D.dists.filter(d=>d.st===st).length;
     const stuck=D.dists.filter(d=>d.st!=='הושלם'&&pri(d,'dist')==='r').length;
     const missing=D.dists.filter(d=>String(d.mi||'').trim()).length;
-    const chip=(lbl,val,clr)=>`<div style="flex:1;min-width:110px;background:${clr}14;border:1px solid ${clr}44;border-radius:11px;padding:9px 13px"><div style="font-size:10px;font-weight:700;color:var(--text3)">${lbl}</div><div style="font-size:19px;font-weight:900;color:${clr}">${val}</div></div>`;
-    ob.innerHTML=`<div class="dpanel" style="padding:13px 16px;margin-top:14px"><h4 style="--h4-accent:#a78bfa;--h4-color:#a78bfa;margin:0 0 9px">📊 פילוח תפעולי</h4>
+    const chip=(lbl,val,clr,f)=>`<div onclick="setDistStatusFilter('${f}')" title="לחץ לסינון הרשימה ל${esc(lbl)}" style="flex:1;min-width:110px;background:${clr}14;border:1px solid ${clr}44;border-radius:11px;padding:9px 13px;cursor:pointer;transition:transform .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''"><div style="font-size:10px;font-weight:700;color:var(--text3)">${lbl}</div><div style="font-size:19px;font-weight:900;color:${clr}">${val}</div></div>`;
+    ob.innerHTML=`<div class="dpanel" style="padding:13px 16px;margin-top:14px"><h4 style="--h4-accent:#a78bfa;--h4-color:#a78bfa;margin:0 0 9px">📊 פילוח תפעולי <span style="font-size:10px;font-weight:400;color:var(--text3)">· לחץ כרטיס לסינון הרשימה</span></h4>
       <div style="display:flex;gap:9px;flex-wrap:wrap">
-        ${chip('🕐 ממתין להפצה',cnt('ממתין להפצה'),'#f4a261')}
-        ${chip('🔧 בהתקנה',cnt('בהתקנה'),'#4cc9f0')}
-        ${chip('⚠ בעיה',cnt('בעיה'),'#e63946')}
-        ${chip('✅ הושלם',cnt('הושלם'),'#06d6a0')}
-        ${stuck?chip('🔴 תקועים (מעל שבוע)',stuck,'#e63946'):''}
-        ${missing?chip('📦 עם חוסרים',missing,'#f4a261'):''}
+        ${chip('🕐 ממתין להפצה',cnt('ממתין להפצה'),'#f4a261','ממתין להפצה')}
+        ${chip('🔧 בהתקנה',cnt('בהתקנה'),'#4cc9f0','בהתקנה')}
+        ${chip('⚠ בעיה',cnt('בעיה'),'#e63946','בעיה')}
+        ${chip('✅ הושלם',cnt('הושלם'),'#06d6a0','הושלם')}
+        ${stuck?chip('🔴 תקועים (מעל שבוע)',stuck,'#e63946','stuck'):''}
+        ${missing?chip('📦 עם חוסרים',missing,'#f4a261','missing'):''}
       </div></div>`;
   }
 }
