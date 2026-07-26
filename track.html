@@ -166,8 +166,17 @@
       +'</div>';
   }
 
+  // ── בידוד לפי לקוח: מציגים אך ורק את הזמנות הלקוח של הקישור שנפתח ──
+  // כך שלקוח לעולם לא רואה עדכונים של לקוחות אחרים, גם אם נפתחו במכשיר קישורים אחרים.
+  function clientKey(o){ return String((o&&(o.co||o.cl))||'').trim().toLowerCase(); }
+  function getActiveClient(){ try{return localStorage.getItem('hot_track_client')||'';}catch(e){return '';} }
+  function setActiveClient(o){ try{ var k=clientKey(o); if(k)localStorage.setItem('hot_track_client',k); }catch(e){} }
+
   function render(){
-    var orders=load().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+    var active=getActiveClient();
+    var all=load();
+    var orders=(active ? all.filter(function(o){return clientKey(o)===active;}) : all)
+      .sort(function(a,b){return (b.ts||0)-(a.ts||0);});
     var list=document.getElementById('list');
     var upd=document.getElementById('upd');
     if(!orders.length){
@@ -218,13 +227,13 @@
   };
   window.clearAllOrders=function(){
     if(!load().length) return;
-    if(window.confirm('לנקות את כל המעקבים מהמכשיר הזה?')){ save([]); render(); toast('הרשימה נוקתה'); }
+    if(window.confirm('לנקות את כל המעקבים מהמכשיר הזה?')){ save([]); try{localStorage.removeItem('hot_track_client');}catch(e){} render(); toast('הרשימה נוקתה'); }
   };
   window.openAdd=function(){ document.getElementById('addModal').classList.add('open'); setTimeout(function(){document.getElementById('addInput').focus();},60); };
   window.closeAdd=function(){ document.getElementById('addModal').classList.remove('open'); document.getElementById('addInput').value=''; };
   window.addFromInput=function(){
     var o=parsePayload(document.getElementById('addInput').value);
-    if(o&&upsert(o)){ closeAdd(); render(); toast('✓ המעקב נוסף'); }
+    if(o&&upsert(o)){ setActiveClient(o); closeAdd(); render(); toast('✓ המעקב נוסף'); }
     else toast('הקישור אינו תקין — ודאו שהעתקתם את כולו');
   };
 
@@ -238,7 +247,7 @@
     if(!enc && location.hash) enc = location.hash.replace(/^#/,'').replace(/^t=/,'');
     if(enc){
       var o=parsePayload(enc);
-      if(o){ upsert(o); try{history.replaceState(null,'',location.pathname);}catch(e){} }
+      if(o){ upsert(o); setActiveClient(o); try{history.replaceState(null,'',location.pathname);}catch(e){} }
     }
     render();
   })();
