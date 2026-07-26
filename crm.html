@@ -5687,6 +5687,14 @@ function rDash(){
     const days=d.dt?db(d.dt,tPri):0;
     pi.push({p,t:d.co+(d.no?' · #'+d.no:''),s:d.mi?`תקוע: ${d.mi}`:`"${d.st}" ${days} ימים${d.hd?' | מנהל: '+d.hd:''}`,ico:'🚀',nav:'dists'});
   });
+  // חוזי שכר לחידוש — 3 חודשים לפני התפוגה (או אחרי): קריטי ≤30 יום, אחרת דחוף
+  D.salary.forEach(s=>{
+    const exp=salExpiry(s);if(!exp)return;
+    const dExp=db(tPri,exp);if(dExp>90)return;
+    const p=dExp<=30?'r':'o';
+    const when=dExp<0?`פג לפני ${Math.abs(dExp)} ימים`:dExp===0?'פג היום':`${dExp} ימים לחידוש`;
+    pi.push({p,t:(s.cl||'לקוח')+(s.pj?' · '+s.pj:''),s:`חידוש חוזה ${s.ty==='equipment'?'ציוד':'שירות'} — ${when} (${fmtDate(exp)})`,ico:'🔄',nav:'salary'});
+  });
   pi.sort((a,b)=>a.p==='r'?-1:b.p==='r'?1:0);
   document.getElementById('prilist').innerHTML=pi.length?pi.slice(0,8).map(i=>`<div onclick="nav('${i.nav}')" class="urg-row" style="border-right:2px solid ${i.p==='r'?'rgba(230,57,70,.55)':'rgba(244,162,97,.5)'}"><span style="font-size:13px;flex-shrink:0">${i.ico}</span><div style="flex:1;min-width:0"><div style="font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(i.t)}</div><div style="font-size:10.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(i.s)}</div></div>${pB(i.p)}</div>`).join(''):'<div style="font-size:11px;color:var(--teal);padding:6px 0">✅ אין פריטים קריטיים</div>';
   // 🔥 urgent list — date-driven alerts (crit first), clickable to client / alerts
