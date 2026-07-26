@@ -2495,6 +2495,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   <div id="client-sections"></div>
   <div id="client-deals-section"></div>
   <div id="client-projects-section"></div>
+  <div id="client-contracts-section"></div>
   <div id="client-meetings-section"></div>
   <div id="client-emails-section"></div>
   <div class="msec" style="border:1px solid rgba(123,94,167,.4)">
@@ -7276,6 +7277,34 @@ function renderClientProjects(id){
   sec.style.display='';
   sec.innerHTML=`<div class="msec" style="border:1px solid rgba(167,139,250,.25)"><div class="msec-hdr"><span style="color:#a78bfa">📁 פרויקטים (${all.length})</span><span style="font-size:10px;color:var(--text2)">הכנסה מצטברת: <b style="color:var(--gold)">${fmt(totInc)}</b></span></div>${rows}</div>`;
 }
+// חוזי שכר של הלקוח בכרטיס המורחב — תאריכי תפוגה מרוכזים, עם חידוש/עריכה בלחיצה.
+function renderClientContracts(id){
+  const sec=document.getElementById('client-contracts-section');
+  if(!sec)return;
+  if(!id){sec.style.display='none';sec.innerHTML='';return;}
+  const c=D.clients.find(x=>x.id==id);
+  if(!c){sec.style.display='none';return;}
+  const list=clientContracts(c);
+  if(!list.length){sec.style.display='none';sec.innerHTML='';return;}
+  const rows=list.map(({s,exp})=>{
+    const d=db(nd(),exp);const col=d<0?'#e63946':d<=90?'#f4a261':'var(--teal)';
+    const kindLbl=s.ty==='equipment'?'ציוד (OTC)':'שירות';
+    const when=d<0?`פג לפני ${Math.abs(d)} ימים`:d===0?'פג היום':`${d} ימים לחידוש`;
+    const renewBtn=(d<=90)?`<button class="btn btns" onclick="renewContract('${s.id}');closeM('mclient')" title="חדש חוזה לתקופה נוספת" style="font-size:10px;border-color:var(--teal);color:var(--teal)">🔄 חדש</button>`:'';
+    return`<div class="cmod-row" style="background:rgba(255,255,255,.03);border:1px solid ${col}33">
+      <span style="font-size:11px;font-weight:800;color:${col};min-width:70px;white-space:nowrap">🔄 ${kindLbl}</span>
+      ${s.pj?`<span style="font-size:10px;color:var(--text2);min-width:50px">${esc(s.pj)}</span>`:''}
+      <span style="font-size:10px;flex:1;min-width:90px;color:var(--text2)">תפוגה: <b style="color:var(--text)">${fmtDate(exp)}</b></span>
+      <span style="font-size:10px;color:var(--text3);white-space:nowrap">${s.term} חודשים · מ-${fmtDate(s.cstart)}</span>
+      <span style="font-size:10px;padding:2px 7px;border-radius:20px;background:${col}18;color:${col};border:1px solid ${col}44;white-space:nowrap">${when}</span>
+      ${renewBtn}
+      <button class="btn btns" onclick="closeM('mclient');setTimeout(()=>openM('salary','${s.id}'),100)" title="פתח לעריכה" style="font-size:10px">✏️</button>
+    </div>`;
+  }).join('');
+  const nextExp=list[0]?fmtDate(list[0].exp):'';
+  sec.style.display='';
+  sec.innerHTML=`<div class="msec" style="border:1px solid rgba(200,169,110,.28)"><div class="msec-hdr"><span style="color:var(--gold)">📅 חוזים ותאריכי תפוגה (${list.length})</span>${nextExp?`<span style="font-size:10px;color:var(--text2)">הקרוב לתפוגה: <b style="color:var(--gold)">${nextExp}</b></span>`:''}</div>${rows}</div>`;
+}
 // שכפול פרויקט קיים לפרויקט חדש — לחזרה על פרויקט במידת הצורך
 function repeatProject(id){
   const d=[...D.dists,...(D.archivedDists||[])].find(x=>x.id==id);
@@ -7683,6 +7712,7 @@ function openClientModal(id){
   attachLoad('client',id?c:null);
   renderClientDeals(id);
   renderClientProjects(id);
+  renderClientContracts(id);
   renderClientMeetings(id);
   renderClientEmails(id);
   document.getElementById('mclient').classList.add('open');
