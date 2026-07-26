@@ -7236,11 +7236,20 @@ function contactLight(p){
   return{clr:'#06d6a0',bg:'rgba(6,214,160,.12)',l:d+'י',days:d,lvl:0};
 }
 // חוזי שכר של לקוח (התאמה לפי שם) שיש להם תאריך תפוגה — לריכוז בכרטיס הלקוח.
-function clientContracts(client){
-  const nm=nrmCo(client&&client.name||''); if(!nm)return [];
-  return (D.salary||[]).map(s=>({s,exp:(typeof salExpiry==='function')?salExpiry(s):''}))
-    .filter(o=>o.exp && nrmCo(o.s.cl||'')===nm)
-    .sort((a,b)=>a.exp<b.exp?-1:1);
+// כל התפוגות של לקוח במקום אחד: חוזי שכר + מוצרים שכבר נמכרו (פריטי כרטיס עם תפוגה).
+function clientRenewables(client){
+  if(!client)return [];
+  const nm=nrmCo(client.name||''); const out=[];
+  if(nm)(D.salary||[]).forEach(s=>{ const exp=(typeof salExpiry==='function')?salExpiry(s):''; if(exp&&nrmCo(s.cl||'')===nm)
+    out.push({exp,label:(s.ty==='equipment'?'ציוד (OTC)':'שירות'),sub:s.pj||'',src:'חוזה',
+      detail:`${s.term} חודשים · מ-${fmtDate(s.cstart)}`,renewJs:`renewContract('${s.id}')`,
+      editJs:`closeM('mclient');setTimeout(()=>openM('salary','${s.id}'),100)`}); });
+  Object.keys(ITEM_CFG).forEach(type=>{
+    (client[type]||[]).forEach((item,idx)=>{ if(!item.expiry)return;
+      out.push({exp:item.expiry,label:ITEM_CFG[type].label,sub:'',src:'מוצר',detail:'מוצר שנמכר',
+        renewJs:`renewProduct('${client.id}','${type}',${idx})`,editJs:''}); });
+  });
+  return out.sort((a,b)=>a.exp<b.exp?-1:1);
 }
 function getExpiryWarnings(client){
   const warns=[];
@@ -7316,33 +7325,33 @@ function renderClientProjects(id){
   sec.style.display='';
   sec.innerHTML=`<div class="msec" style="border:1px solid rgba(167,139,250,.25)"><div class="msec-hdr"><span style="color:#a78bfa">📁 פרויקטים (${all.length})</span><span style="font-size:10px;color:var(--text2)">הכנסה מצטברת: <b style="color:var(--gold)">${fmt(totInc)}</b></span></div>${rows}</div>`;
 }
-// חוזי שכר של הלקוח בכרטיס המורחב — תאריכי תפוגה מרוכזים, עם חידוש/עריכה בלחיצה.
+// כל התפוגות של הלקוח בכרטיס המורחב — חוזי שכר + מוצרים שנמכרו, עם חידוש/עריכה בלחיצה.
 function renderClientContracts(id){
   const sec=document.getElementById('client-contracts-section');
   if(!sec)return;
   if(!id){sec.style.display='none';sec.innerHTML='';return;}
   const c=D.clients.find(x=>x.id==id);
   if(!c){sec.style.display='none';return;}
-  const list=clientContracts(c);
+  const list=clientRenewables(c);
   if(!list.length){sec.style.display='none';sec.innerHTML='';return;}
-  const rows=list.map(({s,exp})=>{
-    const d=db(nd(),exp);const col=d<0?'#e63946':d<=90?'#f4a261':'var(--teal)';
-    const kindLbl=s.ty==='equipment'?'ציוד (OTC)':'שירות';
+  const rows=list.map(o=>{
+    const d=db(nd(),o.exp);const col=d<0?'#e63946':d<=90?'#f4a261':'var(--teal)';
     const when=d<0?`פג לפני ${Math.abs(d)} ימים`:d===0?'פג היום':`${d} ימים לחידוש`;
-    const renewBtn=(d<=90)?`<button class="btn btns" onclick="renewContract('${s.id}');closeM('mclient')" title="חדש חוזה לתקופה נוספת" style="font-size:10px;border-color:var(--teal);color:var(--teal)">🔄 חדש</button>`:'';
+    const renewBtn=(d<=90)?`<button class="btn btns" onclick="${o.renewJs}" title="חדש לתקופה נוספת" style="font-size:10px;border-color:var(--teal);color:var(--teal)">🔄 חדש</button>`:'';
+    const editBtn=o.editJs?`<button class="btn btns" onclick="${o.editJs}" title="פתח לעריכה" style="font-size:10px">✏️</button>`:'';
     return`<div class="cmod-row" style="background:rgba(255,255,255,.03);border:1px solid ${col}33">
-      <span style="font-size:11px;font-weight:800;color:${col};min-width:70px;white-space:nowrap">🔄 ${kindLbl}</span>
-      ${s.pj?`<span style="font-size:10px;color:var(--text2);min-width:50px">${esc(s.pj)}</span>`:''}
-      <span style="font-size:10px;flex:1;min-width:90px;color:var(--text2)">תפוגה: <b style="color:var(--text)">${fmtDate(exp)}</b></span>
-      <span style="font-size:10px;color:var(--text3);white-space:nowrap">${s.term} חודשים · מ-${fmtDate(s.cstart)}</span>
+      <span style="font-size:11px;font-weight:800;color:${col};min-width:96px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔄 ${esc(o.label)}</span>
+      ${o.sub?`<span style="font-size:10px;color:var(--text2);min-width:44px">${esc(o.sub)}</span>`:''}
+      <span style="font-size:9px;color:var(--text3);white-space:nowrap">${esc(o.src)}</span>
+      <span style="font-size:10px;flex:1;min-width:80px;color:var(--text2)">תפוגה: <b style="color:var(--text)">${fmtDate(o.exp)}</b></span>
       <span style="font-size:10px;padding:2px 7px;border-radius:20px;background:${col}18;color:${col};border:1px solid ${col}44;white-space:nowrap">${when}</span>
       ${renewBtn}
-      <button class="btn btns" onclick="closeM('mclient');setTimeout(()=>openM('salary','${s.id}'),100)" title="פתח לעריכה" style="font-size:10px">✏️</button>
+      ${editBtn}
     </div>`;
   }).join('');
   const nextExp=list[0]?fmtDate(list[0].exp):'';
   sec.style.display='';
-  sec.innerHTML=`<div class="msec" style="border:1px solid rgba(200,169,110,.28)"><div class="msec-hdr"><span style="color:var(--gold)">📅 חוזים ותאריכי תפוגה (${list.length})</span>${nextExp?`<span style="font-size:10px;color:var(--text2)">הקרוב לתפוגה: <b style="color:var(--gold)">${nextExp}</b></span>`:''}</div>${rows}</div>`;
+  sec.innerHTML=`<div class="msec" style="border:1px solid rgba(200,169,110,.28)"><div class="msec-hdr"><span style="color:var(--gold)">📅 תפוגות לחידוש — חוזים + מוצרים (${list.length})</span>${nextExp?`<span style="font-size:10px;color:var(--text2)">הקרוב לתפוגה: <b style="color:var(--gold)">${nextExp}</b></span>`:''}</div>${rows}</div>`;
 }
 // שכפול פרויקט קיים לפרויקט חדש — לחזרה על פרויקט במידת הצורך
 function repeatProject(id){
@@ -7829,13 +7838,14 @@ function rClients(){
       const abbr=TYPE_ABBR[t]||cfg.label.replace(/^\S+\s*/,'').substring(0,3)||'?';
       return`<span title="${cfg.label}${inPot?' – בתהליך עבודה':''}" style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.04);color:${inPot?'#7b5ea7':'var(--text3)'};border:1px dashed ${inPot?'rgba(123,94,167,.5)':'rgba(255,255,255,.1)'};white-space:nowrap;font-weight:700;letter-spacing:.3px">${inPot?'🎯 ':''}${abbr}</span>`;
     }).join('')+(missingMore>0?`<span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.03);color:var(--text3);border:1px dashed rgba(255,255,255,.08);white-space:nowrap">+${missingMore}</span>`:'');
-    const contracts=clientContracts(c);
-    const contractsHtml=contracts.length?contracts.map(({s,exp})=>{
-      const d=db(nd(),exp);const col=d<0?'#e63946':d<=90?'#f4a261':'var(--teal)';
-      const kindLbl=s.ty==='equipment'?'ציוד':'שירות';
+    const contracts=clientRenewables(c);
+    const _contShown=contracts.slice(0,5);
+    const contractsHtml=contracts.length?_contShown.map(o=>{
+      const d=db(nd(),o.exp);const col=d<0?'#e63946':d<=90?'#f4a261':'var(--teal)';
       const tail=d<0?' · פג':d<=90?` · ${d}י`:'';
-      return`<span title="חוזה ${kindLbl}${s.pj?' · פרויקט '+esc(s.pj):''} · ${s.term} חודשים · התחלה ${fmtDate(s.cstart)}" style="font-size:9px;padding:2px 7px;border-radius:20px;background:${col}18;color:${col};border:1px solid ${col}44;white-space:nowrap;font-weight:700">🔄 ${kindLbl} עד ${fmtDate(exp)}${tail}</span>`;
-    }).join(''):'';
+      const nm=o.label.replace(/^[^\p{L}\p{N}]+\s*/u,'')||o.label; // מסיר רק אימוג'י מוביל, לא מילה
+      return`<span title="${esc(o.label)}${o.sub?' · '+esc(o.sub):''} · ${esc(o.detail)}" style="font-size:9px;padding:2px 7px;border-radius:20px;background:${col}18;color:${col};border:1px solid ${col}44;white-space:nowrap;font-weight:700">🔄 ${esc(nm)} עד ${fmtDate(o.exp)}${tail}</span>`;
+    }).join('')+(contracts.length>_contShown.length?`<span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.03);color:var(--text3);border:1px solid rgba(255,255,255,.1);white-space:nowrap">+${contracts.length-_contShown.length}</span>`:''):'';
     const mRev=clientMonthlyRevenue(c);
     const mTotal=mRev.reduce((s,x)=>s+x.val,0);
     const mBreakHtml=mRev.length>1?mRev.map(x=>`<span style="font-size:9px;padding:2px 6px;border-radius:8px;background:rgba(212,168,71,.1);color:var(--gold);border:1px solid rgba(212,168,71,.25);white-space:nowrap">${x.cfg.label.split(' ')[0]} ${fmt(x.val)}</span>`).join(''):(mRev.length===1?`<span style="font-size:9px;color:var(--text3)">${mRev[0].cfg.label}</span>`:'');
@@ -7879,7 +7889,7 @@ function rClients(){
         <div style="display:flex;flex-wrap:wrap;gap:3px">${missingHtml||'<span style="font-size:10px;color:var(--text3)">–</span>'}</div>
       </div>
       ${contracts.length?`<div style="border-top:1px solid var(--border);padding-top:6px;margin-bottom:6px">
-        <div style="font-size:10px;font-weight:800;color:var(--gold);letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase">📅 חוזים ותאריכי תפוגה</div>
+        <div style="font-size:10px;font-weight:800;color:var(--gold);letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase">📅 תפוגות לחידוש (חוזים + מוצרים)</div>
         <div style="display:flex;flex-wrap:wrap;gap:3px">${contractsHtml}</div>
       </div>`:''}
       ${potActive.length?(()=>{const late=potActive.filter(p=>{const cl2=contactLight(p);return cl2&&cl2.lvl===3;}).length;return`<div class="pot-chip" style="${late?'border-color:rgba(230,57,70,.55)':''}">🎯 ${potActive.length} בתהליך עבודה לקוחות${potVal?` · ${fmt(potVal)}`:''}${late?` · <b style="color:#e63946">🔴 ${late} ללא קשר!</b>`:''}</div>`;})():''}
