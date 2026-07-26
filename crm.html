@@ -5302,6 +5302,8 @@ function alertGo(i){
     if(!cid&&al.co){const c=findClientByName(al.co);cid=c&&c.id;}
     if(cid&&typeof openClientModal==='function'){openClientModal(cid);return;}
   }
+  // משימות — מעבר למסך המשימות, ופתיחת המשימה הספציפית אם יש מזהה
+  if(al.kind==='task'){ nav('tasks'); if(al.id)setTimeout(()=>openM('task',al.id),340); return; }
   const secMap={deal:'deals',dist:'dists',salary:'salary',tender:'tenders',meetings:'meetings'};
   const mtypeMap={deal:'deal',dist:'dist',salary:'salary',tender:'tender',meetings:'meeting'};
   const sec=secMap[al.kind];
@@ -5412,6 +5414,12 @@ function getAlerts(){
   const allMissedMtgs=D.meetings.filter(m=>m.dt&&m.dt<t&&m.hl!=='כן'&&m.hl!=='מבוטל').sort((a,b)=>b.dt.localeCompare(a.dt));
   const missedMtgs=allMissedMtgs.slice(0,3);
   if(missedMtgs.length)a.push({type:'warn',h:`🤝 פגישות שלא סומנו (${allMissedMtgs.length})`,s:missedMtgs.map(m=>`${m.cl} ${fmtDate(m.dt)}`).join(', ')+(allMissedMtgs.length>3?` ועוד ${allMissedMtgs.length-3}...`:''),kind:'meetings',id:missedMtgs[0].id,co:missedMtgs[0].cl});
+  // משימות פתוחות — באיחור (לפני היום) ולהיום. כדי שלא יפספסו אותן בלוח הבקרה/התראות.
+  const _openTasks=(D.tasks||[]).filter(x=>x.st!=='הושלם');
+  const overdueTasks=_openTasks.filter(x=>x.dt&&x.dt<t).sort((a,b)=>a.dt.localeCompare(b.dt));
+  if(overdueTasks.length){const top=overdueTasks.slice(0,3);a.push({type:overdueTasks.length>=3?'crit':'warn',h:`📋 משימות באיחור (${overdueTasks.length})`,s:top.map(x=>`${esc(x.t||'משימה')}${x.cl?' · '+x.cl:''} (${fmtDate(x.dt)})`).join(' | ')+(overdueTasks.length>3?` ועוד ${overdueTasks.length-3}...`:''),kind:'task',id:overdueTasks[0].id,co:overdueTasks[0].cl});}
+  const todayTasks=_openTasks.filter(x=>x.dt===t).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  if(todayTasks.length){const top=todayTasks.slice(0,4);a.push({type:'info',h:`✅ משימות להיום (${todayTasks.length})`,s:top.map(x=>`${x.time?x.time+' – ':''}${esc(x.t||'משימה')}${x.cl?' · '+x.cl:''}`).join(' | ')+(todayTasks.length>4?` ועוד ${todayTasks.length-4}...`:''),kind:'task',id:todayTasks[0].id,co:todayTasks[0].cl});}
   a.push(...getClientAlerts());
   document.getElementById('acnt').textContent=a.length;
   const dot=document.getElementById('mob-alert-dot');
