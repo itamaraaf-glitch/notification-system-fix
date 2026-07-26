@@ -5290,7 +5290,7 @@ function getAlerts(){
       if(dToExp<=90){
         const kind=sl.ty==='equipment'?'ציוד':'שירות';
         const urg=dToExp<0?`פג לפני ${Math.abs(dToExp)} ימים — לחדש עכשיו!`:dToExp===0?'פג היום!':`${dToExp} ימים לתפוגה`;
-        a.push({type:dToExp<=30?'crit':'warn',h:`🔄 חידוש חוזה – ${sl.cl}${sl.pj?' · פרויקט '+sl.pj:''}`,s:`חוזה ${kind} מסתיים ${fmtDate(exp)} (${urg}) | תקופה: ${sl.term} חודשים | התחלה: ${fmtDate(sl.cstart)}`,co:sl.cl,kind:'salary',id:sl.id,meta:{expiry:exp,days:dToExp}});
+        a.push({type:dToExp<=30?'crit':'warn',h:`🔄 חידוש חוזה – ${sl.cl}${sl.pj?' · פרויקט '+sl.pj:''}`,s:`חוזה ${kind} מסתיים ${fmtDate(exp)} (${urg}) | תקופה: ${sl.term} חודשים | התחלה: ${fmtDate(sl.cstart)}`,co:sl.cl,kind:'salary',id:sl.id,meta:{expiry:exp,days:dToExp,term:sl.term,kindLabel:kind,renew:true}});
       }
     }
   });
@@ -5339,9 +5339,14 @@ function rAlerts(){
       const tip=has?'שלח את ההתראה במייל ללקוח':(c?'אין מייל ללקוח – הוסף בכרטיס':'אין כרטיס לקוח – ייפתח כרטיס חדש');
       mailBtn=`<button class="btn btns" onclick="event.stopPropagation();sendAlertEmail(${i})" title="${tip}" style="margin-top:8px;border-color:#4cc9f0;color:#4cc9f0;opacity:${has?1:.6}">📧 שלח ללקוח</button>`;
     }
+    // חוזה שכר לחידוש → כפתור חידוש בלחיצה אחת (מאריך את החוזה לתקופה נוספת)
+    let renewBtn='';
+    if(x.meta&&x.meta.renew&&x.id){
+      renewBtn=`<button class="btn btns" onclick="event.stopPropagation();renewContract('${x.id}')" title="חדש את החוזה לתקופה נוספת (${x.meta.term||''} חודשים)" style="margin-top:8px;border-color:var(--teal);color:var(--teal)">🔄 חדש חוזה</button>`;
+    }
     // לחיצה על הכרטיס = קיצור דרך ישיר לנושא הרלוונטי
     const clickable=!!(x.kind||x.cid);
-    return`<div class="ac ${x.type}"${clickable?` onclick="alertGo(${i})" style="cursor:pointer" title="לחץ למעבר ישיר לפרטים בנושא"`:''}><div class="at">${x.type==='crit'?'🔴 קריטי':x.type==='warn'?'🟠 אזהרה':'ℹ מידע'}${clickable?'<span style="float:left;font-size:10px;color:var(--text3);font-weight:600">↗ פתח בנושא</span>':''}</div><div class="ah">${esc(x.h)}</div><div class="as">${esc(x.s)}</div>${mailBtn}</div>`;
+    return`<div class="ac ${x.type}"${clickable?` onclick="alertGo(${i})" style="cursor:pointer" title="לחץ למעבר ישיר לפרטים בנושא"`:''}><div class="at">${x.type==='crit'?'🔴 קריטי':x.type==='warn'?'🟠 אזהרה':'ℹ מידע'}${clickable?'<span style="float:left;font-size:10px;color:var(--text3);font-weight:600">↗ פתח בנושא</span>':''}</div><div class="ah">${esc(x.h)}</div><div class="as">${esc(x.s)}</div><div style="display:flex;gap:8px;flex-wrap:wrap">${mailBtn}${renewBtn}</div></div>`;
   }).join(''):`<div style="text-align:center;padding:50px 20px;grid-column:1/-1">
     <div style="color:rgba(6,214,160,.25);font-size:48px;margin-bottom:12px">✅</div>
     <div style="font-size:14px;font-weight:700;color:var(--teal);margin-bottom:6px">אין התראות פעילות</div>
@@ -5460,14 +5465,27 @@ function buildAlertEmail(c,al){
       ];
       break;
     default: // salary / generic
-      subject='HOT Business – המשך טיפול בפרויקט שלכם';
-      lines=[
-        'שלום '+greet+',',
-        '',
-        'ברצוננו לוודא שהכל מתנהל לשביעות רצונכם ולתאם את המשך הטיפול בפרויקט שלכם.',
-        '',
-        'נשמח לתאם שיחה קצרה בנוחותכם.'
-      ];
+      if(m.renew){ // חוזה שכר לחידוש
+        subject='HOT Business – חידוש חוזה '+(m.kindLabel||'שירות');
+        lines=[
+          'שלום '+greet+',',
+          '',
+          'ברצוננו להזכיר כי חוזה ה'+(m.kindLabel||'שירות')+' שלכם '+
+            (m.days<0?'הסתיים בתאריך '+fmtDate(m.expiry)+'.':m.days===0?'מסתיים היום.':'עתיד להסתיים בעוד '+m.days+' ימים (בתאריך '+fmtDate(m.expiry)+').'),
+          'נשמח להמשיך וללוות אתכם בשירות רציף ואיכותי, ולחדש יחד את ההתקשרות ללא הפרעה לרצף השירות.',
+          '',
+          'נשמח לתאם שיחה קצרה בנוחותכם להשלמת חידוש החוזה.'
+        ];
+      }else{
+        subject='HOT Business – המשך טיפול בפרויקט שלכם';
+        lines=[
+          'שלום '+greet+',',
+          '',
+          'ברצוננו לוודא שהכל מתנהל לשביעות רצונכם ולתאם את המשך הטיפול בפרויקט שלכם.',
+          '',
+          'נשמח לתאם שיחה קצרה בנוחותכם.'
+        ];
+      }
   }
   const body=lines.concat(['',''], sign).join('\n'); // RTL applied centrally at send time
   return {subject, body};
@@ -8985,6 +9003,20 @@ function addMonths(dateStr,months){
 }
 // תאריך תפוגת חוזה: תאריך התחלה + תקופת החוזה (חודשים). ריק אם חסר אחד מהם.
 function salExpiry(s){ if(!s)return ''; return addMonths(s.cstart,+s.term||0); }
+// חידוש חוזה בלחיצה אחת: מאריך את החוזה לתקופה נוספת.
+// אם החוזה עדיין בתוקף — התקופה החדשה ממשיכה מיום התפוגה (רציף);
+// אם כבר פג — מתחילה מהיום. התאריך הישן נשמר להיסטוריה.
+function renewContract(id){
+  const s=(D.salary||[]).find(x=>x.id==id); if(!s)return;
+  let term=+s.term||0;
+  if(!term){ openM('salary',id); showToast('בחר תקופת חוזה כדי לחדש','warn'); return; }
+  const today=nd(), oldExp=salExpiry(s)||today;
+  const newStart=(oldExp>today)?oldExp:today; // רציף אם בתוקף, אחרת מהיום
+  dbUpdate('salary',id,{cstart:newStart,st:'סגור',_renewedAt:today,_renewedFrom:(s.cstart||'')});
+  const s2=(D.salary||[]).find(x=>x.id==id);
+  rAll();
+  showToast('🔄 החוזה חודש — תפוגה חדשה: '+fmtDate(salExpiry(s2)),'ok');
+}
 // עדכון תצוגת התפוגה בטופס + מילוי אוטומטי של תאריך התחלה בעת סגירה
 function salExpUpdate(){
   const st=document.getElementById('sst'), term=document.getElementById('sterm'), start=document.getElementById('sstart'), box=document.getElementById('sexp-box');
