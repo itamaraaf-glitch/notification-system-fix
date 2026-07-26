@@ -4965,11 +4965,25 @@ function priFilterBar(secId){
     L.map(([lv,lb],i)=>`<button class="pfchip${i===0?' active':''}" data-lv="${lv}" onclick="setSecFilter('${secId}','${lv}',this)">${lb}</button>`).join('')+
     `</div>`;
 }
+// מצב הסינון הפעיל לכל נושא — הרינדור קורא אותו ומסנן את הנתונים, כך שגם
+// השורות וגם כל הסיכומים/הסכומים בתחתית מתחשבים בסינון.
+window._priFilter={deals:'',tenders:'',dists:'',salary:''};
+const _SEC_FILTER={
+  'sec-deals':{key:'deals',render:'rDeals'},
+  'sec-tenders':{key:'tenders',render:'rTenders'},
+  'sec-dists':{key:'dists',render:'rDists'},
+  'sec-salary':{key:'salary',render:'rSalary'}
+};
 function setSecFilter(secId, level, btn){
-  const sec=document.getElementById(secId); if(!sec)return;
-  sec.classList.remove('pf-r','pf-o','pf-y','pf-g');
-  if(level) sec.classList.add('pf-'+level);
+  const cfg=_SEC_FILTER[secId]; if(!cfg)return;
+  _priFilter[cfg.key]=level||'';
   const bar=btn&&btn.closest('.prifilt'); if(bar) bar.querySelectorAll('.pfchip').forEach(c=>c.classList.toggle('active',c===btn));
+  if(typeof window[cfg.render]==='function') window[cfg.render](); // רינדור מחדש → הסכומים מתעדכנים לפי הסינון
+}
+// עוזר: מסנן רשימה לפי הדחיפות הפעילה של הנושא (ריק = הכל)
+function _applyPri(list, secKey, priType){
+  const lv=window._priFilter&&_priFilter[secKey];
+  return lv ? list.filter(x=>pri(x,priType)===lv) : list;
 }
 function _initPriFilters(){ document.querySelectorAll('.pf-slot').forEach(s=>{ if(!s.firstChild) s.innerHTML=priFilterBar(s.dataset.target); }); }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',_initPriFilters); else _initPriFilters();
@@ -5773,7 +5787,7 @@ function rDeals(){
   D.meetings.forEach(m=>{ if((m.dt||'')>=_curDateStr&&m.hl!=='מבוטל'){ const k=nrmCo(m.cl); if(k&&!_upMtgByCo.has(k))_upMtgByCo.set(k,m); }});
   ['long','short'].forEach(ty=>{
     const tbId=ty==='long'?'ltb':'stb',ftId=ty==='long'?'lft':'sft';
-    const items=D.deals.filter(d=>d.ty===ty);
+    const items=_applyPri(D.deals.filter(d=>d.ty===ty),'deals','deal');
     const sk=ty==='long'?'deals-long':'deals-short';
     const carries=items.filter(d=>(d.date||'').substring(0,7)<curM&&d.st!=='נסגר');
     const newThis=items.filter(d=>(d.date||'').substring(0,7)>=curM&&d.st!=='נסגר');
@@ -6254,7 +6268,8 @@ function rMeetingsArchive(){
 
 function rTenders(){
   const t=nd();
-  document.getElementById('ttb').innerHTML=D.tenders.map(tn=>{
+  const _tn=_applyPri(D.tenders,'tenders','ten'); // רשימה מסוננת לפי הדחיפות הפעילה
+  document.getElementById('ttb').innerHTML=_tn.map(tn=>{
     const p=pri(tn,'ten');
     const sb2=tn.submitted==='כן'?'<span class="badge bg">הוגשה ✓</span>':tn.submitted==='בתהליך'?'<span class="badge by">בתהליך</span>':'<span class="badge br">לא</span>';
     const lb=tn.linked==='כן'?'<span class="badge bg">כן</span>':'<span class="badge br">לא</span>';
@@ -6262,12 +6277,12 @@ function rTenders(){
     const chk=SEL['tenders']&&SEL['tenders'].has(tn.id)?'checked':'';
     return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-tenders" ${chk} onchange="toggleSel('tenders','${tn.id}')"></td><td>${pB(p)}</td><td>${sb2}</td><td>${tn.qty||1}</td><td style="font-size:10px">${fmtDate(tn.pub)}</td><td style="font-weight:600;min-width:120px">${esc(tn.name||'')}</td><td style="font-size:10px">${esc(tn.proj||'–')}</td><td>${(()=>{const u=safeUrl(tn.link);return u?`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer" style="color:#4cc9f0;font-size:10px">🔗</a>`:'–';})()}</td><td style="font-size:10px">${fmtDate(tn.quote)}</td><td>${qd}</td><td>${tn.rounds||'–'}</td><td style="font-weight:600;color:#e63946;font-size:10px">${fmtDate(tn.deadline)}</td><td style="font-size:10px">${esc(tn.handler||'–')}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${esc(tn.docs||'–')}</td><td>${lb}</td><td class="nb">${fmt(tn.amount)}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${esc(tn.notes||'–')}</td><td style="white-space:nowrap">${(()=>{if(tn.result){const won=tn.result==='זכייה',rc=won?'#06d6a0':'#e63946';return`<span onclick="openM('tender','${tn.id}')" title="${tn.result} — ${fmtDate(tn.resultDate)}" style="cursor:pointer;font-size:9px;font-weight:800;padding:2px 8px;border-radius:12px;background:${rc}18;color:${rc};border:1px solid ${rc}44;white-space:nowrap">${won?'🏆 זכייה':'❌ אי-זכייה'}</span> `;}const sd=tenderStageCount(tn);const nx=tenderNextStage(tn);const fc=sd===TENDER_STAGES.length?'#a78bfa':sd>0?'#f4a261':'var(--text3)';return`<span onclick="openM('tender','${tn.id}')" title="${nx?'הבא בתור: '+nx.l:'הוגש — ממתין לתוצאה: סמן זכייה/אי-זכייה בגרף'}" style="cursor:pointer;font-size:9px;font-weight:800;padding:2px 8px;border-radius:12px;background:${fc}18;color:${fc};border:1px solid ${fc}44;white-space:nowrap">🗺️ ${sd}/${TENDER_STAGES.length}${sd===TENDER_STAGES.length?' 🏁':''}</span> `;})()}<button class="btn btns" onclick="showTenderTeamMenu('${tn.id}',event)" title="מייל פנימי: התנעה / איפיון / משפטית / ביטוח / חתימות" style="border-color:#a78bfa;color:#a78bfa">📧</button> <button class="btn btns" onclick="showTenderReqMenu('${tn.id}',event)" title="מייל למבקש המכרז" style="border-color:#4cc9f0;color:#4cc9f0">📨</button> <button class="btn btns" onclick="schedMeetFromTender('${tn.id}')" title="קבע פגישה למכרז" style="border-color:#06d6a0;color:#06d6a0">📅</button> ${(tn.files&&tn.files.length)?`<button class="btn btns" onclick="rowFilesMenu('tenders','${tn.id}',event)" title="${tn.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${tn.files.length>1?tn.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('tender','${tn.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('tenders','${tn.id}')">🗑</button></td></tr>`;
   }).join('')||emptyRow(18,'📋',"אין מכרזים","openM('tender',null)");
-  const ta=D.tenders.reduce((s,t)=>s+(t.amount||0),0);
-  const tsubmit=D.tenders.filter(t=>t.submitted==='כן').length;
-  const tpend=D.tenders.filter(t=>t.submitted!=='כן').length;
+  const ta=_tn.reduce((s,t)=>s+(t.amount||0),0);
+  const tsubmit=_tn.filter(t=>t.submitted==='כן').length;
+  const tpend=_tn.filter(t=>t.submitted!=='כן').length;
   const thdrInfo=document.getElementById('tender-thdr-info');
-  if(thdrInfo)thdrInfo.innerHTML=`· ${D.tenders.length} סה"כ | <span style="color:#06d6a0">${tsubmit} הוגשו</span> | <span style="color:#f4a261">${tpend} ממתינים</span>`;
-  document.getElementById('tft').innerHTML=`<span class="fi">מכרזים: <b>${D.tenders.length}</b></span><span class="fi">הוגשו: <b>${tsubmit}</b></span><span class="fi">ממתינים: <b>${tpend}</b></span><span class="fi">שווי: <b>${fmt(ta)}</b></span>`;
+  if(thdrInfo)thdrInfo.innerHTML=`· ${_tn.length} סה"כ | <span style="color:#06d6a0">${tsubmit} הוגשו</span> | <span style="color:#f4a261">${tpend} ממתינים</span>`;
+  document.getElementById('tft').innerHTML=`<span class="fi">מכרזים: <b>${_tn.length}</b></span><span class="fi">הוגשו: <b>${tsubmit}</b></span><span class="fi">ממתינים: <b>${tpend}</b></span><span class="fi">שווי: <b>${fmt(ta)}</b></span>`;
   updateSelBar('tenders');
 }
 
@@ -6287,7 +6302,7 @@ function rDists(){
   }
   ['long','short'].forEach(ty=>{
     const tbId=ty==='long'?'ldtb':'sdtb',ftId=ty==='long'?'ldft':'sdft';
-    const items=D.dists.filter(d=>d.ty===ty);const t=nd();
+    const items=_applyPri(D.dists.filter(d=>d.ty===ty),'dists','dist');const t=nd();
     const sk=ty==='long'?'dists-long':'dists-short';
     document.getElementById(tbId).innerHTML=items.map(d=>{
       const p=pri(d,'dist');
@@ -6363,7 +6378,7 @@ function rSalary(){
     +`</div>`;
   ['service','equipment'].forEach(ty=>{
     const tbId=ty==='service'?'svctb':'eqtb',ftId=ty==='service'?'svcft':'eqft';
-    const items=D.salary.filter(s=>s.ty===ty);
+    const items=_applyPri(D.salary.filter(s=>s.ty===ty),'salary','sal');
     const sk=ty==='service'?'salary-service':'salary-equip';
     document.getElementById(tbId).innerHTML=items.map(s=>{
       const pct=s.tr?Math.round(((s.cl2||0)/s.tr)*100):0,pc=pct>=100?'var(--teal)':pct>=50?'#f4a261':'#e63946',p=pri(s,'sal');
