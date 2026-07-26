@@ -6608,7 +6608,7 @@ function rDists(){
           ? `<br><span title="הלקוח קיבל את הסטטוס הנוכחי${d._cliSyncAt?' ('+fmtDate(ymd(new Date(d._cliSyncAt)))+')':''}" style="font-size:8.5px;color:var(--teal);font-weight:700">✓ לקוח עודכן</span>`
           : `<br><span title="הסטטוס השתנה מאז העדכון האחרון ללקוח — שלח קישור מעודכן" style="font-size:8.5px;color:#f4a261;font-weight:700">⚠ ממתין לעדכון</span>`;
       }
-      return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${esc(d.hd||'–')}</td><td style="font-size:10px;color:var(--blue);font-weight:600">${esc(d.no||'–')}</td><td style="font-weight:600">${esc(d.co||'')}</td><td style="font-size:10px">${esc(d.cl||'–')}</td><td style="font-size:10px">${esc(d.it||'–')}</td><td>${esc(d.so||'–')}</td><td style="font-size:10px">${esc(d.ad||'–')}</td><td class="nb">${d.tgt?fmt(d.tgt):'–'}</td><td class="ng">${fmt(d.inc)}</td><td>${pctCell}</td><td class="nb">${fmt(d.eq)}</td><td style="font-size:10px;color:${d.mi?'#f4a261':'var(--text3)'}">${esc(d.mi||'אין')}</td><td>${sB(d.st)}${cliBadge}</td><td style="font-size:10px">${fmtDate(d.dt)}</td><td>${days}</td><td style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">${esc(d.notes||'–')}</td><td style="white-space:nowrap">${(d.files&&d.files.length)?`<button class="btn btns" onclick="rowFilesMenu('dists','${d.id}',event)" title="${d.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${d.files.length>1?d.files.length:''}</button> `:''}${(d.da||d.ad)?`<button class="btn btns" onclick="navAddr('${d.id}')" title="נווט ב-Waze: ${esc(d.da||d.ad)}" style="border-color:#4cc9f0;color:#4cc9f0">🗺️</button> `:''}${emailBtn}<button class="btn btns" onclick="trackDistById('${d.id}')" title="🔗 קישור מעקב ללקוח" style="border-color:#a78bfa;color:#a78bfa">🔗</button> <button class="btn btns" onclick="openM('dist','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('dists','${d.id}')">🗑</button></td></tr>`;
+      return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${esc(d.hd||'–')}</td><td style="font-size:10px;color:var(--blue);font-weight:600">${esc(d.no||'–')}</td><td style="font-weight:600">${esc(d.co||'')}</td><td style="font-size:10px">${esc(d.cl||'–')}</td><td style="font-size:10px">${esc(d.it||'–')}</td><td>${esc(d.so||'–')}</td><td style="font-size:10px">${esc(d.ad||'–')}</td><td class="nb">${d.tgt?fmt(d.tgt):'–'}</td><td class="ng">${fmt(d.inc)}</td><td>${pctCell}</td><td class="nb">${fmt(d.eq)}</td><td style="font-size:10px;color:${d.mi?'#f4a261':'var(--text3)'}">${esc(d.mi||'אין')}</td><td><span onclick="event.stopPropagation();advanceDistStatus('${d.id}')" title="לחץ לקידום הסטטוס (ממתין→בהתקנה→הושלם)" style="cursor:pointer">${sB(d.st)}</span>${cliBadge}</td><td style="font-size:10px">${fmtDate(d.dt)}</td><td>${days}</td><td style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">${esc(d.notes||'–')}</td><td style="white-space:nowrap">${(d.files&&d.files.length)?`<button class="btn btns" onclick="rowFilesMenu('dists','${d.id}',event)" title="${d.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${d.files.length>1?d.files.length:''}</button> `:''}${(d.da||d.ad)?`<button class="btn btns" onclick="navAddr('${d.id}')" title="נווט ב-Waze: ${esc(d.da||d.ad)}" style="border-color:#4cc9f0;color:#4cc9f0">🗺️</button> `:''}${emailBtn}<button class="btn btns" onclick="trackDistById('${d.id}')" title="🔗 קישור מעקב ללקוח" style="border-color:#a78bfa;color:#a78bfa">🔗</button> <button class="btn btns" onclick="openM('dist','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('dists','${d.id}')">🗑</button></td></tr>`;
     }).join('')||emptyRow(19,'🚀',"אין הפצות","openM('dist',null)");
     const ti=items.reduce((s,d)=>s+(d.inc||0),0),te=items.reduce((s,d)=>s+(d.eq||0),0),tt=items.reduce((s,d)=>s+(d.tgt||0),0);
     const perf=tt?Math.round(ti/tt*100):0;
@@ -10181,6 +10181,20 @@ function _promptSendTrack(dist, changed){
     ? `📦 הסטטוס עודכן ל"${dist.st}". לשלוח${who} קישור מעקב מעודכן?`
     : `📦 נוצרה הפצה עבור${who}. לשלוח קישור מעקב אחר הסטטוס?`;
   confirmAct(msg, ()=>promptTrackShare(dist), '🔗 שלח קישור מעקב');
+}
+// קידום סטטוס הפצה בלחיצה: ממתין להפצה → בהתקנה → הושלם → (מתחיל מחדש). בעיה → בהתקנה.
+// מסנכרן ללקוח בהשלמה ומזכיר לשלוח עדכון מעקב — בדיוק כמו שמירה מהמודאל.
+function advanceDistStatus(id){
+  const d=(D.dists||[]).find(x=>x.id==id); if(!d)return;
+  const flow={'ממתין להפצה':'בהתקנה','בהתקנה':'הושלם','בעיה':'בהתקנה','הושלם':'ממתין להפצה'};
+  const next=flow[d.st]||'בהתקנה';
+  dbUpdate('dists',id,{st:next});
+  const nd2=D.dists.find(x=>x.id==id);
+  if(next==='הושלם'&&nd2)syncDistToClient(nd2);
+  rAll();
+  showToast('📦 סטטוס ההפצה עודכן ל"'+next+'"','ok');
+  const hasClient=!!(nd2&&(String(nd2.cle||'').trim()||String(nd2.cl||'').trim()));
+  if(hasClient)_promptSendTrack(nd2,true); // תזכורת לעדכן את הלקוח בקישור המעקב
 }
 function saveSal(){
   const row={pj:document.getElementById('spj').value,cl:document.getElementById('scl').value,qt:+document.getElementById('sqt').value,tr:+document.getElementById('str').value,cl2:+document.getElementById('scl2').value,pv:+document.getElementById('spv').value,st:document.getElementById('sst').value,ty:document.getElementById('sty').value,no:document.getElementById('sno').value,term:+document.getElementById('sterm').value||0,cstart:document.getElementById('sstart').value||'',files:_attPending['salary']||[]};
