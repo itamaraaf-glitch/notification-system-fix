@@ -1217,6 +1217,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 .pfchip{font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text2);cursor:pointer;transition:.15s;font-family:inherit;white-space:nowrap}
 .pfchip:hover{border-color:var(--text3);color:var(--text)}
 .pfchip.active{background:rgba(76,201,240,.16);border-color:rgba(76,201,240,.55);color:#4cc9f0;box-shadow:0 0 10px rgba(76,201,240,.2)}
+.pfcnt{font-weight:800;font-size:10px;opacity:.85}
+.pfcnt:empty{display:none}
 /* הסינון מתבצע ברינדור מחדש ב-JS (setSecFilter→_applyPri), לא ב-CSS.
    כללי ה-CSS הישנים (.sec.pf-*) הוסרו כדי שלא יסתירו שורות בטעות. */
 /* ── Mobile nav scroll fade hint ── */
@@ -4985,8 +4987,22 @@ function pC(p){return{r:'pr',o:'po',y:'py',g:'pg'}[p];}
 function priFilterBar(secId){
   const L=[['','הכל'],['r','🔴 קריטי'],['o','🟠 דחוף'],['y','🟡 מעקב'],['g','🟢 תקין']];
   return `<div class="prifilt"><span class="pflbl">סינון (אפשר לבחור כמה):</span>`+
-    L.map(([lv,lb],i)=>`<button class="pfchip${i===0?' active':''}" data-lv="${lv}" onclick="setSecFilter('${secId}','${lv}',this)">${lb}</button>`).join('')+
+    L.map(([lv,lb],i)=>`<button class="pfchip${i===0?' active':''}" data-lv="${lv}" onclick="setSecFilter('${secId}','${lv}',this)">${lb}<span class="pfcnt"></span></button>`).join('')+
     `</div>`;
+}
+// מונה חי לכל צ'יפ: כמה פריטים בכל רמת דחיפות (על כל פריטי הנושא, ללא תלות בסינון הפעיל).
+// כך רואים "🔴 קריטי (3)" עוד לפני הלחיצה, וברור שהסינון תואם למספרים.
+function updatePriChipCounts(secId,list,priType){
+  const slot=document.querySelector('.pf-slot[data-target="'+secId+'"]'); if(!slot)return;
+  const counts={r:0,o:0,y:0,g:0};
+  (list||[]).forEach(x=>{const p=pri(x,priType);if(counts[p]!=null)counts[p]++;});
+  slot.querySelectorAll('.pfchip').forEach(c=>{
+    const lv=c.getAttribute('data-lv'), el=c.querySelector('.pfcnt');
+    if(!el)return;
+    const n = lv ? counts[lv] : (list||[]).length;
+    el.textContent = n ? ' '+n : '';
+    c.style.opacity = (lv && !n) ? '.4' : '';   // רמה ריקה — מעומעם כדי לכוון את המשתמש
+  });
 }
 // מצב הסינון הפעיל לכל נושא — מערך של רמות דחיפות (בחירה מרובה). ריק = הכל.
 // הרינדור קורא אותו ומסנן, כך שגם השורות וגם כל הסכומים מתחשבים בסינון.
@@ -5714,6 +5730,7 @@ function rDash(){
 
 // ===== DEALS =====
 function rDeals(){
+  updatePriChipCounts('sec-deals',D.deals,'deal');
   const curM=nd().substring(0,7);
   // ── סיכום עסקאות ברור (לפי "חודש נוכחי" / mv) — כדי לדעת בדיוק כמה נשאר לסגור החודש ──
   (function(){
@@ -6332,6 +6349,7 @@ function rMeetingsArchive(){
 }
 
 function rTenders(){
+  updatePriChipCounts('sec-tenders',D.tenders,'ten');
   const t=nd();
   const _tn=_applyPri(D.tenders,'tenders','ten'); // רשימה מסוננת לפי הדחיפות הפעילה
   document.getElementById('ttb').innerHTML=_tn.map(tn=>{
@@ -6353,6 +6371,7 @@ function rTenders(){
 
 // ===== DISTS =====
 function rDists(){
+  updatePriChipCounts('sec-dists',D.dists,'dist');
   const gt=document.getElementById('dist-goal-top');
   if(gt){
     // יעד חודשי: רק ההפצות של התקופה הפעילה (ללא ארכיון), עקבי עם יעדי העסקאות.
@@ -6417,6 +6436,7 @@ function rDistSum(){
 
 // ===== SALARY =====
 function rSalary(){
+  updatePriChipCounts('sec-salary',D.salary,'sal');
   // סיכומים אוטומטיים לפרויקטי שכר — שירות וציוד בנפרד, מחושבים מכל הטבלה
   const _salTile=(lbl,val,clr,bg)=>`<div class="stat-mini" style="background:${bg};border:1px solid ${clr}33"><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${lbl}</div><div style="font-size:18px;font-weight:900;color:${clr}">${val}</div></div>`;
   const _salGroup=(title,accent,items)=>{
