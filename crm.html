@@ -2579,7 +2579,10 @@ const SEL = {};
 
 // ===== UTILS =====
 const now = () => new Date();
-const nd = () => now().toISOString().split('T')[0];
+// תאריך מקומי YYYY-MM-DD — לא UTC. חשוב: toISOString מחזיר UTC ובישראל (UTC+2/+3)
+// זה מקפיץ את התאריך יום אחורה בלילה. ymd משתמש ברכיבי התאריך המקומיים.
+const ymd = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const nd = () => ymd(now());
 // אבטחה: בריחת HTML לכל תוכן שמקורו חיצוני (מיילים, שמות לקוחות, קבצים) לפני הזרקה ל-innerHTML.
 // מונע XSS: תוקף ששולח מייל עם <img src=x onerror=...> בנושא/שולח/גוף לא יוכל להריץ קוד במערכת.
 const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -5364,7 +5367,7 @@ function getAlerts(){
   if(todayMtgsAlert.length){const m0=todayMtgsAlert[0];a.push({type:'warn',h:`📅 פגישות היום (${todayMtgsAlert.length})`,s:todayMtgsAlert.map(m=>`${m.time?m.time+' – ':''}${m.cl||''}`).filter(Boolean).join(' | '),kind:'meetings',id:m0.id,co:m0.cl});}
   // Tomorrow's meetings reminder
   const tomorrow=new Date(now());tomorrow.setDate(tomorrow.getDate()+1);
-  const tomorrowStr=tomorrow.toISOString().split('T')[0];
+  const tomorrowStr=ymd(tomorrow);
   const tomorrowMtgs=D.meetings.filter(m=>m.dt===tomorrowStr&&m.hl!=='מבוטל').sort((a,b)=>(a.time||'').localeCompare(b.time||''));
   if(tomorrowMtgs.length){const m0=tomorrowMtgs[0];a.push({type:'info',h:`📅 פגישות מחר (${tomorrowMtgs.length})`,s:tomorrowMtgs.map(m=>`${m.time?m.time+' – ':''}${m.cl||''}`).filter(Boolean).join(' | '),kind:'meetings',id:m0.id,co:m0.cl});}
   // Missed meetings (past, not held) — most recent first, show real total in header
@@ -6427,7 +6430,7 @@ function rDists(){
       let cliBadge='';
       if(d._cliSyncSt){
         cliBadge = d._cliSyncSt===d.st
-          ? `<br><span title="הלקוח קיבל את הסטטוס הנוכחי${d._cliSyncAt?' ('+fmtDate(new Date(d._cliSyncAt).toISOString().slice(0,10))+')':''}" style="font-size:8.5px;color:var(--teal);font-weight:700">✓ לקוח עודכן</span>`
+          ? `<br><span title="הלקוח קיבל את הסטטוס הנוכחי${d._cliSyncAt?' ('+fmtDate(ymd(new Date(d._cliSyncAt)))+')':''}" style="font-size:8.5px;color:var(--teal);font-weight:700">✓ לקוח עודכן</span>`
           : `<br><span title="הסטטוס השתנה מאז העדכון האחרון ללקוח — שלח קישור מעודכן" style="font-size:8.5px;color:#f4a261;font-weight:700">⚠ ממתין לעדכון</span>`;
       }
       return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${esc(d.hd||'–')}</td><td style="font-size:10px;color:var(--blue);font-weight:600">${esc(d.no||'–')}</td><td style="font-weight:600">${esc(d.co||'')}</td><td style="font-size:10px">${esc(d.cl||'–')}</td><td style="font-size:10px">${esc(d.it||'–')}</td><td>${esc(d.so||'–')}</td><td style="font-size:10px">${esc(d.ad||'–')}</td><td class="nb">${d.tgt?fmt(d.tgt):'–'}</td><td class="ng">${fmt(d.inc)}</td><td>${pctCell}</td><td class="nb">${fmt(d.eq)}</td><td style="font-size:10px;color:${d.mi?'#f4a261':'var(--text3)'}">${esc(d.mi||'אין')}</td><td>${sB(d.st)}${cliBadge}</td><td style="font-size:10px">${fmtDate(d.dt)}</td><td>${days}</td><td style="font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">${esc(d.notes||'–')}</td><td style="white-space:nowrap">${(d.files&&d.files.length)?`<button class="btn btns" onclick="rowFilesMenu('dists','${d.id}',event)" title="${d.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${d.files.length>1?d.files.length:''}</button> `:''}${emailBtn}<button class="btn btns" onclick="trackDistById('${d.id}')" title="🔗 קישור מעקב ללקוח" style="border-color:#a78bfa;color:#a78bfa">🔗</button> <button class="btn btns" onclick="openM('dist','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('dists','${d.id}')">🗑</button></td></tr>`;
@@ -8602,7 +8605,7 @@ function _paDialog(name,role){
   _paDlgMeetingId=null;
   // ברירת מחדל: מחר בשעה 10:00
   const tm=new Date();tm.setDate(tm.getDate()+1);
-  const defDt=tm.toISOString().split('T')[0];
+  const defDt=ymd(tm);
   const dlg=document.createElement('div');
   dlg.id='pa-sched-dlg';
   dlg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--s2,#101525);border:1px solid var(--border);border-radius:14px;padding:18px;z-index:99999;min-width:300px;max-width:92vw;box-shadow:0 16px 64px rgba(0,0,0,.75);direction:rtl';
@@ -9248,7 +9251,7 @@ function addMonths(dateStr,months){
   const d=new Date(dateStr+'T00:00:00'); if(isNaN(d))return '';
   const day=d.getDate(); d.setMonth(d.getMonth()+(+months));
   if(d.getDate()<day)d.setDate(0);
-  return d.toISOString().split('T')[0];
+  return ymd(d); // תאריך מקומי — למנוע הסטת יום ב-UTC
 }
 // תאריך תפוגת חוזה: תאריך התחלה + תקופת החוזה (חודשים). ריק אם חסר אחד מהם.
 function salExpiry(s){ if(!s)return ''; return addMonths(s.cstart,+s.term||0); }
