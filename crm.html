@@ -1217,10 +1217,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 .pfchip{font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text2);cursor:pointer;transition:.15s;font-family:inherit;white-space:nowrap}
 .pfchip:hover{border-color:var(--text3);color:var(--text)}
 .pfchip.active{background:rgba(76,201,240,.16);border-color:rgba(76,201,240,.55);color:#4cc9f0;box-shadow:0 0 10px rgba(76,201,240,.2)}
-.sec.pf-r tbody tr[data-pri]:not([data-pri="r"]){display:none!important}
-.sec.pf-o tbody tr[data-pri]:not([data-pri="o"]){display:none!important}
-.sec.pf-y tbody tr[data-pri]:not([data-pri="y"]){display:none!important}
-.sec.pf-g tbody tr[data-pri]:not([data-pri="g"]){display:none!important}
+/* הסינון מתבצע ברינדור מחדש ב-JS (setSecFilter→_applyPri), לא ב-CSS.
+   כללי ה-CSS הישנים (.sec.pf-*) הוסרו כדי שלא יסתירו שורות בטעות. */
 /* ── Mobile nav scroll fade hint ── */
 #mob-nav::after{
   content:'';position:absolute;left:0;top:0;bottom:0;width:22px;pointer-events:none;
@@ -4951,17 +4949,39 @@ function emptyRow(colspan,icon,msg,onclick){
 }
 
 // ===== PRIORITY =====
+// דחיפות פריט → צבע: 'r' קריטי · 'o' דחוף · 'y' מעקב · 'g' תקין.
+// חשוב: הסטטוס המפורש שהמשתמש קבע גובר תמיד — כך שתג הדחיפות תואם למה שרואים
+// בשורה (למשל "בעיה" תמיד קריטי, "הושלם/נסגר/סגור" תמיד תקין) והסינון לא "מתערבב".
 function pri(item,type){
-  if(type==='deal'){if(item.st==='נסגר')return'g';if(item.date&&(now()-new Date(item.date))/(30*86400000)>3)return'r';if((item.v||0)>10000||(item.ot||0)>50000)return'o';return'y';}
-  if(type==='dist'){if(item.st==='הושלם')return'g';if(item.dt&&db(item.dt,nd())>7)return'r';if(item.mi)return'o';return'y';}
-  if(type==='sal'){if(item.st==='סגור')return'g';if((item.pv||0)>0)return'o';return'y';}
+  if(type==='deal'){
+    if(item.st==='בעיה')return'r';                                              // בעיה מפורשת = קריטי
+    if(item.st==='נסגר')return'g';                                              // נסגר = תקין
+    if(item.date&&(now()-new Date(item.date))/(30*86400000)>3)return'r';        // תקועה מעל 3 חודשים
+    if((item.v||0)>10000||(item.ot||0)>50000)return'o';                         // שווי גבוה = דחוף
+    return'y';
+  }
+  if(type==='dist'){
+    if(item.st==='בעיה')return'r';                                              // בעיה מפורשת = קריטי
+    if(item.st==='הושלם')return'g';                                             // הושלם = תקין
+    if(item.dt&&db(item.dt,nd())>7)return'r';                                   // תקוע מעל 7 ימים
+    if(item.mi)return'o';                                                        // חוסרים = דחוף
+    return'y';
+  }
+  if(type==='sal'){
+    // חוזה לחידוש (מהמנגנון החדש) קובע דחיפות — כדי שגם בשכר "קריטי" יהיה משמעותי
+    const exp=(typeof salExpiry==='function')?salExpiry(item):'';
+    if(exp){const d=db(nd(),exp);if(d<=30)return'r';if(d<=90)return'o';}         // ≤30 ימים לחידוש=קריטי, ≤90=דחוף
+    if(item.st==='סגור')return'g';                                              // סגור (ואין חוזה דחוף) = תקין
+    if((item.pv||0)>0)return'o';                                                // יתרה לגבייה = דחוף
+    return'y';
+  }
   if(type==='ten'){if(item.submitted==='כן')return'g';if(item.deadline){const d=db(nd(),item.deadline);if(d<=3&&d>=0)return'r';if(d<=7)return'o';}return'y';}
   return'y';
 }
 function pB(p){const m={r:'br',o:'by',y:'by',g:'bg'};const l={r:'🔴 קריטי',o:'🟠 דחוף',y:'🟡 מעקב',g:'🟢 תקין'};return`<span class="badge ${m[p]}">${l[p]}</span>`;}
 function sB(s){if(['נסגר','הושלם','סגור'].includes(s))return`<span class="badge bg">${s} ✓</span>`;if(['בטיפול','בהתקנה','בתהליך'].includes(s))return`<span class="badge bb">${s}</span>`;if(s==='בעיה')return`<span class="badge br">${s}</span>`;return`<span class="badge by">${s}</span>`;}
 function pC(p){return{r:'pr',o:'po',y:'py',g:'pg'}[p];}
-// סינון סטטוס/דחיפות בכל נושא — מוסתר/מוצג ע"י CSS לפי data-pri (ללא רינדור מחדש)
+// סינון סטטוס/דחיפות בכל נושא — רינדור מחדש ב-JS לפי הרמות שנבחרו (גם השורות וגם הסכומים)
 function priFilterBar(secId){
   const L=[['','הכל'],['r','🔴 קריטי'],['o','🟠 דחוף'],['y','🟡 מעקב'],['g','🟢 תקין']];
   return `<div class="prifilt"><span class="pflbl">סינון (אפשר לבחור כמה):</span>`+
