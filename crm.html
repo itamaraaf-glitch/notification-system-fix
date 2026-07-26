@@ -5376,10 +5376,13 @@ function rAlerts(){
       const tip=has?'שלח את ההתראה במייל ללקוח':(c?'אין מייל ללקוח – הוסף בכרטיס':'אין כרטיס לקוח – ייפתח כרטיס חדש');
       mailBtn=`<button class="btn btns" onclick="event.stopPropagation();sendAlertEmail(${i})" title="${tip}" style="margin-top:8px;border-color:#4cc9f0;color:#4cc9f0;opacity:${has?1:.6}">📧 שלח ללקוח</button>`;
     }
-    // חוזה שכר לחידוש → כפתור חידוש בלחיצה אחת (מאריך את החוזה לתקופה נוספת)
+    // חוזה שכר / מוצר שנמכר → כפתור חידוש בלחיצה אחת (מאריך לתקופה נוספת)
     let renewBtn='';
     if(x.meta&&x.meta.renew&&x.id){
       renewBtn=`<button class="btn btns" onclick="event.stopPropagation();renewContract('${x.id}')" title="חדש את החוזה לתקופה נוספת (${x.meta.term||''} חודשים)" style="margin-top:8px;border-color:var(--teal);color:var(--teal)">🔄 חדש חוזה</button>`;
+    }else if(x.meta&&x.meta.renewProduct){
+      const rp=x.meta.renewProduct;
+      renewBtn=`<button class="btn btns" onclick="event.stopPropagation();renewProduct('${rp.cid}','${rp.type}',${rp.idx})" title="חדש את המוצר לשנה נוספת" style="margin-top:8px;border-color:var(--teal);color:var(--teal)">🔄 חדש מוצר</button>`;
     }
     // לחיצה על הכרטיס = קיצור דרך ישיר לנושא הרלוונטי
     const clickable=!!(x.kind||x.cid);
@@ -6553,37 +6556,36 @@ function rSalSum(){
   document.getElementById('ssk').innerHTML=`<div class="kc"><div class="lb">שירות – יעד</div><div class="vl">₪${Math.round(sm(sv,'tr')/1000)}K</div><div class="sb">${sv.length} פרויקטים</div></div><div class="kc g"><div class="lb">שירות – נסגר</div><div class="vl">₪${Math.round(sm(sv,'cl2')/1000)}K</div></div><div class="kc r"><div class="lb">שירות – יתרה</div><div class="vl">₪${Math.round(sm(sv,'pv')/1000)}K</div></div><div class="kc"><div class="lb">ציוד – יעד</div><div class="vl">₪${Math.round(sm(eq,'tr')/1000)}K</div><div class="sb">${eq.length} פרויקטים</div></div><div class="kc g"><div class="lb">ציוד – נסגר</div><div class="vl">₪${Math.round(sm(eq,'cl2')/1000)}K</div></div><div class="kc y"><div class="lb">סה"כ כולל</div><div class="vl">₪${Math.round((sm(sv,'tr')+sm(eq,'tr'))/1000)}K</div></div>`;
   renderRenewalsPanel();
 }
-// לוח ניהול חוזים לחידוש — כל החוזים במקום אחד, ממוינים לפי תפוגה, עם חידוש/עריכה.
+// לוח ניהול חוזים ומוצרים לחידוש — הכול במקום אחד (חוזי שכר + מוצרים שכבר נמכרו),
+// ממוין לפי תפוגה, עם חידוש/עריכה בלחיצה.
 function renderRenewalsPanel(){
   const box=document.getElementById('sal-renewals'); if(!box)return;
-  const all=(D.salary||[]).map(s=>({s,exp:salExpiry(s)})).filter(o=>o.exp)
-    .sort((a,b)=>a.exp<b.exp?-1:1);
+  const all=allRenewables();
   if(!all.length){
-    box.innerHTML=`<div class="dpanel" style="padding:14px 16px;margin-top:14px"><h4 style="--h4-accent:var(--gold);--h4-color:var(--gold)">📅 חוזים לחידוש</h4>
-      <div style="font-size:12px;color:var(--text3);padding:6px 0">אין חוזים במעקב עדיין. סמנו פרויקט שכר כ"סגור" ובחרו תקופת חוזה (6/12/24/36 חודשים) כדי שיופיע כאן.</div></div>`;
+    box.innerHTML=`<div class="dpanel" style="padding:14px 16px;margin-top:14px"><h4 style="--h4-accent:var(--gold);--h4-color:var(--gold)">📅 חוזים ומוצרים לחידוש</h4>
+      <div style="font-size:12px;color:var(--text3);padding:6px 0">אין פריטים במעקב עדיין. סמנו פרויקט שכר כ"סגור" עם תקופת חוזה, או הוסיפו תאריך תפוגה למוצר בכרטיס הלקוח — והם יופיעו כאן.</div></div>`;
     return;
   }
   const t=nd();
   const soon=all.filter(o=>db(t,o.exp)<=90).length;
-  const rows=all.map(({s,exp})=>{
-    const d=db(t,exp);const col=d<0?'#e63946':d<=90?'#f4a261':'var(--teal)';
-    const kindLbl=s.ty==='equipment'?'ציוד (OTC)':'שירות';
+  const rows=all.map(o=>{
+    const d=db(t,o.exp);const col=d<0?'#e63946':d<=90?'#f4a261':'var(--teal)';
     const when=d<0?`פג לפני ${Math.abs(d)} ימים`:d===0?'פג היום':`${d} ימים לחידוש`;
-    const renewBtn=(d<=90)?`<button class="btn btns" onclick="renewContract('${s.id}')" title="חדש חוזה לתקופה נוספת" style="font-size:10px;border-color:var(--teal);color:var(--teal)">🔄 חדש</button>`:'';
+    const renewBtn=(d<=90)?`<button class="btn btns" onclick="${o.renewJs}" title="חדש לתקופה נוספת" style="font-size:10px;border-color:var(--teal);color:var(--teal)">🔄 חדש</button>`:'';
     return`<div class="cmod-row" style="background:rgba(255,255,255,.03);border:1px solid ${col}33">
-      <span style="font-size:11px;font-weight:800;color:${col};min-width:78px;white-space:nowrap">🔄 ${kindLbl}</span>
-      <span style="font-size:11px;font-weight:700;flex:1;min-width:90px">${esc(s.cl||'לקוח')}</span>
-      ${s.pj?`<span style="font-size:10px;color:var(--text3);min-width:44px">${esc(s.pj)}</span>`:''}
-      <span style="font-size:10px;color:var(--text2);white-space:nowrap">תפוגה: <b style="color:var(--text)">${fmtDate(exp)}</b></span>
-      <span style="font-size:10px;color:var(--text3);white-space:nowrap">${s.term} ח׳</span>
+      <span style="font-size:11px;font-weight:800;color:${col};min-width:96px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔄 ${esc(o.label)}</span>
+      <span style="font-size:11px;font-weight:700;flex:1;min-width:80px">${esc(o.cl)}</span>
+      ${o.sub?`<span style="font-size:10px;color:var(--text3);min-width:40px">${esc(o.sub)}</span>`:''}
+      <span style="font-size:9px;color:var(--text3);white-space:nowrap">${esc(o.src)}</span>
+      <span style="font-size:10px;color:var(--text2);white-space:nowrap">תפוגה: <b style="color:var(--text)">${fmtDate(o.exp)}</b></span>
       <span style="font-size:10px;padding:2px 7px;border-radius:20px;background:${col}18;color:${col};border:1px solid ${col}44;white-space:nowrap">${when}</span>
       ${renewBtn}
-      <button class="btn btns" onclick="openM('salary','${s.id}')" title="פתח לעריכה" style="font-size:10px">✏️</button>
+      <button class="btn btns" onclick="${o.editJs}" title="פתח לעריכה" style="font-size:10px">✏️</button>
     </div>`;
   }).join('');
   box.innerHTML=`<div class="dpanel" style="padding:14px 16px;margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <h4 style="--h4-accent:var(--gold);--h4-color:var(--gold);margin:0">📅 חוזים לחידוש (${all.length})</h4>
-      ${soon?`<span style="font-size:11px;font-weight:800;color:#f4a261">🔔 ${soon} דורשים חידוש ב-3 חודשים</span>`:`<span style="font-size:11px;color:var(--teal)">✅ אין חוזים דחופים לחידוש</span>`}
+      <h4 style="--h4-accent:var(--gold);--h4-color:var(--gold);margin:0">📅 חוזים ומוצרים לחידוש (${all.length})</h4>
+      ${soon?`<span style="font-size:11px;font-weight:800;color:#f4a261">🔔 ${soon} דורשים חידוש ב-3 חודשים</span>`:`<span style="font-size:11px;color:var(--teal)">✅ אין פריטים דחופים לחידוש</span>`}
     </div>${rows}</div>`;
 }
 
@@ -7254,11 +7256,14 @@ function getClientAlerts(){
   const alerts=[];
   D.clients.forEach(c=>{
     Object.keys(ITEM_CFG).forEach(type=>{
-      (c[type]||[]).forEach(item=>{
+      (c[type]||[]).forEach((item,idx)=>{
         if(item.expiry){
           const d=db(nd(),item.expiry);
-          if(d>=0&&d<=30){
-            alerts.push({type:d<=7?'crit':'warn',h:`תפוגת ${ITEM_CFG[type].label} – ${c.name}`,s:d===0?'פג היום!':d+' ימים לתפוגה',co:c.name,kind:'expiry',cid:c.id,meta:{label:ITEM_CFG[type].label,days:d,date:item.expiry}});
+          // מוצר שכבר נמכר ללקוח מקבל אותו טיפול חידוש כמו חוזה: 3 חודשים לפני (קריטי ≤30).
+          // תפוגה ישנה מ-365 יום לא מתריעה (כנראה נתון היסטורי) — עדיין תופיע בלוח החידושים.
+          if(d<=90&&d>=-365){
+            const when=d<0?`פג לפני ${Math.abs(d)} ימים — לחידוש`:d===0?'פג היום!':`${d} ימים לתפוגה`;
+            alerts.push({type:d<=30?'crit':'warn',h:`🔄 חידוש ${ITEM_CFG[type].label} – ${c.name}`,s:`${when} | מוצר שנמכר ללקוח (${fmtDate(item.expiry)})`,co:c.name,kind:'expiry',cid:c.id,meta:{label:ITEM_CFG[type].label,days:d,date:item.expiry,renewProduct:{cid:c.id,type,idx}}});
           }
         }
       });
@@ -9146,6 +9151,35 @@ function renewContract(id){
   const s2=(D.salary||[]).find(x=>x.id==id);
   rAll();
   showToast('🔄 החוזה חודש — תפוגה חדשה: '+fmtDate(salExpiry(s2)),'ok');
+}
+// חידוש מוצר שכבר נמכר ללקוח (פריט בכרטיס עם תאריך תפוגה) — הארכה בשנה, בלחיצה אחת.
+// רציף: אם המוצר עדיין בתוקף התקופה החדשה ממשיכה מהתפוגה; אם פג — מהיום.
+function renewProduct(clientId,type,idx,months){
+  const c=(D.clients||[]).find(x=>x.id==clientId); if(!c)return;
+  const arr=c[type]; if(!Array.isArray(arr)||!arr[idx])return;
+  const item=arr[idx]; const today=nd();
+  const base=(item.expiry&&item.expiry>today)?item.expiry:today;
+  const newExp=addMonths(base,+months||12);
+  const newArr=arr.map((x,i)=>i===idx?{...x,expiry:newExp,_renewedAt:today}:x);
+  dbUpdate('clients',clientId,{[type]:newArr});
+  rAll();
+  showToast('🔄 המוצר חודש — תפוגה חדשה: '+fmtDate(newExp),'ok');
+}
+// רשימת כל מה שדורש חידוש: חוזי שכר + מוצרים שכבר נמכרו ללקוח (פריטי כרטיס עם תפוגה).
+// כל פריט אחיד: {exp, cl, label, sub, renewJs, editJs} כדי שכל המסכים יטפלו בשניהם זהה.
+function allRenewables(){
+  const out=[];
+  (D.salary||[]).forEach(s=>{ const exp=salExpiry(s); if(!exp)return;
+    out.push({exp,cl:s.cl||'לקוח',label:(s.ty==='equipment'?'ציוד (OTC)':'שירות'),sub:s.pj||'',src:'חוזה שכר',
+      renewJs:`renewContract('${s.id}')`, editJs:`openM('salary','${s.id}')`}); });
+  (D.clients||[]).forEach(c=>{
+    Object.keys(ITEM_CFG).forEach(type=>{
+      (c[type]||[]).forEach((item,idx)=>{ if(!item.expiry)return;
+        out.push({exp:item.expiry,cl:c.name||'לקוח',label:ITEM_CFG[type].label,sub:'',src:'מוצר שנמכר',
+          renewJs:`renewProduct('${c.id}','${type}',${idx})`, editJs:`openClientModal('${c.id}')`}); });
+    });
+  });
+  return out.sort((a,b)=>a.exp<b.exp?-1:1);
 }
 // עדכון תצוגת התפוגה בטופס + מילוי אוטומטי של תאריך התחלה בעת סגירה
 function salExpUpdate(){
