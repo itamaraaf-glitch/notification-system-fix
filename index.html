@@ -11075,7 +11075,7 @@ async function restoreGoldBackup(){
     confirmAct(`לשחזר ${cnt} רשומות מגיבוי הזהב (המצב האחרון הידוע עם נתונים)?`,()=>{
       try{
         idbBackup(JSON.stringify(D));
-        const allCols=['deals','tenders','dists','salary','meetings','clients','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
+        const allCols=SYNC_COLS.slice(); // כולל tasks + inbox — כך שכל שחזור מחזיר גם את המשימות והמיילים (ולא רק את שאר המסכים)
         allCols.forEach(col=>{D[col]=p[col]||[];});
         D.goals=p.goals||D.goals;D._deletedIds={};D.lastCycleMonth=p.lastCycleMonth||'';
         saveAll();rAll();
@@ -11201,7 +11201,7 @@ async function restoreFromDailyIdb(day){
   const snap=dailyList.find(s=>s.day===day);
   if(!snap){showToast('⚠️ הגיבוי היומי לא נמצא','warn');return;}
   const mainCols=['deals','tenders','dists','salary','meetings','clients'];
-  const allCols=['deals','tenders','dists','salary','meetings','clients','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
+  const allCols=SYNC_COLS.slice(); // כולל tasks + inbox — כך שכל שחזור מחזיר גם את המשימות והמיילים (ולא רק את שאר המסכים)
   const currentlyEmpty=mainCols.every(c=>!(D[c]||[]).length);
   const confirmMsg=currentlyEmpty
     ?`לשחזר נתונים מגיבוי יומי של ${day}?\n\nהמערכת ריקה — כל הנתונים יוחזרו במלואם.`
@@ -11244,7 +11244,7 @@ async function restoreFromIdb(ts){
   const timeLabel=new Date(ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
   const dateLabel=new Date(ts).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'});
   const mainCols=['deals','tenders','dists','salary','meetings','clients'];
-  const allCols=['deals','tenders','dists','salary','meetings','clients','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
+  const allCols=SYNC_COLS.slice(); // כולל tasks + inbox — כך שכל שחזור מחזיר גם את המשימות והמיילים (ולא רק את שאר המסכים)
   // If current data is empty → full replace; otherwise merge
   const currentlyEmpty=mainCols.every(c=>!(D[c]||[]).length);
   const confirmMsg=currentlyEmpty
