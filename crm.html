@@ -5680,7 +5680,8 @@ function rDeals(){
   // סיכומים אוטומטיים: חודש נוכחי, הפצות, יתרה (שווי שטרם שובץ), ויתרה לחודש הבא
   const sumMv=D.deals.reduce((a,d)=>a+(+d.mv||0),0);
   const sumDi=D.deals.reduce((a,d)=>a+(+d.di||0),0);
-  const sumRem=D.deals.reduce((a,d)=>a+Math.max(0,(+d.v||0)-(+d.mv||0)-(+d.di||0)),0);
+  // יתרה = חודש נוכחי − הפצות (מה שנשאר להשלים החודש אחרי מה שנסגר בהפצות)
+  const sumRem=Math.max(0, sumMv - sumDi);
   const sumDn=D.deals.reduce((a,d)=>a+(+d.dn||0),0);
   // OTC (ציוד) — מופרד לגמרי מהשירות כדי שלא יתערבב בסיכומים
   const sumOt=D.deals.reduce((a,d)=>a+(+d.ot||0),0);
@@ -5857,7 +5858,9 @@ function rDealSum(){
   const _all=D.deals;
   const _sumMv=_all.reduce((a,d)=>a+(+d.mv||0),0);
   const _sumDn=_all.reduce((a,d)=>a+(+d.dn||0),0);
-  const _sumRem=_all.reduce((a,d)=>a+Math.max(0,(+d.v||0)-(+d.mv||0)-(+d.di||0)),0);
+  const _sumDi=_all.reduce((a,d)=>a+(+d.di||0),0);
+  // יתרה = חודש נוכחי − הפצות (עקבי עם באנר השירות)
+  const _sumRem=Math.max(0, _sumMv - _sumDi);
   const _sumOt=_all.reduce((a,d)=>a+(+d.ot||0),0);
   const _sumOtc=_all.reduce((a,d)=>a+(+d.otc||0),0);
   // שירות בשורה עליונה, OTC (ציוד) בבלוק נפרד — כדי שלא יתערבבו
