@@ -4961,13 +4961,13 @@ function pC(p){return{r:'pr',o:'po',y:'py',g:'pg'}[p];}
 // סינון סטטוס/דחיפות בכל נושא — מוסתר/מוצג ע"י CSS לפי data-pri (ללא רינדור מחדש)
 function priFilterBar(secId){
   const L=[['','הכל'],['r','🔴 קריטי'],['o','🟠 דחוף'],['y','🟡 מעקב'],['g','🟢 תקין']];
-  return `<div class="prifilt"><span class="pflbl">סינון:</span>`+
+  return `<div class="prifilt"><span class="pflbl">סינון (אפשר לבחור כמה):</span>`+
     L.map(([lv,lb],i)=>`<button class="pfchip${i===0?' active':''}" data-lv="${lv}" onclick="setSecFilter('${secId}','${lv}',this)">${lb}</button>`).join('')+
     `</div>`;
 }
-// מצב הסינון הפעיל לכל נושא — הרינדור קורא אותו ומסנן את הנתונים, כך שגם
-// השורות וגם כל הסיכומים/הסכומים בתחתית מתחשבים בסינון.
-window._priFilter={deals:'',tenders:'',dists:'',salary:''};
+// מצב הסינון הפעיל לכל נושא — מערך של רמות דחיפות (בחירה מרובה). ריק = הכל.
+// הרינדור קורא אותו ומסנן, כך שגם השורות וגם כל הסכומים מתחשבים בסינון.
+window._priFilter={deals:[],tenders:[],dists:[],salary:[]};
 const _SEC_FILTER={
   'sec-deals':{key:'deals',render:'rDeals'},
   'sec-tenders':{key:'tenders',render:'rTenders'},
@@ -4976,14 +4976,22 @@ const _SEC_FILTER={
 };
 function setSecFilter(secId, level, btn){
   const cfg=_SEC_FILTER[secId]; if(!cfg)return;
-  _priFilter[cfg.key]=level||'';
-  const bar=btn&&btn.closest('.prifilt'); if(bar) bar.querySelectorAll('.pfchip').forEach(c=>c.classList.toggle('active',c===btn));
+  if(!Array.isArray(_priFilter[cfg.key])) _priFilter[cfg.key]=[];
+  const arr=_priFilter[cfg.key];
+  if(!level){ _priFilter[cfg.key]=[]; }            // "הכל" — מנקה את הבחירה
+  else{ const i=arr.indexOf(level); if(i>=0)arr.splice(i,1); else arr.push(level); }  // toggle
+  // עדכון מצב הצ'יפים (בחירה מרובה): "הכל" פעיל כשאין בחירה
+  const bar=btn&&btn.closest('.prifilt');
+  if(bar) bar.querySelectorAll('.pfchip').forEach(c=>{
+    const lv=c.getAttribute('data-lv');
+    c.classList.toggle('active', lv ? _priFilter[cfg.key].includes(lv) : _priFilter[cfg.key].length===0);
+  });
   if(typeof window[cfg.render]==='function') window[cfg.render](); // רינדור מחדש → הסכומים מתעדכנים לפי הסינון
 }
-// עוזר: מסנן רשימה לפי הדחיפות הפעילה של הנושא (ריק = הכל)
+// עוזר: מסנן רשימה לפי רמות הדחיפות שנבחרו (מערך ריק = הכל)
 function _applyPri(list, secKey, priType){
   const lv=window._priFilter&&_priFilter[secKey];
-  return lv ? list.filter(x=>pri(x,priType)===lv) : list;
+  return (lv&&lv.length) ? list.filter(x=>lv.includes(pri(x,priType))) : list;
 }
 function _initPriFilters(){ document.querySelectorAll('.pf-slot').forEach(s=>{ if(!s.firstChild) s.innerHTML=priFilterBar(s.dataset.target); }); }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',_initPriFilters); else _initPriFilters();
@@ -5488,10 +5496,15 @@ function renderMonthSummary(){
   const iOpen=D.dists.filter(d=>d.st!=='הושלם');
   const iClosedV=iClosed.reduce((a,d)=>a+(d.inc||0),0);
   const iOpenV=iOpen.reduce((a,d)=>a+((d.inc||d.tgt)||0),0);
-  // שכר — סכום "סגירה" בפועל מול סכום "יתרה" שנשאר לגבייה
-  const sClosedV=D.salary.reduce((a,x)=>a+(x.cl2||0),0);
-  const sOpen=D.salary.filter(x=>x.st!=='סגור'&&(x.pv||0)>0);
-  const sOpenV=sOpen.reduce((a,x)=>a+(x.pv||0),0);
+  // שכר — מופרד לשירות ו-OTC (ציוד): נסגר בפועל מול יתרה לגבייה, לכל אחד בנפרד
+  const _isEq=x=>x.ty==='equipment';                       // כל השאר = שירות (כולל רשומות ישנות ללא ty)
+  const svcAll=D.salary.filter(x=>!_isEq(x)), eqAll=D.salary.filter(_isEq);
+  const svcClosed=svcAll.reduce((a,x)=>a+(x.cl2||0),0);
+  const svcOpen=svcAll.filter(x=>x.st!=='סגור'&&(x.pv||0)>0);
+  const svcOpenV=svcOpen.reduce((a,x)=>a+(x.pv||0),0);
+  const eqClosed=eqAll.reduce((a,x)=>a+(x.cl2||0),0);
+  const eqOpen=eqAll.filter(x=>x.st!=='סגור'&&(x.pv||0)>0);
+  const eqOpenV=eqOpen.reduce((a,x)=>a+(x.pv||0),0);
   const card=(ico,name,clr,navKey,closedLbl,closedV,closedN,carryLbl,carryV,carryN)=>{
     const total=closedV+carryV;
     const pct=total?Math.round(closedV/total*100):0;
@@ -5519,7 +5532,8 @@ function renderMonthSummary(){
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px">
       ${card('💼','עסקאות','#4cc9f0','deals','נסגרו',dClosedV,dClosed.length,'צפי סגירה',dOpenV,dOpen.length)}
       ${card('🚀','הפצות','#a78bfa','dists','הושלמו החודש',iClosedV,iClosed.length,'עובר לחודש הבא',iOpenV,iOpen.length)}
-      ${card('💰','פרויקטי שכר','#06d6a0','salary','נסגר בפועל',sClosedV,null,'יתרה לגבייה',sOpenV,sOpen.length)}
+      ${card('💰','שכר — שירות','#06d6a0','salary','נסגר בפועל',svcClosed,svcAll.length,'יתרה לגבייה',svcOpenV,svcOpen.length)}
+      ${card('📦','שכר — ציוד (OTC)','#4cc9f0','salary','נסגר בפועל',eqClosed,eqAll.length,'יתרה לגבייה',eqOpenV,eqOpen.length)}
     </div>
   </div>`;
 }
