@@ -2507,8 +2507,19 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <div class="g"><label>שם חברה *</label><input type="text" id="cl-name"></div>
       <div class="g"><label>ח.פ</label><input type="text" id="cl-cp" placeholder="מספר ח.פ"></div>
       <div class="g"><label>איש קשר</label><input type="text" id="cl-contact"></div>
-      <div class="g"><label>טלפון</label><input type="text" id="cl-phone"></div>
-      <div class="g"><label>אימייל</label><input type="text" id="cl-email"></div>
+      <div class="g"><label>טלפון</label>
+        <div style="display:flex;gap:5px">
+          <input type="text" id="cl-phone" style="flex:1">
+          <button type="button" class="btn btns" onclick="_callTo(document.getElementById('cl-phone').value)" title="חייג" style="border-color:#4cc9f0;color:#4cc9f0;padding:0 10px">📞</button>
+          <button type="button" class="btn btns" onclick="_waTo(document.getElementById('cl-phone').value)" title="וואטסאפ" style="border-color:#25D366;color:#25D366;padding:0 10px">💬</button>
+        </div>
+      </div>
+      <div class="g"><label>אימייל</label>
+        <div style="display:flex;gap:5px">
+          <input type="text" id="cl-email" style="flex:1">
+          <button type="button" class="btn btns" onclick="_mailToAddr(document.getElementById('cl-email').value)" title="שלח מייל" style="border-color:#c8a96e;color:#c8a96e;padding:0 10px">✉️</button>
+        </div>
+      </div>
       <div class="g"><label>כתובת</label><input type="text" id="cl-address"></div>
       <div class="g"><label>סטטוס</label><select id="cl-status"><option>לקוח פעיל</option><option>לקוח פוטנציאלי</option><option>לקוח לא פעיל</option><option>ליד חדש</option></select></div>
     </div>
@@ -2599,6 +2610,17 @@ const escJs = s => String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,'\\x2
 // אבטחה: כתובת URL בטוחה ל-href. מתירה רק http/https/mailto/tel — חוסמת javascript: ו-data:
 // (וקטור XSS דרך קישור שהוזן/יובא). מחזירה '' אם הכתובת אינה בטוחה.
 const safeUrl = u => { const s=String(u==null?'':u).trim(); return /^(https?:|mailto:|tel:)/i.test(s)?s:(/^(javascript|data|vbscript):/i.test(s)?'':(s?'https://'+s.replace(/^\/+/,''):'')); };
+// ===== קשר מהיר: חיוג / וואטסאפ / מייל בלחיצה (מכל מקום במערכת) =====
+const _digits = s => String(s==null?'':s).replace(/\D/g,'');
+// נרמול מספר ישראלי ל-wa.me: מספר מקומי (מתחיל ב-0) → קידומת 972.
+function _waNum(p){ let d=_digits(p); if(!d)return''; if(d.startsWith('972')){} else if(d.startsWith('0'))d='972'+d.slice(1); return 'https://wa.me/'+d; }
+function _callTo(p){ const d=_digits(p); if(!d){showToast('אין מספר טלפון','warn');return;} location.href='tel:'+d; }
+function _waTo(p){ const h=_waNum(p); if(!h){showToast('אין מספר טלפון','warn');return;} window.open(h,'_blank','noopener'); }
+function _mailToAddr(e){ e=String(e==null?'':e).trim(); if(!e){showToast('אין כתובת מייל','warn');return;} const a=document.createElement('a'); a.href='mailto:'+encodeURIComponent(e).replace(/%40/g,'@'); a.target='_blank'; a.rel='noopener'; a.style.display='none'; document.body.appendChild(a); a.click(); a.remove(); }
+// גרסאות לכרטיס הלקוח — מאתרות את הלקוח לפי מזהה
+function callClient(id){ const c=(D.clients||[]).find(x=>x.id==id); _callTo(c&&c.phone); }
+function waClient(id){ const c=(D.clients||[]).find(x=>x.id==id); _waTo(c&&c.phone); }
+function mailClient(id){ const c=(D.clients||[]).find(x=>x.id==id); _mailToAddr(c&&c.email); }
 const fmt = n => (!n || n == 0) ? '–' : '₪' + Number(n).toLocaleString('he-IL');
 const fmtDate = s => {if(!s)return'–';const[y,m,d]=s.split('-');return(d||'?')+'/'+(m||'?')+'/'+(y||'?');}
 const db = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
@@ -7953,6 +7975,7 @@ function rClients(){
           <span class="badge" style="background:${stCol}22;color:${stCol};border:1px solid ${stCol}44;font-size:9px">${esc(c.status||'')}</span>
           <div style="display:flex;gap:4px">
             ${(c.files&&c.files.length)?`<button class="btn btns" onclick="event.stopPropagation();rowFilesMenu('clients','${c.id}',event)" title="${c.files.length} קבצים מצורפים" style="font-size:9px;border-color:#06d6a0;color:#06d6a0">📎${c.files.length>1?c.files.length:''}</button>`:''}
+            ${c.phone?`<button class="btn btns" onclick="event.stopPropagation();callClient('${c.id}')" title="חייג ${esc(c.phone)}" style="font-size:9px;border-color:#4cc9f0;color:#4cc9f0">📞</button><button class="btn btns" onclick="event.stopPropagation();waClient('${c.id}')" title="וואטסאפ ${esc(c.phone)}" style="font-size:9px;border-color:#25D366;color:#25D366">💬</button>`:''}
             ${emailBtn}
             <button class="btn btns btnd" onclick="event.stopPropagation();dbDelete('clients','${c.id}')" style="font-size:9px">🗑</button>
           </div>
