@@ -1868,6 +1868,13 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="tab active" id="tv-today" onclick="setTaskView('today')">📆 היום</div>
     <div class="tab" id="tv-all" onclick="setTaskView('all')">כל המשימות</div>
   </div>
+  <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;background:rgba(240,114,182,.05);border:1px solid rgba(240,114,182,.2);border-radius:11px;padding:8px 11px;margin-bottom:12px">
+    <span style="font-size:13px">⚡</span>
+    <input type="text" id="qtask-inp" placeholder="הוספה מהירה: הקלד משימה ולחץ Enter (ברירת מחדל: היום)" onkeydown="if(event.key==='Enter')quickAddTask()" style="flex:1;min-width:160px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
+    <input type="date" id="qtask-dt" title="תאריך המשימה" style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:7px 9px;color:var(--text);font-family:inherit;font-size:12px;outline:none">
+    <select id="qtask-pr" title="עדיפות" style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:7px 9px;color:var(--text);font-family:inherit;font-size:12px;outline:none"><option value="בינונית">🟠 בינונית</option><option value="גבוהה">🔴 גבוהה</option><option value="נמוכה">🟢 נמוכה</option></select>
+    <button class="btn btnp" onclick="quickAddTask()" style="font-size:13px">+ הוסף</button>
+  </div>
   <div class="krow" id="tskkrow"></div>
   <div class="tw"><div class="thdr" style="border-right:3px solid #f072b6">✅ רשימת משימות</div>
   <div class="tscroll"><table><thead><tr>
@@ -6843,6 +6850,7 @@ function setTaskView(v){
 function rTasks(){
   if(!Array.isArray(D.tasks))D.tasks=[];
   const todayStr=nd();
+  const _qd=document.getElementById('qtask-dt'); if(_qd&&!_qd.value)_qd.value=todayStr; // ברירת מחדל: היום
   const all=D.tasks;
   const todays=all.filter(t=>t.dt===todayStr);
   const openToday=todays.filter(t=>t.st!=='הושלם').length;
@@ -6883,6 +6891,17 @@ function toggleTaskDone(id){
   t.st=t.st==='הושלם'?'פתוח':'הושלם';t._mts=Date.now();
   saveAll();rTasks();updateNavBadges();
   showToast(t.st==='הושלם'?'✅ המשימה סומנה כבוצעה':'↩ המשימה הוחזרה לפתוחה','ok');
+}
+// הוספה מהירה של משימה משורה אחת (הקלד + Enter) — בלי לפתוח מודאל
+function quickAddTask(){
+  const inp=document.getElementById('qtask-inp'); if(!inp)return;
+  const t=inp.value.trim(); if(!t){inp.focus();return;}
+  const dt=(document.getElementById('qtask-dt')||{}).value||nd();
+  const pr=(document.getElementById('qtask-pr')||{}).value||'בינונית';
+  dbInsert('tasks',{dt,time:'',t,cl:'',pr,st:'פתוח',no:''});
+  inp.value=''; rTasks(); updateNavBadges();
+  showToast('✅ נוספה משימה: '+t+(dt?' ל-'+fmtDate(dt):''),'ok');
+  inp.focus(); // מוכן להקלדה מהירה של הבאה
 }
 function saveTask(){
   const row={
