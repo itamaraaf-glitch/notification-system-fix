@@ -5455,12 +5455,17 @@ function rAlerts(){
   if(cnt)cnt.innerHTML=a.length===0?'<span style="color:var(--teal)">✅ הכל תקין</span>':[critN?`<span style="color:#e63946;font-weight:700">${critN} קריטי</span>`:'',warnN?`<span style="color:#f4a261">${warnN} אזהרה</span>`:'',`<span style="color:var(--text3)">${a.length} סה"כ</span>`].filter(Boolean).join(' · ');
   window._alertsList=a; // לניווט בלחיצה על התראה
   document.getElementById('alcont').innerHTML=a.length?a.map((x,i)=>{
-    let mailBtn='';
+    let mailBtn='',contactBtns='';
     if(x.co){
       const c=findClientByName(x.co);
       const has=!!(c&&c.email&&c.email.trim());
       const tip=has?'שלח את ההתראה במייל ללקוח':(c?'אין מייל ללקוח – הוסף בכרטיס':'אין כרטיס לקוח – ייפתח כרטיס חדש');
       mailBtn=`<button class="btn btns" onclick="event.stopPropagation();sendAlertEmail(${i})" title="${tip}" style="margin-top:8px;border-color:#4cc9f0;color:#4cc9f0;opacity:${has?1:.6}">📧 שלח ללקוח</button>`;
+      // חיוג/וואטסאפ ישיר ללקוח מכל התראה — פעולה מיידית על מה שדורש טיפול
+      if(c&&c.phone){
+        contactBtns=`<button class="btn btns" onclick="event.stopPropagation();callClient('${c.id}')" title="חייג ${esc(c.phone)}" style="margin-top:8px;border-color:#4cc9f0;color:#4cc9f0">📞 חייג</button>`
+          +`<button class="btn btns" onclick="event.stopPropagation();waClient('${c.id}')" title="וואטסאפ ${esc(c.phone)}" style="margin-top:8px;border-color:#25D366;color:#25D366">💬 וואטסאפ</button>`;
+      }
     }
     // חוזה שכר / מוצר שנמכר → כפתור חידוש בלחיצה אחת (מאריך לתקופה נוספת)
     let renewBtn='';
@@ -5472,7 +5477,7 @@ function rAlerts(){
     }
     // לחיצה על הכרטיס = קיצור דרך ישיר לנושא הרלוונטי
     const clickable=!!(x.kind||x.cid);
-    return`<div class="ac ${x.type}"${clickable?` onclick="alertGo(${i})" style="cursor:pointer" title="לחץ למעבר ישיר לפרטים בנושא"`:''}><div class="at">${x.type==='crit'?'🔴 קריטי':x.type==='warn'?'🟠 אזהרה':'ℹ מידע'}${clickable?'<span style="float:left;font-size:10px;color:var(--text3);font-weight:600">↗ פתח בנושא</span>':''}</div><div class="ah">${esc(x.h)}</div><div class="as">${esc(x.s)}</div><div style="display:flex;gap:8px;flex-wrap:wrap">${mailBtn}${renewBtn}</div></div>`;
+    return`<div class="ac ${x.type}"${clickable?` onclick="alertGo(${i})" style="cursor:pointer" title="לחץ למעבר ישיר לפרטים בנושא"`:''}><div class="at">${x.type==='crit'?'🔴 קריטי':x.type==='warn'?'🟠 אזהרה':'ℹ מידע'}${clickable?'<span style="float:left;font-size:10px;color:var(--text3);font-weight:600">↗ פתח בנושא</span>':''}</div><div class="ah">${esc(x.h)}</div><div class="as">${esc(x.s)}</div><div style="display:flex;gap:8px;flex-wrap:wrap">${mailBtn}${contactBtns}${renewBtn}</div></div>`;
   }).join(''):`<div style="text-align:center;padding:50px 20px;grid-column:1/-1">
     <div style="color:rgba(6,214,160,.25);font-size:48px;margin-bottom:12px">✅</div>
     <div style="font-size:14px;font-weight:700;color:var(--teal);margin-bottom:6px">אין התראות פעילות</div>
