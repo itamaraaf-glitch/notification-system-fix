@@ -5496,10 +5496,15 @@ function renderMonthSummary(){
   const iOpen=D.dists.filter(d=>d.st!=='הושלם');
   const iClosedV=iClosed.reduce((a,d)=>a+(d.inc||0),0);
   const iOpenV=iOpen.reduce((a,d)=>a+((d.inc||d.tgt)||0),0);
-  // שכר — סכום "סגירה" בפועל מול סכום "יתרה" שנשאר לגבייה
-  const sClosedV=D.salary.reduce((a,x)=>a+(x.cl2||0),0);
-  const sOpen=D.salary.filter(x=>x.st!=='סגור'&&(x.pv||0)>0);
-  const sOpenV=sOpen.reduce((a,x)=>a+(x.pv||0),0);
+  // שכר — מופרד לשירות ו-OTC (ציוד): נסגר בפועל מול יתרה לגבייה, לכל אחד בנפרד
+  const _isEq=x=>x.ty==='equipment';                       // כל השאר = שירות (כולל רשומות ישנות ללא ty)
+  const svcAll=D.salary.filter(x=>!_isEq(x)), eqAll=D.salary.filter(_isEq);
+  const svcClosed=svcAll.reduce((a,x)=>a+(x.cl2||0),0);
+  const svcOpen=svcAll.filter(x=>x.st!=='סגור'&&(x.pv||0)>0);
+  const svcOpenV=svcOpen.reduce((a,x)=>a+(x.pv||0),0);
+  const eqClosed=eqAll.reduce((a,x)=>a+(x.cl2||0),0);
+  const eqOpen=eqAll.filter(x=>x.st!=='סגור'&&(x.pv||0)>0);
+  const eqOpenV=eqOpen.reduce((a,x)=>a+(x.pv||0),0);
   const card=(ico,name,clr,navKey,closedLbl,closedV,closedN,carryLbl,carryV,carryN)=>{
     const total=closedV+carryV;
     const pct=total?Math.round(closedV/total*100):0;
@@ -5527,7 +5532,8 @@ function renderMonthSummary(){
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px">
       ${card('💼','עסקאות','#4cc9f0','deals','נסגרו',dClosedV,dClosed.length,'צפי סגירה',dOpenV,dOpen.length)}
       ${card('🚀','הפצות','#a78bfa','dists','הושלמו החודש',iClosedV,iClosed.length,'עובר לחודש הבא',iOpenV,iOpen.length)}
-      ${card('💰','פרויקטי שכר','#06d6a0','salary','נסגר בפועל',sClosedV,null,'יתרה לגבייה',sOpenV,sOpen.length)}
+      ${card('💰','שכר — שירות','#06d6a0','salary','נסגר בפועל',svcClosed,svcAll.length,'יתרה לגבייה',svcOpenV,svcOpen.length)}
+      ${card('📦','שכר — ציוד (OTC)','#4cc9f0','salary','נסגר בפועל',eqClosed,eqAll.length,'יתרה לגבייה',eqOpenV,eqOpen.length)}
     </div>
   </div>`;
 }
