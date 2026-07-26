@@ -362,6 +362,9 @@ td.cell-copied{animation:cellcopied 1s ease-out}
 .tscroll:active{cursor:grabbing}
 table{width:max-content;min-width:100%;border-collapse:collapse;font-size:12px}
 th{position:sticky;top:0;z-index:2;padding:9px 12px;text-align:right;font-weight:800;color:var(--text3);font-size:9px;border-bottom:1px solid var(--border);white-space:nowrap;background:linear-gradient(180deg,#131b2e,#111828);text-transform:uppercase;letter-spacing:.6px;box-shadow:0 1px 0 var(--border)}
+.tscroll th:not(.cb-th){cursor:pointer;transition:color .15s}
+.tscroll th:not(.cb-th):hover{color:var(--gold)}
+.tscroll th[data-sortdir]{color:var(--gold)}
 td{padding:8px 12px;border-bottom:1px solid rgba(28,38,64,.4);color:var(--text);vertical-align:middle;white-space:nowrap;transition:background .12s}
 tr:nth-child(even) td{background:rgba(255,255,255,.012)}
 tr:last-child td{border-bottom:none}
@@ -5335,6 +5338,48 @@ function alertGo(i){
   const label=(al.h||'').split('–').pop().trim();
   setTimeout(()=>_secLocateFlash(sec,mtypeMap[al.kind],al.id,al.co||label,false),380);
 }
+// ===== מיון בלחיצה על כותרת עמודה — בכל טבלאות הנתונים (עסקאות/הפצות/שכר/מכרזים/משימות/פגישות) =====
+// מיון DOM בלבד (בלי רינדור מחדש). מזהה מספרים/מטבע/אחוזים/תאריכים DD/MM/YYYY; ריקים תמיד בסוף.
+function _cellSortKey(txt){
+  txt=String(txt==null?'':txt).trim();
+  if(txt===''||txt==='–'||txt==='-')return {t:'e'};
+  const dm=txt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);           // תאריך DD/MM/YYYY → YYYYMMDD
+  if(dm)return {t:'n',v:+(dm[3]+dm[2].padStart(2,'0')+dm[1].padStart(2,'0'))};
+  const cleaned=txt.replace(/[₪,%\s]/g,'');
+  if(/^-?\d+(\.\d+)?$/.test(cleaned))return {t:'n',v:parseFloat(cleaned)};
+  return {t:'s',v:txt};
+}
+function _sortTable(th){
+  const table=th.closest('table'); if(!table)return;
+  const tbody=table.querySelector('tbody'); if(!tbody)return;
+  const headCells=[...th.parentElement.children]; const idx=headCells.indexOf(th);
+  const rows=[...tbody.querySelectorAll(':scope > tr')].filter(r=>r.children.length>idx && !r.querySelector('td[colspan]'));
+  if(rows.length<2)return;
+  const dir=th.getAttribute('data-sortdir')==='asc'?'desc':'asc';
+  headCells.forEach(h=>{ if(h!==th){h.removeAttribute('data-sortdir');const s=h.querySelector('.sort-ind');if(s)s.remove();} });
+  th.setAttribute('data-sortdir',dir);
+  const cellText=r=>{const c=r.children[idx];return c?c.textContent:'';};
+  rows.sort((a,b)=>{
+    const ka=_cellSortKey(cellText(a)),kb=_cellSortKey(cellText(b));
+    if(ka.t==='e'&&kb.t==='e')return 0;
+    if(ka.t==='e')return 1; if(kb.t==='e')return -1;   // ריקים תמיד בסוף
+    let cmp=(ka.t==='n'&&kb.t==='n')?ka.v-kb.v:String(ka.v).localeCompare(String(kb.v),'he');
+    return dir==='asc'?cmp:-cmp;
+  });
+  rows.forEach(r=>tbody.appendChild(r));
+  let ind=th.querySelector('.sort-ind');
+  if(!ind){ind=document.createElement('span');ind.className='sort-ind';ind.style.cssText='font-size:9px;margin-inline-start:4px;opacity:.75';th.appendChild(ind);}
+  ind.textContent=dir==='asc'?'▲':'▼';
+}
+document.addEventListener('click',e=>{
+  const th=e.target.closest('th');
+  if(!th||!th.closest('.tscroll'))return;
+  if(th.classList.contains('cb-th'))return;                     // עמודת סימון — לא ממיינים
+  if(e.target.closest('input,button,a,select'))return;
+  const label=(th.textContent||'').replace(/[▲▼]/g,'').trim();
+  if(!label||label==='פעולות'||label==='#')return;              // עמודות פעולה/מספור — לא ממיינים
+  _sortTable(th);
+});
 // ===== העתקה בלחיצה: כל תא בטבלאות מועתק ללוח בלחיצה אחת =====
 // מספרי פרויקט, שמות לקוח, סכומים — בלי להיכנס לרשומה. לחיצה על
 // כפתורים/תיבות סימון בתוך התא לא מעתיקה.
