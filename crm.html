@@ -2624,6 +2624,21 @@ function _mailToAddr(e){ e=String(e==null?'':e).trim(); if(!e){showToast('אין
 function callClient(id){ const c=(D.clients||[]).find(x=>x.id==id); _callTo(c&&c.phone); }
 function waClient(id){ const c=(D.clients||[]).find(x=>x.id==id); _waTo(c&&c.phone); }
 function mailClient(id){ const c=(D.clients||[]).find(x=>x.id==id); _mailToAddr(c&&c.email); }
+// שיתוף סיכום לקוח בוואטסאפ — מוצרים, חוזים לחידוש והכנסה חודשית, בטקסט מסודר.
+function shareClientSummary(id){
+  const c=(D.clients||[]).find(x=>x.id==id); if(!c){showToast('לקוח לא נמצא','warn');return;}
+  const L=['🏢 '+(c.name||'לקוח')];
+  const l2=[c.contact,c.phone].filter(Boolean).join(' · '); if(l2)L.push('👤 '+l2);
+  if(c.status)L.push('📌 '+c.status);
+  const prods=[];
+  Object.keys(ITEM_CFG).forEach(t=>{(c[t]||[]).forEach(it=>{prods.push('• '+ITEM_CFG[t].label+(it.expiry?' · תפוגה '+fmtDate(it.expiry):''));});});
+  if(prods.length){L.push('','📦 מוצרים ושירותים:',...prods);}
+  const ren=(typeof clientRenewables==='function'?clientRenewables(c):[]).filter(o=>o.exp&&db(nd(),o.exp)<=90);
+  if(ren.length){L.push('','🔄 לחידוש בקרוב:');ren.forEach(o=>{const d=db(nd(),o.exp);L.push('• '+o.label+' — '+fmtDate(o.exp)+(d<0?' (פג)':' ('+d+' ימים)'));});}
+  const mRev=(typeof clientMonthlyRevenue==='function'?clientMonthlyRevenue(c):[]);const mTot=mRev.reduce((s,x)=>s+(x.val||0),0);
+  if(mTot)L.push('','💰 הכנסה חודשית: '+fmt(mTot));
+  window.open('https://wa.me/?text='+encodeURIComponent(L.join('\n')),'_blank','noopener');
+}
 const fmt = n => (!n || n == 0) ? '–' : '₪' + Number(n).toLocaleString('he-IL');
 const fmtDate = s => {if(!s)return'–';const[y,m,d]=s.split('-');return(d||'?')+'/'+(m||'?')+'/'+(y||'?');}
 const db = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
@@ -8026,6 +8041,7 @@ function rClients(){
           <div style="display:flex;gap:4px">
             ${(c.files&&c.files.length)?`<button class="btn btns" onclick="event.stopPropagation();rowFilesMenu('clients','${c.id}',event)" title="${c.files.length} קבצים מצורפים" style="font-size:9px;border-color:#06d6a0;color:#06d6a0">📎${c.files.length>1?c.files.length:''}</button>`:''}
             ${c.phone?`<button class="btn btns" onclick="event.stopPropagation();callClient('${c.id}')" title="חייג ${esc(c.phone)}" style="font-size:9px;border-color:#4cc9f0;color:#4cc9f0">📞</button><button class="btn btns" onclick="event.stopPropagation();waClient('${c.id}')" title="וואטסאפ ${esc(c.phone)}" style="font-size:9px;border-color:#25D366;color:#25D366">💬</button>`:''}
+            <button class="btn btns" onclick="event.stopPropagation();shareClientSummary('${c.id}')" title="שתף סיכום לקוח בוואטסאפ" style="font-size:9px;border-color:#25D366;color:#25D366">📤</button>
             ${emailBtn}
             <button class="btn btns btnd" onclick="event.stopPropagation();dbDelete('clients','${c.id}')" style="font-size:9px">🗑</button>
           </div>
