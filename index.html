@@ -1921,7 +1921,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <button class="btn btnp" onclick="openClientModal(null)">+ לקוח חדש</button>
       <button class="btn" id="cli-view-btn" onclick="toggleClientsView()" title="החלף בין תצוגת רשת לקרוסלת 3D" style="border-color:#a78bfa;color:#a78bfa">🎠 קרוסלה 3D</button>
       <button class="btn" onclick="manualSyncDeals()" style="background:#7b5ea7;color:#fff;border-color:#7b5ea7" title="סנכרן עסקאות סגורות לכרטיסי לקוח">🔄 סנכרן עסקאות</button>
-      <button class="btn" onclick="runBackfillExpiry()" style="border-color:var(--gold);color:var(--gold)" title="קבע תאריך תפוגה למוצרים שאין להם — לפי תאריך הפרויקט שנסגר + 36 חודשים">📅 השלם תפוגות</button>
+      <button class="btn" onclick="runBackfillExpiry()" style="border-color:var(--gold);color:var(--gold)" title="קבע תאריך תפוגה למוצרים שאין להם — לפי תאריך הפרויקט + תקופת החוזה (Microsoft 365: 12 חודשים, שאר: 36)">📅 השלם תפוגות</button>
       <button class="btn btn-excel" onclick="exportExcel('clients')">📥 Excel</button>
       <button class="btn btn-import" onclick="importFromExcel('clients')" title="ייבוא מ-Excel">📤 ייבוא</button>
     </div>
@@ -8841,10 +8841,13 @@ function mapDealToItemType(deal){
 
 // תקופת חוזה ברירת-מחדל למוצר שנוצר מפרויקט שנסגר: תפוגה = תאריך הפרויקט + התקופה.
 const DEFAULT_CONTRACT_MONTHS=36;
+// תקופות חוזה לפי סוג מוצר (חריגים לברירת-המחדל). Microsoft 365 תמיד 12 חודשים.
+const CONTRACT_MONTHS={ms365:12};
+function contractMonthsFor(type){ return CONTRACT_MONTHS[type]||DEFAULT_CONTRACT_MONTHS; }
 function buildItemFromDeal(deal,type){
   const note=`עסקה #${deal.num||''}  |  ${fmtDate(deal.date)}  |  ${deal.ct||''}`;
   const mo=deal.mv||deal.v||'';
-  const exp=deal.date?addMonths(deal.date,DEFAULT_CONTRACT_MONTHS):''; // תפוגה = תאריך העסקה + תקופת החוזה
+  const exp=deal.date?addMonths(deal.date,contractMonthsFor(type)):''; // תפוגה = תאריך העסקה + תקופת החוזה לפי הסוג
   switch(type){
     case'lines':return{lineType:deal.inf&&deal.inf.includes('הוט')?'HOT':deal.inf==='RF'?'RF':'צד ג׳',speed:deal.srv||'',ip:'',expiry:exp,monthly:mo,notes:note};
     case'forti':return{model:deal.srv||'',sn:'',license:'UTM/ATP',expiry:exp,notes:note};
@@ -8870,7 +8873,7 @@ function buildClientItem(type,{srv,monthly,note,srcDate}){
   if(has('solution'))item.solution=srv||'';
   if(has('unit'))item.unit=srv||'';
   if(has('monthly')&&monthly)item.monthly=+monthly;
-  if(has('expiry'))item.expiry=srcDate?addMonths(srcDate,DEFAULT_CONTRACT_MONTHS):'';
+  if(has('expiry'))item.expiry=srcDate?addMonths(srcDate,contractMonthsFor(type)):'';
   if(has('notes'))item.notes=note||'';
   return item;
 }
@@ -8887,31 +8890,40 @@ function _productSourceDate(item){
   if(em){const d=[...(D.deals||[]),...(D.archivedDeals||[])].find(x=>String(x.num)===em[1]);if(d&&d.date)return d.date;}
   return '';
 }
-// השלמת תפוגות חסרות למוצרים קיימים: לכל מוצר עם שדה תפוגה ריק — קובע תפוגה = תאריך הפרויקט + התקופה.
-function backfillProductExpiry(months){
-  months=+months||DEFAULT_CONTRACT_MONTHS;
-  let filled=0,noSrc=0;
+// השלמת תפוגות למוצרים קיימים: תפוגה = תאריך הפרויקט + תקופת החוזה לפי סוג המוצר.
+// ממלא מוצרים ללא תפוגה, וגם מתקן תאריך שנקבע אוטומטית אם כלל התקופה של הסוג השתנה
+// (לעולם לא נוגע בתאריך שהוזן/נערך ידנית — עריכה ידנית מנקה את הדגל _expiryBackfilled).
+function backfillProductExpiry(){
+  let filled=0,fixed=0,noSrc=0;
   (D.clients||[]).forEach(c=>{
     let changed=false;
     Object.keys(ITEM_CFG).forEach(type=>{
       const hasExp=ITEM_CFG[type].fields.some(f=>f.k==='expiry');
       if(!hasExp)return;
+      const months=contractMonthsFor(type);
       (c[type]||[]).forEach(item=>{
-        if(item.expiry)return;
-        const src=_productSourceDate(item);
-        if(src){item.expiry=addMonths(src,months);item._expiryBackfilled=true;filled++;changed=true;}
-        else noSrc++;
+        if(!item.expiry){
+          const src=_productSourceDate(item);
+          if(src){item.expiry=addMonths(src,months);item._expiryBackfilled=true;filled++;changed=true;}
+          else noSrc++;
+        }else if(item._expiryBackfilled){
+          const src=_productSourceDate(item);
+          if(src){const want=addMonths(src,months); if(want&&want!==item.expiry){item.expiry=want;fixed++;changed=true;}}
+        }
       });
     });
     if(changed&&c.id)dbUpdate('clients',c.id,c);
   });
-  return {filled,noSrc};
+  return {filled,fixed,noSrc};
 }
 function runBackfillExpiry(){
-  const r=backfillProductExpiry(DEFAULT_CONTRACT_MONTHS);
+  const r=backfillProductExpiry();
   rAll();
-  if(r.filled)showToast(`✅ ${r.filled} מוצרים קיבלו תאריך תפוגה (תאריך הפרויקט + ${DEFAULT_CONTRACT_MONTHS} חודשים)${r.noSrc?`\n⚠️ ${r.noSrc} מוצרים ללא תאריך פרויקט — הגדר ידנית`:''}`,'ok');
-  else showToast(r.noSrc?`ℹ️ ${r.noSrc} מוצרים ללא תפוגה — לא נמצא תאריך פרויקט לגזור ממנו. הגדר ידנית בכרטיס.`:'✅ לכל המוצרים כבר יש תאריך תפוגה','info');
+  const parts=[];
+  if(r.filled)parts.push(`${r.filled} מוצרים קיבלו תאריך תפוגה`);
+  if(r.fixed)parts.push(`${r.fixed} תוקנו לתקופה הנכונה`);
+  if(parts.length)showToast('✅ '+parts.join(' · ')+' (לפי תאריך הפרויקט + תקופת החוזה)'+(r.noSrc?`\n⚠️ ${r.noSrc} ללא תאריך פרויקט — הגדר ידנית`:''),'ok');
+  else showToast(r.noSrc?`ℹ️ ${r.noSrc} מוצרים ללא תפוגה — לא נמצא תאריך פרויקט לגזור ממנו. הגדר ידנית בכרטיס.`:'✅ לכל המוצרים כבר יש תאריך תפוגה תקין','info');
 }
 
 // ─── UPSELL SUGGESTIONS ───
@@ -9049,7 +9061,7 @@ function convertPotentialToProduct(client,pot){
   const item={};
   if(realType==='extra')item.name=pot.product||pot.productType||'פתרון';
   if(has('monthly')&&pot.estimatedValue)item.monthly=+pot.estimatedValue;
-  if(has('expiry'))item.expiry=addMonths(nd(),DEFAULT_CONTRACT_MONTHS); // תפוגה = מועד הסגירה + תקופת החוזה
+  if(has('expiry'))item.expiry=addMonths(nd(),contractMonthsFor(realType)); // תפוגה = מועד הסגירה + תקופת החוזה לפי הסוג
   const bits=['נרכש מתהליך עבודה'];
   if(pot.product)bits.push(pot.product);
   if(pot.estimatedValue)bits.push('שווי '+fmt(+pot.estimatedValue));
