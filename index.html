@@ -4742,8 +4742,9 @@ function loadAll(){
       D.goals=Object.assign({},_GOAL_DEFAULTS,p.goals||{});
       D.contractTerms=p.contractTerms||{}; // תקופות חוזה שהמשתמש הגדיר לכל סוג מוצר
 
-      // Only seed demo data if all tables are empty AND no initialized flag
-      const allEmpty=!D.deals.length&&!D.tenders.length&&!D.dists.length&&!D.salary.length&&!D.meetings.length&&!D.clients.length;
+      // Only seed demo data if all tables are empty AND no initialized flag.
+      // כולל tasks + inbox — מצב שיש בו רק משימות לא ייחשב "ריק" ולא יידרס בזריעת דמו.
+      const allEmpty=!D.deals.length&&!D.tenders.length&&!D.dists.length&&!D.salary.length&&!D.meetings.length&&!D.clients.length&&!(D.tasks&&D.tasks.length)&&!(D.inbox&&D.inbox.length);
       if(allEmpty&&!localStorage.getItem(LS_KEY+'_init')){
         // Before seeding demo data, check IDB for a recent real backup
         setTimeout(async()=>{
