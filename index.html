@@ -5196,6 +5196,15 @@ function updateNavBadges(){
       alBadge.textContent=critCnt||'';
       alBadge.style.display=critCnt?'inline-block':'none';
     }
+    // Tenders with an imminent submission deadline (≤5 days, not submitted/decided)
+    const tenCnt=(Array.isArray(D.tenders)?D.tenders:[]).filter(t=>{ if(t.submitted==='כן'||t.result||!t.deadline)return false; const dl=db(todayStr,t.deadline); return dl>=0&&dl<=5; }).length;
+    const tenNav=document.getElementById('nv-tenders');
+    if(tenNav){
+      let tnb=tenNav.querySelector('.nav-badge');
+      if(!tnb){tnb=document.createElement('span');tnb.className='nav-badge';tnb.style.cssText='background:#f4a261;color:#000';tenNav.querySelector('span:last-child').appendChild(tnb);}
+      tnb.textContent=tenCnt||'';
+      tnb.style.display=tenCnt?'inline-block':'none';
+    }
   }catch(e){}
 }
 
