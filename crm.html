@@ -1921,6 +1921,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <button class="btn btnp" onclick="openClientModal(null)">+ לקוח חדש</button>
       <button class="btn" id="cli-view-btn" onclick="toggleClientsView()" title="החלף בין תצוגת רשת לקרוסלת 3D" style="border-color:#a78bfa;color:#a78bfa">🎠 קרוסלה 3D</button>
       <button class="btn" onclick="manualSyncDeals()" style="background:#7b5ea7;color:#fff;border-color:#7b5ea7" title="סנכרן עסקאות סגורות לכרטיסי לקוח">🔄 סנכרן עסקאות</button>
+      <button class="btn" onclick="runBackfillExpiry()" style="border-color:var(--gold);color:var(--gold)" title="קבע תאריך תפוגה למוצרים שאין להם — לפי תאריך הפרויקט שנסגר + 36 חודשים">📅 השלם תפוגות</button>
       <button class="btn btn-excel" onclick="exportExcel('clients')">📥 Excel</button>
       <button class="btn btn-import" onclick="importFromExcel('clients')" title="ייבוא מ-Excel">📤 ייבוא</button>
     </div>
@@ -8838,24 +8839,28 @@ function mapDealToItemType(deal){
   return'lines';
 }
 
+// תקופת חוזה ברירת-מחדל למוצר שנוצר מפרויקט שנסגר: תפוגה = תאריך הפרויקט + התקופה.
+const DEFAULT_CONTRACT_MONTHS=36;
 function buildItemFromDeal(deal,type){
   const note=`עסקה #${deal.num||''}  |  ${fmtDate(deal.date)}  |  ${deal.ct||''}`;
   const mo=deal.mv||deal.v||'';
+  const exp=deal.date?addMonths(deal.date,DEFAULT_CONTRACT_MONTHS):''; // תפוגה = תאריך העסקה + תקופת החוזה
   switch(type){
-    case'lines':return{lineType:deal.inf&&deal.inf.includes('הוט')?'HOT':deal.inf==='RF'?'RF':'צד ג׳',speed:deal.srv||'',ip:'',expiry:'',monthly:mo,notes:note};
-    case'forti':return{model:deal.srv||'',sn:'',license:'UTM/ATP',expiry:'',notes:note};
-    case'cisco':return{model:deal.srv||'',sn:'',sw:'',expiry:'',notes:note};
-    case'hp':return{model:deal.srv||'',sn:'',expiry:'',notes:note};
-    case'juniper':return{model:deal.srv||'',sn:'',expiry:'',notes:note};
-    case'cybiz':return{solution:deal.srv||'',expiry:'',monthly:mo,notes:note};
-    case'starlink':return{unit:'',expiry:'',monthly:mo,notes:note};
-    case'pbx':return{brand:'',model:deal.srv||'',expiry:'',extensions:'',notes:note};
-    case'ms365':return{plan:'Business Standard',licenses:'',expiry:'',monthly:mo,notes:note};
-    default:return{name:deal.srv||'',vendor:'HOT Business',expiry:'',monthly:mo,notes:note};
+    case'lines':return{lineType:deal.inf&&deal.inf.includes('הוט')?'HOT':deal.inf==='RF'?'RF':'צד ג׳',speed:deal.srv||'',ip:'',expiry:exp,monthly:mo,notes:note};
+    case'forti':return{model:deal.srv||'',sn:'',license:'UTM/ATP',expiry:exp,notes:note};
+    case'cisco':return{model:deal.srv||'',sn:'',sw:'',expiry:exp,notes:note};
+    case'hp':return{model:deal.srv||'',sn:'',expiry:exp,notes:note};
+    case'juniper':return{model:deal.srv||'',sn:'',expiry:exp,notes:note};
+    case'cybiz':return{solution:deal.srv||'',expiry:exp,monthly:mo,notes:note};
+    case'starlink':return{unit:'',expiry:exp,monthly:mo,notes:note};
+    case'pbx':return{brand:'',model:deal.srv||'',expiry:exp,extensions:'',notes:note};
+    case'ms365':return{plan:'Business Standard',licenses:'',expiry:exp,monthly:mo,notes:note};
+    default:return{name:deal.srv||'',vendor:'HOT Business',expiry:exp,monthly:mo,notes:note};
   }
 }
 // generic client-card item for any category (used by dist→client and conversions)
-function buildClientItem(type,{srv,monthly,note}){
+// srcDate = תאריך סגירת הפרויקט → נגזרת ממנו תפוגת החוזה (תאריך + DEFAULT_CONTRACT_MONTHS).
+function buildClientItem(type,{srv,monthly,note,srcDate}){
   const cfg=ITEM_CFG[type]||ITEM_CFG.extra;
   const has=k=>cfg.fields.some(f=>f.k===k);
   const item={};
@@ -8865,9 +8870,48 @@ function buildClientItem(type,{srv,monthly,note}){
   if(has('solution'))item.solution=srv||'';
   if(has('unit'))item.unit=srv||'';
   if(has('monthly')&&monthly)item.monthly=+monthly;
-  if(has('expiry'))item.expiry='';
+  if(has('expiry'))item.expiry=srcDate?addMonths(srcDate,DEFAULT_CONTRACT_MONTHS):'';
   if(has('notes'))item.notes=note||'';
   return item;
+}
+// גוזר את תאריך הפרויקט של מוצר קיים: קודם מהתאריך שמוטבע בהערה, אחרת לפי מס' ההפצה/עסקה.
+function _productSourceDate(item){
+  const notes=String(item&&item.notes||'');
+  const iso=notes.match(/(\d{4})-(\d{2})-(\d{2})/);            // YYYY-MM-DD (מהמרת מוצר מ"תהליך עבודה")
+  if(iso)return iso[0];
+  const m=notes.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);        // DD/MM/YYYY (מהפצה/עסקה)
+  if(m)return `${m[3]}-${('0'+m[2]).slice(-2)}-${('0'+m[1]).slice(-2)}`;
+  const dm=notes.match(/הפצה #(\S+)/);
+  if(dm){const d=[...(D.dists||[]),...(D.archivedDists||[])].find(x=>String(x.no)===dm[1]);if(d&&d.dt)return d.dt;}
+  const em=notes.match(/עסקה #(\S+)/);
+  if(em){const d=[...(D.deals||[]),...(D.archivedDeals||[])].find(x=>String(x.num)===em[1]);if(d&&d.date)return d.date;}
+  return '';
+}
+// השלמת תפוגות חסרות למוצרים קיימים: לכל מוצר עם שדה תפוגה ריק — קובע תפוגה = תאריך הפרויקט + התקופה.
+function backfillProductExpiry(months){
+  months=+months||DEFAULT_CONTRACT_MONTHS;
+  let filled=0,noSrc=0;
+  (D.clients||[]).forEach(c=>{
+    let changed=false;
+    Object.keys(ITEM_CFG).forEach(type=>{
+      const hasExp=ITEM_CFG[type].fields.some(f=>f.k==='expiry');
+      if(!hasExp)return;
+      (c[type]||[]).forEach(item=>{
+        if(item.expiry)return;
+        const src=_productSourceDate(item);
+        if(src){item.expiry=addMonths(src,months);item._expiryBackfilled=true;filled++;changed=true;}
+        else noSrc++;
+      });
+    });
+    if(changed&&c.id)dbUpdate('clients',c.id,c);
+  });
+  return {filled,noSrc};
+}
+function runBackfillExpiry(){
+  const r=backfillProductExpiry(DEFAULT_CONTRACT_MONTHS);
+  rAll();
+  if(r.filled)showToast(`✅ ${r.filled} מוצרים קיבלו תאריך תפוגה (תאריך הפרויקט + ${DEFAULT_CONTRACT_MONTHS} חודשים)${r.noSrc?`\n⚠️ ${r.noSrc} מוצרים ללא תאריך פרויקט — הגדר ידנית`:''}`,'ok');
+  else showToast(r.noSrc?`ℹ️ ${r.noSrc} מוצרים ללא תפוגה — לא נמצא תאריך פרויקט לגזור ממנו. הגדר ידנית בכרטיס.`:'✅ לכל המוצרים כבר יש תאריך תפוגה','info');
 }
 
 // ─── UPSELL SUGGESTIONS ───
@@ -8936,7 +8980,7 @@ function syncDistToClient(dist){
   // add the equipment/product to the matching client-card category (per the dist's type)
   const type=(dist.ptype&&ITEM_CFG[dist.ptype])?dist.ptype:'lines';
   if(!client[type])client[type]=[];
-  client[type].push(buildClientItem(type,{srv:dist.so||dist.it||'',monthly:dist.inc||0,note:`הפצה #${dist.no||''} | ${fmtDate(dist.dt)}`}));
+  client[type].push(buildClientItem(type,{srv:dist.so||dist.it||'',monthly:dist.inc||0,note:`הפצה #${dist.no||''} | ${fmtDate(dist.dt)}`,srcDate:dist.dt||''}));
   client.syncedDeals.push(syncKey);
   if(client.id){dbUpdate('clients',client.id,client);}
   else{dbInsert('clients',client);}
@@ -9005,6 +9049,7 @@ function convertPotentialToProduct(client,pot){
   const item={};
   if(realType==='extra')item.name=pot.product||pot.productType||'פתרון';
   if(has('monthly')&&pot.estimatedValue)item.monthly=+pot.estimatedValue;
+  if(has('expiry'))item.expiry=addMonths(nd(),DEFAULT_CONTRACT_MONTHS); // תפוגה = מועד הסגירה + תקופת החוזה
   const bits=['נרכש מתהליך עבודה'];
   if(pot.product)bits.push(pot.product);
   if(pot.estimatedValue)bits.push('שווי '+fmt(+pot.estimatedValue));
