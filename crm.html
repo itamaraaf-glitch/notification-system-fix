@@ -2320,8 +2320,11 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="g"><label>יעד ₪</label><input type="number" id="str" placeholder="0" oninput="salAutoCalc()"></div>
     <div class="g"><label>סגירה ₪</label><input type="number" id="scl2" placeholder="0" oninput="salAutoCalc()"></div>
     <div class="g"><label>יתרה ₪ <span style="font-size:9px;color:var(--teal);font-weight:400">אוטומטי: יעד − סגירה</span></label><input type="number" id="spv" placeholder="0" oninput="this.dataset.manual='1'"></div>
-    <div class="g"><label>סטטוס</label><select id="sst"><option>פתוח</option><option>בתהליך</option><option>סגור</option><option>חלקי</option></select></div>
+    <div class="g"><label>סטטוס</label><select id="sst" onchange="salExpUpdate()"><option>פתוח</option><option>בתהליך</option><option>סגור</option><option>חלקי</option></select></div>
     <div class="g"><label>סוג</label><select id="sty"><option value="service">שירות</option><option value="equipment">ציוד (OTC)</option></select></div>
+    <div class="g"><label>תקופת חוזה <span style="font-size:9px;color:var(--teal);font-weight:400">חידוש</span></label><select id="sterm" onchange="salExpUpdate()"><option value="0">ללא</option><option value="6">6 חודשים</option><option value="12">12 חודשים</option><option value="24">24 חודשים</option><option value="36">36 חודשים</option></select></div>
+    <div class="g"><label>תאריך התחלה <span style="font-size:9px;color:var(--teal);font-weight:400">אוטומטי בסגירה</span></label><input type="date" id="sstart" onchange="salExpUpdate()"></div>
+    <div class="gf"><div id="sexp-box" style="display:none;font-size:12px;background:rgba(6,214,160,.07);border:1px solid rgba(6,214,160,.25);border-radius:9px;padding:8px 12px;color:var(--text2)"></div></div>
     <div class="gf"><label>הערות</label><textarea id="sno" rows="2"></textarea></div>
     <div class="gf"><label>📎 קבצים מצורפים (Word / PDF / Excel / תמונה)</label>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -5280,6 +5283,16 @@ function getAlerts(){
       const kind=sl.ty==='equipment'?'ציוד':'שירות';
       a.push({type:'warn',h:`שכר לא ממומש – ${sl.cl}${sl.pj?' · פרויקט '+sl.pj:''}`,s:`יתרה לגבייה: ${fmt(sl.pv)} מתוך יעד ${fmt(sl.tr)} (${kind}) | סטטוס: ${sl.st||'פתוח'}${sl.no?` | רקע: ${sl.no}`:''}`,co:sl.cl,kind:'salary',id:sl.id});
     }
+    // חידוש חוזה: 3 חודשים לפני תפוגה (או אחרי) — לפי תאריך התחלה + תקופת החוזה
+    const exp=salExpiry(sl);
+    if(exp){
+      const dToExp=db(t,exp); // ימים עד התפוגה (חיובי=עתיד, שלילי=פג)
+      if(dToExp<=90){
+        const kind=sl.ty==='equipment'?'ציוד':'שירות';
+        const urg=dToExp<0?`פג לפני ${Math.abs(dToExp)} ימים — לחדש עכשיו!`:dToExp===0?'פג היום!':`${dToExp} ימים לתפוגה`;
+        a.push({type:dToExp<=30?'crit':'warn',h:`🔄 חידוש חוזה – ${sl.cl}${sl.pj?' · פרויקט '+sl.pj:''}`,s:`חוזה ${kind} מסתיים ${fmtDate(exp)} (${urg}) | תקופה: ${sl.term} חודשים | התחלה: ${fmtDate(sl.cstart)}`,co:sl.cl,kind:'salary',id:sl.id,meta:{expiry:exp,days:dToExp}});
+      }
+    }
   });
   D.tenders.forEach(t2=>{
     if(t2.deadline){const dl=db(t,t2.deadline);if(dl>=0&&dl<=5&&t2.submitted!=='כן'){const nx=tenderNextStage(t2);a.push({type:'crit',h:`הגשת מכרז בעוד ${dl} ימים – ${t2.name}`,s:`מועד הגשה: ${fmtDate(t2.deadline)} | תחנה נוכחית: ${nx?nx.l+' ('+tenderStageCount(t2)+'/'+TENDER_STAGES.length+')':'הוגש'}${t2.handler?` | מטפל: ${t2.handler}`:''}${t2.amount?` | היקף: ${fmt(t2.amount)}`:''}${t2.notes?` | ${t2.notes}`:''}`,kind:'tender',id:t2.id});}}
@@ -6397,7 +6410,9 @@ function rSalary(){
     document.getElementById(tbId).innerHTML=items.map(s=>{
       const pct=s.tr?Math.round(((s.cl2||0)/s.tr)*100):0,pc=pct>=100?'var(--teal)':pct>=50?'#f4a261':'#e63946',p=pri(s,'sal');
       const chk=SEL[sk]&&SEL[sk].has(s.id)?'checked':'';
-      return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td>${sB(s.st)}</td><td>${s.qt||1}</td><td style="font-size:10px">${esc(s.pj||'')}</td><td style="font-weight:600">${esc(s.cl||'')}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${esc(s.no||'–')}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
+      const _exp=salExpiry(s);let _expChip='';
+      if(_exp){const _d=db(nd(),_exp);const _c=_d<0?'#e63946':_d<=90?'#f4a261':'var(--teal)';_expChip=`<div style="font-size:9px;font-weight:700;color:${_c};margin-top:2px;white-space:nowrap" title="חוזה ${s.term} חודשים · התחלה ${fmtDate(s.cstart)}">🔄 חוזה עד ${fmtDate(_exp)}${_d<0?' · פג!':_d<=90?` · ${_d}י`:''}</div>`;}
+      return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td>${sB(s.st)}</td><td>${s.qt||1}</td><td style="font-size:10px">${esc(s.pj||'')}${_expChip}</td><td style="font-weight:600">${esc(s.cl||'')}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${esc(s.no||'–')}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
     }).join('')||emptyRow(12,'💰',"אין פרויקטים","openM('salary',null)");
     const tt=items.reduce((s,i)=>s+(i.tr||0),0),tc=items.reduce((s,i)=>s+(i.cl2||0),0),tp=items.reduce((s,i)=>s+(i.pv||0),0);
     const p2=tt?Math.round((tc/tt)*100):0;
@@ -8959,6 +8974,30 @@ function salAutoCalc(){
   const cl2=+document.getElementById('scl2').value||0;
   pv.value=Math.max(0,tr-cl2)||'';
 }
+// ===== חוזי שכר: תאריך התחלה + תקופה → תאריך תפוגה + התראת חידוש =====
+// מוסיף חודשים לתאריך תוך טיפול בגלישת חודש (למשל 31.1 + חודש → 28/29.2)
+function addMonths(dateStr,months){
+  if(!dateStr||!(+months))return '';
+  const d=new Date(dateStr+'T00:00:00'); if(isNaN(d))return '';
+  const day=d.getDate(); d.setMonth(d.getMonth()+(+months));
+  if(d.getDate()<day)d.setDate(0);
+  return d.toISOString().split('T')[0];
+}
+// תאריך תפוגת חוזה: תאריך התחלה + תקופת החוזה (חודשים). ריק אם חסר אחד מהם.
+function salExpiry(s){ if(!s)return ''; return addMonths(s.cstart,+s.term||0); }
+// עדכון תצוגת התפוגה בטופס + מילוי אוטומטי של תאריך התחלה בעת סגירה
+function salExpUpdate(){
+  const st=document.getElementById('sst'), term=document.getElementById('sterm'), start=document.getElementById('sstart'), box=document.getElementById('sexp-box');
+  if(!st||!term||!start||!box)return;
+  // סגירת פרויקט ללא תאריך התחלה → קובע אוטומטית את היום כתאריך התחלת חוזה
+  if(st.value==='סגור'&&!start.value)start.value=nd();
+  const exp=addMonths(start.value,+term.value||0);
+  if(exp){
+    const d=db(nd(),exp);
+    const urg=d<0?`⚠️ החוזה פג לפני ${Math.abs(d)} ימים`:d===0?'⚠️ החוזה פג היום':d<=90?`🔄 ${d} ימים לחידוש (התראה תיפתח)`:`${d} ימים לתפוגה`;
+    box.style.display=''; box.innerHTML=`📅 תפוגת חוזה: <b style="color:var(--text)">${fmtDate(exp)}</b> · ${urg}`;
+  }else{ box.style.display='none'; box.innerHTML=''; }
+}
 function openM(type,id){
   if(typeof closeFab==='function')closeFab();
   EI=id;ET=type;const isNew=!id;
@@ -8990,6 +9029,7 @@ function openM(type,id){
     document.getElementById('sttit').textContent=isNew?'פרויקט לשכר':'עריכת פרויקט';
     const s=isNew?{}:D.salary.find(x=>x.id==id)||{};
     document.getElementById('spj').value=s.pj||'';document.getElementById('scl').value=s.cl||'';document.getElementById('sqt').value=s.qt||1;document.getElementById('str').value=s.tr||0;document.getElementById('scl2').value=s.cl2||0;document.getElementById('spv').value=s.pv||0;document.getElementById('sst').value=s.st||'פתוח';document.getElementById('sty').value=s.ty||'service';document.getElementById('sno').value=s.no||'';
+    document.getElementById('sterm').value=String(s.term||0);document.getElementById('sstart').value=s.cstart||'';salExpUpdate();
     // אתחול האוטומטיקה של "יתרה": ערך ידני קיים ששונה מהחישוב — נשמר ולא נדרס
     const _spv=document.getElementById('spv');
     if(_spv){
@@ -9631,7 +9671,9 @@ function _promptSendTrack(dist, changed){
   confirmAct(msg, ()=>promptTrackShare(dist), '🔗 שלח קישור מעקב');
 }
 function saveSal(){
-  const row={pj:document.getElementById('spj').value,cl:document.getElementById('scl').value,qt:+document.getElementById('sqt').value,tr:+document.getElementById('str').value,cl2:+document.getElementById('scl2').value,pv:+document.getElementById('spv').value,st:document.getElementById('sst').value,ty:document.getElementById('sty').value,no:document.getElementById('sno').value,files:_attPending['salary']||[]};
+  const row={pj:document.getElementById('spj').value,cl:document.getElementById('scl').value,qt:+document.getElementById('sqt').value,tr:+document.getElementById('str').value,cl2:+document.getElementById('scl2').value,pv:+document.getElementById('spv').value,st:document.getElementById('sst').value,ty:document.getElementById('sty').value,no:document.getElementById('sno').value,term:+document.getElementById('sterm').value||0,cstart:document.getElementById('sstart').value||'',files:_attPending['salary']||[]};
+  // אוטומציה: פרויקט שהסתיים (סגור) — קובע תאריך התחלת חוזה אוטומטית אם לא הוזן
+  if(row.st==='סגור'&&!row.cstart)row.cstart=nd();
   if(!row.cl){alert('יש להזין שם לקוח');return;}
   if(isNaN(row.qt)||row.qt<0||isNaN(row.tr)||row.tr<0||isNaN(row.cl2)||row.cl2<0||isNaN(row.pv)||row.pv<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}
   if(EI){dbUpdate('salary',EI,row);}else{dbInsert('salary',row);}
