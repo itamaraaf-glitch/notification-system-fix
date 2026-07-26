@@ -6598,7 +6598,8 @@ function rDists(){
       let days='–';if(d.dt){const diff=db(d.dt,t);const col=d.st!=='הושלם'&&diff>7?'#e63946':diff>3?'#f4a261':'var(--teal)';days=`<b style="color:${col}">${diff}י</b>`;}
       const chk=SEL[sk]&&SEL[sk].has(d.id)?'checked':'';
       const mgr=MANAGERS.find(m=>m.name===(d.hd||''));
-      const emailBtn=mgr?`<button class="btn btns" onclick="sendEmailToDist('${d.id}')" title="📧 שלח מייל ל${mgr.name}" style="font-size:9px">📧</button>`:'';
+      const _recip=(mgr?mgr.name:'')+(d.hp?(mgr?' + ':'')+d.hp:'');
+      const emailBtn=_distHasRecipient(d)?`<button class="btn btns" onclick="sendEmailToDist('${d.id}')" title="📧 שלח מייל ל${esc(_recip||'צוות')} (מנהל + מטפל)" style="font-size:9px">📧</button>`:'';
       const dpct=d.tgt?Math.round(((d.inc||0)/d.tgt)*100):0;
       const dpc=dpct>=100?'var(--teal)':dpct>=50?'#f4a261':'#e63946';
       const pctCell=d.tgt?`<div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(dpct,100)}%;background:${dpc}"></div></div><span style="font-size:10px;font-weight:600;color:${dpc}">${dpct}%</span></div>`:'–';
@@ -8308,13 +8309,25 @@ function buildDistEmailBody(d){
   ].filter(l=>l!=='').join('\n');
   return lines;
 }
+// נמעני מייל הפצה: מנהל הפרויקט (hd) כנמען ראשי + גורם מטפל (hp) ב-CC.
+// 'כולם' = כל הגורמים המטפלים. אם אין מנהל — הגורם המטפל הופך לנמען הראשי.
+function _distRecipients(d){
+  const cc=[]; const mgr=MANAGERS.find(m=>m.name===(d&&d.hd||''));
+  const to=mgr?[mgr.email]:[];
+  const hp=(d&&d.hp)||'';
+  if(hp==='כולם') HANDLERS.forEach(h=>(h.emails||[]).forEach(e=>cc.push(e)));
+  else { const h=HANDLERS.find(x=>x.name===hp); if(h)(h.emails||[]).forEach(e=>cc.push(e)); }
+  if(!to.length&&cc.length) return {to:cc.slice(),cc:[]}; // אין מנהל → המטפל הוא הנמען
+  return {to,cc};
+}
+function _distHasRecipient(d){ const r=_distRecipients(d); return r.to.length>0; }
 function sendEmailToDist(id){
   const d=D.dists.find(x=>x.id==id);if(!d)return;
-  const mgr=MANAGERS.find(m=>m.name===(d.hd||''));
-  if(!mgr){toast('⚠️ לא נבחר מנהל פרויקט','warn');return;}
+  const {to,cc}=_distRecipients(d);
+  if(!to.length){toast('⚠️ לא נבחר מנהל פרויקט או גורם מטפל','warn');return;}
   const subject=`HOT Business – הפצה ${d.no||d.co||''} – ${d.co||''}`;
   const body=buildDistEmailBody(d);
-  openMail(mgr.email, subject, body);
+  openMail(to, subject, body, cc);
 }
 
 // ===== DEAL STATUS EMAIL =====
