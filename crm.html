@@ -5160,7 +5160,18 @@ function globalSearch(q){
   const hit=(...v)=>v.some(x=>String(x==null?'':x).toLowerCase().includes(q));
   const push=(icon,label,sub,type,id,arch)=>{ if(_gsRes.length<25)_gsRes.push({icon,label,sub,type,id,arch}); };
   D.deals.forEach(d=>{ if(hit(d.co,d.srv,d.ct,d.num,d.no)) push('💼',d.co||'(ללא שם)','עסקה'+(d.srv?' · '+d.srv:''),'deal',d.id); });
-  D.clients.forEach(c=>{ if(hit(c.name,c.contact,c.email,c.phone,c.cp)) push('🏢',c.name||'(ללא שם)','לקוח'+(c.contact?' · '+c.contact:''),'client',c.id); });
+  D.clients.forEach(c=>{
+    if(hit(c.name,c.contact,c.email,c.phone,c.cp)){ push('🏢',c.name||'(ללא שם)','לקוח'+(c.contact?' · '+c.contact:''),'client',c.id); return; }
+    // התאמה לפי מוצר שהלקוח מחזיק (דגם / S/N / תוכנית / מהירות / הערות...) → מציף את הלקוח
+    let prodHit='';
+    for(const t of Object.keys(ITEM_CFG)){
+      for(const it of (c[t]||[])){
+        if(hit(...Object.values(it).filter(v=>typeof v==='string'||typeof v==='number'))){ prodHit=ITEM_CFG[t].label; break; }
+      }
+      if(prodHit)break;
+    }
+    if(prodHit) push('🏢',c.name||'(ללא שם)','לקוח · '+prodHit,'client',c.id);
+  });
   D.dists.forEach(d=>{ if(hit(d.co,d.cl,d.no,d.so,d.hd)) push('🚀',d.co||'(ללא שם)','הפצה'+(d.no?' · #'+d.no:''),'dist',d.id); });
   D.salary.forEach(s=>{ if(hit(s.cl,s.pj,s.no)) push('💰',s.cl||'(ללא שם)','שכר'+(s.pj?' · '+s.pj:''),'salary',s.id); });
   D.tenders.forEach(t=>{ if(hit(t.name,t.proj,t.handler)) push('📋',t.name||'(ללא שם)','מכרז','tender',t.id); });
