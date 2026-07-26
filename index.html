@@ -1922,6 +1922,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <button class="btn" id="cli-view-btn" onclick="toggleClientsView()" title="החלף בין תצוגת רשת לקרוסלת 3D" style="border-color:#a78bfa;color:#a78bfa">🎠 קרוסלה 3D</button>
       <button class="btn" onclick="manualSyncDeals()" style="background:#7b5ea7;color:#fff;border-color:#7b5ea7" title="סנכרן עסקאות סגורות לכרטיסי לקוח">🔄 סנכרן עסקאות</button>
       <button class="btn" onclick="runBackfillExpiry()" style="border-color:var(--gold);color:var(--gold)" title="קבע תאריך תפוגה למוצרים שאין להם — לפי תאריך הפרויקט + תקופת החוזה (Microsoft 365: 12 חודשים, שאר: 36)">📅 השלם תפוגות</button>
+      <button class="btn" onclick="openContractTerms()" style="border-color:var(--gold);color:var(--gold)" title="הגדר תקופת חוזה לכל סוג מוצר">⚙️ תקופות חוזה</button>
       <button class="btn btn-excel" onclick="exportExcel('clients')">📥 Excel</button>
       <button class="btn btn-import" onclick="importFromExcel('clients')" title="ייבוא מ-Excel">📤 ייבוא</button>
     </div>
@@ -2339,6 +2340,17 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
     <button class="btn" onclick="closeM('msalary')">ביטול</button>
     <button class="btn btnp" onclick="saveSal()">שמור</button>
+  </div>
+</div></div>
+
+<!-- CONTRACT TERMS MODAL -->
+<div class="mw" id="mcterms"><div class="modal">
+  <div class="mhdr"><h3>⚙️ תקופות חוזה לפי מוצר</h3><button class="mcls" onclick="closeM('mcterms')">✕</button></div>
+  <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">קבע לכל סוג מוצר את תקופת החוזה. התפוגה נקבעת אוטומטית = <b>תאריך הפרויקט + התקופה</b>. שינוי כאן מעדכן גם מוצרים שנקבעו אוטומטית (לא נוגע בתאריכים שהוזנו ידנית).</p>
+  <div id="cterms-list" style="display:grid;gap:8px"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+    <button class="btn" onclick="closeM('mcterms')">ביטול</button>
+    <button class="btn btnp" onclick="saveContractTerms()">שמור והחל</button>
   </div>
 </div></div>
 
@@ -4725,6 +4737,8 @@ function loadAll(){
        D._bio=(_bl&&_bl.cred)?{on:true,cred:_bl.cred,since:(p._bio&&p._bio.since)||nd()}:null;}
       // Merge with defaults so new goal keys are never undefined in old saves
       D.goals=Object.assign({},_GOAL_DEFAULTS,p.goals||{});
+      D.contractTerms=p.contractTerms||{}; // תקופות חוזה שהמשתמש הגדיר לכל סוג מוצר
+
       // Only seed demo data if all tables are empty AND no initialized flag
       const allEmpty=!D.deals.length&&!D.tenders.length&&!D.dists.length&&!D.salary.length&&!D.meetings.length&&!D.clients.length;
       if(allEmpty&&!localStorage.getItem(LS_KEY+'_init')){
@@ -4876,7 +4890,7 @@ function nextDealNum(){
   return (nums.length?Math.max(...nums):0)+1;
 }
 // a complete empty dataset template so restores never drop a section
-function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],tasks:[],inbox:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000},_deletedIds:{}};}
+function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],tasks:[],inbox:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000},contractTerms:{},_deletedIds:{}};}
 function dbInsert(table,row){row.id=genId();row._mts=Date.now();D[table].push(row);saveAll();return row;}
 function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0)D[table][i]={...D[table][i],...row,_mts:Date.now()};saveAll();}
 // ===== GLOBAL UNDO (for accidental deletes in any section) =====
@@ -8841,9 +8855,13 @@ function mapDealToItemType(deal){
 
 // תקופת חוזה ברירת-מחדל למוצר שנוצר מפרויקט שנסגר: תפוגה = תאריך הפרויקט + התקופה.
 const DEFAULT_CONTRACT_MONTHS=36;
-// תקופות חוזה לפי סוג מוצר (חריגים לברירת-המחדל). Microsoft 365 תמיד 12 חודשים.
+// תקופות חוזה לפי סוג מוצר (חריגים מובנים לברירת-המחדל). Microsoft 365 תמיד 12 חודשים.
 const CONTRACT_MONTHS={ms365:12};
-function contractMonthsFor(type){ return CONTRACT_MONTHS[type]||DEFAULT_CONTRACT_MONTHS; }
+// עדיפות: הגדרת המשתמש (D.contractTerms) → חריג מובנה → ברירת מחדל.
+function contractMonthsFor(type){
+  const u=D&&D.contractTerms&&D.contractTerms[type];
+  return (+u>0)?+u:(CONTRACT_MONTHS[type]||DEFAULT_CONTRACT_MONTHS);
+}
 function buildItemFromDeal(deal,type){
   const note=`עסקה #${deal.num||''}  |  ${fmtDate(deal.date)}  |  ${deal.ct||''}`;
   const mo=deal.mv||deal.v||'';
@@ -8915,6 +8933,35 @@ function backfillProductExpiry(){
     if(changed&&c.id)dbUpdate('clients',c.id,c);
   });
   return {filled,fixed,noSrc};
+}
+// מסך הגדרת תקופות חוזה לכל סוג מוצר (עם שדה תפוגה)
+function openContractTerms(){
+  const opts=[6,12,24,36,48,60];
+  const rows=Object.keys(ITEM_CFG).filter(t=>ITEM_CFG[t].fields.some(f=>f.k==='expiry')).map(t=>{
+    const cur=contractMonthsFor(t);
+    return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:8px 12px">
+      <span style="font-size:12.5px;font-weight:600">${ITEM_CFG[t].label}</span>
+      <select data-ct="${t}" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:8px;padding:5px 8px;color:var(--text);font-family:inherit;outline:none">
+        ${opts.map(m=>`<option value="${m}"${m===cur?' selected':''}>${m} חודשים</option>`).join('')}
+      </select>
+    </div>`;
+  }).join('');
+  document.getElementById('cterms-list').innerHTML=rows;
+  openM_id('mcterms');
+}
+function saveContractTerms(){
+  if(!D.contractTerms)D.contractTerms={};
+  document.querySelectorAll('#cterms-list select[data-ct]').forEach(sel=>{
+    const t=sel.getAttribute('data-ct'), m=+sel.value||DEFAULT_CONTRACT_MONTHS;
+    D.contractTerms[t]=m;
+  });
+  saveAll();
+  closeM('mcterms');
+  // החלת התקופות החדשות על מוצרים שנקבעו אוטומטית (לא על ידניים)
+  const r=backfillProductExpiry();
+  rAll();
+  const changed=(r.filled||0)+(r.fixed||0);
+  showToast(changed?`✅ התקופות נשמרו — ${changed} מוצרים עודכנו לתפוגה החדשה`:'✅ תקופות החוזה נשמרו','ok');
 }
 function runBackfillExpiry(){
   const r=backfillProductExpiry();
