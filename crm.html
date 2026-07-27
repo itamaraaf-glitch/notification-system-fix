@@ -9484,6 +9484,7 @@ function rWorkPlan(){
   D.clients.forEach(c=>{
     (c.potential||[]).forEach((p,idx)=>{all.push({...p,clientName:c.name,clientId:c.id,potIdx:idx});});
   });
+  const rawTotal=all.length; // כמה מוצרים קיימים לפני סינון — כדי להבחין בין "אין בכלל" ל"אין תואמים לסינון"
   if(priF)all=all.filter(p=>p.priority===priF);
   if(stF)all=all.filter(p=>p.status===stF);
   const priO={'גבוהה':0,'בינונית':1,'נמוכה':2};
@@ -9536,11 +9537,19 @@ function rWorkPlan(){
     wpHtml+=`<tr class="mdiv mdiv-client"><td colspan="11" onclick="openClientModal('${g.id}')">🏢 ${esc(g.name)} <span style="font-weight:400;opacity:.85">(${g.items.length} פעילויות · שווי ${fmt(g.total)})</span></td></tr>`;
     wpHtml+=g.items.map(rowHtml).join('');
   });
-  if(tbEl)tbEl.innerHTML=wpHtml||'<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text2)">אין מוצרים פוטנציאליים – פתח כרטיס לקוח והוסף, או סגור עסקה כדי לקבל הצעות אוטומטיות</td></tr>';
+  if(tbEl)tbEl.innerHTML=wpHtml||((priF||stF)&&rawTotal>0
+    ? `<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text2)"><div style="font-size:13px;font-weight:700;margin-bottom:4px">🔍 אין מוצרים תואמים לסינון</div><div style="font-size:11px;color:var(--text3);margin-bottom:12px">קיימים ${rawTotal} מוצרים פוטנציאליים בסינון אחר</div><button class="btn btnp" onclick="clearWpFilters()" style="font-size:12px">✖ נקה סינון</button></td></tr>`
+    : '<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text2)">אין מוצרים פוטנציאליים – פתח כרטיס לקוח והוסף, או סגור עסקה כדי לקבל הצעות אוטומטיות</td></tr>');
   const wpTh=document.getElementById('wp-thdr-info');
   if(wpTh)wpTh.innerHTML=all.length?`· <span style="color:#a78bfa">${groupArr.length} לקוחות</span> · <span style="color:var(--text2)">${all.length} פעילויות</span> · <span style="color:var(--gold)">₪${Math.round(totalVal/1000)}K פוטנציאל</span>`:'';
   const ftEl=document.getElementById('wpft');
   if(ftEl)ftEl.innerHTML=`<span class="fi">מוצרים: <b>${all.length}</b></span><span class="fi">שווי פוטנציאלי: <b class="ny">${fmt(totalVal)}</b></span><span class="fi">עדיפות גבוהה: <b style="color:#e63946">${high}</b></span><span class="fi">בתהליך: <b class="nb">${inProg}</b></span><span class="fi">יעד החודש: <b style="color:var(--blue)">${thisMonth}</b></span><span class="fi">נסגרו: <b class="ng">${closed}</b></span>`;
+}
+// ניקוי סינון תוכנית העבודה (עדיפות + סטטוס) בלחיצה אחת
+function clearWpFilters(){
+  const pf=document.getElementById('wp-pri-filter'); if(pf)pf.value='';
+  const sf=document.getElementById('wp-status-filter'); if(sf)sf.value='';
+  rWorkPlan();
 }
 
 // ===== MODALS =====
