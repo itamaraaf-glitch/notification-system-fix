@@ -3753,7 +3753,7 @@ async function fbBaselineNow(){
 }
 
 // BroadcastChannel: sync between tabs in same browser without Firebase
-let _bc=null;
+let _bc=null,_bcTimer=null;
 function initBroadcast(){
   if(!('BroadcastChannel' in window))return;
   try{
@@ -3761,14 +3761,19 @@ function initBroadcast(){
     _bc.onmessage=e=>{
       if(_fbApplying)return;
       if(e.data&&e.data.type==='saved'){
-        // Another tab saved — pull from localStorage (already updated by that tab)
-        const raw=localStorage.getItem(LS_KEY);
-        if(!raw)return;
-        try{
-          const p=JSON.parse(raw);
-          const changed=fbMergeRemote(p);
-          if(changed){D=Object.assign(D,{});rAll();showToast('🔄 עודכן מכרטיסייה אחרת','ok');}
-        }catch(e2){}
+        // Another tab saved — pull from localStorage (already updated by that tab).
+        // דחיסה (debounce): רצף שמירות מכרטיסייה אחרת מתמזג למיזוג+רינדור+הודעה אחת
+        // (localStorage כבר מכיל את המצב הסופי) — מונע סחרור רינדור והצפת הודעות בין כרטיסיות.
+        clearTimeout(_bcTimer);
+        _bcTimer=setTimeout(()=>{
+          const raw=localStorage.getItem(LS_KEY);
+          if(!raw)return;
+          try{
+            const p=JSON.parse(raw);
+            const changed=fbMergeRemote(p);
+            if(changed){D=Object.assign(D,{});rAll();showToast('🔄 עודכן מכרטיסייה אחרת','ok');}
+          }catch(e2){}
+        },300);
       }
     };
   }catch(e){}
