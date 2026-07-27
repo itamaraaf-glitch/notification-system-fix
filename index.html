@@ -6718,7 +6718,7 @@ function rSalary(){
       const chk=SEL[sk]&&SEL[sk].has(s.id)?'checked':'';
       const _exp=salExpiry(s);let _expChip='';
       if(_exp){const _d=db(nd(),_exp);const _c=_d<0?'#e63946':_d<=90?'#f4a261':'var(--teal)';_expChip=`<div style="font-size:9px;font-weight:700;color:${_c};margin-top:2px;white-space:nowrap" title="חוזה ${s.term} חודשים · התחלה ${fmtDate(s.cstart)}">🔄 חוזה עד ${fmtDate(_exp)}${_d<0?' · פג!':_d<=90?` · ${_d}י`:''}</div>`;}
-      return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td>${sB(s.st)}</td><td>${s.qt||1}</td><td style="font-size:10px">${esc(s.pj||'')}${_expChip}</td><td style="font-weight:600">${esc(s.cl||'')}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${esc(s.no||'–')}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
+      return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td>${sB(s.st)}</td><td>${s.qt||1}</td><td style="font-size:10px">${esc(s.pj||'')}${_expChip}</td><td style="font-weight:600">${esc(s.cl||'')}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${(+s.pv>0)?`<span onclick="event.stopPropagation();collectSalaryBalance('${s.id}')" title="לחץ לסימון שהיתרה נגבתה — הפרויקט ייסגר" style="cursor:pointer;text-decoration:underline dotted">${fmt(s.pv)} ✓</span>`:fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${esc(s.no||'–')}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
     }).join('')||emptyRow(12,'💰',"אין פרויקטים","openM('salary',null)");
     const tt=items.reduce((s,i)=>s+(i.tr||0),0),tc=items.reduce((s,i)=>s+(i.cl2||0),0),tp=items.reduce((s,i)=>s+(i.pv||0),0);
     const p2=tt?Math.round((tc/tt)*100):0;
@@ -10278,6 +10278,17 @@ function clearDistMissing(id){
     rAll();
     showToast('✅ החוסרים סומנו כהתקבלו','ok');
   },'✅ התקבלו');
+}
+// סימון שהיתרה בפרויקט שכר נגבתה — מוסיף אותה לסכום שנסגר, מאפס יתרה וסוגר את הפרויקט
+function collectSalaryBalance(id){
+  const s=(D.salary||[]).find(x=>x.id==id); if(!s||!(+s.pv>0))return;
+  confirmAct('לסמן שהיתרה ('+fmt(s.pv)+') של '+(s.cl||'הלקוח')+' נגבתה? הפרויקט ייסגר.',()=>{
+    const patch={cl2:(+s.cl2||0)+(+s.pv||0), pv:0, st:'סגור'};
+    if(!s.cstart)patch.cstart=nd(); // תאריך התחלת חוזה אוטומטי בסגירה (עקבי עם saveSal)
+    dbUpdate('salary',id,patch);
+    rAll();
+    showToast('✅ היתרה נגבתה — הפרויקט נסגר','ok');
+  },'✅ נגבה');
 }
 function saveSal(){
   const row={pj:document.getElementById('spj').value,cl:document.getElementById('scl').value,qt:+document.getElementById('sqt').value,tr:+document.getElementById('str').value,cl2:+document.getElementById('scl2').value,pv:+document.getElementById('spv').value,st:document.getElementById('sst').value,ty:document.getElementById('sty').value,no:document.getElementById('sno').value,term:+document.getElementById('sterm').value||0,cstart:document.getElementById('sstart').value||'',files:_attPending['salary']||[]};
