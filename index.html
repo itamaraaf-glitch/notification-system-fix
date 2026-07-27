@@ -2615,7 +2615,11 @@ const now = () => new Date();
 // תאריך מקומי YYYY-MM-DD — לא UTC. חשוב: toISOString מחזיר UTC ובישראל (UTC+2/+3)
 // זה מקפיץ את התאריך יום אחורה בלילה. ymd משתמש ברכיבי התאריך המקומיים.
 const ymd = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-const nd = () => ymd(now());
+// nd() = מחרוזת "היום" (YYYY-MM-DD מקומי). ממומש עם מטמון קצר-טווח (1 שנייה): בתוך רינדור
+// סינכרוני אחד כל הקריאות מקבלות ערך מהמטמון (חוסך new Date()+פורמט אלפי פעמים), והערך
+// לעולם לא מתיישן ביותר משנייה — זניח למחרוזת ברזולוציית יום. לא נוגע ב-now() (זמן-אמת).
+let _ndCache={t:0,v:''};
+const nd = () => { const ms=Date.now(); if(ms-_ndCache.t<1000)return _ndCache.v; const v=ymd(new Date(ms)); _ndCache={t:ms,v}; return v; };
 // אבטחה: בריחת HTML לכל תוכן שמקורו חיצוני (מיילים, שמות לקוחות, קבצים) לפני הזרקה ל-innerHTML.
 // מונע XSS: תוקף ששולח מייל עם <img src=x onerror=...> בנושא/שולח/גוף לא יוכל להריץ קוד במערכת.
 const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -5570,10 +5574,13 @@ function rAlerts(){
   const cnt=document.getElementById('alerts-count');
   if(cnt)cnt.innerHTML=a.length===0?'<span style="color:var(--teal)">✅ הכל תקין</span>':[critN?`<span style="color:#e63946;font-weight:700">${critN} קריטי</span>`:'',warnN?`<span style="color:#f4a261">${warnN} אזהרה</span>`:'',`<span style="color:var(--text3)">${a.length} סה"כ</span>`].filter(Boolean).join(' · ');
   window._alertsList=a; // לניווט בלחיצה על התראה
+  // אינדקס לקוחות לפי שם מנורמל (חד-פעמי) — במקום findClientByName (סריקת כל הלקוחות) לכל התראה
+  const _cliByCo=new Map();
+  D.clients.forEach(c=>{ const k=nrmCo(c.name); if(k&&!_cliByCo.has(k))_cliByCo.set(k,c); });
   document.getElementById('alcont').innerHTML=a.length?a.map((x,i)=>{
     let mailBtn='',contactBtns='';
     if(x.co){
-      const c=findClientByName(x.co);
+      const c=_cliByCo.get(nrmCo(x.co));
       const has=!!(c&&c.email&&c.email.trim());
       const tip=has?'שלח את ההתראה במייל ללקוח':(c?'אין מייל ללקוח – הוסף בכרטיס':'אין כרטיס לקוח – ייפתח כרטיס חדש');
       mailBtn=`<button class="btn btns" onclick="event.stopPropagation();sendAlertEmail(${i})" title="${tip}" style="margin-top:8px;border-color:#4cc9f0;color:#4cc9f0;opacity:${has?1:.6}">📧 שלח ללקוח</button>`;
@@ -7551,10 +7558,13 @@ function contactLight(p){
 }
 // חוזי שכר של לקוח (התאמה לפי שם) שיש להם תאריך תפוגה — לריכוז בכרטיס הלקוח.
 // כל התפוגות של לקוח במקום אחד: חוזי שכר + מוצרים שכבר נמכרו (פריטי כרטיס עם תפוגה).
-function clientRenewables(client){
+// salByCo (אופציונלי) = Map של nrmCo(שם לקוח) → מערך רשומות שכר. כשמסופק, נחסך סריקת
+// כל D.salary לכל לקוח (O(לקוחות×שכר) → O(לקוחות+שכר)) — מאיץ מאוד את רינדור כרטיסי הלקוח.
+function clientRenewables(client,salByCo){
   if(!client)return [];
   const nm=nrmCo(client.name||''); const out=[];
-  if(nm)(D.salary||[]).forEach(s=>{ const exp=(typeof salExpiry==='function')?salExpiry(s):''; if(exp&&nrmCo(s.cl||'')===nm)
+  const _sal=nm?(salByCo?(salByCo.get(nm)||[]):(D.salary||[]).filter(s=>nrmCo(s.cl||'')===nm)):[];
+  if(nm)_sal.forEach(s=>{ const exp=(typeof salExpiry==='function')?salExpiry(s):''; if(exp)
     out.push({exp,label:(s.ty==='equipment'?'ציוד (OTC)':'שירות'),sub:s.pj||'',src:'חוזה',
       detail:`${s.term} חודשים · מ-${fmtDate(s.cstart)}`,renewJs:`renewContract('${s.id}')`,
       editJs:`closeM('mclient');setTimeout(()=>openM('salary','${s.id}'),100)`}); });
@@ -8131,6 +8141,9 @@ function rClients(){
   // אינדקס פגישות לפי חברה (חד-פעמי) — במקום סריקת כל הפגישות לכל כרטיס לקוח
   const _mtgByCo=new Map();
   D.meetings.forEach(m=>{ const k=nrmCo(m.cl); if(!k)return; let a=_mtgByCo.get(k); if(!a){a=[];_mtgByCo.set(k,a);} a.push(m); });
+  // אינדקס שכר לפי חברה (חד-פעמי) — כדי ש-clientRenewables לא יסרוק את כל D.salary לכל כרטיס
+  const _salByCo=new Map();
+  D.salary.forEach(s=>{ const k=nrmCo(s.cl); if(!k)return; let a=_salByCo.get(k); if(!a){a=[];_salByCo.set(k,a);} a.push(s); });
   const _cardsHtml=D.clients.map(c=>{
     const sc={r:'#e63946',y:'#f4a261',g:'var(--teal)',b:'#4cc9f0'};
     const stCol=c.status==='לקוח פעיל'?sc.g:c.status==='לקוח פוטנציאלי'?sc.b:c.status==='ליד חדש'?sc.y:sc.r;
@@ -8159,7 +8172,7 @@ function rClients(){
       const abbr=TYPE_ABBR[t]||cfg.label.replace(/^\S+\s*/,'').substring(0,3)||'?';
       return`<span title="${cfg.label}${inPot?' – בתהליך עבודה':''}" style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.04);color:${inPot?'#7b5ea7':'var(--text3)'};border:1px dashed ${inPot?'rgba(123,94,167,.5)':'rgba(255,255,255,.1)'};white-space:nowrap;font-weight:700;letter-spacing:.3px">${inPot?'🎯 ':''}${abbr}</span>`;
     }).join('')+(missingMore>0?`<span style="font-size:9px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,.03);color:var(--text3);border:1px dashed rgba(255,255,255,.08);white-space:nowrap">+${missingMore}</span>`:'');
-    const contracts=clientRenewables(c);
+    const contracts=clientRenewables(c,_salByCo);
     const _contShown=contracts.slice(0,5);
     const contractsHtml=contracts.length?_contShown.map(o=>{
       const d=db(nd(),o.exp);const col=d<0?'#e63946':d<=90?'#f4a261':'var(--teal)';
