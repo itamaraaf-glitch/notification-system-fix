@@ -4967,7 +4967,8 @@ function nextDealNum(){
 }
 // a complete empty dataset template so restores never drop a section
 function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],tasks:[],inbox:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000},contractTerms:{},_deletedIds:{}};}
-function dbInsert(table,row){row.id=genId();row._mts=Date.now();D[table].push(row);saveAll();return row;}
+// noSave=true משמש בפעולות בכמות (ייבוא) — הכנסה בלי saveAll לכל שורה; הקורא שומר פעם אחת בסוף.
+function dbInsert(table,row,noSave){row.id=genId();row._mts=Date.now();D[table].push(row);if(!noSave)saveAll();return row;}
 function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0)D[table][i]={...D[table][i],...row,_mts:Date.now()};saveAll();}
 // ===== GLOBAL UNDO (for accidental deletes in any section) =====
 let _undoStack=[];
@@ -10605,7 +10606,7 @@ function handleImport(ev,sec){
         const defs={deals:{st:'ממתין לתשובה',ty:'long',date:nd()},tenders:{submitted:'לא',qty:1},dists:{st:'ממתין להפצה',ty:'long',dt:nd()},salary:{st:'פתוח',ty:'service',qt:1},meetings:{dt:nd(),hl:'לא'},clients:{status:'לקוח'}};
         Object.entries(defs[sec]||{}).forEach(([k,dv])=>{if(!obj[k]&&obj[k]!==0)obj[k]=dv;});
         if(sec==='deals'&&!obj.num)obj.num=nextDealNum();
-        const ins=dbInsert(sec,obj);
+        const ins=dbInsert(sec,obj,true); // בלי שמירה לכל שורה — נשמר פעם אחת בסוף הייבוא
         if(ins&&sec==='deals'&&ins.st==='נסגר'){syncDealToClient(ins,true);syncDealToSalary(ins,true);syncDealToDist(ins,true);}
         added++;
       });
