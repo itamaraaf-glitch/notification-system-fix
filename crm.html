@@ -10461,6 +10461,11 @@ function deleteAll(section){
   if(!n){showToast('אין פריטים למחיקה','warn');return;}
   confirmAct('למחוק את כל '+n+' הפריטים? פעולה זו ניתנת לביטול.',()=>{
     pushUndo('מחיקת כל ה'+section+' ('+n+')');
+    // מצבות מחיקה לכל הפריטים — כדי שהסנכרון לא יחזיר אותם ממכשיר אחר (כמו מחיקה בודדת/בכמות)
+    if(!D._deletedIds)D._deletedIds={};
+    if(!D._deletedIds[tbl])D._deletedIds[tbl]={};
+    const _ts=Date.now();
+    D[tbl].forEach(x=>{if(x&&x.id!=null)D._deletedIds[tbl][String(x.id)]=_ts;});
     D[tbl]=[];saveAll();rAll();
     showToast('🗑 כל '+n+' הפריטים נמחקו','ok');
   },'כן, מחק הכל');
