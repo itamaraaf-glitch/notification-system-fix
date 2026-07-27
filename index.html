@@ -5529,6 +5529,9 @@ function getAlerts(){
   }); });
   if(_fixableNoExp>0)a.push({type:'info',h:`📅 ${_fixableNoExp} מוצרים ללא תאריך תפוגה`,s:`מוצרים שנמכרו מפרויקט שנסגר וטרם קיבלו תפוגה — לא נכנסים למעקב חידושים. לחץ "השלם תפוגות".`,kind:'clients-expiry',meta:{backfill:true}});
   a.push(...getClientAlerts());
+  // מיון לפי דחיפות: קריטי → אזהרה → מידע. מיון יציב — שומר על סדר הקטגוריות בתוך אותה רמה.
+  const _sevRank={crit:0,warn:1,info:2};
+  a.sort((x,y)=>(_sevRank[x.type]??3)-(_sevRank[y.type]??3));
   document.getElementById('acnt').textContent=a.length;
   const dot=document.getElementById('mob-alert-dot');
   if(dot){if(a.length>0){dot.textContent=a.length>99?'99+':a.length;dot.style.display='block';}else{dot.style.display='none';}}
