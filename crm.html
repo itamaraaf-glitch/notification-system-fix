@@ -9250,6 +9250,7 @@ function _productSourceDate(item){
 // (לעולם לא נוגע בתאריך שהוזן/נערך ידנית — עריכה ידנית מנקה את הדגל _expiryBackfilled).
 function backfillProductExpiry(){
   let filled=0,fixed=0,noSrc=0;
+  const _ts=Date.now();
   (D.clients||[]).forEach(c=>{
     let changed=false;
     Object.keys(ITEM_CFG).forEach(type=>{
@@ -9267,8 +9268,10 @@ function backfillProductExpiry(){
         }
       });
     });
-    if(changed&&c.id)dbUpdate('clients',c.id,c);
+    // הלקוח מעודכן במקום (רפרנס ב-D.clients); מסמנים _mts לסנכרון בלבד — בלי saveAll לכל לקוח
+    if(changed&&c.id)c._mts=_ts;
   });
+  if(filled||fixed)saveAll(); // כתיבה אחת בסוף במקום N כתיבות (מונע קיפאון בפעולת השלמה על הרבה לקוחות)
   return {filled,fixed,noSrc};
 }
 // מסך הגדרת תקופות חוזה לכל סוג מוצר (עם שדה תפוגה)
