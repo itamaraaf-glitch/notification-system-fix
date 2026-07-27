@@ -1940,7 +1940,13 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <button class="btn btn-import" onclick="importFromExcel('clients')" title="ייבוא מ-Excel">📤 ייבוא</button>
     </div>
   </div>
+  <div id="clients-search-info" style="display:none;font-size:11px;color:var(--text3);margin-bottom:8px"></div>
   <div id="clients-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px"></div>
+  <div id="clients-noresults" style="display:none;text-align:center;padding:40px 20px;color:var(--text3)">
+    <div style="font-size:40px;margin-bottom:10px;opacity:.3">🔍</div>
+    <div style="font-size:13px;font-weight:700;margin-bottom:4px">לא נמצאו לקוחות תואמים</div>
+    <div style="font-size:11px">נסה מונח חיפוש אחר, או <span onclick="document.getElementById('client-search').value='';filterClients()" style="color:#4cc9f0;cursor:pointer;text-decoration:underline">נקה חיפוש</span></div>
+  </div>
   <div id="clients-carousel" style="display:none">
     <div id="cli-carousel-hint" style="text-align:center;font-size:11px;color:var(--text3);margin-bottom:6px">🖱️ גרור עם העכבר · 👆 החלק באצבע — לסיבוב הכרטיסים</div>
     <div id="cli-carousel-stage"><div id="cli-carousel-ring"></div></div>
@@ -8075,10 +8081,17 @@ function saveClient(){
 }
 
 function filterClients(){
-  const q=document.getElementById('client-search').value.toLowerCase();
+  const q=document.getElementById('client-search').value.trim().toLowerCase();
   // חיפוש הוא פעולת רשת — אם מחפשים בזמן קרוסלה, חוזרים אוטומטית לתצוגת רשת
   if(q&&_clientsView==='carousel'){toggleClientsView();}
-  document.querySelectorAll('#clients-grid .client-card').forEach(card=>{card.style.display=card.textContent.toLowerCase().includes(q)?'':'none';});
+  const cards=document.querySelectorAll('#clients-grid .client-card');
+  let matches=0;
+  cards.forEach(card=>{const hit=!q||card.textContent.toLowerCase().includes(q);card.style.display=hit?'':'none';if(hit)matches++;});
+  // משוב חיפוש: מונה תוצאות + מצב "אין תוצאות" (במקום רשת ריקה ללא הסבר)
+  const info=document.getElementById('clients-search-info');
+  const noRes=document.getElementById('clients-noresults');
+  if(info)info.style.display=q?( info.textContent=`🔍 ${matches} מתוך ${cards.length} לקוחות תואמים ל"${document.getElementById('client-search').value.trim()}"`,'block'):'none';
+  if(noRes)noRes.style.display=(q&&matches===0)?'block':'none';
 }
 
 function clientMonthlyRevenue(c){
@@ -8201,6 +8214,10 @@ function rClients(){
     if(caro)caro.style.display='none';
     grid.style.display='grid';
     grid.innerHTML=_cardsHtml.join('');
+    // אם יש חיפוש פעיל — החל אותו מחדש על הכרטיסים שנוצרו (אחרת ריצה מחדש מציגה את כולם)
+    const _cs=document.getElementById('client-search');
+    if(_cs&&_cs.value.trim())filterClients();
+    else{const _i=document.getElementById('clients-search-info');if(_i)_i.style.display='none';const _n=document.getElementById('clients-noresults');if(_n)_n.style.display='none';}
   }
 }
 
