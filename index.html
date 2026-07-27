@@ -10442,6 +10442,12 @@ function deleteSelected(key){
   if(!tbl)return;
   confirmAct('למחוק '+n+' פריטים נבחרים? ניתן לשחזר.',()=>{
     pushUndo('מחיקת '+n+' פריטים');
+    // רישום מצבות מחיקה (tombstones) — כמו במחיקה בודדת — כדי שהסנכרון לא "יחייה" את הפריטים
+    // חזרה ממכשיר אחר. חסר כאן קודם וגרם לפריטים שנמחקו בכמות לחזור אחרי סנכרון.
+    if(!D._deletedIds)D._deletedIds={};
+    if(!D._deletedIds[tbl])D._deletedIds[tbl]={};
+    const _ts=Date.now();
+    SEL[key].forEach(id=>{D._deletedIds[tbl][String(id)]=_ts;});
     D[tbl]=D[tbl].filter(x=>!SEL[key].has(x.id));
     saveAll();
     SEL[key]=new Set();rAll();
