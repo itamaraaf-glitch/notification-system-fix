@@ -3158,6 +3158,9 @@ function doLogout(){
 // חדש יותר, ולכן כל שינוי חייב לקבל חותמת — גם בנתיבי שמירה שלא עוברים דרך dbUpdate.
 // משווים כל פריט לחתימה מהשמירה הקודמת ומטביעים _mts רק על מה שבאמת השתנה.
 const SYNC_COLS=['deals','tenders','dists','salary','meetings','clients','tasks','inbox','archivedDeals','archivedTenders','archivedDists','archivedSalary','archivedMeetings'];
+// עמודות הנתונים החיות (כולל משימות ותיבת מייל, ללא ארכיונים) — לספירת רשומות ולבדיקת "האם יש נתונים".
+// חשוב: כולל tasks+inbox כדי שמשתמש שיש לו רק משימות לא ייחשב "ריק" (אחרת הגיבוי/סנכרון היו מדלגים עליו).
+const DATA_COLS=['deals','tenders','dists','salary','meetings','clients','tasks','inbox'];
 const SYNC_META=['lastCycleMonth','lastMeetCycle','goals','tenderEmails','_totp'];
 let _syncSnap=null;
 // חתימת שינוי לפריט — משמיטים את הבייטים הכבדים (data/photo) כדי שחישוב החתימה
@@ -3715,7 +3718,7 @@ async function fbForcePull(){
 
 // יישור קו: המכשיר הנוכחי נקבע כמקור האמת — כל שאר המכשירים יקבלו עותק מדויק
 async function fbBaselineNow(){
-  const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+  const mainCols=DATA_COLS;
   const totalRec=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
   if(totalRec===0){showToast('⚠️ אין נתונים במכשיר הזה — יישור קו בוטל','warn');return;}
   if(!_ssUrl&&!_fbRef){showToast('⚠️ הסנכרון לא מחובר — הגדר סנכרון ענן קודם','warn');return;}
@@ -4056,7 +4059,7 @@ function ssPush(){
 async function _ssPushNow(){
   if(!_ssUrl||_fbApplying)return;
   // SAFETY: never push empty data to cloud — protects against sync bugs
-  const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+  const mainCols=DATA_COLS;
   const totalRec=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
   if(totalRec===0){console.warn('ssPush blocked: D is empty, refusing to overwrite cloud data');return;}
   // לפני דחיפה: אם בענן יש יישור קו חדש משלנו — לא דורסים אותו אלא מאמצים
@@ -4157,7 +4160,7 @@ async function openSendToMobile(){
 
   const cfgStr=localStorage.getItem(FB_CFG_KEY);
   const hasCfg=!!(cfgStr&&JSON.parse(cfgStr).databaseURL);
-  const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+  const mainCols=DATA_COLS;
   const totalRec=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
 
   let html=`<div style="font-size:12px;color:var(--text2);margin-bottom:16px;text-align:center">סה"כ <b style="color:var(--teal)">${totalRec} רשומות</b> ישלחו למובייל</div>`;
@@ -5866,7 +5869,7 @@ function rDash(){
     const last=bkList[bkList.length-1];
     const ageMins=Math.round((Date.now()-last.ts)/60000);
     const ageStr=ageMins<2?'עכשיו':ageMins<60?`לפני ${ageMins} דקות`:ageMins<120?'לפני שעה':ageMins<1440?`לפני ${Math.round(ageMins/60)} שעות`:`לפני ${Math.round(ageMins/1440)} ימים`;
-    const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+    const mainCols=DATA_COLS;
     let cnt=0;try{const d=JSON.parse(last.data);cnt=mainCols.reduce((s,c)=>s+(d[c]||[]).length,0);}catch(e){}
     el.innerHTML=`🛡️ גיבוי אחרון: <b style="color:var(--teal)">${ageStr}</b> · ${cnt} רשומות · ${bkList.length} גיבויים שמורים`;
   }).catch(()=>{});
@@ -11345,7 +11348,7 @@ function idbOpen(){
 // Daily backup — one snapshot per calendar day, kept 7 days
 async function idbDailyBackup(){
   try{
-    const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+    const mainCols=DATA_COLS;
     const totalRec=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
     if(totalRec===0)return; // never save empty daily snapshot
     const day=nd(); // YYYY-MM-DD
@@ -11378,7 +11381,7 @@ function idbDailyList(){
 function maybeDailyIdbBackup(){
   const today=nd();
   if(localStorage.getItem('cem_last_daily_idb')===today)return;
-  const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+  const mainCols=DATA_COLS;
   const totalRec=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
   if(totalRec>0) idbDailyBackup();
 }
@@ -11396,7 +11399,7 @@ async function idbBackup(jsonStr){
   try{
     const dataStr=(jsonStr!=null?jsonStr:JSON.stringify(D));
     // Never save an empty snapshot — protect against sync bugs wiping data
-    const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+    const mainCols=DATA_COLS;
     let parsed; try{parsed=JSON.parse(dataStr);}catch(e){return;}
     const totalRec=mainCols.reduce((s,c)=>s+(parsed[c]||[]).length,0);
     if(totalRec===0){
@@ -11437,7 +11440,7 @@ async function restoreGoldBackup(){
     const g=localStorage.getItem(IDB_GOLD_KEY);
     if(!g){showToast('⚠️ אין גיבוי זהב שמור','warn');return;}
     const p=JSON.parse(g);
-    const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+    const mainCols=DATA_COLS;
     const cnt=mainCols.reduce((s,c)=>s+(p[c]||[]).length,0);
     if(!cnt){showToast('⚠️ גיבוי הזהב ריק','warn');return;}
     confirmAct(`לשחזר ${cnt} רשומות מגיבוי הזהב (המצב האחרון הידוע עם נתונים)?`,()=>{
@@ -11568,7 +11571,7 @@ async function restoreFromDailyIdb(day){
   const dailyList=await idbDailyList();
   const snap=dailyList.find(s=>s.day===day);
   if(!snap){showToast('⚠️ הגיבוי היומי לא נמצא','warn');return;}
-  const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+  const mainCols=DATA_COLS;
   const allCols=SYNC_COLS.slice(); // כולל tasks + inbox — כך שכל שחזור מחזיר גם את המשימות והמיילים (ולא רק את שאר המסכים)
   const currentlyEmpty=mainCols.every(c=>!(D[c]||[]).length);
   const confirmMsg=currentlyEmpty
@@ -11611,7 +11614,7 @@ async function restoreFromIdb(ts){
   if(!snap)return;
   const timeLabel=new Date(ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
   const dateLabel=new Date(ts).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'});
-  const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+  const mainCols=DATA_COLS;
   const allCols=SYNC_COLS.slice(); // כולל tasks + inbox — כך שכל שחזור מחזיר גם את המשימות והמיילים (ולא רק את שאר המסכים)
   // If current data is empty → full replace; otherwise merge
   const currentlyEmpty=mainCols.every(c=>!(D[c]||[]).length);
@@ -11666,7 +11669,7 @@ async function dumpAllBackups(){
 }
 async function checkEmptyAndRecovery(){
   try{
-    const mainCols=['deals','tenders','dists','salary','meetings','clients'];
+    const mainCols=DATA_COLS;
     const totalNow=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
     if(totalNow>0)return;
     const [list,dailyList]=await Promise.all([idbList(),idbDailyList()]);
