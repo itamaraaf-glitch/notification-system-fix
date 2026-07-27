@@ -2615,7 +2615,11 @@ const now = () => new Date();
 // תאריך מקומי YYYY-MM-DD — לא UTC. חשוב: toISOString מחזיר UTC ובישראל (UTC+2/+3)
 // זה מקפיץ את התאריך יום אחורה בלילה. ymd משתמש ברכיבי התאריך המקומיים.
 const ymd = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-const nd = () => ymd(now());
+// nd() = מחרוזת "היום" (YYYY-MM-DD מקומי). ממומש עם מטמון קצר-טווח (1 שנייה): בתוך רינדור
+// סינכרוני אחד כל הקריאות מקבלות ערך מהמטמון (חוסך new Date()+פורמט אלפי פעמים), והערך
+// לעולם לא מתיישן ביותר משנייה — זניח למחרוזת ברזולוציית יום. לא נוגע ב-now() (זמן-אמת).
+let _ndCache={t:0,v:''};
+const nd = () => { const ms=Date.now(); if(ms-_ndCache.t<1000)return _ndCache.v; const v=ymd(new Date(ms)); _ndCache={t:ms,v}; return v; };
 // אבטחה: בריחת HTML לכל תוכן שמקורו חיצוני (מיילים, שמות לקוחות, קבצים) לפני הזרקה ל-innerHTML.
 // מונע XSS: תוקף ששולח מייל עם <img src=x onerror=...> בנושא/שולח/גוף לא יוכל להריץ קוד במערכת.
 const esc = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
