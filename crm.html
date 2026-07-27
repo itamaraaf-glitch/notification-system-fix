@@ -3478,7 +3478,7 @@ async function cloudExtract(remote){
   // את נתיב הענן (אך לא את מפתח ההצפנה) מנסה להזריק/להחליף נתונים — נדחה ומתעלמים.
   // חוקי ה-Firebase פתוחים לכתיבה, ולכן זהו קו ההגנה בצד-הלקוח מפני ענן עוין.
   if(remote.data!==undefined||remote._baseline!==undefined||remote._ts!==undefined||
-     ['deals','tenders','dists','salary','meetings','clients'].some(k=>remote[k]!==undefined)){
+     DATA_COLS.some(k=>remote[k]!==undefined)){
     console.warn('rejected unauthenticated (unencrypted) cloud payload');
     return null;
   }
@@ -3607,7 +3607,7 @@ function fbMergeRemote(remote){
   // בסיס מרוחק חדש משלנו: המכשיר הראשי הכריז שהנתונים שלו הם מקור האמת —
   // מחליפים הכול בעותק מדויק (עם גיבוי מקומי קודם) במקום למזג
   if((remote._baseline||0)>(D._baseline||0)){
-    const total=['deals','tenders','dists','salary','meetings','clients'].reduce((s,c)=>s+(Array.isArray(remote[c])?remote[c].length:0),0);
+    const total=DATA_COLS.reduce((s,c)=>s+(Array.isArray(remote[c])?remote[c].length:0),0);
     if(total>0){
       try{if(typeof idbBackup==='function')idbBackup(JSON.stringify(D));}catch(e){}
       const _prev=D;                         // הנתונים המקומיים לפני ההחלפה
@@ -3820,7 +3820,7 @@ function fbPush(){
   clearTimeout(_fbPushTimer);
   _fbPushTimer=setTimeout(async()=>{
     // SAFETY: never push empty data to cloud
-    const totalRec=['deals','tenders','dists','salary','meetings','clients'].reduce((s,c)=>s+(D[c]||[]).length,0);
+    const totalRec=DATA_COLS.reduce((s,c)=>s+(D[c]||[]).length,0);
     if(totalRec===0){console.warn('fbPush blocked: D is empty');return;}
     // לפני דחיפה: אם בענן יש יישור קו חדש משלנו — לא דורסים אותו אלא מאמצים
     try{
