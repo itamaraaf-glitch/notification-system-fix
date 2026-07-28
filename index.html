@@ -8773,6 +8773,13 @@ async function _publishTrack(d){
     return r.ok;
   }catch(e){ return false; }
 }
+// פרסום + סימון "לקוח עודכן" בהצלחה — עבור קישור חי, פרסום מוצלח = הלקוח כבר מעודכן אוטומטית,
+// כך שהתג בטבלה יציג "✓ לקוח עודכן" (ולא "⚠ ממתין לעדכון" המטעה לקישור שמתעדכן לבד).
+async function _publishTrackAndMark(d){
+  if(!d||!d._trackTok) return;
+  const ok=await _publishTrack(d);
+  if(ok){ d._cliSyncSt=d.st; d._cliSyncAt=Date.now(); saveAll(); if(currentSec==='dists')rDists(); }
+}
 function _distTrackURL(d){
   const enc=_b64urlEncode(JSON.stringify(_distTrackPayload(d)));
   let base; try{ base=new URL('track.html',location.href).href; }catch(e){ base='track.html'; }
@@ -10378,7 +10385,7 @@ function saveDist(){
   const _newForClient = !_wasEdit && _hasClient;
   // אם ההפצה כבר שותפה (יש טוקן) — הקישור הקיים של הלקוח מתעדכן לבד; מפרסמים מחדש ולא מבקשים לשלוח שוב
   if(savedDist && savedDist._trackTok){
-    if(_statusChanged){ _publishTrack(savedDist); showToast('🔄 קישור המעקב של הלקוח עודכן אוטומטית — אין צורך לשלוח שוב','ok'); }
+    if(_statusChanged){ _publishTrackAndMark(savedDist); showToast('🔄 קישור המעקב של הלקוח עודכן אוטומטית — אין צורך לשלוח שוב','ok'); }
   } else if(savedDist && _hasClient && (_statusChanged || _newForClient)){
     _promptSendTrack(savedDist, _statusChanged); // טרם שותף — הצעה לשלוח את הקישור הראשון
   }
@@ -10404,7 +10411,7 @@ function advanceDistStatus(id){
   showToast('📦 סטטוס ההפצה עודכן ל"'+next+'"','ok');
   const hasClient=!!(nd2&&(String(nd2.cle||'').trim()||String(nd2.cl||'').trim()));
   // אם כבר שותף — הקישור הקיים מתעדכן לבד (פרסום מחדש); אחרת תזכורת לשלוח קישור ראשון
-  if(nd2&&nd2._trackTok){ _publishTrack(nd2); showToast('🔄 קישור המעקב של הלקוח עודכן אוטומטית','ok'); }
+  if(nd2&&nd2._trackTok){ _publishTrackAndMark(nd2); showToast('🔄 קישור המעקב של הלקוח עודכן אוטומטית','ok'); }
   else if(hasClient)_promptSendTrack(nd2,true);
 }
 // סימון שהחוסרים בהפצה התקבלו — מנקה את שדה החוסרים בלחיצה (מסיר את חסימת ה"תקוע")
