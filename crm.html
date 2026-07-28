@@ -8007,6 +8007,10 @@ function renderQuickActions(){
       <span style="font-size:16px">📖</span>
       <div style="flex:1"><div style="font-size:11px;font-weight:700;color:#a78bfa">ייבוא חכם</div><div style="font-size:11px;color:var(--text3)">Word / PDF / Excel</div></div>
     </div>
+    ${now().getDate()>=22?`<div onclick="openMonthClose()" class="qa-item" style="background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.3)">
+      <span style="font-size:16px">📦</span>
+      <div style="flex:1"><div style="font-size:11px;font-weight:700;color:var(--gold)">סגירת חודש</div><div style="font-size:11px;color:var(--text3)">סיכום · השוואה · שיתוף</div></div>
+    </div>`:''}
   `;
 }
 
