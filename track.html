@@ -272,16 +272,56 @@
   function getParam(name){
     try{ var m=location.search.match(new RegExp('[?&]'+name+'=([^&#]+)')); return m?decodeURIComponent(m[1]):''; }catch(e){ return ''; }
   }
-  // on load: ingest a tracking payload from ?t= (robust for messenger shares) or a #hash
-  // (older links). Then clean the URL so a refresh doesn't re-ingest.
+  // ── מעקב "חי": אותו קישור מתעדכן לבד ──
+  // הקישור כולל id (טוקן) + d (כתובת בסיס הענן, base64url) למקור החי, וגם t (תמונת-מצב)
+  // לגיבוי מיידי/אופליין. קוראים את הרשומה העדכנית מהענן — כך שאין צורך לשלוח קישור חדש.
+  function liveUrl(dbBase,id){ return String(dbBase||'').replace(/\/+$/,'')+'/track/'+encodeURIComponent(id)+'.json'; }
+  // החלה של רשומה חיה (מקור-אמת) — מחליפה את הפריט השמור ללא בדיקת זמן, ושומרת _db/_id לרענון
+  function ingestLive(rec,dbBase,id){
+    if(!rec||rec.no==null) return false;
+    rec._db=dbBase; rec._id=id;
+    var k=orderKey(rec);
+    var all=load().filter(function(x){return orderKey(x)!==k;});
+    all.push(rec); save(all); return true;
+  }
+  function fetchLive(dbBase,id,cb){
+    try{
+      fetch(liveUrl(dbBase,id),{cache:'no-store'})
+        .then(function(r){return r.ok?r.json():null;})
+        .then(function(rec){ cb(rec&&rec.no!=null?rec:null); })
+        .catch(function(){ cb(null); });
+    }catch(e){ cb(null); }
+  }
+  // רענון אוטומטי: מושך את הרשומה החיה של הפריט הפעיל (אם יש) — כדי שדף פתוח יתעדכן לבד
+  function refreshLive(){
+    var active=getActiveOrder(); if(!active) return;
+    var o=load().filter(function(x){return orderKey(x)===active;})[0];
+    if(!o||!o._db||!o._id) return;
+    fetchLive(o._db,o._id,function(rec){
+      if(rec&&orderKey(rec)===active){ ingestLive(rec,o._db,o._id); render(); }
+    });
+  }
+
   (function init(){
     var enc = getParam('t');
     if(!enc && location.hash) enc = location.hash.replace(/^#/,'').replace(/^t=/,'');
-    if(enc){
-      var o=parsePayload(enc);
-      if(o){ upsert(o); setActiveOrder(o); try{history.replaceState(null,'',location.pathname);}catch(e){} }
-    }
+    var id = getParam('id');
+    var dbEnc = getParam('d');
+    var dbBase = dbEnc ? (b64urlToStr(dbEnc)||'') : '';
+    // 1) תמונת-המצב מהקישור מוצגת מיד (מהיר / אופליין)
+    if(enc){ var o=parsePayload(enc); if(o){ upsert(o); setActiveOrder(o); } }
     render();
+    // 2) אם יש מקור חי — מושכים את הסטטוס העדכני ומעדכנים את אותו כרטיס
+    if(id && dbBase){
+      fetchLive(dbBase,id,function(rec){
+        if(rec){ ingestLive(rec,dbBase,id); setActiveOrder(rec); render(); }
+      });
+    }
+    try{history.replaceState(null,'',location.pathname);}catch(e){}
+    // רענון תקופתי + בכל חזרה לדף — כך שאין צורך לשלוח קישור חדש בכל שינוי
+    setInterval(refreshLive, 30000);
+    document.addEventListener('visibilitychange',function(){ if(!document.hidden)refreshLive(); });
+    window.addEventListener('focus', refreshLive);
   })();
 })();
 </script>

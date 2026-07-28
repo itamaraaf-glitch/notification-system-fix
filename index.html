@@ -8750,12 +8750,39 @@ function _distTrackPayload(d){
     ts:Date.now()
   };
 }
+// ===== קישור מעקב "חי": אותו קישור מתעדכן לבד =====
+// טוקן יציב ובלתי-ניתן-לניחוש לכל הפצה — משמש כמפתח לרשומת המעקב הציבורית בענן.
+function _genTrackTok(){ return (Date.now().toString(36)+Math.random().toString(36).slice(2,12)).replace(/[^a-z0-9]/gi,''); }
+// שורש ה-Firebase (ללא נתיב הסנכרון המוצפן) — כדי לכתוב/לקרוא נתיב מעקב ציבורי נפרד.
+// ריק אם אין ענן מוגדר → הקישור נשאר "תמונת-מצב" מקודדת בלבד (התנהגות קודמת, ללא רגרסיה).
+function _trackDbBase(){
+  try{
+    if(_ssUrl) return _ssUrl.replace(/\/cem_hot_[^/]*\.json.*$/,'').replace(/\/+$/,'');
+    const cfgStr=localStorage.getItem(FB_CFG_KEY);
+    if(cfgStr){ const c=JSON.parse(cfgStr); if(c&&c.databaseURL) return String(c.databaseURL).replace(/\/+$/,''); }
+  }catch(e){}
+  return '';
+}
+// פרסום/עדכון רשומת המעקב הציבורית (שדות לא-רגישים בלבד) בנתיב track/<token>.
+// נקרא בשיתוף ובכל שינוי סטטוס של הפצה משותפת — כך שאותו קישור מציג תמיד את הסטטוס העדכני.
+async function _publishTrack(d){
+  const base=_trackDbBase(); if(!base||!d||!d._trackTok) return false;
+  try{
+    const r=await fetch(base+'/track/'+encodeURIComponent(d._trackTok)+'.json',
+      {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(_distTrackPayload(d))});
+    return r.ok;
+  }catch(e){ return false; }
+}
 function _distTrackURL(d){
   const enc=_b64urlEncode(JSON.stringify(_distTrackPayload(d)));
   let base; try{ base=new URL('track.html',location.href).href; }catch(e){ base='track.html'; }
   // פרמטר-שאילתה (?t=) ולא עוגן (#) — עוגן נחתך לעיתים ע"י דפדפני-מובנה של וואטסאפ
   // וכך הנמען לא רואה כלום. פרמטר-שאילתה שורד שיתוף במסנג'רים.
-  return base+'?t='+enc;
+  // t = תמונת-מצב לגיבוי אופליין; id+d = מקור "חי" שמתעדכן לבד מהענן.
+  let url=base+'?t='+enc;
+  const dbBase=_trackDbBase();
+  if(dbBase && d._trackTok) url+='&id='+encodeURIComponent(d._trackTok)+'&d='+_b64urlEncode(dbBase);
+  return url;
 }
 function trackLinkFromDistForm(){
   const d={
@@ -8776,6 +8803,8 @@ function trackLinkFromDistForm(){
 // פתיחת חלון-שיתוף קישור-מעקב מתוך אובייקט הפצה (עובד גם כשהטופס סגור, לתזכורת האוטומטית)
 function promptTrackShare(dist){
   if(!dist||(!dist.no&&!dist.co)){ toast('⚠️ אין מספיק פרטים לקישור מעקב','warn'); return; }
+  // הבטחת טוקן יציב (פעם אחת) + פרסום הרשומה לענן — כדי שאותו קישור יתעדכן לבד בהמשך
+  if(dist.id){ if(!dist._trackTok){ dist._trackTok=_genTrackTok(); saveAll(); } _publishTrack(dist); }
   _trackSharePopup(_distTrackURL(dist), dist);
 }
 // מסמן שההפצה עודכנה ללקוח (עם הסטטוס ששותף) — לסגירת הלולאה "האם עדכנתי את הלקוח?"
@@ -10335,14 +10364,14 @@ function saveDist(){
   if(savedDist&&savedDist.st==='הושלם')syncDistToClient(savedDist);
   if(savedDist&&syncDistToSalary(savedDist))toast('🔗 מספר הפרויקט סונכרן לפרויקטי שכר','ok');
   closeM('mdist');rAll();
-  // תזכורת אוטומטית לשלוח ללקוח קישור מעקב — כשיש לקוח, וגם:
-  //  • בעריכה: רק אם השלב השתנה בפועל, או
-  //  • ביצירת הפצה חדשה עבור לקוח.
   const _hasClient = !!(savedDist && (String(savedDist.cle||'').trim() || String(savedDist.cl||'').trim()));
   const _statusChanged = _wasEdit && _oldStatus!==null && savedDist && savedDist.st!==_oldStatus;
   const _newForClient = !_wasEdit && _hasClient;
-  if(savedDist && _hasClient && (_statusChanged || _newForClient)){
-    _promptSendTrack(savedDist, _statusChanged);
+  // אם ההפצה כבר שותפה (יש טוקן) — הקישור הקיים של הלקוח מתעדכן לבד; מפרסמים מחדש ולא מבקשים לשלוח שוב
+  if(savedDist && savedDist._trackTok){
+    if(_statusChanged){ _publishTrack(savedDist); showToast('🔄 קישור המעקב של הלקוח עודכן אוטומטית — אין צורך לשלוח שוב','ok'); }
+  } else if(savedDist && _hasClient && (_statusChanged || _newForClient)){
+    _promptSendTrack(savedDist, _statusChanged); // טרם שותף — הצעה לשלוח את הקישור הראשון
   }
 }
 // הקפצה אוטומטית בשינוי סטטוס / יצירת הפצה ללקוח — כדי שלא לשכוח לעדכן את הלקוח
@@ -10365,7 +10394,9 @@ function advanceDistStatus(id){
   rAll();
   showToast('📦 סטטוס ההפצה עודכן ל"'+next+'"','ok');
   const hasClient=!!(nd2&&(String(nd2.cle||'').trim()||String(nd2.cl||'').trim()));
-  if(hasClient)_promptSendTrack(nd2,true); // תזכורת לעדכן את הלקוח בקישור המעקב
+  // אם כבר שותף — הקישור הקיים מתעדכן לבד (פרסום מחדש); אחרת תזכורת לשלוח קישור ראשון
+  if(nd2&&nd2._trackTok){ _publishTrack(nd2); showToast('🔄 קישור המעקב של הלקוח עודכן אוטומטית','ok'); }
+  else if(hasClient)_promptSendTrack(nd2,true);
 }
 // סימון שהחוסרים בהפצה התקבלו — מנקה את שדה החוסרים בלחיצה (מסיר את חסימת ה"תקוע")
 function clearDistMissing(id){
