@@ -178,34 +178,33 @@
       +'</div>';
   }
 
-  // ── בידוד לפי לקוח: מציגים אך ורק את הזמנות הלקוח של הקישור שנפתח ──
-  // כך שלקוח לעולם לא רואה עדכונים של לקוחות אחרים, גם אם נפתחו במכשיר קישורים אחרים.
-  function clientKey(o){ return String((o&&(o.co||o.cl))||'').trim().toLowerCase(); }
-  function getActiveClient(){ try{return localStorage.getItem('hot_track_client')||'';}catch(e){return '';} }
-  // בידוד קשיח: קביעת הלקוח הפעיל. אם נפתח קישור של לקוח אחר — מוחקים לחלוטין את
-  // ההזמנות של הלקוח הקודם מהמכשיר, כך שלקוח לעולם לא רואה מידע של לקוח אחר (לא רק סינון בתצוגה).
-  function setActiveClient(o){
+  // ── בידוד קשיח ברמת הפרויקט ──
+  // כל קישור מציג אך ורק את הפרויקט הספציפי שלו — לא פרויקטים אחרים, גם לא של אותו לקוח.
+  // פתיחת קישור אחר מחליפה לחלוטין את מה ששמור במכשיר.
+  function getActiveOrder(){ try{return localStorage.getItem('hot_track_order')||'';}catch(e){return '';} }
+  function setActiveOrder(o){
     try{
-      var k=clientKey(o); if(!k) return;
-      var prev=getActiveClient();
-      localStorage.setItem('hot_track_client',k);
-      if(prev!==k) save(load().filter(function(x){return clientKey(x)===k;}));
+      var k=orderKey(o); if(!k||k==='|') return;
+      localStorage.setItem('hot_track_order',k);
+      // משאירים באחסון אך ורק את הפרויקט הזה — מוחקים כל פרויקט אחר
+      save(load().filter(function(x){return orderKey(x)===k;}));
+      try{localStorage.removeItem('hot_track_client');}catch(e){} // ניקוי מפתח ישן מגרסה קודמת
     }catch(e){}
   }
 
   function render(){
     var all=load();
-    var active=getActiveClient();
-    // אם אין לקוח פעיל אך קיימות הזמנות (למשל נתונים ישנים מלפני הבידוד) — נגזר מההזמנה
-    // החדשה ביותר; לעולם לא נופלים ל"הצג הכל" שעלול לחשוף לקוחות אחרים.
+    var active=getActiveOrder();
+    // אם אין פרויקט פעיל אך קיימות הזמנות (נתונים ישנים) — נגזר מההזמנה החדשה ביותר;
+    // לעולם לא נופלים ל"הצג הכל" שעלול לחשוף פרויקטים אחרים.
     if(!active && all.length){
       var newest=all.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);})[0];
-      active=clientKey(newest);
-      if(active){ try{localStorage.setItem('hot_track_client',active);}catch(e){} }
+      active=orderKey(newest);
+      if(active){ try{localStorage.setItem('hot_track_order',active);}catch(e){} }
     }
-    // ניקוי קשיח באחסון: משאירים אך ורק את הזמנות הלקוח הפעיל (מסירים כל שאר הלקוחות).
+    // ניקוי קשיח באחסון: משאירים אך ורק את הפרויקט הפעיל (מסירים כל פרויקט אחר).
     if(active){
-      var mine=all.filter(function(o){return clientKey(o)===active;});
+      var mine=all.filter(function(o){return orderKey(o)===active;});
       if(mine.length!==all.length){ save(mine); all=mine; }
     }
     var orders=all.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
@@ -218,7 +217,7 @@
     }
     upd.textContent='עודכן לאחרונה '+fmtTime(orders[0].ts);
     list.innerHTML=orders.map(cardHtml).join('')
-      +'<div style="text-align:center;font-size:10.5px;color:var(--txt3);padding:2px 10px 8px;line-height:1.5">🔒 עמוד פרטי — מוצגות אך ורק ההזמנות שלכם.<br>המידע נשמר במכשיר זה בלבד.</div>';
+      +'<div style="text-align:center;font-size:10.5px;color:var(--txt3);padding:2px 10px 8px;line-height:1.5">🔒 עמוד פרטי — מוצג אך ורק הפרויקט של הקישור הזה.<br>המידע נשמר במכשיר זה בלבד.</div>';
   }
 
   // מפתח-זהות של הזמנה: מזהה ייחודי (oid) קודם, אחרת מס' פרויקט, אחרת הרכב חברה+לקוח.
@@ -266,7 +265,7 @@
   window.closeAdd=function(){ document.getElementById('addModal').classList.remove('open'); document.getElementById('addInput').value=''; };
   window.addFromInput=function(){
     var o=parsePayload(document.getElementById('addInput').value);
-    if(o&&upsert(o)){ setActiveClient(o); closeAdd(); render(); toast('✓ המעקב נוסף'); }
+    if(o&&upsert(o)){ setActiveOrder(o); closeAdd(); render(); toast('✓ המעקב נוסף'); }
     else toast('הקישור אינו תקין — ודאו שהעתקתם את כולו');
   };
 
@@ -280,7 +279,7 @@
     if(!enc && location.hash) enc = location.hash.replace(/^#/,'').replace(/^t=/,'');
     if(enc){
       var o=parsePayload(enc);
-      if(o){ upsert(o); setActiveClient(o); try{history.replaceState(null,'',location.pathname);}catch(e){} }
+      if(o){ upsert(o); setActiveOrder(o); try{history.replaceState(null,'',location.pathname);}catch(e){} }
     }
     render();
   })();
