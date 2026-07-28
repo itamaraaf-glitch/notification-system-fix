@@ -5399,6 +5399,7 @@ function alertGo(i){
   // משימות — מעבר למסך המשימות, ופתיחת המשימה הספציפית אם יש מזהה
   if(al.kind==='task'){ nav('tasks'); if(al.id)setTimeout(()=>openM('task',al.id),340); return; }
   if(al.kind==='clients-expiry'){ nav('clients'); return; } // מוצרים ללא תפוגה — מעבר למסך הלקוחות
+  if(al.kind==='monthclose'){ if(typeof openMonthClose==='function')openMonthClose(); return; } // סגירת חודש — תצוגה מקדימה
   const secMap={deal:'deals',dist:'dists',salary:'salary',tender:'tenders',meetings:'meetings'};
   const mtypeMap={deal:'deal',dist:'dist',salary:'salary',tender:'tender',meetings:'meeting'};
   const sec=secMap[al.kind];
@@ -5565,6 +5566,10 @@ function getAlerts(){
     (c[type]||[]).forEach(it=>{ if(!it.expiry && (typeof _productSourceDate==='function') && _productSourceDate(it))_fixableNoExp++; });
   }); });
   if(_fixableNoExp>0)a.push({type:'info',h:`📅 ${_fixableNoExp} מוצרים ללא תאריך תפוגה`,s:`מוצרים שנמכרו מפרויקט שנסגר וטרם קיבלו תפוגה — לא נכנסים למעקב חידושים. לחץ "השלם תפוגות".`,kind:'clients-expiry',meta:{backfill:true}});
+  // סגירת חודש: בסוף החודש (מיום 24) — תזכורת לצפות בסיכום, בהשוואה לחודש קודם, ולשתף דו"ח. נעלם אחרי צפייה.
+  if(now().getDate()>=24 && _monthReviewSeen()<t.substring(0,7)){
+    a.push({type:'info',h:`🗓️ סגירת חודש — ${curMonthStr()}`,s:'החודש עומד להסתיים. לחץ לצפייה בסיכום הביצועים, השוואה לחודש קודם ושיתוף דו"ח.',kind:'monthclose'});
+  }
   a.push(...getClientAlerts());
   // מיון לפי דחיפות: קריטי → אזהרה → מידע. מיון יציב — שומר על סדר הקטגוריות בתוך אותה רמה.
   const _sevRank={crit:0,warn:1,info:2};
@@ -9258,8 +9263,12 @@ function _deltaChip(cur,prev){
 function _mcRow(ico,label,val,color){
   return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:12px;color:var(--text2)">${ico} ${label}</span><b style="font-size:13px;color:${color||'var(--text)'}">${val}</b></div>`;
 }
+// דגל מקומי (למכשיר) שהמשתמש כבר צפה בסקירת סגירת-החודש של החודש הנוכחי — לביטול התזכורת
+function _monthReviewSeen(){ try{return localStorage.getItem('cem_month_review_seen')||'';}catch(e){return '';} }
+function _setMonthReviewSeen(m){ try{localStorage.setItem('cem_month_review_seen',m);}catch(e){} }
 function openMonthClose(){
   const s=_monthCloseSummary();
+  if(_monthReviewSeen()!==s.cur){ _setMonthReviewSeen(s.cur); if(typeof rAlerts==='function'&&currentSec==='alerts')setTimeout(rAlerts,50); }
   const old=document.getElementById('month-close-popup'); if(old)old.remove();
   const mName=curMonthStr();
   const pct=Math.round((s.held/s.goal)*100);
