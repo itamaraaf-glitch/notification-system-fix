@@ -1940,6 +1940,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
       <button class="btn btn-import" onclick="importFromExcel('clients')" title="ייבוא מ-Excel">📤 ייבוא</button>
     </div>
   </div>
+  <div id="clients-summary" style="display:none"></div>
   <div id="clients-search-info" style="display:none;font-size:11px;color:var(--text3);margin-bottom:8px"></div>
   <div id="clients-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px"></div>
   <div id="clients-noresults" style="display:none;text-align:center;padding:40px 20px;color:var(--text3)">
@@ -8146,12 +8147,13 @@ function clientMonthlyRevenue(c){
 }
 function rClients(){
   const grid=document.getElementById('clients-grid');if(!grid)return;
+  const _csEl=document.getElementById('clients-summary');
   if(!D.clients.length){grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:50px 20px">
     <div style="color:rgba(200,169,110,.2);font-size:48px;margin-bottom:12px">🏢</div>
     <div style="font-size:14px;font-weight:700;color:var(--text3);margin-bottom:6px">אין כרטיסי לקוח עדיין</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:16px">הוסף את הלקוח הראשון שלך כדי להתחיל</div>
     <button class="btn btnp" onclick="openClientModal(null)">+ הוסף לקוח</button>
-  </div>`;return;}
+  </div>`;if(_csEl)_csEl.style.display='none';return;}
   const allTypes=Object.entries(ITEM_CFG).filter(([t])=>t!=='extra');
   // אינדקס פגישות לפי חברה (חד-פעמי) — במקום סריקת כל הפגישות לכל כרטיס לקוח
   const _mtgByCo=new Map();
@@ -8159,6 +8161,15 @@ function rClients(){
   // אינדקס שכר לפי חברה (חד-פעמי) — כדי ש-clientRenewables לא יסרוק את כל D.salary לכל כרטיס
   const _salByCo=new Map();
   D.salary.forEach(s=>{ const k=nrmCo(s.cl); if(!k)return; let a=_salByCo.get(k); if(!a){a=[];_salByCo.set(k,a);} a.push(s); });
+  // סיכום תיק הלקוחות: סה"כ · פעילים · הכנסה חוזרת חודשית (MRR) · פריטים לחידוש (≤90 יום)
+  { let _mrr=0,_renewSoon=0; const _tdy=nd();
+    D.clients.forEach(c=>{ _mrr+=clientMonthlyRevenue(c).reduce((s,x)=>s+x.val,0);
+      clientRenewables(c,_salByCo).forEach(o=>{ if(o.exp&&db(_tdy,o.exp)<=90)_renewSoon++; }); });
+    const _active=D.clients.filter(c=>c.status==='לקוח פעיל').length;
+    const _chip=(ico,lbl,val,clr)=>`<div style="display:flex;align-items:center;gap:6px;background:${clr}14;border:1px solid ${clr}33;border-radius:10px;padding:6px 11px"><span style="font-size:14px">${ico}</span><div><div style="font-size:9.5px;color:var(--text3);font-weight:700;letter-spacing:.3px">${lbl}</div><div style="font-size:13px;font-weight:800;color:${clr}">${val}</div></div></div>`;
+    if(_csEl){ _csEl.style.display='flex'; _csEl.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px';
+      _csEl.innerHTML=_chip('🏢','סה"כ לקוחות',D.clients.length,'#4cc9f0')+_chip('✅','לקוחות פעילים',_active,'var(--teal)')+_chip('💰','הכנסה חוזרת חודשית',fmt(_mrr),'var(--gold)')+(_renewSoon?_chip('🔄','לחידוש (≤90 יום)',_renewSoon,'#f4a261'):''); }
+  }
   const _cardsHtml=D.clients.map(c=>{
     const sc={r:'#e63946',y:'#f4a261',g:'var(--teal)',b:'#4cc9f0'};
     const stCol=c.status==='לקוח פעיל'?sc.g:c.status==='לקוח פוטנציאלי'?sc.b:c.status==='ליד חדש'?sc.y:sc.r;
