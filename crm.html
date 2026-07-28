@@ -5399,6 +5399,7 @@ function alertGo(i){
   // משימות — מעבר למסך המשימות, ופתיחת המשימה הספציפית אם יש מזהה
   if(al.kind==='task'){ nav('tasks'); if(al.id)setTimeout(()=>openM('task',al.id),340); return; }
   if(al.kind==='clients-expiry'){ nav('clients'); return; } // מוצרים ללא תפוגה — מעבר למסך הלקוחות
+  if(al.kind==='monthclose'){ if(typeof openMonthClose==='function')openMonthClose(); return; } // סגירת חודש — תצוגה מקדימה
   const secMap={deal:'deals',dist:'dists',salary:'salary',tender:'tenders',meetings:'meetings'};
   const mtypeMap={deal:'deal',dist:'dist',salary:'salary',tender:'tender',meetings:'meeting'};
   const sec=secMap[al.kind];
@@ -5565,6 +5566,10 @@ function getAlerts(){
     (c[type]||[]).forEach(it=>{ if(!it.expiry && (typeof _productSourceDate==='function') && _productSourceDate(it))_fixableNoExp++; });
   }); });
   if(_fixableNoExp>0)a.push({type:'info',h:`📅 ${_fixableNoExp} מוצרים ללא תאריך תפוגה`,s:`מוצרים שנמכרו מפרויקט שנסגר וטרם קיבלו תפוגה — לא נכנסים למעקב חידושים. לחץ "השלם תפוגות".`,kind:'clients-expiry',meta:{backfill:true}});
+  // סגירת חודש: בסוף החודש (מיום 24) — תזכורת לצפות בסיכום, בהשוואה לחודש קודם, ולשתף דו"ח. נעלם אחרי צפייה.
+  if(now().getDate()>=24 && _monthReviewSeen()<t.substring(0,7)){
+    a.push({type:'info',h:`🗓️ סגירת חודש — ${curMonthStr()}`,s:'החודש עומד להסתיים. לחץ לצפייה בסיכום הביצועים, השוואה לחודש קודם ושיתוף דו"ח.',kind:'monthclose'});
+  }
   a.push(...getClientAlerts());
   // מיון לפי דחיפות: קריטי → אזהרה → מידע. מיון יציב — שומר על סדר הקטגוריות בתוך אותה רמה.
   const _sevRank={crit:0,warn:1,info:2};
@@ -8002,6 +8007,10 @@ function renderQuickActions(){
       <span style="font-size:16px">📖</span>
       <div style="flex:1"><div style="font-size:11px;font-weight:700;color:#a78bfa">ייבוא חכם</div><div style="font-size:11px;color:var(--text3)">Word / PDF / Excel</div></div>
     </div>
+    ${now().getDate()>=22?`<div onclick="openMonthClose()" class="qa-item" style="background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.3)">
+      <span style="font-size:16px">📦</span>
+      <div style="flex:1"><div style="font-size:11px;font-weight:700;color:var(--gold)">סגירת חודש</div><div style="font-size:11px;color:var(--text3)">סיכום · השוואה · שיתוף</div></div>
+    </div>`:''}
   `;
 }
 
@@ -9215,15 +9224,136 @@ function runMonthlyCycle(force){
   return archDeals.length;
 }
 
-function manualRunCycle(){
+// ===== סגירת חודש — סיכום מלא + תצוגה מקדימה לפני ארכוב =====
+// אוסף את נתוני "מה נסגר החודש", "מה יועבר לארכיון" ו"מה עובר לחודש הבא" — לתצוגה מקדימה.
+function _ymPrev(ym){ const p=ym.split('-'); const d=new Date(+p[0],+p[1]-1,1); d.setMonth(d.getMonth()-1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+function _monthCloseSummary(){
+  const cur=nd().substring(0,7), prev=_ymPrev(cur);
+  const sum=(a,k)=>a.reduce((s,d)=>s+(+d[k]||0),0);
+  const archDeals=(D.deals||[]).filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<cur); // ייארכבו עכשיו
+  const oldMtgs=(D.meetings||[]).filter(m=>m.dt&&m.dt.substring(0,7)<cur);                 // ייארכבו עכשיו
+  const openDeals=(D.deals||[]).filter(d=>d.st!=='נסגר');                                  // עוברות לחודש הבא
+  const openDists=(D.dists||[]).filter(d=>d.st!=='הושלם');
+  const salOut=(D.salary||[]).filter(s=>s.st!=='סגור').reduce((a,s)=>a+(+s.pv||0),0);
+  // השוואה לחודש קודם — כולל ארכיון (כי חלק מהחודש הקודם אולי כבר אורכב)
+  const allDeals=[...(D.deals||[]),...(D.archivedDeals||[])];
+  const allDists=[...(D.dists||[]),...(D.archivedDists||[])];
+  const allMtgs=[...(D.meetings||[]),...(D.archivedMeetings||[])];
+  const dealsClosedIn=mm=>allDeals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)===mm);
+  const distsDoneIn=mm=>allDists.filter(d=>d.st==='הושלם'&&(d.dt||'').substring(0,7)===mm);
+  const heldIn=mm=>allMtgs.filter(m=>m.hl==='כן'&&(m.dt||'').substring(0,7)===mm).length;
+  const closedThis=dealsClosedIn(cur), closedPrev=dealsClosedIn(prev);
+  const distThis=distsDoneIn(cur), distPrev=distsDoneIn(prev);
+  return {cur, prev,
+    archDeals, archN:archDeals.length, archVal:sum(archDeals,'v'), archOtc:sum(archDeals,'otc'),
+    oldMtgsN:oldMtgs.length,
+    openDealsN:openDeals.length, openDealsVal:sum(openDeals,'v'),
+    openDistsN:openDists.length, salOut,
+    closedThisN:closedThis.length, closedThisVal:sum(closedThis,'v'), closedThisOtc:sum(closedThis,'otc'),
+    distThisN:distThis.length, distThisInc:sum(distThis,'inc'),
+    held:heldThisMonth(), goal:MEETING_GOAL,
+    // חודש קודם להשוואה
+    prevClosedN:closedPrev.length, prevClosedVal:sum(closedPrev,'v'),
+    prevDistN:distThis.length!=null?distPrev.length:0, prevHeld:heldIn(prev) };
+}
+// תג הפרש מול חודש קודם: ▲ ירוק לעלייה, ▼ אדום לירידה, — אפור לשוויון
+function _deltaChip(cur,prev){
+  const d=(+cur||0)-(+prev||0);
+  if(!prev&&!cur) return '';
+  if(d>0) return `<span style="font-size:9.5px;font-weight:800;color:var(--teal);margin-inline-start:6px">▲ ${fmt(Math.abs(d))}</span>`;
+  if(d<0) return `<span style="font-size:9.5px;font-weight:800;color:#e63946;margin-inline-start:6px">▼ ${fmt(Math.abs(d))}</span>`;
+  return `<span style="font-size:9.5px;font-weight:700;color:var(--text3);margin-inline-start:6px">= ללא שינוי</span>`;
+}
+function _mcRow(ico,label,val,color){
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:12px;color:var(--text2)">${ico} ${label}</span><b style="font-size:13px;color:${color||'var(--text)'}">${val}</b></div>`;
+}
+// דגל מקומי (למכשיר) שהמשתמש כבר צפה בסקירת סגירת-החודש של החודש הנוכחי — לביטול התזכורת
+function _monthReviewSeen(){ try{return localStorage.getItem('cem_month_review_seen')||'';}catch(e){return '';} }
+function _setMonthReviewSeen(m){ try{localStorage.setItem('cem_month_review_seen',m);}catch(e){} }
+function openMonthClose(){
+  const s=_monthCloseSummary();
+  if(_monthReviewSeen()!==s.cur){ _setMonthReviewSeen(s.cur); if(typeof rAlerts==='function'&&currentSec==='alerts')setTimeout(rAlerts,50); }
+  const old=document.getElementById('month-close-popup'); if(old)old.remove();
+  const mName=curMonthStr();
+  const pct=Math.round((s.held/s.goal)*100);
+  const el=document.createElement('div');
+  el.id='month-close-popup';
+  el.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.78);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto';
+  el.innerHTML=`<div style="background:linear-gradient(135deg,#101525,#0a0e1c);border:1px solid rgba(200,169,110,.3);border-radius:16px;max-width:400px;width:100%;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:cardIn .25s ease;max-height:92vh;overflow:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-size:16px;font-weight:900;color:var(--gold)">📦 סגירת חודש — ${esc(mName)}</div>
+      <button onclick="document.getElementById('month-close-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:12px">סיכום החודש לפני ארכוב. הפריטים לא נמחקים — עוברים ללשוניות הארכיון וניתן לצפות בהם תמיד.</div>
+
+    <div style="background:rgba(6,214,160,.06);border:1px solid rgba(6,214,160,.2);border-radius:11px;padding:10px 13px;margin-bottom:11px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px"><span style="font-size:11px;font-weight:800;color:var(--teal);letter-spacing:.4px">✅ ביצועי החודש</span><span style="font-size:9.5px;color:var(--text3)">מול ${esc(MONTH_HE[(+s.prev.split('-')[1])-1])}</span></div>
+      ${_mcRow('💼','עסקאות שנסגרו',`${s.closedThisN} · ${fmt(s.closedThisVal)}${_deltaChip(s.closedThisVal,s.prevClosedVal)}`,'var(--teal)')}
+      ${s.closedThisOtc?_mcRow('📦','OTC שנסגר',fmt(s.closedThisOtc),'var(--teal)'):''}
+      ${_mcRow('🚀','הפצות שהושלמו',`${s.distThisN}${s.distThisInc?' · '+fmt(s.distThisInc):''}${_deltaChip(s.distThisN,s.prevDistN)}`,'#a78bfa')}
+      ${_mcRow('🤝','פגישות שהתקיימו',`${s.held}/${s.goal} · ${pct}%${_deltaChip(s.held,s.prevHeld)}`,pct>=100?'var(--teal)':pct>=66?'#f4a261':'#e63946')}
+    </div>
+
+    <div style="background:rgba(200,169,110,.06);border:1px solid rgba(200,169,110,.2);border-radius:11px;padding:10px 13px;margin-bottom:11px">
+      <div style="font-size:11px;font-weight:800;color:var(--gold);margin-bottom:4px;letter-spacing:.4px">📦 יועבר לארכיון עכשיו</div>
+      ${_mcRow('💼','עסקאות שנסגרו (חודשים קודמים)',`${s.archN}${s.archVal?' · '+fmt(s.archVal):''}`,'var(--gold)')}
+      ${_mcRow('🤝','פגישות ישנות',String(s.oldMtgsN),'var(--gold)')}
+      ${(s.archN===0&&s.oldMtgsN===0)?'<div style="font-size:10.5px;color:var(--text3);padding-top:5px">אין פריטים ישנים לארכוב — הכול מעודכן.</div>':''}
+    </div>
+
+    <div style="background:rgba(76,201,240,.06);border:1px solid rgba(76,201,240,.2);border-radius:11px;padding:10px 13px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:800;color:var(--blue);margin-bottom:4px;letter-spacing:.4px">➡️ ממשיך לחודש הבא</div>
+      ${_mcRow('💼','עסקאות פתוחות',`${s.openDealsN}${s.openDealsVal?' · '+fmt(s.openDealsVal):''}`,'var(--blue)')}
+      ${_mcRow('🚀','הפצות בתהליך',String(s.openDistsN),'var(--blue)')}
+      ${s.salOut?_mcRow('💰','יתרת שכר לגבייה',fmt(s.salOut),'#f4a261'):''}
+    </div>
+
+    <button class="btn btns" onclick="shareMonthReport()" style="width:100%;font-size:12px;border-color:#25d366;color:#25d366;margin-bottom:8px">📤 שתף דו"ח חודש (וואטסאפ / העתקה)</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btns" onclick="document.getElementById('month-close-popup').remove()" style="font-size:12px">ביטול</button>
+      <button class="btn btnp" onclick="confirmMonthClose()" style="font-size:12px;background:var(--gold);border-color:var(--gold);color:#0a0e1c;font-weight:800">📦 סגור חודש</button>
+    </div>
+  </div>`;
+  el.addEventListener('click',()=>el.remove());
+  document.body.appendChild(el);
+}
+// דו"ח חודש טקסטואלי לשיתוף — סיכום ביצועים + השוואה לחודש קודם
+function _monthReportText(){
+  const s=_monthCloseSummary();
+  const pct=Math.round((s.held/s.goal)*100);
+  const dl=(c,p)=>{const d=(+c||0)-(+p||0);return d>0?` (▲ ${fmt(Math.abs(d))})`:d<0?` (▼ ${fmt(Math.abs(d))})`:'';};
+  const L=[];
+  L.push(`📊 *סיכום חודש — ${curMonthStr()}*`);
+  L.push('');
+  L.push(`💼 עסקאות שנסגרו: ${s.closedThisN} · ${fmt(s.closedThisVal)}${dl(s.closedThisVal,s.prevClosedVal)}`);
+  if(s.closedThisOtc)L.push(`📦 OTC שנסגר: ${fmt(s.closedThisOtc)}`);
+  L.push(`🚀 הפצות שהושלמו: ${s.distThisN}${s.distThisInc?' · '+fmt(s.distThisInc):''}`);
+  L.push(`🤝 פגישות: ${s.held}/${s.goal} (${pct}%)${dl(s.held,s.prevHeld)}`);
+  L.push('');
+  L.push(`➡️ ממשיך לחודש הבא: ${s.openDealsN} עסקאות פתוחות${s.openDealsVal?' · '+fmt(s.openDealsVal):''}, ${s.openDistsN} הפצות בתהליך`);
+  if(s.salOut)L.push(`💰 יתרת שכר לגבייה: ${fmt(s.salOut)}`);
+  L.push('');
+  L.push('— HOT Business CRM');
+  return L.join('\n');
+}
+function shareMonthReport(){
+  const txt=_monthReportText();
+  const copyThenWa=()=>window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank','noopener');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>{showToast('📋 הדו"ח הועתק — נפתח וואטסאפ לשיתוף','ok');copyThenWa();}).catch(copyThenWa);
+  }else copyThenWa();
+}
+function confirmMonthClose(){
+  const s=_monthCloseSummary();
+  const pop=document.getElementById('month-close-popup'); if(pop)pop.remove();
   const n=runMonthlyCycle(true);
   rAll();
-  if(n){
-    alert(`📦 סגירת חודש בוצעה!\n\n${n} עסקאות שנסגרו הועברו לארכיון.\nעסקאות פתוחות עוברות לחודש הבא.\nפגישות מחודשים קודמים הועברו לארכיון הפגישות.\n\nניתן לצפות בהן בלשוניות "📦 ארכיון".`);
-  }else{
-    alert('✓ אין עסקאות נסגרות מחודש קודם להעביר לארכיון.\n\nרק עסקאות שסומנו "נסגר" בחודש שעבר יועברו אוטומטית.\nפגישות מחודשים קודמים מועברות לארכיון הפגישות אוטומטית.');
-  }
+  const parts=[];
+  if(n)parts.push(`${n} עסקאות שנסגרו הועברו לארכיון`);
+  if(s.oldMtgsN)parts.push(`${s.oldMtgsN} פגישות ישנות לארכיון`);
+  showToast(parts.length?('📦 סגירת חודש הושלמה — '+parts.join(' · ')+' (זמין בלשוניות הארכיון)'):'✓ סגירת חודש: אין פריטים ישנים לארכוב — הכול מעודכן','ok');
 }
+function manualRunCycle(){ openMonthClose(); }
 
 // product-type helpers (key ↔ label) for display + Excel round-trip
 function ptypeLabel(k){ return (k&&ITEM_CFG[k])?ITEM_CFG[k].label:''; }
