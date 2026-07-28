@@ -182,13 +182,33 @@
   // כך שלקוח לעולם לא רואה עדכונים של לקוחות אחרים, גם אם נפתחו במכשיר קישורים אחרים.
   function clientKey(o){ return String((o&&(o.co||o.cl))||'').trim().toLowerCase(); }
   function getActiveClient(){ try{return localStorage.getItem('hot_track_client')||'';}catch(e){return '';} }
-  function setActiveClient(o){ try{ var k=clientKey(o); if(k)localStorage.setItem('hot_track_client',k); }catch(e){} }
+  // בידוד קשיח: קביעת הלקוח הפעיל. אם נפתח קישור של לקוח אחר — מוחקים לחלוטין את
+  // ההזמנות של הלקוח הקודם מהמכשיר, כך שלקוח לעולם לא רואה מידע של לקוח אחר (לא רק סינון בתצוגה).
+  function setActiveClient(o){
+    try{
+      var k=clientKey(o); if(!k) return;
+      var prev=getActiveClient();
+      localStorage.setItem('hot_track_client',k);
+      if(prev!==k) save(load().filter(function(x){return clientKey(x)===k;}));
+    }catch(e){}
+  }
 
   function render(){
-    var active=getActiveClient();
     var all=load();
-    var orders=(active ? all.filter(function(o){return clientKey(o)===active;}) : all)
-      .sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+    var active=getActiveClient();
+    // אם אין לקוח פעיל אך קיימות הזמנות (למשל נתונים ישנים מלפני הבידוד) — נגזר מההזמנה
+    // החדשה ביותר; לעולם לא נופלים ל"הצג הכל" שעלול לחשוף לקוחות אחרים.
+    if(!active && all.length){
+      var newest=all.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);})[0];
+      active=clientKey(newest);
+      if(active){ try{localStorage.setItem('hot_track_client',active);}catch(e){} }
+    }
+    // ניקוי קשיח באחסון: משאירים אך ורק את הזמנות הלקוח הפעיל (מסירים כל שאר הלקוחות).
+    if(active){
+      var mine=all.filter(function(o){return clientKey(o)===active;});
+      if(mine.length!==all.length){ save(mine); all=mine; }
+    }
+    var orders=all.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
     var list=document.getElementById('list');
     var upd=document.getElementById('upd');
     if(!orders.length){
