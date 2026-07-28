@@ -8795,7 +8795,12 @@ function _trackSharePopup(url, d){
   window._trackShareCtx={url,cl:d.cl||'',no:d.no||'',co:d.co||'',cle:(d.cle||'').trim(),id:d.id||null,st:d.st||''};
   const qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data='+encodeURIComponent(url);
   const waTxt=`שלום${d.cl?' '+d.cl:''}, למעקב אחר סטטוס ההזמנה שלכם (${d.no||d.co||''}) בזמן אמת:\n${url}`;
-  const wa='https://wa.me/?text='+encodeURIComponent(waTxt);
+  // אם ידוע מספר הטלפון של הלקוח (מכרטיס הלקוח) — שולחים וואטסאפ ישירות אליו; אחרת בורר שיתוף כללי
+  const _cliCard=(typeof findClientByName==='function')?(findClientByName(d.co)||findClientByName(d.cl)):null;
+  const _cliPhone=_cliCard&&_cliCard.phone?String(_cliCard.phone).trim():'';
+  const _waBase=_cliPhone?_waNum(_cliPhone):'';
+  const wa=(_waBase||'https://wa.me/')+'?text='+encodeURIComponent(waTxt);
+  const waLabel=_cliPhone?'💬 וואטסאפ ללקוח':'💬 וואטסאפ';
   const cle=(d.cle||'').trim();
   const el=document.createElement('div');
   el.id='track-share-popup';
@@ -8810,7 +8815,7 @@ function _trackSharePopup(url, d){
     <input id="track-share-url" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;box-sizing:border-box;padding:9px 11px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text2);font-size:10.5px;direction:ltr;margin-bottom:11px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btnp" onclick="_trackCopy()" style="font-size:12px">📋 העתק קישור</button>
-      <button class="btn btns" onclick="window.open('${wa}','_blank','noopener');_trackMarkSynced()" style="border-color:#25d366;color:#25d366;font-size:12px">💬 וואטסאפ</button>
+      <button class="btn btns" onclick="window.open('${wa}','_blank','noopener');_trackMarkSynced()" title="${_cliPhone?'שליחה ישירה ל-'+esc(_cliPhone):'בחירת נמען'}" style="border-color:#25d366;color:#25d366;font-size:12px">${waLabel}</button>
       ${cle?`<button class="btn btns" onclick="_trackMail()" style="grid-column:1/-1;border-color:#4cc9f0;color:#4cc9f0;font-size:12px">📧 שלח במייל ללקוח (${esc(cle)})</button>`:''}
     </div>
   </div>`;
