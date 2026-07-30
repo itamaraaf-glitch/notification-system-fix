@@ -3370,6 +3370,30 @@ function saveAll(){
     }
   }
 }
+// ── יציבות: לא מרנדרים מחדש ברקע בזמן שהמשתמש עסוק ──
+// סנכרון-ענן/כרטיסייה שמגיע באמצע עבודה על שורה קרא ל-rAll() ובנה מחדש את הטבלה — מה שגרם
+// לדף "לקפוץ החוצה" מהשורה שעבדו עליה. עכשיו רינדור-הרקע נדחה כל עוד יש מודאל פתוח / שדה בעריכה /
+// גלילה פעילה, ומשוחרר מיד כשהמשתמש מסיים. הנתונים מתמזגים תמיד — רק הרינדור הויזואלי מתעכב.
+let _lastTouchTs=0, _deferredSyncRender=false;
+function _userBusy(){
+  try{
+    if(document.querySelector('.mw.open'))return true;                       // מודאל פתוח
+    const cb=document.getElementById('cbar'); if(cb&&cb.classList.contains('show'))return true; // סרגל אישור
+    const ae=document.activeElement;                                          // עריכת שדה טקסט
+    if(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&ae.type!=='checkbox'&&ae.type!=='radio')return true;
+    if(Date.now()-_lastTouchTs<1200)return true;                             // בתוך מגע/גלילה
+  }catch(e){}
+  return false;
+}
+function _syncRender(){ if(_userBusy()){ _deferredSyncRender=true; return; } try{rAll();}catch(e){} }
+function _flushSyncRender(){ if(_deferredSyncRender && !_userBusy()){ _deferredSyncRender=false; try{rAll();}catch(e){} } }
+try{
+  document.addEventListener('touchstart',()=>{_lastTouchTs=Date.now();},{passive:true});
+  document.addEventListener('touchmove',()=>{_lastTouchTs=Date.now();},{passive:true});
+  document.addEventListener('touchend',()=>{ setTimeout(_flushSyncRender,1300); },{passive:true});
+  document.addEventListener('focusout',()=>{ setTimeout(_flushSyncRender,300); });
+  setInterval(_flushSyncRender,4000); // רשת ביטחון — משחרר רינדור דחוי כשהמשתמש כבר לא עסוק
+}catch(e){}
 const _GOAL_DEFAULTS={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000};
 function showLoginHealth(){
   // הודעת "נטענו X רשומות" — פעם אחת בלבד בכל הפעלה, לא בכל רענון/סנכרון
@@ -3717,7 +3741,7 @@ async function fbForcePull(){
       _saveLS();
       localStorage.setItem('cem_sync_ts',String(newTs));
       _lastSyncTs=Date.now();
-      if(changed){rAll();showToast('✅ סונכרן! נתונים חדשים הגיעו מהענן','ok');}
+      if(changed){_syncRender();showToast('✅ סונכרן! נתונים חדשים הגיעו מהענן','ok');}
       else showToast('✅ הנתונים מעודכנים – אין שינויים חדשים','ok');
     }catch(e2){showToast('⚠️ שגיאת סנכרון: '+e2.message,'warn');}
     finally{_fbApplying=false;}
@@ -3772,7 +3796,7 @@ function initBroadcast(){
           try{
             const p=JSON.parse(raw);
             const changed=fbMergeRemote(p);
-            if(changed){D=Object.assign(D,{});rAll();showToast('🔄 עודכן מכרטיסייה אחרת','ok');}
+            if(changed){D=Object.assign(D,{});_syncRender();showToast('🔄 עודכן מכרטיסייה אחרת','ok');}
           }catch(e2){}
         },300);
       }
@@ -3812,7 +3836,7 @@ async function fbInit(){
         _saveLS();
         localStorage.setItem('cem_sync_ts',String(newTs));
         _lastSyncTs=Date.now();
-        if(changed){rAll();showToast('🔄 עודכן מהענן – נתונים חדשים הגיעו','ok');}
+        if(changed){_syncRender();showToast('🔄 עודכן מהענן – נתונים חדשים הגיעו','ok');}
       }finally{_fbApplying=false;}
       fbStatus('connected');
       _fbListening=true;
@@ -4016,7 +4040,7 @@ async function ssInit(dbUrl,syncCode){
           _saveLS();
           localStorage.setItem('cem_sync_ts',String(Math.max(remoteTs,localTs)));
           _lastSyncTs=Date.now();
-          if(changed){rAll();showToast('🔄 עודכן מהענן – נתונים חדשים','ok');}
+          if(changed){_syncRender();showToast('🔄 עודכן מהענן – נתונים חדשים','ok');}
         }finally{_fbApplying=false;}
       }
     }
@@ -4052,7 +4076,7 @@ async function ssPoll(){
         _saveLS();
         localStorage.setItem('cem_sync_ts',String(Math.max(remoteTs,localTs)));
         _lastSyncTs=Date.now();
-        if(changed){rAll();showToast('🔄 עודכן מהענן','ok');}
+        if(changed){_syncRender();showToast('🔄 עודכן מהענן','ok');}
       }finally{_fbApplying=false;}
     }
   }catch(e){console.warn('ssPoll:',e);}
@@ -4774,7 +4798,7 @@ async function fbSyncNow(){
       _fbApplying=true;
       try{
         const changed=fbMergeRemote(plain);
-        if(changed){_saveLS();rAll();}
+        if(changed){_saveLS();_syncRender();}
       }finally{_fbApplying=false;}
     }
     fbPush();
@@ -4942,7 +4966,7 @@ document.addEventListener('visibilitychange',()=>{
               if(typeof _schedulePersist==='function')_schedulePersist();
               localStorage.setItem('cem_sync_ts',String(Math.max(remoteTs,localTs)));
               _lastSyncTs=Date.now();
-              if(changed){rAll();showToast('🔄 עודכן מהענן','ok');}
+              if(changed){_syncRender();showToast('🔄 עודכן מהענן','ok');}
             }finally{_fbApplying=false;}
           }
         });
