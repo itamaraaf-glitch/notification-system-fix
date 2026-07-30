@@ -1972,7 +1972,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="tw" style="cursor:pointer;border-top:3px solid #f072b6" onclick="exportExcel('tasks')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(240,114,182,.1)">✅</div><div class="exp-tile-ttl">משימות</div><div class="exp-tile-sub" id="exp-tasks-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
     <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0" onclick="exportExcel('inbox')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(76,201,240,.1)">📥</div><div class="exp-tile-ttl">תיבת מייל</div><div class="exp-tile-sub" id="exp-inbox-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
     <div class="tw" style="cursor:pointer;border-top:3px solid #a78bfa" onclick="exportExcel('workplan')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(167,139,250,.1)">🎯</div><div class="exp-tile-ttl">תוכנית עבודה</div><div class="exp-tile-sub" id="exp-workplan-count">0 מוצרים</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
-    <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="exportProjectsReport()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(6,214,160,.1)">🗂️</div><div class="exp-tile-ttl">דו"ח פרויקטים מלא</div><div class="exp-tile-sub">כל מס' הפרויקט · כל הסטטוסים · כולל ארכיון</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="openProjectsReport()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(6,214,160,.1)">🗂️</div><div class="exp-tile-ttl">דו"ח פרויקטים מלא</div><div class="exp-tile-sub">סיכום על המסך · כל מס' הפרויקט · כולל ארכיון</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📊 הצג + הורד</div></div></div>
     <div class="tw" style="cursor:pointer;border-top:3px solid #e63946" onclick="exportAll()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(230,57,70,.1)">📊</div><div class="exp-tile-ttl">כל הנתונים</div><div class="exp-tile-sub">כל הנושאים</div><div class="exp-tile-btn" style="background:#e63946;color:#fff">📥 ייצוא הכל</div></div></div>
   </div>
   <div style="font-size:11px;font-weight:800;color:rgba(200,169,110,.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding:0 2px">🛡️ גיבוי ושחזור</div>
@@ -10898,21 +10898,19 @@ function exportAll(){
   showToast(`📊 מייצא ${secs.length} קבצים — כולל משימות ותיבת מייל`,'ok');
 }
 // ===== דוח פרויקטים מלא =====
-// מרכז את כל מספרי הפרויקט — הפצות + שכר, פעיל + ארכיון — בכל סטטוס, בקובץ אחד מסודר עם תאריכים.
-// מתעלם מכל סינון פעיל (מייצא הכול), וממזג הפצה+שכר לפי מס' הפרויקט.
-function exportProjectsReport(){
+// מרכז את כל מספרי הפרויקט — הפצות + שכר, פעיל + ארכיון — בכל סטטוס, מסודר עם תאריכים.
+// מתעלם מכל סינון פעיל, וממזג הפצה+שכר לפי מס' הפרויקט. משמש גם לתצוגה על המסך וגם לייצוא CSV.
+function _projectsReportData(){
   const fmtD=d=>d?fmtDate(d):'';
   const num=n=>(+n||0);
   const allDist=[...(D.dists||[]).map(d=>({...d,_src:'פעיל'})),...(D.archivedDists||[]).map(d=>({...d,_src:'ארכיון'}))];
   const allSal=[...(D.salary||[]).map(s=>({...s,_src:'פעיל'})),...(D.archivedSalary||[]).map(s=>({...s,_src:'ארכיון'}))];
-  // אינדקס שכר לפי מס' פרויקט (pj)
   const salByNo=new Map();
   allSal.forEach(s=>{ const k=String(s.pj||'').trim(); if(!k)return; if(!salByNo.has(k))salByNo.set(k,[]); salByNo.get(k).push(s); });
   const distNums=new Set(allDist.map(d=>String(d.no||'').trim()).filter(Boolean));
   const rows=[];
   const _exp=s=>(s&&typeof salExpiry==='function')?salExpiry(s):'';
   const _tyLbl=t=>t==='equipment'?'ציוד':t?'שירות':'';
-  // שורה לכל הפצה — ממוזגת עם רשומת השכר התואמת (לפי מס' פרויקט)
   allDist.forEach(d=>{
     const k=String(d.no||'').trim();
     const s=(k&&salByNo.get(k))?salByNo.get(k)[0]:{};
@@ -10920,10 +10918,9 @@ function exportProjectsReport(){
       num(d.inc), num(d.tgt), num(d.eq), d.mi||'', s.st||'', num(s.tr), num(s.cl2), num(s.pv),
       fmtD(s.cstart), s.term?num(s.term)+' ח\'':'', fmtD(_exp(s)), d._src ]);
   });
-  // שורה לכל פרויקט שכר שאין לו הפצה תואמת — כדי שאף מס' פרויקט לא ייעדר
   allSal.forEach(s=>{
     const k=String(s.pj||'').trim();
-    if(k&&distNums.has(k))return; // כבר מוצג בשורת ההפצה
+    if(k&&distNums.has(k))return;
     rows.push([ k||'–', s.cl||'', s.cl||'', _tyLbl(s.ty), '', '', '', '',
       0, 0, 0, '', s.st||'', num(s.tr), num(s.cl2), num(s.pv),
       fmtD(s.cstart), s.term?num(s.term)+' ח\'':'', fmtD(_exp(s)), s._src ]);
@@ -10932,13 +10929,66 @@ function exportProjectsReport(){
   const hdrs=['מס פרויקט','חברה','לקוח','סוג','שירות/פתרון','מנהל פרויקט','סטטוס הפצה','תאריך הפצה',
     'הכנסה חודשית','יעד הכנסה','ציוד','חוסרים','סטטוס שכר','יעד שכר','נסגר','יתרה לגבייה',
     'התחלת חוזה','תקופה','תפוגת חוזה','מקור'];
+  return {hdrs,rows};
+}
+function exportProjectsReport(){
+  const {hdrs,rows}=_projectsReportData();
   if(!rows.length){ showToast('אין פרויקטים לייצוא','warn'); return; }
-  // שורת סיכום: סכומי העמודות המספריות (הכנסה/יעד/ציוד/יעד-שכר/נסגר/יתרה)
   const colSum=i=>rows.reduce((a,r)=>a+(+r[i]||0),0);
   const totals=['סה"כ ('+rows.length+' פרויקטים)','','','','','','','',
     colSum(8),colSum(9),colSum(10),'','',colSum(13),colSum(14),colSum(15),'','','',''];
   dlCSV('דוח_פרויקטים',toCSV(hdrs,[...rows,totals]));
   showToast('📊 דו"ח פרויקטים יוצא — '+rows.length+' פרויקטים (כל הסטטוסים, כולל ארכיון)','ok');
+}
+// תצוגת דו"ח פרויקטים על המסך — סיכום כולל, פילוח סטטוסים, וטבלה מתומצתת + כפתור הורדה
+function openProjectsReport(){
+  const {rows}=_projectsReportData();
+  if(!rows.length){ showToast('אין פרויקטים להצגה','warn'); return; }
+  const old=document.getElementById('proj-report-popup'); if(old)old.remove();
+  const colSum=i=>rows.reduce((a,r)=>a+(+r[i]||0),0);
+  const sumInc=colSum(8),sumTgt=colSum(9),sumEq=colSum(10),sumClosed=colSum(14),sumOut=colSum(15);
+  // פילוח לפי סטטוס הפצה (עמודה 6); רשומות ללא הפצה = "שכר בלבד"
+  const stC={}; rows.forEach(r=>{const st=(r[6]||'').trim()||'שכר בלבד';stC[st]=(stC[st]||0)+1;});
+  const stColor=st=>st==='הושלם'?'var(--teal)':st==='בעיה'?'#e63946':st==='בהתקנה'?'#4cc9f0':st==='שכר בלבד'?'var(--text3)':'#f4a261';
+  const kpi=(lbl,val,clr)=>`<div style="flex:1;min-width:90px;background:${clr}12;border:1px solid ${clr}30;border-radius:9px;padding:7px 9px"><div style="font-size:9px;color:var(--text3);font-weight:700">${lbl}</div><div style="font-size:14px;font-weight:800;color:${clr}">${val}</div></div>`;
+  const stChips=Object.entries(stC).sort((a,b)=>b[1]-a[1]).map(([st,n])=>`<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:12px;background:${stColor(st)}18;color:${stColor(st)};border:1px solid ${stColor(st)}40;white-space:nowrap">${esc(st)}: ${n}</span>`).join(' ');
+  // טבלה מתומצתת: מס' · חברה · סטטוס הפצה · הכנסה · תפוגה · מקור
+  const trs=rows.map(r=>`<tr>
+    <td style="font-weight:700;color:var(--blue)">${esc(r[0])}</td>
+    <td>${esc(r[1])}</td>
+    <td><span style="font-size:9px;font-weight:700;color:${stColor((r[6]||'').trim()||'שכר בלבד')}">${esc(r[6]||'—')}</span></td>
+    <td class="ng" style="text-align:left">${r[8]?fmt(r[8]):'–'}</td>
+    <td style="font-size:9px;white-space:nowrap">${esc(r[18]||'–')}</td>
+    <td style="font-size:9px;color:${r[19]==='ארכיון'?'var(--text3)':'var(--teal)'}">${esc(r[19])}</td>
+  </tr>`).join('');
+  const el=document.createElement('div');
+  el.id='proj-report-popup';
+  el.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.8);z-index:100000;display:flex;align-items:center;justify-content:center;padding:14px';
+  el.innerHTML=`<div style="background:linear-gradient(135deg,#101525,#0a0e1c);border:1px solid rgba(6,214,160,.3);border-radius:16px;max-width:560px;width:100%;padding:16px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:cardIn .25s ease;max-height:92vh;display:flex;flex-direction:column" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:15px;font-weight:900;color:var(--teal)">🗂️ דו"ח פרויקטים — ${rows.length} פרויקטים</div>
+      <button onclick="document.getElementById('proj-report-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px">
+      ${kpi('הכנסה חודשית',fmt(sumInc),'var(--gold)')}
+      ${kpi('יעד הכנסה',fmt(sumTgt),'#4cc9f0')}
+      ${kpi('ציוד',fmt(sumEq),'#a78bfa')}
+      ${kpi('שכר נסגר',fmt(sumClosed),'var(--teal)')}
+      ${kpi('יתרה לגבייה',fmt(sumOut),'#f4a261')}
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${stChips}</div>
+    <div style="flex:1;overflow:auto;border:1px solid var(--border);border-radius:9px;-webkit-overflow-scrolling:touch">
+      <table style="width:100%;border-collapse:collapse;font-size:10.5px">
+        <thead style="position:sticky;top:0;background:#0d1424;z-index:1"><tr style="color:var(--text3)">
+          <th style="text-align:right;padding:6px 8px">מס'</th><th style="text-align:right;padding:6px 8px">חברה</th><th style="text-align:right;padding:6px 8px">סטטוס</th><th style="text-align:left;padding:6px 8px">הכנסה</th><th style="text-align:right;padding:6px 8px">תפוגה</th><th style="text-align:right;padding:6px 8px">מקור</th>
+        </tr></thead>
+        <tbody>${trs}</tbody>
+      </table>
+    </div>
+    <button class="btn btnp" onclick="exportProjectsReport()" style="margin-top:12px;width:100%;font-size:13px;background:#1d6f42;border-color:#1d6f42;color:#fff">📥 הורד דו"ח מלא (CSV · 20 עמודות)</button>
+  </div>`;
+  el.addEventListener('click',()=>el.remove());
+  document.body.appendChild(el);
 }
 function updateExportCounts(){
   const _wpN=(D.clients||[]).reduce((s,c)=>s+((c.potential||[]).length),0);
