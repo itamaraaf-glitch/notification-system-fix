@@ -9343,7 +9343,10 @@ function openMonthClose(){
       ${s.salOut?_mcRow('💰','יתרת שכר לגבייה',fmt(s.salOut),'#f4a261'):''}
     </div>
 
-    <button class="btn btns" onclick="shareMonthReport()" style="width:100%;font-size:12px;border-color:#25d366;color:#25d366;margin-bottom:8px">📤 שתף דו"ח חודש (וואטסאפ / העתקה)</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <button class="btn btns" onclick="shareMonthReport()" style="font-size:12px;border-color:#25d366;color:#25d366">📤 שתף דו"ח</button>
+      <button class="btn btns" onclick="downloadMonthReport()" style="font-size:12px;border-color:#4cc9f0;color:#4cc9f0">📥 הורד דו"ח</button>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btns" onclick="document.getElementById('month-close-popup').remove()" style="font-size:12px">ביטול</button>
       <button class="btn btnp" onclick="confirmMonthClose()" style="font-size:12px;background:var(--gold);border-color:var(--gold);color:#0a0e1c;font-weight:800">📦 סגור חודש</button>
@@ -9371,6 +9374,17 @@ function _monthReportText(){
   L.push('— HOT Business CRM');
   return L.join('\n');
 }
+function downloadMonthReport(){
+  try{
+    const txt=_monthReportText();
+    const blob=new Blob([txt],{type:'text/plain;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='month-report-'+_monthCloseSummary().cur+'.txt';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    showToast('📥 דו"ח החודש הורד','ok');
+  }catch(e){ showToast('⚠️ שגיאה בהורדת הדו"ח','warn'); }
+}
 function shareMonthReport(){
   const txt=_monthReportText();
   const copyThenWa=()=>window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank','noopener');
@@ -9386,7 +9400,7 @@ function confirmMonthClose(){
   const parts=[];
   if(n)parts.push(`${n} עסקאות שנסגרו הועברו לארכיון`);
   if(s.oldMtgsN)parts.push(`${s.oldMtgsN} פגישות ישנות לארכיון`);
-  showToast(parts.length?('📦 סגירת חודש הושלמה — '+parts.join(' · ')+' (זמין בלשוניות הארכיון)'):'✓ סגירת חודש: אין פריטים ישנים לארכוב — הכול מעודכן','ok');
+  showToast(parts.length?('📦 סגירת חודש הושלמה — '+parts.join(' · ')+' (זמין תמיד בלשוניות הארכיון)'):'✓ סגירת חודש: אין פריטים ישנים לארכוב — הכול מעודכן','ok');
 }
 function manualRunCycle(){ openMonthClose(); }
 
