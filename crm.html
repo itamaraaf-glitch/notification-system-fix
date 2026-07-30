@@ -5809,9 +5809,9 @@ function sendAlertEmail(idx){
 function renderMonthSummary(){
   const el=document.getElementById('month-summary');if(!el)return;
   const curM=nd().substring(0,7);
-  // עסקאות — כל מה שנסגר בפועל (לא משנה מתי) מול צפי סגירה, באותה מדידה כמו סיכום העסקאות (mv)
-  // כדי ששני המסכים יראו אותם מספרים ולא יתבלבלו.
-  const dClosed=D.deals.filter(d=>d.st==='נסגר');
+  // עסקאות — נסגר בחודש הנוכחי (מתוחם לחודש, כמו בסיכום העסקאות) מול צפי סגירה, לפי mv.
+  // חשוב: מתוחם לחודש כדי שהמספר לא "יקפוץ" כשעסקאות מחודשים קודמים עוברות לארכיון בסגירת חודש.
+  const dClosed=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=curM);
   const dOpen=D.deals.filter(d=>d.st!=='נסגר');
   const dClosedV=dClosed.reduce((a,d)=>a+(+d.mv||0),0);
   const dOpenV=dOpen.reduce((a,d)=>a+(+d.mv||0),0);
@@ -9267,8 +9267,8 @@ function runMonthlyCycle(force){
 function _monthCloseSummary(){
   const cur=nd().substring(0,7);
   const sum=(a,k)=>a.reduce((s,d)=>s+(+d[k]||0),0);
-  // עסקאות — כל מה שנסגר בפועל, לפי mv (חודש נוכחי) — זהה לדשבורד ולסיכום העסקאות
-  const dClosed=(D.deals||[]).filter(d=>d.st==='נסגר');
+  // עסקאות — נסגר בחודש הנוכחי לפי mv (זהה לדשבורד); מתוחם לחודש כדי שלא ישתנה בסגירת חודש
+  const dClosed=(D.deals||[]).filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=cur);
   const dOpen=(D.deals||[]).filter(d=>d.st!=='נסגר');
   // שכר — שירות/ציוד(OTC) בנפרד: נסגר בפועל (cl2) ויתרה לגבייה (pv) — זהה לדשבורד
   const _isEq=x=>x.ty==='equipment';
