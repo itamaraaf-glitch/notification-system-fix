@@ -10933,7 +10933,11 @@ function exportProjectsReport(){
     'הכנסה חודשית','יעד הכנסה','ציוד','חוסרים','סטטוס שכר','יעד שכר','נסגר','יתרה לגבייה',
     'התחלת חוזה','תקופה','תפוגת חוזה','מקור'];
   if(!rows.length){ showToast('אין פרויקטים לייצוא','warn'); return; }
-  dlCSV('דוח_פרויקטים',toCSV(hdrs,rows));
+  // שורת סיכום: סכומי העמודות המספריות (הכנסה/יעד/ציוד/יעד-שכר/נסגר/יתרה)
+  const colSum=i=>rows.reduce((a,r)=>a+(+r[i]||0),0);
+  const totals=['סה"כ ('+rows.length+' פרויקטים)','','','','','','','',
+    colSum(8),colSum(9),colSum(10),'','',colSum(13),colSum(14),colSum(15),'','','',''];
+  dlCSV('דוח_פרויקטים',toCSV(hdrs,[...rows,totals]));
   showToast('📊 דו"ח פרויקטים יוצא — '+rows.length+' פרויקטים (כל הסטטוסים, כולל ארכיון)','ok');
 }
 function updateExportCounts(){
