@@ -1972,6 +1972,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="tw" style="cursor:pointer;border-top:3px solid #f072b6" onclick="exportExcel('tasks')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(240,114,182,.1)">✅</div><div class="exp-tile-ttl">משימות</div><div class="exp-tile-sub" id="exp-tasks-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
     <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0" onclick="exportExcel('inbox')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(76,201,240,.1)">📥</div><div class="exp-tile-ttl">תיבת מייל</div><div class="exp-tile-sub" id="exp-inbox-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
     <div class="tw" style="cursor:pointer;border-top:3px solid #a78bfa" onclick="exportExcel('workplan')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(167,139,250,.1)">🎯</div><div class="exp-tile-ttl">תוכנית עבודה</div><div class="exp-tile-sub" id="exp-workplan-count">0 מוצרים</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="exportProjectsReport()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(6,214,160,.1)">🗂️</div><div class="exp-tile-ttl">דו"ח פרויקטים מלא</div><div class="exp-tile-sub">כל מס' הפרויקט · כל הסטטוסים · כולל ארכיון</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
     <div class="tw" style="cursor:pointer;border-top:3px solid #e63946" onclick="exportAll()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(230,57,70,.1)">📊</div><div class="exp-tile-ttl">כל הנתונים</div><div class="exp-tile-sub">כל הנושאים</div><div class="exp-tile-btn" style="background:#e63946;color:#fff">📥 ייצוא הכל</div></div></div>
   </div>
   <div style="font-size:11px;font-weight:800;color:rgba(200,169,110,.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding:0 2px">🛡️ גיבוי ושחזור</div>
@@ -10895,6 +10896,45 @@ function exportAll(){
   if(_wpN>0)secs.push('workplan');
   secs.forEach((s,i)=>setTimeout(()=>exportExcel(s),i*350));
   showToast(`📊 מייצא ${secs.length} קבצים — כולל משימות ותיבת מייל`,'ok');
+}
+// ===== דוח פרויקטים מלא =====
+// מרכז את כל מספרי הפרויקט — הפצות + שכר, פעיל + ארכיון — בכל סטטוס, בקובץ אחד מסודר עם תאריכים.
+// מתעלם מכל סינון פעיל (מייצא הכול), וממזג הפצה+שכר לפי מס' הפרויקט.
+function exportProjectsReport(){
+  const fmtD=d=>d?fmtDate(d):'';
+  const num=n=>(+n||0);
+  const allDist=[...(D.dists||[]).map(d=>({...d,_src:'פעיל'})),...(D.archivedDists||[]).map(d=>({...d,_src:'ארכיון'}))];
+  const allSal=[...(D.salary||[]).map(s=>({...s,_src:'פעיל'})),...(D.archivedSalary||[]).map(s=>({...s,_src:'ארכיון'}))];
+  // אינדקס שכר לפי מס' פרויקט (pj)
+  const salByNo=new Map();
+  allSal.forEach(s=>{ const k=String(s.pj||'').trim(); if(!k)return; if(!salByNo.has(k))salByNo.set(k,[]); salByNo.get(k).push(s); });
+  const distNums=new Set(allDist.map(d=>String(d.no||'').trim()).filter(Boolean));
+  const rows=[];
+  const _exp=s=>(s&&typeof salExpiry==='function')?salExpiry(s):'';
+  const _tyLbl=t=>t==='equipment'?'ציוד':t?'שירות':'';
+  // שורה לכל הפצה — ממוזגת עם רשומת השכר התואמת (לפי מס' פרויקט)
+  allDist.forEach(d=>{
+    const k=String(d.no||'').trim();
+    const s=(k&&salByNo.get(k))?salByNo.get(k)[0]:{};
+    rows.push([ k||'–', d.co||'', d.cl||'', _tyLbl(s.ty), d.so||d.it||'', d.hd||'', d.st||'', fmtD(d.dt),
+      num(d.inc), num(d.tgt), num(d.eq), d.mi||'', s.st||'', num(s.tr), num(s.cl2), num(s.pv),
+      fmtD(s.cstart), s.term?num(s.term)+' ח\'':'', fmtD(_exp(s)), d._src ]);
+  });
+  // שורה לכל פרויקט שכר שאין לו הפצה תואמת — כדי שאף מס' פרויקט לא ייעדר
+  allSal.forEach(s=>{
+    const k=String(s.pj||'').trim();
+    if(k&&distNums.has(k))return; // כבר מוצג בשורת ההפצה
+    rows.push([ k||'–', s.cl||'', s.cl||'', _tyLbl(s.ty), '', '', '', '',
+      0, 0, 0, '', s.st||'', num(s.tr), num(s.cl2), num(s.pv),
+      fmtD(s.cstart), s.term?num(s.term)+' ח\'':'', fmtD(_exp(s)), s._src ]);
+  });
+  rows.sort((a,b)=>String(a[0]).localeCompare(String(b[0]),undefined,{numeric:true}));
+  const hdrs=['מס פרויקט','חברה','לקוח','סוג','שירות/פתרון','מנהל פרויקט','סטטוס הפצה','תאריך הפצה',
+    'הכנסה חודשית','יעד הכנסה','ציוד','חוסרים','סטטוס שכר','יעד שכר','נסגר','יתרה לגבייה',
+    'התחלת חוזה','תקופה','תפוגת חוזה','מקור'];
+  if(!rows.length){ showToast('אין פרויקטים לייצוא','warn'); return; }
+  dlCSV('דוח_פרויקטים',toCSV(hdrs,rows));
+  showToast('📊 דו"ח פרויקטים יוצא — '+rows.length+' פרויקטים (כל הסטטוסים, כולל ארכיון)','ok');
 }
 function updateExportCounts(){
   const _wpN=(D.clients||[]).reduce((s,c)=>s+((c.potential||[]).length),0);
