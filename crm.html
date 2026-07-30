@@ -5257,14 +5257,14 @@ function updateNavBadges(){
     }
     const mobInbDot=document.getElementById('mob-inbox-dot');
     if(mobInbDot){mobInbDot.textContent=inbCnt||'';mobInbDot.style.display=inbCnt?'block':'none';}
-    // Critical alerts badge on alerts nav
-    const critCnt=getAlerts().filter(a=>a.type==='crit').length;
+    // תג התראות בניווט — סה"כ ההתראות (זהה למונה בלוח הבקרה, לכותרת ולנקודה במובייל)
+    const alCnt=getAlerts().length;
     const alNav=document.getElementById('nv-alerts');
     if(alNav){
       let alBadge=alNav.querySelector('.nav-badge');
       if(!alBadge){alBadge=document.createElement('span');alBadge.className='nav-badge';alBadge.style.cssText='background:#e63946;color:#fff';alNav.querySelector('span:last-child').appendChild(alBadge);}
-      alBadge.textContent=critCnt||'';
-      alBadge.style.display=critCnt?'inline-block':'none';
+      alBadge.textContent=alCnt||'';
+      alBadge.style.display=alCnt?'inline-block':'none';
     }
     // Tenders with an imminent submission deadline (≤5 days, not submitted/decided)
     const tenCnt=(Array.isArray(D.tenders)?D.tenders:[]).filter(t=>{ if(t.submitted==='כן'||t.result||!t.deadline)return false; const dl=db(todayStr,t.deadline); return dl>=0&&dl<=5; }).length;
