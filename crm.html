@@ -9903,11 +9903,38 @@ function _saveArch(type,row){
 }
 function deleteArchRow(type,id){
   const col=_ARCH_COL[type]; if(!col)return;
+  const arr=D[col]||[];
+  const origIdx=arr.findIndex(x=>x.id==id); if(origIdx<0)return;
+  const item=arr[origIdx];
   confirmAct('למחוק רשומה זו מהארכיון לצמיתות?',()=>{
+    pushUndo('מחיקה מהארכיון ('+type+')');
     D[col]=(D[col]||[]).filter(x=>x.id!=id);
     if(!D._deletedIds)D._deletedIds={}; if(!D._deletedIds[col])D._deletedIds[col]={}; D._deletedIds[col][String(id)]=Date.now();
     saveAll(); _archRender(type); rAll();
-    showToast('🗑 הרשומה נמחקה מהארכיון','ok');
+    // תזכורת ביטול מהירה ל-6 שניות (זהה למחיקה בטבלה הפעילה)
+    let undone=false;
+    const t=document.createElement('div');
+    t.className='toast toast-warn';
+    t.style.cssText='cursor:pointer;display:flex;align-items:center;gap:10px';
+    const msg=document.createElement('span');msg.textContent='🗑 הרשומה נמחקה מהארכיון';
+    const btn=document.createElement('button');
+    btn.textContent='↩ בטל';
+    btn.style.cssText='background:rgba(255,255,255,.25);border:none;color:inherit;padding:3px 10px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700';
+    btn.onclick=(e)=>{
+      e.stopPropagation();
+      if(undone)return; undone=true;
+      if(!D[col])D[col]=[];
+      D[col].splice(Math.min(origIdx,D[col].length),0,item);
+      // ביטול רישום המחיקה — אחרת הסנכרון הבא ימחק את הרשומה המשוחזרת שוב
+      if(D._deletedIds&&D._deletedIds[col])delete D._deletedIds[col][String(id)];
+      item._mts=Date.now();
+      saveAll(); _archRender(type); rAll();
+      t.style.opacity='0';setTimeout(()=>t.remove(),400);
+      showToast('↩ שוחזר לארכיון','ok');
+    };
+    t.appendChild(msg);t.appendChild(btn);
+    document.body.appendChild(t);
+    setTimeout(()=>{if(!undone){t.style.opacity='0';setTimeout(()=>t.remove(),400);}},6000);
   },'כן, מחק');
 }
 function openM(type,id){
