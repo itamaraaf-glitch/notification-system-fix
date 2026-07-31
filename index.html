@@ -1521,8 +1521,8 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <span class="live-dot" title="מחובר"></span>
   </div>
   <div id="gsearch">
-    <input type="text" id="gsi" placeholder="🔍 חיפוש גלובלי – לקוח, עסקה, פרויקט..." autocomplete="off"
-      oninput="globalSearch(this.value)" onkeydown="gsKey(event)">
+    <input type="text" id="gsi" placeholder="🔍 חיפוש גלובלי – לקוח, עסקה, פרויקט...   (Ctrl+K)" autocomplete="off"
+      title="חיפוש בכל המערכת · קיצור: Ctrl+K או /" oninput="globalSearch(this.value)" onkeydown="gsKey(event)">
     <div id="gsres"></div>
   </div>
   <div class="tbr">
@@ -5413,6 +5413,26 @@ function gsGo(i){
   nav(sec);
   setTimeout(()=>_secLocateFlash(sec,r.type,r.id,r.label,r.arch),380);
 }
+// קיצורי מקלדת גלובליים: Ctrl/⌘+K או "/" — מיקוד מהיר בחיפוש הגלובלי מכל מקום במערכת
+function _focusGlobalSearch(){
+  const si=document.getElementById('gsi'); if(!si)return;
+  si.focus(); si.select();
+  si.scrollIntoView({block:'nearest'});
+}
+function _initKbdShortcuts(){
+  if(window._kbdShortcutsInit)return; window._kbdShortcutsInit=true;
+  document.addEventListener('keydown',e=>{
+    // רק כשמחוברים (מסך העבודה גלוי) — לא במסך ההתחברות
+    const app=document.getElementById('app'); if(app&&app.style.display==='none')return;
+    const t=e.target||{};
+    const typing=/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName||'')||t.isContentEditable;
+    // Ctrl/⌘+K — פעיל תמיד (צירוף מכוון)
+    if((e.ctrlKey||e.metaKey)&&(e.key==='k'||e.key==='K')){ e.preventDefault(); _focusGlobalSearch(); return; }
+    // "/" — רק כשלא מקלידים בשדה טקסט
+    if(e.key==='/'&&!typing&&!e.ctrlKey&&!e.metaKey&&!e.altKey){ e.preventDefault(); _focusGlobalSearch(); }
+  });
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',_initKbdShortcuts); else _initKbdShortcuts();
 // לחיצה על התראה במסך ההתראות: קיצור דרך ישירות לרשומה הרלוונטית בנושא שלה
 function alertGo(i){
   const al=(window._alertsList||[])[i]; if(!al)return;
