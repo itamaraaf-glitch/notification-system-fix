@@ -6976,7 +6976,9 @@ function rSalaryArchive(){
   const cont=document.getElementById('archive-salary-content');if(!cont)return;
   if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--text2)">📦 אין פרויקטי שכר בארכיון</div>';return;}
   const byMonth={};
-  arch.forEach(s=>{const m=s._archivedAt||'ללא תאריך';if(!byMonth[m])byMonth[m]=[];byMonth[m].push(s);});
+  // קיבוץ לפי חודש תחילת החוזה (cstart) — כך פרויקטי יולי מופיעים תחת יולי גם אם הועברו לארכיון באוגוסט;
+  // נפילה ל-_archivedAt ואז 'ללא תאריך' כשאין תאריך חוזה תקין.
+  arch.forEach(s=>{const cm=(s.cstart||'').substring(0,7);const m=/^\d{4}-\d{2}$/.test(cm)?cm:(s._archivedAt||'ללא תאריך');if(!byMonth[m])byMonth[m]=[];byMonth[m].push(s);});
   const months=Object.keys(byMonth).sort().reverse();
   const totTr=arch.reduce((s,i)=>s+(i.tr||0),0),totCl=arch.reduce((s,i)=>s+(i.cl2||0),0);
   const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">פרויקטים בארכיון</div><div class="vl" style="color:var(--text2)">${arch.length}</div></div><div class="kc g"><div class="lb">יעד מצטבר</div><div class="vl">${fmt(totTr)}</div></div><div class="kc"><div class="lb">נסגר מצטבר</div><div class="vl" style="color:var(--teal)">${fmt(totCl)}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
@@ -9279,6 +9281,9 @@ function goalBarHtml(label,curVal,goal,qData,clr,section){
 // פרויקט שכר "הושלם" לצורך ארכוב בסגירת חודש: סטטוס 'סגור', או שנגבה במלואו (אין יתרה לגבייה ונגבה בפועל).
 // פרויקטים עם יתרה לגבייה פתוחה (pv>0) נשארים תמיד פעילים וממשיכים לחודש הבא — לא מאבדים מעקב אחרי כסף שלא נגבה.
 function _salaryDone(s){ return s && (s.st==='סגור' || ((+s.pv||0)<=0 && (+s.cl2||0)>0)); }
+// חודש הארכיון של פרויקט שכר = חודש תחילת החוזה (cstart) — כך שפרויקט של יולי מתויק תחת יולי,
+// גם אם הועבר לארכיון בפועל בחודש מאוחר יותר. נפילה לחודש הנוכחי רק כשאין תאריך חוזה.
+function _salaryArchMonth(s){ const m=((s&&s.cstart)||'').substring(0,7); return /^\d{4}-\d{2}$/.test(m)?m:nd().substring(0,7); }
 // טאטוא שכר שהושלם: פרויקטי שכר "תקין"/סגור (או שנגבו במלואם) עוברים לארכיון — נקרא בכל טעינה,
 // כדי שהמסך הפעיל יציג רק עבודה פתוחה, ללא תלות במחזור החודשי. אינו מפצל חלקיים (פיצול = פעולה ידנית).
 function _sweepDoneSalary(){
@@ -9286,7 +9291,7 @@ function _sweepDoneSalary(){
   const done=(D.salary||[]).filter(_salaryDone);
   if(!done.length)return 0;
   if(!D.archivedSalary)D.archivedSalary=[];
-  done.forEach(s=>{ if(!s._archivedAt)s._archivedAt=cur; });
+  done.forEach(s=>{ s._archivedAt=_salaryArchMonth(s); }); // חודש לפי תחילת החוזה (יולי), לא חודש הטאטוא
   D.archivedSalary=[...D.archivedSalary,...done];
   const ids=new Set(done.map(s=>s.id));
   D.salary=(D.salary||[]).filter(s=>!ids.has(s.id));
@@ -9351,10 +9356,10 @@ function runMonthlyCycle(force,includeCurrent){
     (D.salary||[]).forEach(s=>{
       const collected=+s.cl2||0, balance=+s.pv||0;
       if(_salaryDone(s)){                                  // הושלם — כל הרשומה לארכיון (אוטומטי + ידני)
-        toArch.push({...s,_archivedAt:cur});
+        toArch.push({...s,_archivedAt:_salaryArchMonth(s)});
         doneIds.push(s.id);
       } else if(includeCurrent&&collected>0&&balance>0){   // חלקי — פיצול רק בסגירה ידנית
-        toArch.push({...s,id:genId(),tr:collected,cl2:collected,pv:0,st:'סגור',_archivedAt:cur,_splitFrom:s.id,_mts:Date.now()});
+        toArch.push({...s,id:genId(),tr:collected,cl2:collected,pv:0,st:'סגור',_archivedAt:_salaryArchMonth(s),_splitFrom:s.id,_mts:Date.now()});
         remain.push({...s,tr:balance,cl2:0,pv:balance,st:'פתוח',_mts:Date.now()}); // יתרה לגבייה — כל הפרטים נשמרים
       } else {                                             // לא נגבה כלום / חלקי במחזור אוטומטי — נשאר
         remain.push(s);
