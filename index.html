@@ -2745,6 +2745,43 @@ function _cNo(){
   try{_restackToasts();}catch(e){}
   _cCb=null;
 }
+// חלונית קלט מספרי מעוצבת (למשל: רישום סכום שנגבה). cb מקבל את הערך, או null אם בוטל.
+let _pnCb=null;
+function _pnHide(){ const ov=document.getElementById('pn-overlay'); if(ov)ov.style.display='none'; }
+function promptNumber(msg,opts,cb){
+  opts=opts||{}; _pnCb=cb;
+  let ov=document.getElementById('pn-overlay');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='pn-overlay';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.72);z-index:100002;display:flex;align-items:center;justify-content:center;padding:16px';
+    ov.innerHTML='<div style="background:linear-gradient(135deg,#101525,#0a0e1c);border:1px solid rgba(200,169,110,.3);border-radius:14px;max-width:340px;width:100%;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.6)" onclick="event.stopPropagation()">'
+      +'<div id="pn-msg" style="font-size:13px;color:var(--text);margin-bottom:10px;font-weight:600;line-height:1.5"></div>'
+      +'<input id="pn-inp" type="number" min="0" step="any" inputmode="decimal" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:inherit;font-size:15px;outline:none;margin-bottom:12px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+      +'<button class="btn btns" id="pn-cancel" style="font-size:12px">ביטול</button>'
+      +'<button class="btn btnp" id="pn-ok" style="font-size:12px;background:var(--gold);border-color:var(--gold);color:#0a0e1c;font-weight:800">אישור</button>'
+      +'</div></div>';
+    document.body.appendChild(ov);
+    const cancel=()=>{ _pnHide(); _pnCb=null; };
+    ov.addEventListener('click',cancel);
+    document.getElementById('pn-cancel').addEventListener('click',cancel);
+    document.getElementById('pn-ok').addEventListener('click',()=>{
+      const v=parseFloat(document.getElementById('pn-inp').value);
+      const f=_pnCb; _pnCb=null; _pnHide(); if(f)f(isNaN(v)?null:v);
+    });
+    document.getElementById('pn-inp').addEventListener('keydown',e=>{
+      if(e.key==='Enter'){ e.preventDefault(); document.getElementById('pn-ok').click(); }
+      else if(e.key==='Escape'){ cancel(); }
+    });
+  }
+  document.getElementById('pn-msg').textContent=msg;
+  const inp=document.getElementById('pn-inp');
+  inp.value=(opts.default!=null?opts.default:'');
+  if(opts.max!=null)inp.max=opts.max; else inp.removeAttribute('max');
+  ov.style.display='flex';
+  setTimeout(()=>{try{inp.focus();inp.select();}catch(e){}},50);
+}
 
 // ===== AUTH =====
 async function sha256(str){
@@ -4813,6 +4850,9 @@ function _finishLoad(){
   syncAllDealsToDists();
   syncAllDealsToSalary();
   runMonthlyCycle();
+  // שכר שהושלם ("תקין"/סגור) → ארכיון בכל טעינה, גם אם המחזור החודשי כבר רץ החודש
+  const _sweptSal=_sweepDoneSalary();
+  if(_sweptSal){ saveAll(); setTimeout(()=>{try{showToast('📦 '+_sweptSal+' פרויקטי שכר שהושלמו הועברו לארכיון (שכר ← 📦 ארכיון)','ok');}catch(e){}},2200); }
   if(!localStorage.getItem(LS_KEY+'_init')){
     localStorage.setItem(LS_KEY+'_init','1');
     saveAll();
@@ -5842,11 +5882,15 @@ function renderMonthSummary(){
   const iOpenV=iOpen.reduce((a,d)=>a+((d.inc||d.tgt)||0),0);
   // שכר — מופרד לשירות ו-OTC (ציוד): נסגר בפועל מול יתרה לגבייה, לכל אחד בנפרד
   const _isEq=x=>x.ty==='equipment';                       // כל השאר = שירות (כולל רשומות ישנות ללא ty)
+  // שכר שהושלם והועבר לארכיון החודש (_archivedAt===החודש הנוכחי) עדיין נספר כ"נסגר בפועל" של החודש,
+  // כדי שהמספר לא ייפול כשהטאטוא מעביר שכר "תקין" לארכיון.
+  const _salArchM=(D.archivedSalary||[]).filter(x=>x._archivedAt===curM);
   const svcAll=D.salary.filter(x=>!_isEq(x)), eqAll=D.salary.filter(_isEq);
-  const svcClosed=svcAll.reduce((a,x)=>a+(x.cl2||0),0);
+  const svcArchM=_salArchM.filter(x=>!_isEq(x)), eqArchM=_salArchM.filter(_isEq);
+  const svcClosed=svcAll.reduce((a,x)=>a+(x.cl2||0),0)+svcArchM.reduce((a,x)=>a+(+x.cl2||0),0);
   const svcOpen=svcAll.filter(x=>x.st!=='סגור'&&(x.pv||0)>0);
   const svcOpenV=svcOpen.reduce((a,x)=>a+(x.pv||0),0);
-  const eqClosed=eqAll.reduce((a,x)=>a+(x.cl2||0),0);
+  const eqClosed=eqAll.reduce((a,x)=>a+(x.cl2||0),0)+eqArchM.reduce((a,x)=>a+(+x.cl2||0),0);
   const eqOpen=eqAll.filter(x=>x.st!=='סגור'&&(x.pv||0)>0);
   const eqOpenV=eqOpen.reduce((a,x)=>a+(x.pv||0),0);
   const card=(ico,name,clr,navKey,closedLbl,closedV,closedN,carryLbl,carryV,carryN)=>{
@@ -5876,8 +5920,8 @@ function renderMonthSummary(){
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px">
       ${card('💼','עסקאות','#4cc9f0','deals','נסגרו',dClosedV,dClosed.length,'צפי סגירה',dOpenV,dOpen.length)}
       ${card('🚀','הפצות','#a78bfa','dists','הושלמו החודש',iClosedV,iClosed.length,'עובר לחודש הבא',iOpenV,iOpen.length)}
-      ${card('💰','שכר — שירות','#06d6a0','salary','נסגר בפועל',svcClosed,svcAll.length,'יתרה לגבייה',svcOpenV,svcOpen.length)}
-      ${card('📦','שכר — ציוד (OTC)','#4cc9f0','salary','נסגר בפועל',eqClosed,eqAll.length,'יתרה לגבייה',eqOpenV,eqOpen.length)}
+      ${card('💰','שכר — שירות','#06d6a0','salary','נסגר בפועל',svcClosed,svcAll.length+svcArchM.length,'יתרה לגבייה',svcOpenV,svcOpen.length)}
+      ${card('📦','שכר — ציוד (OTC)','#4cc9f0','salary','נסגר בפועל',eqClosed,eqAll.length+eqArchM.length,'יתרה לגבייה',eqOpenV,eqOpen.length)}
     </div>
   </div>`;
 }
@@ -6820,7 +6864,7 @@ function rSalary(){
       const chk=SEL[sk]&&SEL[sk].has(s.id)?'checked':'';
       const _exp=salExpiry(s);let _expChip='';
       if(_exp){const _d=db(nd(),_exp);const _c=_d<0?'#e63946':_d<=90?'#f4a261':'var(--teal)';_expChip=`<div style="font-size:9px;font-weight:700;color:${_c};margin-top:2px;white-space:nowrap" title="חוזה ${s.term} חודשים · התחלה ${fmtDate(s.cstart)}">🔄 חוזה עד ${fmtDate(_exp)}${_d<0?' · פג!':_d<=90?` · ${_d}י`:''}</div>`;}
-      return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td><span onclick="event.stopPropagation();advanceSalaryStatus('${s.id}')" title="לחץ לקידום הסטטוס (פתוח → בתהליך → סגור)" style="cursor:pointer">${sB(s.st)}</span></td><td>${s.qt||1}</td><td style="font-size:10px">${esc(s.pj||'')}${_expChip}</td><td style="font-weight:600">${esc(s.cl||'')}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${(+s.pv>0)?`<span onclick="event.stopPropagation();collectSalaryBalance('${s.id}')" title="לחץ לסימון שהיתרה נגבתה — הפרויקט ייסגר" style="cursor:pointer;text-decoration:underline dotted">${fmt(s.pv)} ✓</span>`:fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${esc(s.no||'–')}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
+      return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td><span onclick="event.stopPropagation();advanceSalaryStatus('${s.id}')" title="לחץ לקידום הסטטוס (פתוח → בתהליך → סגור)" style="cursor:pointer">${sB(s.st)}</span></td><td>${s.qt||1}</td><td style="font-size:10px">${esc(s.pj||'')}${_expChip}</td><td style="font-weight:600">${esc(s.cl||'')}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${(+s.pv>0)?`<span onclick="event.stopPropagation();collectSalaryBalance('${s.id}')" title="לחץ לרישום גבייה — מלאה או חלקית" style="cursor:pointer;text-decoration:underline dotted">${fmt(s.pv)} ✓</span>`:fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${esc(s.no||'–')}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
     }).join('')||emptyRow(12,'💰',"אין פרויקטים","openM('salary',null)");
     const tt=items.reduce((s,i)=>s+(i.tr||0),0),tc=items.reduce((s,i)=>s+(i.cl2||0),0),tp=items.reduce((s,i)=>s+(i.pv||0),0);
     const p2=tt?Math.round((tc/tt)*100):0;
@@ -9235,6 +9279,22 @@ function goalBarHtml(label,curVal,goal,qData,clr,section){
 // פרויקט שכר "הושלם" לצורך ארכוב בסגירת חודש: סטטוס 'סגור', או שנגבה במלואו (אין יתרה לגבייה ונגבה בפועל).
 // פרויקטים עם יתרה לגבייה פתוחה (pv>0) נשארים תמיד פעילים וממשיכים לחודש הבא — לא מאבדים מעקב אחרי כסף שלא נגבה.
 function _salaryDone(s){ return s && (s.st==='סגור' || ((+s.pv||0)<=0 && (+s.cl2||0)>0)); }
+// טאטוא שכר שהושלם: פרויקטי שכר "תקין"/סגור (או שנגבו במלואם) עוברים לארכיון — נקרא בכל טעינה,
+// כדי שהמסך הפעיל יציג רק עבודה פתוחה, ללא תלות במחזור החודשי. אינו מפצל חלקיים (פיצול = פעולה ידנית).
+function _sweepDoneSalary(){
+  const cur=nd().substring(0,7);
+  const done=(D.salary||[]).filter(_salaryDone);
+  if(!done.length)return 0;
+  if(!D.archivedSalary)D.archivedSalary=[];
+  done.forEach(s=>{ if(!s._archivedAt)s._archivedAt=cur; });
+  D.archivedSalary=[...D.archivedSalary,...done];
+  const ids=new Set(done.map(s=>s.id));
+  D.salary=(D.salary||[]).filter(s=>!ids.has(s.id));
+  if(!D._deletedIds)D._deletedIds={};
+  if(!D._deletedIds.salary)D._deletedIds.salary={};
+  ids.forEach(id=>{D._deletedIds.salary[String(id)]=Date.now();});
+  return done.length;
+}
 function archiveOldMeetings(force,includeCurrent){
   const cur=nd().substring(0,7);
   if(!force&&(D.lastMeetCycle||'')>=cur)return 0;
@@ -9327,9 +9387,12 @@ function _monthCloseSummary(){
   // עסקאות — נסגר בחודש הנוכחי לפי mv (זהה לדשבורד); מתוחם לחודש כדי שלא ישתנה בסגירת חודש
   const dClosed=(D.deals||[]).filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=cur);
   const dOpen=(D.deals||[]).filter(d=>d.st!=='נסגר');
-  // שכר — שירות/ציוד(OTC) בנפרד: נסגר בפועל (cl2) ויתרה לגבייה (pv) — זהה לדשבורד
+  // שכר — שירות/ציוד(OTC) בנפרד: נסגר בפועל (cl2) ויתרה לגבייה (pv) — זהה לדשבורד.
+  // כולל שכר שהושלם והועבר לארכיון החודש, כדי שהמספר יישאר יציב אחרי הטאטוא.
   const _isEq=x=>x.ty==='equipment';
-  const svcAll=(D.salary||[]).filter(x=>!_isEq(x)), eqAll=(D.salary||[]).filter(_isEq);
+  const _salArchM=(D.archivedSalary||[]).filter(x=>x._archivedAt===cur);
+  const svcAll=[...(D.salary||[]).filter(x=>!_isEq(x)),..._salArchM.filter(x=>!_isEq(x))];
+  const eqAll=[...(D.salary||[]).filter(_isEq),..._salArchM.filter(_isEq)];
   const svcOpenV=svcAll.filter(x=>x.st!=='סגור'&&(+x.pv||0)>0).reduce((a,x)=>a+(+x.pv||0),0);
   const eqOpenV=eqAll.filter(x=>x.st!=='סגור'&&(+x.pv||0)>0).reduce((a,x)=>a+(+x.pv||0),0);
   // הפצות — הושלמו החודש (זהה לדשבורד) מול בתהליך
@@ -10745,13 +10808,18 @@ function clearDistMissing(id){
 // סימון שהיתרה בפרויקט שכר נגבתה — מוסיף אותה לסכום שנסגר, מאפס יתרה וסוגר את הפרויקט
 function collectSalaryBalance(id){
   const s=(D.salary||[]).find(x=>x.id==id); if(!s||!(+s.pv>0))return;
-  confirmAct('לסמן שהיתרה ('+fmt(s.pv)+') של '+(s.cl||'הלקוח')+' נגבתה? הפרויקט ייסגר.',()=>{
-    const patch={cl2:(+s.cl2||0)+(+s.pv||0), pv:0, st:'סגור'};
-    if(!s.cstart)patch.cstart=nd(); // תאריך התחלת חוזה אוטומטי בסגירה (עקבי עם saveSal)
+  const bal=+s.pv||0;
+  // רישום גבייה — אפשר סכום חלקי. ברירת המחדל = כל היתרה (Enter = גבייה מלאה כמו קודם).
+  promptNumber('כמה נגבה מתוך היתרה של '+(s.cl||'הלקוח')+'?\nיתרה נוכחית: '+fmt(bal),{default:bal,max:bal},amt=>{
+    if(amt==null||amt<=0)return;
+    const pay=Math.min(amt,bal), newPv=Math.max(0,bal-pay);
+    const patch={cl2:(+s.cl2||0)+pay, pv:newPv};
+    if(newPv<=0){ patch.st='סגור'; if(!s.cstart)patch.cstart=nd(); } // נגבה במלואו — נסגר
+    else if(s.st!=='בתהליך'){ patch.st='חלקי'; }                     // גבייה חלקית — מסומן 'חלקי'
     dbUpdate('salary',id,patch);
     rAll();
-    showToast('✅ היתרה נגבתה — הפרויקט נסגר','ok');
-  },'✅ נגבה');
+    showToast(newPv<=0?('✅ נגבה '+fmt(pay)+' — הפרויקט נסגר'):('💰 נרשמה גבייה '+fmt(pay)+' · נותרה יתרה '+fmt(newPv)),'ok');
+  });
 }
 // קידום סטטוס שכר בלחיצה: פתוח/חלקי → בתהליך → (סגור) → פתוח מחדש.
 // הסגירה עוברת דרך זרימת גביית-היתרה התקינה כשיש יתרה — כדי שלא ייווצר "סגור" עם יתרה פתוחה.
