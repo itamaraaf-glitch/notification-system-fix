@@ -9280,22 +9280,23 @@ function runMonthlyCycle(force,includeCurrent){
       showToast('📦 '+archDeals.length+' עסקאות שנסגרו הועברו לארכיון החודשי — לא נמחקו! (ארכיון ← עסקאות)','ok');
     },1500);
   }
-  // ארכוב פרויקטי שכר — רק בסגירת חודש ידנית (includeCurrent). לשכר אין תאריך-חודש.
-  //  • הושלם (סגור / נגבה במלואו) → הרשומה כולה לארכיון.
-  //  • חלקי (נגבה חלק + יש יתרה לגבייה) → רק החלק שנגבה עובר לארכיון; היתרה נשארת פעילה עם כל הפרטים.
+  // ארכוב פרויקטי שכר (לשכר אין תאריך-חודש):
+  //  • הושלם (סטטוס 'סגור' = "תקין", או נגבה במלואו) → הרשומה כולה לארכיון — גם במחזור האוטומטי (חודש התחלף)
+  //    וגם בסגירה ידנית, בדיוק כמו עסקאות שנסגרו.
+  //  • חלקי (נגבה חלק + יש יתרה לגבייה) → פיצול רק בסגירה ידנית: החלק שנגבה לארכיון, היתרה נשארת פעילה עם כל הפרטים.
   //  • לא נגבה כלום → נשאר פעיל כמות שהוא.
-  if(includeCurrent){
+  {
     if(!D.archivedSalary)D.archivedSalary=[];
     const toArch=[], remain=[], doneIds=[];
     (D.salary||[]).forEach(s=>{
       const collected=+s.cl2||0, balance=+s.pv||0;
-      if(_salaryDone(s)){                       // הושלם — כל הרשומה לארכיון
+      if(_salaryDone(s)){                                  // הושלם — כל הרשומה לארכיון (אוטומטי + ידני)
         toArch.push({...s,_archivedAt:cur});
         doneIds.push(s.id);
-      } else if(collected>0&&balance>0){        // חלקי — פיצול: החלק שנגבה לארכיון, היתרה נשארת
+      } else if(includeCurrent&&collected>0&&balance>0){   // חלקי — פיצול רק בסגירה ידנית
         toArch.push({...s,id:genId(),tr:collected,cl2:collected,pv:0,st:'סגור',_archivedAt:cur,_splitFrom:s.id,_mts:Date.now()});
         remain.push({...s,tr:balance,cl2:0,pv:balance,st:'פתוח',_mts:Date.now()}); // יתרה לגבייה — כל הפרטים נשמרים
-      } else {                                   // לא נגבה כלום — נשאר
+      } else {                                             // לא נגבה כלום / חלקי במחזור אוטומטי — נשאר
         remain.push(s);
       }
     });
@@ -9307,7 +9308,7 @@ function runMonthlyCycle(force,includeCurrent){
       if(!D._deletedIds.salary)D._deletedIds.salary={};
       doneIds.forEach(id=>{D._deletedIds.salary[String(id)]=Date.now();});
       setTimeout(()=>{
-        showToast('📦 '+toArch.length+' רשומות שכר שנגבו הועברו לארכיון — יתרות פתוחות נשארו פעילות! (ארכיון ← שכר)','ok');
+        showToast('📦 '+toArch.length+' רשומות שכר שהושלמו הועברו לארכיון — יתרות פתוחות נשארו פעילות! (ארכיון ← שכר)','ok');
       },1800);
     }
   }
