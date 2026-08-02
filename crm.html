@@ -9232,11 +9232,12 @@ function goalBarHtml(label,curVal,goal,qData,clr,section){
 
 // פגישות מחודשים קודמים עוברות לארכיון פגישות (לשונית 📦 בסעיף פגישות).
 // רץ עם מונה חודשי משלו כדי שיפעל גם אצל משתמשים שהמחזור החודשי שלהם כבר עודכן החודש.
-function archiveOldMeetings(force){
+function archiveOldMeetings(force,includeCurrent){
   const cur=nd().substring(0,7);
   if(!force&&(D.lastMeetCycle||'')>=cur)return 0;
   if(!D.archivedMeetings)D.archivedMeetings=[];
-  const old=D.meetings.filter(m=>m.dt&&m.dt.substring(0,7)<cur);
+  // סגירת חודש ידנית (includeCurrent) מארכבת גם את פגישות החודש הנוכחי; המחזור האוטומטי — רק חודשים קודמים
+  const old=D.meetings.filter(m=>m.dt&&(includeCurrent?m.dt.substring(0,7)<=cur:m.dt.substring(0,7)<cur));
   if(old.length){
     old.forEach(m=>{m._archivedAt=m.dt.substring(0,7);});
     D.archivedMeetings=[...D.archivedMeetings,...old];
@@ -9254,13 +9255,14 @@ function archiveOldMeetings(force){
   D.lastMeetCycle=cur;
   return old.length;
 }
-function runMonthlyCycle(force){
+function runMonthlyCycle(force,includeCurrent){
   const cur=nd().substring(0,7);
-  const archMeet=archiveOldMeetings(force);
+  const archMeet=archiveOldMeetings(force,includeCurrent);
   if(!force&&(D.lastCycleMonth||'')>=cur){if(archMeet)saveAll();return 0;}
-  // archive closed deals from previous months
+  // ארכוב עסקאות שנסגרו: המחזור האוטומטי מארכב רק חודשים קודמים (<cur);
+  // סגירת חודש ידנית (includeCurrent) מארכבת גם את החודש הנוכחי (<=cur) — "סוגרים את יולי → יולי לארכיון"
   if(!D.archivedDeals)D.archivedDeals=[];
-  const archDeals=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<cur);
+  const archDeals=D.deals.filter(d=>d.st==='נסגר'&&(includeCurrent?(d.date||'').substring(0,7)<=cur:(d.date||'').substring(0,7)<cur));
   if(archDeals.length){
     archDeals.forEach(d=>{d._archivedAt=cur;});
     D.archivedDeals=[...D.archivedDeals,...archDeals];
@@ -9274,6 +9276,24 @@ function runMonthlyCycle(force){
     setTimeout(()=>{
       showToast('📦 '+archDeals.length+' עסקאות שנסגרו הועברו לארכיון החודשי — לא נמחקו! (ארכיון ← עסקאות)','ok');
     },1500);
+  }
+  // ארכוב פרויקטי שכר סגורים — רק בסגירת חודש ידנית (includeCurrent). לשכר אין תאריך-חודש,
+  // ולכן "כל מה שסגור" מועבר לארכיון בעת סגירת החודש; המחזור האוטומטי לא נוגע בשכר.
+  if(includeCurrent){
+    if(!D.archivedSalary)D.archivedSalary=[];
+    const archSal=(D.salary||[]).filter(s=>s.st==='סגור');
+    if(archSal.length){
+      archSal.forEach(s=>{s._archivedAt=cur;});
+      D.archivedSalary=[...D.archivedSalary,...archSal];
+      const sids=new Set(archSal.map(s=>s.id));
+      D.salary=D.salary.filter(s=>!sids.has(s.id));
+      if(!D._deletedIds)D._deletedIds={};
+      if(!D._deletedIds.salary)D._deletedIds.salary={};
+      sids.forEach(id=>{D._deletedIds.salary[String(id)]=Date.now();});
+      setTimeout(()=>{
+        showToast('📦 '+archSal.length+' פרויקטי שכר סגורים הועברו לארכיון — לא נמחקו! (ארכיון ← שכר)','ok');
+      },1800);
+    }
   }
   D.lastCycleMonth=cur;
   saveAll();
@@ -9298,15 +9318,18 @@ function _monthCloseSummary(){
   // הפצות — הושלמו החודש (זהה לדשבורד) מול בתהליך
   const distThis=(D.dists||[]).filter(d=>d.st==='הושלם'&&(d.dt||'').substring(0,7)===cur);
   const openDists=(D.dists||[]).filter(d=>d.st!=='הושלם');
-  // ארכוב: עסקאות שנסגרו בחודשים קודמים + פגישות ישנות (מה שיעבור עכשיו לארכיון)
-  const archDeals=(D.deals||[]).filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<cur);
-  const oldMtgs=(D.meetings||[]).filter(m=>m.dt&&m.dt.substring(0,7)<cur);
+  // ארכוב בסגירה ידנית: עסקאות שנסגרו בחודש הנוכחי + קודמים, פגישות עד החודש הנוכחי כולל,
+  // וכל פרויקטי השכר הסגורים — זהה בדיוק ל-runMonthlyCycle(true,true), כך שהתצוגה המקדימה מדויקת
+  const archDeals=(D.deals||[]).filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<=cur);
+  const oldMtgs=(D.meetings||[]).filter(m=>m.dt&&m.dt.substring(0,7)<=cur);
+  const archSal=(D.salary||[]).filter(s=>s.st==='סגור');
   return {cur,
     dClosedN:dClosed.length, dClosedMv:sum(dClosed,'mv'),
     dOpenN:dOpen.length, dOpenMv:sum(dOpen,'mv'),
     svcClosed:sum(svcAll,'cl2'), eqClosed:sum(eqAll,'cl2'), svcOpenV, eqOpenV, salOut:svcOpenV+eqOpenV,
     distThisN:distThis.length, distThisInc:sum(distThis,'inc'), openDistsN:openDists.length,
     archN:archDeals.length, archVal:sum(archDeals,'mv'), oldMtgsN:oldMtgs.length,
+    archSalN:archSal.length, archSalVal:sum(archSal,'cl2'),
     held:heldThisMonth(), goal:MEETING_GOAL };
 }
 function _mcRow(ico,label,val,color){
@@ -9341,10 +9364,11 @@ function openMonthClose(){
     </div>
 
     <div style="background:rgba(200,169,110,.06);border:1px solid rgba(200,169,110,.2);border-radius:11px;padding:10px 13px;margin-bottom:11px">
-      <div style="font-size:11px;font-weight:800;color:var(--gold);margin-bottom:4px;letter-spacing:.4px">📦 יועבר לארכיון עכשיו</div>
-      ${_mcRow('💼','עסקאות שנסגרו (חודשים קודמים)',`${s.archN}${s.archVal?' · '+fmt(s.archVal):''}`,'var(--gold)')}
-      ${_mcRow('🤝','פגישות ישנות',String(s.oldMtgsN),'var(--gold)')}
-      ${(s.archN===0&&s.oldMtgsN===0)?'<div style="font-size:10.5px;color:var(--text3);padding-top:5px">אין פריטים ישנים לארכוב — הכול מעודכן.</div>':''}
+      <div style="font-size:11px;font-weight:800;color:var(--gold);margin-bottom:4px;letter-spacing:.4px">📦 יועבר לארכיון עכשיו <span style="font-weight:400;color:var(--text3)">(${esc(mName)} + קודם)</span></div>
+      ${_mcRow('💼','עסקאות שנסגרו',`${s.archN}${s.archVal?' · '+fmt(s.archVal):''}`,'var(--gold)')}
+      ${_mcRow('💰','פרויקטי שכר סגורים',`${s.archSalN}${s.archSalVal?' · '+fmt(s.archSalVal):''}`,'var(--gold)')}
+      ${_mcRow('🤝','פגישות שהתקיימו',String(s.oldMtgsN),'var(--gold)')}
+      ${(s.archN===0&&s.oldMtgsN===0&&s.archSalN===0)?'<div style="font-size:10.5px;color:var(--text3);padding-top:5px">אין עסקאות/שכר/פגישות לארכוב — הכול מעודכן.</div>':'<div style="font-size:10.5px;color:var(--text3);padding-top:5px">עסקאות פתוחות, שכר פתוח והפצות בתהליך יישארו פעילים וימשיכו לחודש הבא.</div>'}
     </div>
 
     <div style="background:rgba(76,201,240,.06);border:1px solid rgba(76,201,240,.2);border-radius:11px;padding:10px 13px;margin-bottom:14px">
@@ -9406,12 +9430,13 @@ function shareMonthReport(){
 function confirmMonthClose(){
   const s=_monthCloseSummary();
   const pop=document.getElementById('month-close-popup'); if(pop)pop.remove();
-  const n=runMonthlyCycle(true);
+  const n=runMonthlyCycle(true,true); // סגירה ידנית — כולל את החודש הנוכחי
   rAll();
   const parts=[];
   if(n)parts.push(`${n} עסקאות שנסגרו הועברו לארכיון`);
-  if(s.oldMtgsN)parts.push(`${s.oldMtgsN} פגישות ישנות לארכיון`);
-  showToast(parts.length?('📦 סגירת חודש הושלמה — '+parts.join(' · ')+' (זמין תמיד בלשוניות הארכיון)'):'✓ סגירת חודש: אין פריטים ישנים לארכוב — הכול מעודכן','ok');
+  if(s.archSalN)parts.push(`${s.archSalN} פרויקטי שכר סגורים לארכיון`);
+  if(s.oldMtgsN)parts.push(`${s.oldMtgsN} פגישות לארכיון`);
+  showToast(parts.length?('📦 סגירת חודש הושלמה — '+parts.join(' · ')+' (זמין תמיד בלשוניות הארכיון)'):'✓ סגירת חודש: אין פריטים לארכוב — הכול מעודכן','ok');
 }
 function manualRunCycle(){ openMonthClose(); }
 
