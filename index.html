@@ -6245,7 +6245,7 @@ function rDealSum(){
   const qData=quarters.map(qs=>{
     const ms=monthsOfQ(qs);
     const live=D.deals.filter(d=>d.st==='נסגר'&&ms.includes((d.date||'').substring(0,7)));
-    const archived=arch.filter(d=>ms.includes((d._archivedAt||d.date||'').substring(0,7)));
+    const archived=arch.filter(d=>ms.includes((d.date||d._archivedAt||'').substring(0,7)));
     return{qs,val:[...live,...archived].reduce((s,d)=>s+(d.v||0),0)};
   });
   const curVal=(qData.find(x=>x.qs===curQ)||{val:0}).val;
@@ -6331,7 +6331,8 @@ function rDealsArchive(){
   const cont=document.getElementById('archive-deals-content');if(!cont)return;
   if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--text2)">📦 אין עסקאות בארכיון</div>';return;}
   const byMonth={};
-  arch.forEach(d=>{const m=d._archivedAt||(d.date||'').substring(0,7);if(!byMonth[m])byMonth[m]=[];byMonth[m].push(d);});
+  // קיבוץ לפי חודש העסקה עצמה (date), לא לפי חודש הארכוב — כך עסקת יולי מופיעה תחת יולי
+  arch.forEach(d=>{const dm=(d.date||'').substring(0,7);const m=/^\d{4}-\d{2}$/.test(dm)?dm:(d._archivedAt||'ללא תאריך');if(!byMonth[m])byMonth[m]=[];byMonth[m].push(d);});
   const months=Object.keys(byMonth).sort().reverse();
   const totV=arch.reduce((s,d)=>s+(d.v||0),0),totD=arch.reduce((s,d)=>s+(d.di||0),0),totO=arch.reduce((s,d)=>s+(d.otc||0),0);
   const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">עסקאות בארכיון</div><div class="vl" style="color:var(--text2)">${arch.length}</div></div><div class="kc g"><div class="lb">שווי מצטבר</div><div class="vl">${fmt(totV)}</div></div><div class="kc"><div class="lb">הפצות</div><div class="vl" style="color:#4cc9f0">${fmt(totD)}</div></div><div class="kc y"><div class="lb">OTC</div><div class="vl">${fmt(totO)}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
@@ -6635,7 +6636,8 @@ function rTendersArchive(){
   const cont=document.getElementById('archive-tenders-content');if(!cont)return;
   if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--text2)">📦 אין מכרזים בארכיון</div>';return;}
   const byMonth={};
-  arch.forEach(t=>{const m=t._archivedAt||(t.deadline||'').substring(0,7);if(!byMonth[m])byMonth[m]=[];byMonth[m].push(t);});
+  // קיבוץ לפי חודש ההגשה של המכרז (deadline), לא לפי חודש הארכוב
+  arch.forEach(t=>{const dm=(t.deadline||'').substring(0,7);const m=/^\d{4}-\d{2}$/.test(dm)?dm:(t._archivedAt||'ללא תאריך');if(!byMonth[m])byMonth[m]=[];byMonth[m].push(t);});
   const months=Object.keys(byMonth).sort().reverse();
   const totA=arch.reduce((s,t)=>s+(t.amount||0),0),totSub=arch.filter(t=>t.submitted==='כן').length;
   const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">מכרזים בארכיון</div><div class="vl" style="color:var(--text2)">${arch.length}</div></div><div class="kc g"><div class="lb">הוגשו</div><div class="vl">${totSub}</div></div><div class="kc r"><div class="lb">לא הוגשו</div><div class="vl">${arch.length-totSub}</div></div><div class="kc y"><div class="lb">שווי מצטבר</div><div class="vl">${fmt(totA)}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
@@ -6658,7 +6660,8 @@ function rDistsArchive(){
   const cont=document.getElementById('archive-dists-content');if(!cont)return;
   if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--text2)">📦 אין הפצות בארכיון</div>';return;}
   const byMonth={};
-  arch.forEach(d=>{const m=d._archivedAt||(d.dt||'').substring(0,7);if(!byMonth[m])byMonth[m]=[];byMonth[m].push(d);});
+  // קיבוץ לפי חודש ההפצה עצמה (dt), לא לפי חודש הארכוב
+  arch.forEach(d=>{const dm=(d.dt||'').substring(0,7);const m=/^\d{4}-\d{2}$/.test(dm)?dm:(d._archivedAt||'ללא תאריך');if(!byMonth[m])byMonth[m]=[];byMonth[m].push(d);});
   const months=Object.keys(byMonth).sort().reverse();
   const totI=arch.reduce((s,d)=>s+(d.inc||0),0),totE=arch.reduce((s,d)=>s+(d.eq||0),0);
   const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">הפצות בארכיון</div><div class="vl" style="color:var(--text2)">${arch.length}</div></div><div class="kc g"><div class="lb">הכנסה חודשית מצטברת</div><div class="vl">${fmt(totI)}</div></div><div class="kc y"><div class="lb">ציוד מצטבר</div><div class="vl">${fmt(totE)}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
@@ -6680,7 +6683,8 @@ function rMeetingsArchive(){
   const cont=document.getElementById('archive-meetings-content');if(!cont)return;
   if(!arch.length){cont.innerHTML='<div style="text-align:center;padding:30px;color:var(--text2)">📦 אין פגישות בארכיון</div>';return;}
   const byMonth={};
-  arch.forEach(m=>{const mo=m._archivedAt||(m.dt||'').substring(0,7);if(!byMonth[mo])byMonth[mo]=[];byMonth[mo].push(m);});
+  // קיבוץ לפי חודש הפגישה עצמה (dt), לא לפי חודש הארכוב
+  arch.forEach(m=>{const dm=(m.dt||'').substring(0,7);const mo=/^\d{4}-\d{2}$/.test(dm)?dm:(m._archivedAt||'ללא תאריך');if(!byMonth[mo])byMonth[mo]=[];byMonth[mo].push(m);});
   const months=Object.keys(byMonth).sort().reverse();
   const totH=arch.filter(m=>m.hl==='כן').length;
   const summary=`<div class="krow" style="margin-bottom:12px"><div class="kc"><div class="lb">פגישות בארכיון</div><div class="vl" style="color:var(--text2)">${arch.length}</div></div><div class="kc g"><div class="lb">התקיימו</div><div class="vl">${totH}</div></div><div class="kc r"><div class="lb">לא התקיימו</div><div class="vl">${arch.length-totH}</div></div><div class="kc p"><div class="lb">חודשים</div><div class="vl">${months.length}</div></div></div>`;
