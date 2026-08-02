@@ -9397,8 +9397,9 @@ function openMonthClose(){
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
       <button class="btn btns" onclick="shareMonthReport()" style="font-size:12px;border-color:#25d366;color:#25d366">📤 שתף דו"ח</button>
-      <button class="btn btns" onclick="downloadMonthReport()" style="font-size:12px;border-color:#4cc9f0;color:#4cc9f0">📥 הורד דו"ח</button>
+      <button class="btn btns" onclick="downloadMonthReport()" style="font-size:12px;border-color:#4cc9f0;color:#4cc9f0">📥 הורד סיכום</button>
     </div>
+    <button class="btn btns" onclick="downloadMonthCloseExcel()" style="font-size:12px;border-color:#1d8348;color:#2ecc71;width:100%;margin-bottom:8px">📊 הורד דו"ח מפורט (Excel) — שורה לכל פריט</button>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btns" onclick="document.getElementById('month-close-popup').remove()" style="font-size:12px">ביטול</button>
       <button class="btn btnp" onclick="confirmMonthClose()" style="font-size:12px;background:var(--gold);border-color:var(--gold);color:#0a0e1c;font-weight:800">📦 סגור חודש</button>
@@ -9436,6 +9437,35 @@ function downloadMonthReport(){
     setTimeout(()=>URL.revokeObjectURL(url),1500);
     showToast('📥 דו"ח החודש הורד','ok');
   }catch(e){ showToast('⚠️ שגיאה בהורדת הדו"ח','warn'); }
+}
+// דו"ח סגירת חודש מפורט (Excel/CSV) — שורה לכל פריט שנסגר/נגבה החודש, כולל פירוט פיצול שכר חלקי
+function _monthCloseCSV(){
+  const cur=nd().substring(0,7);
+  const _isEq=x=>x.ty==='equipment';
+  const rows=[];
+  // עסקאות שנסגרו החודש (זהה לדשבורד/סיכום — לפי mv)
+  (D.deals||[]).filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=cur)
+    .forEach(d=>rows.push(['עסקה שנסגרה',(d.co||'')+(d.srv?' · '+d.srv:''),d.num||'',d.st||'',fmtDate(d.date),(+d.mv||0),(+d.v||0)]));
+  // שכר שנגבה — הושלם או חלקי; לחלקי מסומן הסכום שנגבה (cl2) והיתרה (pv)
+  (D.salary||[]).filter(s=>_salaryDone(s)||((+s.cl2||0)>0&&(+s.pv||0)>0))
+    .forEach(s=>{ const partial=!_salaryDone(s)&&(+s.pv||0)>0;
+      rows.push([partial?'שכר שנגבה (חלקי)':'שכר שנגבה',(s.cl||'')+' · '+(_isEq(s)?'ציוד (OTC)':'שירות'),s.pj||'',s.st||'','',(+s.cl2||0),(+s.pv||0)]); });
+  // הפצות שהושלמו החודש
+  (D.dists||[]).filter(d=>d.st==='הושלם'&&(d.dt||'').substring(0,7)===cur)
+    .forEach(d=>rows.push(['הפצה שהושלמה',(d.co||'')+(d.so?' · '+d.so:''),d.no||'',d.st||'',fmtDate(d.dt),(+d.inc||0),'']));
+  // פגישות שהתקיימו החודש
+  (D.meetings||[]).filter(m=>m.hl==='כן'&&(m.dt||'').substring(0,7)===cur)
+    .forEach(m=>rows.push(['פגישה שהתקיימה',m.cl||'',m.nu||'',m.hl||'',fmtDate(m.dt),'','']));
+  const totClosed=rows.reduce((a,r)=>a+(typeof r[5]==='number'?r[5]:0),0);
+  const totOut=rows.reduce((a,r)=>a+(typeof r[6]==='number'?r[6]:0),0);
+  rows.push(['— סה"כ —','','','','',totClosed,totOut]);
+  const hdrs=['קטגוריה','פרטים','מס׳ / פרויקט','סטטוס','תאריך','נסגר / נגבה ₪','יתרה / שווי ₪'];
+  return toCSV(hdrs,rows);
+}
+function downloadMonthCloseExcel(){
+  try{ dlCSV('סגירת_חודש_'+_monthCloseSummary().cur,_monthCloseCSV());
+    showToast('📊 דו"ח סגירת החודש המפורט (Excel) הורד','ok');
+  }catch(e){ showToast('⚠️ שגיאה בהורדת הדו"ח המפורט','warn'); }
 }
 function shareMonthReport(){
   const txt=_monthReportText();
