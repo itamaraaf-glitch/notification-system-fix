@@ -5880,17 +5880,15 @@ function renderMonthSummary(){
   const iOpen=D.dists.filter(d=>d.st!=='הושלם');
   const iClosedV=iClosed.reduce((a,d)=>a+(d.inc||0),0);
   const iOpenV=iOpen.reduce((a,d)=>a+((d.inc||d.tgt)||0),0);
-  // שכר — מופרד לשירות ו-OTC (ציוד): נסגר בפועל מול יתרה לגבייה, לכל אחד בנפרד
+  // שכר — מופרד לשירות ו-OTC (ציוד): נסגר בפועל מול יתרה לגבייה, לכל אחד בנפרד.
+  // הכרטיס מציג "נסגר מתוך הפעיל" — ולכן סופר אך ורק שכר פעיל. שכר שהושלם ועבר לארכיון
+  // אינו מוצג כאן יותר (הוא בלשונית 📦 ארכיון ובדו"ח החודשי).
   const _isEq=x=>x.ty==='equipment';                       // כל השאר = שירות (כולל רשומות ישנות ללא ty)
-  // שכר שהושלם והועבר לארכיון החודש (_archivedAt===החודש הנוכחי) עדיין נספר כ"נסגר בפועל" של החודש,
-  // כדי שהמספר לא ייפול כשהטאטוא מעביר שכר "תקין" לארכיון.
-  const _salArchM=(D.archivedSalary||[]).filter(x=>x._archivedAt===curM);
   const svcAll=D.salary.filter(x=>!_isEq(x)), eqAll=D.salary.filter(_isEq);
-  const svcArchM=_salArchM.filter(x=>!_isEq(x)), eqArchM=_salArchM.filter(_isEq);
-  const svcClosed=svcAll.reduce((a,x)=>a+(x.cl2||0),0)+svcArchM.reduce((a,x)=>a+(+x.cl2||0),0);
+  const svcClosed=svcAll.reduce((a,x)=>a+(x.cl2||0),0);
   const svcOpen=svcAll.filter(x=>x.st!=='סגור'&&(x.pv||0)>0);
   const svcOpenV=svcOpen.reduce((a,x)=>a+(x.pv||0),0);
-  const eqClosed=eqAll.reduce((a,x)=>a+(x.cl2||0),0)+eqArchM.reduce((a,x)=>a+(+x.cl2||0),0);
+  const eqClosed=eqAll.reduce((a,x)=>a+(x.cl2||0),0);
   const eqOpen=eqAll.filter(x=>x.st!=='סגור'&&(x.pv||0)>0);
   const eqOpenV=eqOpen.reduce((a,x)=>a+(x.pv||0),0);
   const card=(ico,name,clr,navKey,closedLbl,closedV,closedN,carryLbl,carryV,carryN)=>{
@@ -5920,8 +5918,8 @@ function renderMonthSummary(){
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px">
       ${card('💼','עסקאות','#4cc9f0','deals','נסגרו',dClosedV,dClosed.length,'צפי סגירה',dOpenV,dOpen.length)}
       ${card('🚀','הפצות','#a78bfa','dists','הושלמו החודש',iClosedV,iClosed.length,'עובר לחודש הבא',iOpenV,iOpen.length)}
-      ${card('💰','שכר — שירות','#06d6a0','salary','נסגר בפועל',svcClosed,svcAll.length+svcArchM.length,'יתרה לגבייה',svcOpenV,svcOpen.length)}
-      ${card('📦','שכר — ציוד (OTC)','#4cc9f0','salary','נסגר בפועל',eqClosed,eqAll.length+eqArchM.length,'יתרה לגבייה',eqOpenV,eqOpen.length)}
+      ${card('💰','שכר — שירות','#06d6a0','salary','נסגר בפועל',svcClosed,svcAll.length,'יתרה לגבייה',svcOpenV,svcOpen.length)}
+      ${card('📦','שכר — ציוד (OTC)','#4cc9f0','salary','נסגר בפועל',eqClosed,eqAll.length,'יתרה לגבייה',eqOpenV,eqOpen.length)}
     </div>
   </div>`;
 }
@@ -9397,11 +9395,9 @@ function _monthCloseSummary(){
   const dClosed=(D.deals||[]).filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=cur);
   const dOpen=(D.deals||[]).filter(d=>d.st!=='נסגר');
   // שכר — שירות/ציוד(OTC) בנפרד: נסגר בפועל (cl2) ויתרה לגבייה (pv) — זהה לדשבורד.
-  // כולל שכר שהושלם והועבר לארכיון החודש, כדי שהמספר יישאר יציב אחרי הטאטוא.
+  // שכר פעיל בלבד; שכר שהושלם ועבר לארכיון אינו נספר כאן (הוא בארכיון ובדו"ח החודשי).
   const _isEq=x=>x.ty==='equipment';
-  const _salArchM=(D.archivedSalary||[]).filter(x=>x._archivedAt===cur);
-  const svcAll=[...(D.salary||[]).filter(x=>!_isEq(x)),..._salArchM.filter(x=>!_isEq(x))];
-  const eqAll=[...(D.salary||[]).filter(_isEq),..._salArchM.filter(_isEq)];
+  const svcAll=(D.salary||[]).filter(x=>!_isEq(x)), eqAll=(D.salary||[]).filter(_isEq);
   const svcOpenV=svcAll.filter(x=>x.st!=='סגור'&&(+x.pv||0)>0).reduce((a,x)=>a+(+x.pv||0),0);
   const eqOpenV=eqAll.filter(x=>x.st!=='סגור'&&(+x.pv||0)>0).reduce((a,x)=>a+(+x.pv||0),0);
   // הפצות — הושלמו החודש (זהה לדשבורד) מול בתהליך
