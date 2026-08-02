@@ -9232,6 +9232,9 @@ function goalBarHtml(label,curVal,goal,qData,clr,section){
 
 // פגישות מחודשים קודמים עוברות לארכיון פגישות (לשונית 📦 בסעיף פגישות).
 // רץ עם מונה חודשי משלו כדי שיפעל גם אצל משתמשים שהמחזור החודשי שלהם כבר עודכן החודש.
+// פרויקט שכר "הושלם" לצורך ארכוב בסגירת חודש: סטטוס 'סגור', או שנגבה במלואו (אין יתרה לגבייה ונגבה בפועל).
+// פרויקטים עם יתרה לגבייה פתוחה (pv>0) נשארים תמיד פעילים וממשיכים לחודש הבא — לא מאבדים מעקב אחרי כסף שלא נגבה.
+function _salaryDone(s){ return s && (s.st==='סגור' || ((+s.pv||0)<=0 && (+s.cl2||0)>0)); }
 function archiveOldMeetings(force,includeCurrent){
   const cur=nd().substring(0,7);
   if(!force&&(D.lastMeetCycle||'')>=cur)return 0;
@@ -9277,21 +9280,34 @@ function runMonthlyCycle(force,includeCurrent){
       showToast('📦 '+archDeals.length+' עסקאות שנסגרו הועברו לארכיון החודשי — לא נמחקו! (ארכיון ← עסקאות)','ok');
     },1500);
   }
-  // ארכוב פרויקטי שכר סגורים — רק בסגירת חודש ידנית (includeCurrent). לשכר אין תאריך-חודש,
-  // ולכן "כל מה שסגור" מועבר לארכיון בעת סגירת החודש; המחזור האוטומטי לא נוגע בשכר.
+  // ארכוב פרויקטי שכר — רק בסגירת חודש ידנית (includeCurrent). לשכר אין תאריך-חודש.
+  //  • הושלם (סגור / נגבה במלואו) → הרשומה כולה לארכיון.
+  //  • חלקי (נגבה חלק + יש יתרה לגבייה) → רק החלק שנגבה עובר לארכיון; היתרה נשארת פעילה עם כל הפרטים.
+  //  • לא נגבה כלום → נשאר פעיל כמות שהוא.
   if(includeCurrent){
     if(!D.archivedSalary)D.archivedSalary=[];
-    const archSal=(D.salary||[]).filter(s=>s.st==='סגור');
-    if(archSal.length){
-      archSal.forEach(s=>{s._archivedAt=cur;});
-      D.archivedSalary=[...D.archivedSalary,...archSal];
-      const sids=new Set(archSal.map(s=>s.id));
-      D.salary=D.salary.filter(s=>!sids.has(s.id));
+    const toArch=[], remain=[], doneIds=[];
+    (D.salary||[]).forEach(s=>{
+      const collected=+s.cl2||0, balance=+s.pv||0;
+      if(_salaryDone(s)){                       // הושלם — כל הרשומה לארכיון
+        toArch.push({...s,_archivedAt:cur});
+        doneIds.push(s.id);
+      } else if(collected>0&&balance>0){        // חלקי — פיצול: החלק שנגבה לארכיון, היתרה נשארת
+        toArch.push({...s,id:genId(),tr:collected,cl2:collected,pv:0,st:'סגור',_archivedAt:cur,_splitFrom:s.id,_mts:Date.now()});
+        remain.push({...s,tr:balance,cl2:0,pv:balance,st:'פתוח',_mts:Date.now()}); // יתרה לגבייה — כל הפרטים נשמרים
+      } else {                                   // לא נגבה כלום — נשאר
+        remain.push(s);
+      }
+    });
+    if(toArch.length){
+      D.archivedSalary=[...D.archivedSalary,...toArch];
+      D.salary=remain;
+      // tombstone רק לרשומות שהוסרו לגמרי (שהושלמו); רשומת היתרה נשארת עם אותו מזהה
       if(!D._deletedIds)D._deletedIds={};
       if(!D._deletedIds.salary)D._deletedIds.salary={};
-      sids.forEach(id=>{D._deletedIds.salary[String(id)]=Date.now();});
+      doneIds.forEach(id=>{D._deletedIds.salary[String(id)]=Date.now();});
       setTimeout(()=>{
-        showToast('📦 '+archSal.length+' פרויקטי שכר סגורים הועברו לארכיון — לא נמחקו! (ארכיון ← שכר)','ok');
+        showToast('📦 '+toArch.length+' רשומות שכר שנגבו הועברו לארכיון — יתרות פתוחות נשארו פעילות! (ארכיון ← שכר)','ok');
       },1800);
     }
   }
@@ -9322,7 +9338,8 @@ function _monthCloseSummary(){
   // וכל פרויקטי השכר הסגורים — זהה בדיוק ל-runMonthlyCycle(true,true), כך שהתצוגה המקדימה מדויקת
   const archDeals=(D.deals||[]).filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<=cur);
   const oldMtgs=(D.meetings||[]).filter(m=>m.dt&&m.dt.substring(0,7)<=cur);
-  const archSal=(D.salary||[]).filter(s=>s.st==='סגור');
+  // כל רשומת שכר שתייצר רשומה בארכיון: הושלמה, או חלקית עם סכום שנגבה. הערך = הסכום שנגבה בפועל (cl2).
+  const archSal=(D.salary||[]).filter(s=>_salaryDone(s)||((+s.cl2||0)>0&&(+s.pv||0)>0));
   return {cur,
     dClosedN:dClosed.length, dClosedMv:sum(dClosed,'mv'),
     dOpenN:dOpen.length, dOpenMv:sum(dOpen,'mv'),
@@ -9366,7 +9383,7 @@ function openMonthClose(){
     <div style="background:rgba(200,169,110,.06);border:1px solid rgba(200,169,110,.2);border-radius:11px;padding:10px 13px;margin-bottom:11px">
       <div style="font-size:11px;font-weight:800;color:var(--gold);margin-bottom:4px;letter-spacing:.4px">📦 יועבר לארכיון עכשיו <span style="font-weight:400;color:var(--text3)">(${esc(mName)} + קודם)</span></div>
       ${_mcRow('💼','עסקאות שנסגרו',`${s.archN}${s.archVal?' · '+fmt(s.archVal):''}`,'var(--gold)')}
-      ${_mcRow('💰','פרויקטי שכר סגורים',`${s.archSalN}${s.archSalVal?' · '+fmt(s.archSalVal):''}`,'var(--gold)')}
+      ${_mcRow('💰','שכר שנגבה (יתרות נשארות)',`${s.archSalN}${s.archSalVal?' · '+fmt(s.archSalVal):''}`,'var(--gold)')}
       ${_mcRow('🤝','פגישות שהתקיימו',String(s.oldMtgsN),'var(--gold)')}
       ${(s.archN===0&&s.oldMtgsN===0&&s.archSalN===0)?'<div style="font-size:10.5px;color:var(--text3);padding-top:5px">אין עסקאות/שכר/פגישות לארכוב — הכול מעודכן.</div>':'<div style="font-size:10.5px;color:var(--text3);padding-top:5px">עסקאות פתוחות, שכר פתוח והפצות בתהליך יישארו פעילים וימשיכו לחודש הבא.</div>'}
     </div>
@@ -9434,7 +9451,7 @@ function confirmMonthClose(){
   rAll();
   const parts=[];
   if(n)parts.push(`${n} עסקאות שנסגרו הועברו לארכיון`);
-  if(s.archSalN)parts.push(`${s.archSalN} פרויקטי שכר סגורים לארכיון`);
+  if(s.archSalN)parts.push(`${s.archSalN} רשומות שכר שנגבו לארכיון`);
   if(s.oldMtgsN)parts.push(`${s.oldMtgsN} פגישות לארכיון`);
   showToast(parts.length?('📦 סגירת חודש הושלמה — '+parts.join(' · ')+' (זמין תמיד בלשוניות הארכיון)'):'✓ סגירת חודש: אין פריטים לארכוב — הכול מעודכן','ok');
 }
