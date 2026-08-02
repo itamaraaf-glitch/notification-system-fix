@@ -9232,6 +9232,9 @@ function goalBarHtml(label,curVal,goal,qData,clr,section){
 
 // פגישות מחודשים קודמים עוברות לארכיון פגישות (לשונית 📦 בסעיף פגישות).
 // רץ עם מונה חודשי משלו כדי שיפעל גם אצל משתמשים שהמחזור החודשי שלהם כבר עודכן החודש.
+// פרויקט שכר "הושלם" לצורך ארכוב בסגירת חודש: סטטוס 'סגור', או שנגבה במלואו (אין יתרה לגבייה ונגבה בפועל).
+// פרויקטים עם יתרה לגבייה פתוחה (pv>0) נשארים תמיד פעילים וממשיכים לחודש הבא — לא מאבדים מעקב אחרי כסף שלא נגבה.
+function _salaryDone(s){ return s && (s.st==='סגור' || ((+s.pv||0)<=0 && (+s.cl2||0)>0)); }
 function archiveOldMeetings(force,includeCurrent){
   const cur=nd().substring(0,7);
   if(!force&&(D.lastMeetCycle||'')>=cur)return 0;
@@ -9281,7 +9284,7 @@ function runMonthlyCycle(force,includeCurrent){
   // ולכן "כל מה שסגור" מועבר לארכיון בעת סגירת החודש; המחזור האוטומטי לא נוגע בשכר.
   if(includeCurrent){
     if(!D.archivedSalary)D.archivedSalary=[];
-    const archSal=(D.salary||[]).filter(s=>s.st==='סגור');
+    const archSal=(D.salary||[]).filter(_salaryDone);
     if(archSal.length){
       archSal.forEach(s=>{s._archivedAt=cur;});
       D.archivedSalary=[...D.archivedSalary,...archSal];
@@ -9322,7 +9325,7 @@ function _monthCloseSummary(){
   // וכל פרויקטי השכר הסגורים — זהה בדיוק ל-runMonthlyCycle(true,true), כך שהתצוגה המקדימה מדויקת
   const archDeals=(D.deals||[]).filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<=cur);
   const oldMtgs=(D.meetings||[]).filter(m=>m.dt&&m.dt.substring(0,7)<=cur);
-  const archSal=(D.salary||[]).filter(s=>s.st==='סגור');
+  const archSal=(D.salary||[]).filter(_salaryDone);
   return {cur,
     dClosedN:dClosed.length, dClosedMv:sum(dClosed,'mv'),
     dOpenN:dOpen.length, dOpenMv:sum(dOpen,'mv'),
