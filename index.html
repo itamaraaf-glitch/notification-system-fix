@@ -9690,9 +9690,48 @@ function _aiSubmit(){
     ${ans.act?`<button class="btn btns" style="margin-top:8px;font-size:11px" onclick="document.getElementById('ai-popup').remove();${ans.act}">מעבר →</button>`:''}
   </div>`;
 }
+// פעולות מומלצות — רשימת "מה לעשות עכשיו", מדורגת לפי דחיפות/ערך (ניקוד גבוה = דחוף יותר)
+function _aiActions(){
+  const acts=[];
+  // מכרזים עם הגשה קרובה שטרם הוגשו — הכי דחוף
+  (D.tenders||[]).forEach(x=>{ if(x.submitted!=='כן'&&x.deadline){ const d=db(nd(),x.deadline); if(d>=0&&d<=14) acts.push({score:1000-d*10,icon:'📋',text:`הגש מכרז "${esc(x.name||'—')}" — הגשה בעוד ${d} ימים`,act:"nav('tenders')"}); } });
+  // חוזי שכר שמסתיימים ב-30 יום — לחדש
+  (D.salary||[]).forEach(s=>{ const e=salExpiry(s); if(e){ const d=db(nd(),e); if(d>=0&&d<=30) acts.push({score:600-d*5,icon:'🔄',text:`חדש חוזה ${esc(s.cl||'לקוח')} — מסתיים בעוד ${d} ימים`,act:"nav('salary')"}); } });
+  // גבייה — היתרות הגדולות
+  (D.salary||[]).filter(s=>s.st!=='סגור'&&(+s.pv||0)>0&&!_salDeferred(s)).sort((a,b)=>(+b.pv||0)-(+a.pv||0)).slice(0,3)
+    .forEach(s=>acts.push({score:200+Math.min(400,(+s.pv||0)/100),icon:'💰',text:`גבה ${fmt(+s.pv)} מ-${esc(s.cl||'לקוח')}${s.pj?' · פרויקט '+esc(s.pj):''}`,act:"nav('salary')"}));
+  // עסקאות תקועות — הישנות ביותר
+  (D.deals||[]).filter(d=>d.date&&d.st!=='נסגר'&&(now()-new Date(d.date))/(30*86400000)>2).sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(0,3)
+    .forEach(d=>{ const mo=Math.floor((now()-new Date(d.date))/(30*86400000)); acts.push({score:300+mo*20,icon:'📞',text:`חזור ל-${esc(d.co||'לקוח')}${d.srv?' · '+esc(d.srv):''} — עסקה פתוחה ${mo} חודשים`,act:"nav('deals')"}); });
+  // חוסרים בהפצות פעילות
+  (D.dists||[]).filter(d=>String(d.mi||'').trim()&&d.st!=='הושלם').slice(0,2)
+    .forEach(d=>acts.push({score:250,icon:'📦',text:`טפל בחוסרים בהפצה ${esc(d.co||'')}${d.no?' #'+esc(d.no):''}: ${esc(d.mi)}`,act:"nav('dists')"}));
+  // קצב פגישות מאחור
+  const held=heldThisMonth(), day=now().getDate(), dim=new Date(now().getFullYear(),now().getMonth()+1,0).getDate();
+  const need=MEETING_GOAL-held, daysLeft=dim-day;
+  if(need>0&&daysLeft>0) acts.push({score:150+need*8,icon:'🤝',text:`קבע עוד ${need} פגישות להשלמת היעד (${daysLeft} ימים נותרו)`,act:"nav('meetings')"});
+  return acts.sort((a,b)=>b.score-a.score);
+}
+// מגמה וחיזוי — נסגר החודש מול חודש קודם + צפי לסוף החודש לפי הקצב
+function _aiTrend(){
+  const cur=nd().substring(0,7);
+  const prev=(function(){const d=new Date();d.setMonth(d.getMonth()-1);return ymd(d).substring(0,7);})();
+  const all=[...(D.deals||[]),...(D.archivedDeals||[])];
+  const closedM=m=>all.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)===m).reduce((s,d)=>s+(+d.mv||0),0);
+  const curV=closedM(cur), prevV=closedM(prev);
+  const day=now().getDate(), dim=new Date(now().getFullYear(),now().getMonth()+1,0).getDate();
+  const proj=day>0?Math.round(curV/day*dim):curV;
+  const pctVsPrev=prevV>0?Math.round((curV-prevV)/prevV*100):(curV>0?100:0);
+  return {curV,prevV,proj,pctVsPrev};
+}
 function _aiCopySummary(){
-  const ins=_aiInsights();
-  const txt='🤖 סיכום תובנות — '+curMonthStr()+'\n\n'+ins.map(i=>`${i.icon} ${i.title}: ${String(i.text).replace(/<[^>]+>/g,'')}`).join('\n')+'\n\n— HOT Business CRM';
+  const ins=_aiInsights(), acts=_aiActions().slice(0,5), tr=_aiTrend();
+  const L=['🤖 סיכום תובנות — '+curMonthStr(),''];
+  L.push(`📊 נסגר החודש: ${fmt(tr.curV)} (חודש קודם: ${fmt(tr.prevV)}${tr.prevV>0?` · ${tr.pctVsPrev>=0?'▲':'▼'}${Math.abs(tr.pctVsPrev)}%`:''}) · צפי לסוף החודש: ${fmt(tr.proj)}`,'');
+  if(acts.length){ L.push('🎯 פעולות מומלצות:'); acts.forEach(a=>L.push(`  ${a.icon} ${a.text}`)); L.push(''); }
+  L.push('📌 תובנות:'); ins.forEach(i=>L.push(`  ${i.icon} ${i.title}: ${String(i.text).replace(/<[^>]+>/g,'')}`));
+  L.push('','— HOT Business CRM');
+  const txt=L.join('\n');
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(()=>showToast('📋 התובנות הועתקו','ok')).catch(()=>showToast('⚠️ העתקה נכשלה','warn')); }
   else showToast('⚠️ העתקה לא נתמכת בדפדפן זה','warn');
 }
@@ -9703,6 +9742,21 @@ function openAiAssistant(){
   const cards=ins.map(i=>`<div style="background:rgba(255,255,255,.03);border:1px solid ${(toneC[i.tone]||'#4cc9f0')}33;border-right:3px solid ${toneC[i.tone]||'#4cc9f0'};border-radius:10px;padding:10px 13px;${i.act?'cursor:pointer':''}" ${i.act?`onclick="document.getElementById('ai-popup').remove();${i.act}"`:''}>
     <div style="font-size:12px;font-weight:800;color:${toneC[i.tone]||'#4cc9f0'};margin-bottom:3px">${i.icon} ${esc(i.title)}</div>
     <div style="font-size:12px;color:var(--text2);line-height:1.5">${i.text}</div></div>`).join('');
+  // מגמה וחיזוי
+  const tr=_aiTrend();
+  const trArrow=tr.pctVsPrev>=0?'▲':'▼', trCol=tr.pctVsPrev>=0?'#06d6a0':'#e63946';
+  const trendHtml=`<div style="background:rgba(76,201,240,.06);border:1px solid rgba(76,201,240,.2);border-radius:10px;padding:10px 13px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:800;color:#4cc9f0;margin-bottom:5px">📊 מגמה וחיזוי</div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);gap:8px;flex-wrap:wrap">
+      <span>נסגר החודש: <b style="color:var(--teal)">${fmt(tr.curV)}</b></span>
+      <span>חודש קודם: <b>${fmt(tr.prevV)}</b> ${tr.prevV>0?`<b style="color:${trCol}">${trArrow}${Math.abs(tr.pctVsPrev)}%</b>`:''}</span>
+      <span>צפי לסוף החודש: <b style="color:#4cc9f0">${fmt(tr.proj)}</b></span>
+    </div></div>`;
+  // פעולות מומלצות (עד 5)
+  const acts=_aiActions().slice(0,5);
+  const actHtml=acts.length?`<div style="font-size:11px;font-weight:800;color:#a78bfa;letter-spacing:.5px;margin:2px 0 8px">🎯 פעולות מומלצות</div>
+    <div style="display:grid;gap:6px;margin-bottom:14px">`+acts.map(a=>`<div onclick="document.getElementById('ai-popup').remove();${a.act}" style="display:flex;align-items:center;gap:8px;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);border-radius:9px;padding:8px 11px;cursor:pointer">
+      <span style="font-size:15px">${a.icon}</span><span style="font-size:12px;color:var(--text);line-height:1.4;flex:1">${a.text}</span><span style="color:#a78bfa;font-size:13px">→</span></div>`).join('')+`</div>`:'';
   const sugg=['סיכום החודש','כמה יש לי לגבות','פגישות','חוזים לחידוש','עסקאות שנסגרו','מכרזים'];
   const chips=sugg.map(c=>`<button class="btn btns" style="font-size:11px" onclick="var e=document.getElementById('ai-q');e.value='${c}';_aiSubmit()">${c}</button>`).join(' ');
   const el=document.createElement('div');
@@ -9720,6 +9774,8 @@ function openAiAssistant(){
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${chips}</div>
     <div id="ai-answer"></div>
+    ${trendHtml}
+    ${actHtml}
     <div style="font-size:11px;font-weight:800;color:var(--text3);letter-spacing:.5px;margin:6px 0 8px">📌 תובנות אוטומטיות</div>
     <div style="display:grid;gap:8px">${cards||'<div style="color:var(--text3);font-size:12px">אין מספיק נתונים לניתוח עדיין — הוסף עסקאות, שכר או פגישות.</div>'}</div>
     <button class="btn btns" onclick="_aiCopySummary()" style="width:100%;margin-top:12px;font-size:12px;border-color:#a78bfa;color:#a78bfa">📋 העתק סיכום תובנות</button>
