@@ -9728,6 +9728,15 @@ function _aiAsk(qRaw){
     return {icon:'📦',title:`מוצר: ${esc(pT)}`,text:`${md.length} עסקאות (${closed.length} נסגרו) · ${mx.length} הפצות · שווי מצטבר ${fmt(v)}.`,act:"nav('deals')"};
   }
 
+  // ── יעדים / תוכנית להצלחה החודש ──
+  if(has('יעד','עמיד','חסר','תוכנית','להשיג','להצליח','לעמוד','מה נשאר','איך אני')){
+    const plan=_aiGoalPlan();
+    const behind=plan.items.filter(it=>it.gap>0);
+    const txt=behind.length
+      ? 'כדי לעמוד ביעדים החודש: '+behind.map(it=>`${it.icon} ${it.name} — חסר ${it.isCount?it.gap:fmt(it.gap)}`).join(' · ')+`. נותרו ${plan.daysLeft} ימים.`
+      : '🎉 אתה עומד בכל היעדים החודש! המשך כך.';
+    return {icon:'🎯',title:'תוכנית להשגת היעדים',text:txt,act:"nav('dashboard')"};
+  }
   // ── 4) עסקאות/הכנסות (עם מסנן חודש אופציונלי) ──
   if(has('עסקא','נסגר','סגרתי','מכיר','הכנס','הרווח','שווי','כמה כסף')){
     let deals=AD.filter(d=>d.st==='נסגר'&&inM(d.date));
@@ -9781,6 +9790,34 @@ function _aiHealth(){
   const col=score>=80?'#06d6a0':score>=60?'#4cc9f0':score>=40?'#f4a261':'#e63946';
   return {score,label,col,parts:[['פגישות',mtg],['גבייה',collect],['עסקאות',deals],['תגובתיות',resp]]};
 }
+// תוכנית להשגת היעדים החודשיים: לכל יעד — הישג מול יעד, פער, וההמלצה הקונקרטית לסגור אותו
+function _aiGoalItem(icon,name,ach,goal,rec,isCount){
+  const gap=Math.max(0,goal-ach), pct=goal>0?Math.round(ach/goal*100):100;
+  return {icon,name,ach,goal,gap,pct,isCount:!!isCount,rec:gap<=0?'✅ ביעד! כל הכבוד':rec(gap)};
+}
+function _aiGoalPlan(){
+  const cur=nd().substring(0,7);
+  const g=Object.assign({deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000},D.goals||{});
+  const day=now().getDate(), dim=new Date(now().getFullYear(),now().getMonth()+1,0).getDate(), daysLeft=Math.max(1,dim-day);
+  const cd=[...(D.deals||[]),...(D.archivedDeals||[])].filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)===cur);
+  const dealsAch=cd.reduce((a,d)=>a+(+d.mv||0),0), dealsEqAch=cd.reduce((a,d)=>a+(+d.otc||0),0);
+  const dd=[...(D.dists||[]),...(D.archivedDists||[])].filter(d=>d.st==='הושלם'&&(d.dt||'').substring(0,7)===cur);
+  const distAch=dd.reduce((a,d)=>a+(+d.inc||0),0);
+  const salSvcAch=(D.salary||[]).filter(x=>x.ty!=='equipment').reduce((a,s)=>a+(+s.cl2||0),0);
+  const salEqAch=(D.salary||[]).filter(x=>x.ty==='equipment').reduce((a,s)=>a+(+s.cl2||0),0);
+  const held=heldThisMonth();
+  const pipe=(D.deals||[]).filter(d=>d.st!=='נסגר'&&(+d.mv||0)>0).map(d=>({d,ev:(+d.mv||0)*(d.ch||0.5)})).sort((a,b)=>b.ev-a.ev);
+  const dealRec=gap=>{ const picks=[]; let acc=0; for(const p of pipe){ if(acc>=gap)break; picks.push(p.d); acc+=(+p.d.mv||0);} return picks.length?('סגור מהצנרת: '+picks.slice(0,3).map(d=>`${esc(d.co||'—')} (${fmt(+d.mv)})`).join(' · ')):'הכנס עסקאות חדשות לצנרת'; };
+  const items=[];
+  items.push(_aiGoalItem('💼','עסקאות (שירות)',dealsAch,g.deals,gap=>`חסרים ${fmt(gap)}. ${dealRec(gap)}`));
+  if(g.dealsEq) items.push(_aiGoalItem('📦','עסקאות ציוד (OTC)',dealsEqAch,g.dealsEq,gap=>`חסרים ${fmt(gap)} — קדם עסקאות ציוד פתוחות`));
+  items.push(_aiGoalItem('🚀','הפצות',distAch,g.dists,gap=>`חסרים ${fmt(gap)} — השלם הפצות בתהליך`));
+  items.push(_aiGoalItem('💰','שכר שירות',salSvcAch,g.sal,gap=>`חסרים ${fmt(gap)} — גבה יתרות פתוחות`));
+  if(g.salEq) items.push(_aiGoalItem('🧰','שכר ציוד',salEqAch,g.salEq,gap=>`חסרים ${fmt(gap)}`));
+  const need=Math.max(0,MEETING_GOAL-held);
+  items.push(_aiGoalItem('🤝','פגישות',held,MEETING_GOAL,()=>`חסרות ${need} — קבע ~${Math.ceil(need/daysLeft)} ליום (${daysLeft} ימים נותרו)`,true));
+  return {items,daysLeft};
+}
 function _aiSubmit(){
   const inp=document.getElementById('ai-q'); const ans=_aiAsk(inp?inp.value:'');
   const box=document.getElementById('ai-answer'); if(!box||!ans)return;
@@ -9825,9 +9862,12 @@ function _aiTrend(){
   return {curV,prevV,proj,pctVsPrev};
 }
 function _aiCopySummary(){
-  const ins=_aiInsights(), acts=_aiActions().slice(0,5), tr=_aiTrend();
+  const ins=_aiInsights(), acts=_aiActions().slice(0,5), tr=_aiTrend(), plan=_aiGoalPlan();
   const L=['🤖 סיכום תובנות — '+curMonthStr(),''];
   L.push(`📊 נסגר החודש: ${fmt(tr.curV)} (חודש קודם: ${fmt(tr.prevV)}${tr.prevV>0?` · ${tr.pctVsPrev>=0?'▲':'▼'}${Math.abs(tr.pctVsPrev)}%`:''}) · צפי לסוף החודש: ${fmt(tr.proj)}`,'');
+  L.push(`🎯 עמידה ביעדים (${plan.daysLeft} ימים לסוף החודש):`);
+  plan.items.forEach(it=>L.push(`  ${it.icon} ${it.name}: ${it.isCount?it.ach+'/'+it.goal:fmt(it.ach)+'/'+fmt(it.goal)} (${it.pct}%)${it.gap>0?' — '+String(it.rec).replace(/<[^>]+>/g,''):' ✅'}`));
+  L.push('');
   if(acts.length){ L.push('🎯 פעולות מומלצות:'); acts.forEach(a=>L.push(`  ${a.icon} ${a.text}`)); L.push(''); }
   L.push('📌 תובנות:'); ins.forEach(i=>L.push(`  ${i.icon} ${i.title}: ${String(i.text).replace(/<[^>]+>/g,'')}`));
   L.push('','— HOT Business CRM');
@@ -9851,6 +9891,15 @@ function openAiAssistant(){
       <div style="font-size:13px;font-weight:800;color:${h.col}">מדד בריאות עסקי — ${h.label}</div>
       <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:4px">${h.parts.map(([n,v])=>`<span style="font-size:10px;color:var(--text3)">${n}: <b style="color:var(--text2)">${v}/25</b></span>`).join('')}</div>
     </div></div>`;
+  // תוכנית להשגת היעדים
+  const plan=_aiGoalPlan();
+  const planHtml=`<div style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.22);border-radius:11px;padding:11px 13px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:800;color:#fbbf24;margin-bottom:8px">🎯 עמידה ביעדים + תוכנית <span style="font-weight:400;color:var(--text3)">(${plan.daysLeft} ימים לסוף החודש)</span></div>
+    ${plan.items.map(it=>{const col=it.pct>=100?'#06d6a0':it.pct>=60?'#f4a261':'#e63946';return `<div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;gap:8px;font-size:11.5px;margin-bottom:2px"><span style="color:var(--text2)">${it.icon} ${it.name}</span><b style="color:${col};white-space:nowrap">${it.isCount?it.ach+'/'+it.goal:fmt(it.ach)+' / '+fmt(it.goal)} · ${it.pct}%</b></div>
+      <div style="height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-bottom:3px"><div style="height:100%;width:${Math.min(100,it.pct)}%;background:${col};transition:width .3s"></div></div>
+      <div style="font-size:10px;color:var(--text3);line-height:1.4">${it.rec}</div></div>`;}).join('')}
+  </div>`;
   // מגמת הכנסות 6 חודשים
   const rev=_aiMonthlyRevenue(); const maxV=Math.max(1,...rev.map(r=>r.value));
   const curM=nd().substring(0,7);
@@ -9872,7 +9921,7 @@ function openAiAssistant(){
   const actHtml=acts.length?`<div style="font-size:11px;font-weight:800;color:#a78bfa;letter-spacing:.5px;margin:2px 0 8px">🎯 פעולות מומלצות</div>
     <div style="display:grid;gap:6px;margin-bottom:14px">`+acts.map(a=>`<div onclick="document.getElementById('ai-popup').remove();${a.act}" style="display:flex;align-items:center;gap:8px;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);border-radius:9px;padding:8px 11px;cursor:pointer">
       <span style="font-size:15px">${a.icon}</span><span style="font-size:12px;color:var(--text);line-height:1.4;flex:1">${a.text}</span><span style="color:#a78bfa;font-size:13px">→</span></div>`).join('')+`</div>`:'';
-  const sugg=['סיכום החודש','כמה יש לי לגבות','פגישות','חוזים לחידוש','עסקאות שנסגרו','מכרזים'];
+  const sugg=['איך אני עומד ביעד','סיכום החודש','כמה יש לי לגבות','חוזים לחידוש','עסקאות שנסגרו','מכרזים'];
   const chips=sugg.map(c=>`<button class="btn btns" style="font-size:11px" onclick="var e=document.getElementById('ai-q');e.value='${c}';_aiSubmit()">${c}</button>`).join(' ');
   const el=document.createElement('div');
   el.id='ai-popup';
@@ -9884,6 +9933,7 @@ function openAiAssistant(){
     </div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:12px">מנתח את הנתונים שלך במכשיר — ללא ענן 🔒 פרטי לחלוטין</div>
     ${healthHtml}
+    ${planHtml}
     <div style="display:flex;gap:6px;margin-bottom:10px">
       <input id="ai-q" placeholder="שאל חופשי: כמה הכנסתי מ-Starlink? מה עם לקוח [שם]? כמה סגרתי במאי?" onkeydown="if(event.key==='Enter')_aiSubmit()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:9px 11px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none">
       <button class="btn btnp" onclick="_aiSubmit()" style="background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:800;font-size:12px">שאל</button>
