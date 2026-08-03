@@ -1589,6 +1589,7 @@ body.logged-in #ai-fab{display:flex}
 <div class="sec active" id="sec-dashboard">
   <div class="shdr"><div class="stit">📊 לוח בקרה</div><button class="btn btns" onclick="loadAll();toast('✅ לוח הבקרה עודכן','ok')" style="font-size:11px;padding:6px 14px;border-color:var(--teal);color:var(--teal)">🔄 רענן</button></div>
   <div id="dash-welcome"></div>
+  <div id="ai-spotlight"></div>
   <div class="krow" id="krow"></div>
   <div id="month-summary" style="margin-bottom:14px"></div>
   <div class="dgrid">
@@ -6064,6 +6065,7 @@ function rDash(){
     qsRow('📋 הוגשו',''+D.tenders.filter(t=>t.submitted==='כן').length,'var(--teal)','tenders');
   renderUpcomingMeetings();
   renderQuickActions();
+  renderAiSpotlight();
 }
 
 // ===== DEALS =====
@@ -9874,6 +9876,35 @@ function _aiCopySummary(){
   const txt=L.join('\n');
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(()=>showToast('📋 התובנות הועתקו','ok')).catch(()=>showToast('⚠️ העתקה נכשלה','warn')); }
   else showToast('⚠️ העתקה לא נתמכת בדפדפן זה','warn');
+}
+// ספוטלייט AI בלוח הבקרה — מדד בריאות + הפעולה החשובה ביותר + תיבת שאלה מהירה, חי במסך הראשי
+function renderAiSpotlight(){
+  const box=document.getElementById('ai-spotlight'); if(!box)return;
+  const h=_aiHealth();
+  const top=_aiActions()[0];
+  const plan=_aiGoalPlan();
+  const behind=plan.items.filter(it=>it.gap>0).length;
+  box.innerHTML=`<div style="background:linear-gradient(135deg,rgba(167,139,250,.14),rgba(76,201,240,.08));border:1px solid rgba(167,139,250,.3);border-radius:14px;padding:12px 15px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div onclick="openAiAssistant()" style="width:48px;height:48px;border-radius:50%;border:3px solid ${h.col};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer" title="פתח עוזר חכם">
+        <div style="font-size:17px;font-weight:900;color:${h.col};line-height:1">${h.score}</div><div style="font-size:7px;color:var(--text3)">בריאות</div></div>
+      <div style="flex:1;min-width:150px">
+        <div style="font-size:12px;font-weight:800;color:#a78bfa;margin-bottom:2px">🤖 העוזר החכם${behind?` · ${behind} יעדים בפער`:' · במסלול ליעדים 🎯'}</div>
+        <div style="font-size:11.5px;color:var(--text2);line-height:1.45">${top?`${top.icon} ${top.text}`:'אין פעולות דחופות כרגע — כל הכבוד!'}</div>
+      </div>
+      ${top&&top.act?`<button class="btn btns" onclick="${top.act}" style="font-size:11px;border-color:#a78bfa;color:#a78bfa;white-space:nowrap">בצע →</button>`:''}
+    </div>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <input id="ai-spot-q" placeholder="שאל את העוזר: איך אני עומד ביעד? כמה יש לי לגבות?" onkeydown="if(event.key==='Enter')_aiSpotAsk()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:8px 11px;color:var(--text);font-family:inherit;font-size:12px;outline:none">
+      <button class="btn btnp" onclick="_aiSpotAsk()" style="background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:800;font-size:11px">שאל 🤖</button>
+    </div>
+  </div>`;
+}
+// שאלה מהספוטלייט — פותחת את העוזר עם התשובה מוצגת
+function _aiSpotAsk(){
+  const inp=document.getElementById('ai-spot-q'); const q=inp?inp.value.trim():'';
+  openAiAssistant();
+  if(q){ setTimeout(()=>{ const f=document.getElementById('ai-q'); if(f){ f.value=q; _aiSubmit(); } },80); }
 }
 function openAiAssistant(){
   const old=document.getElementById('ai-popup'); if(old)old.remove();
