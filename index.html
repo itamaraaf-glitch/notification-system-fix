@@ -9852,7 +9852,7 @@ function _aiErrMsg(status){
   if(status===401||status===403) return 'המפתח שגוי/בוטל או ללא הרשאה. בדוק שהעתקת את כולו ושהוא פעיל ב-'+cfg.linkLabel;
   if(status===400) return 'בקשה שגויה — ייתכן שם מודל לא תקין. נסה '+cfg.model+' בשדה המודל';
   if(status===402) return 'אין קרדיט/חיוב בחשבון — הוסף אמצעי תשלום';
-  if(status===429) return 'חריגה ממכסה/קצב הבקשות — נסה שוב בעוד רגע'+(cfg.free?' (בשכבה החינמית יש מגבלת קצב)':'');
+  if(status===429) return 'חריגה במכסה/קצב — המתן דקה ונסה שוב'+(cfg.free?'. אם חוזר: החלף מודל ל-gemini-1.5-flash בשדה המודל (מכסה חינמית נדיבה יותר)':'');
   if(status>=500) return 'שירות ה-AI זמנית לא זמין — נסה שוב מאוחר יותר';
   return 'שגיאת API '+status;
 }
@@ -9882,13 +9882,15 @@ async function _aiLLM(messages){
   const system=_aiSystemPrompt();
   return _aiProvider()==='gemini' ? _aiCallGemini(key,system,msgs) : _aiCallAnthropic(key,system,msgs);
 }
+// חילוץ הודעת השגיאה האמיתית מגוף התשובה (Anthropic: error.message · Google: error.message)
+async function _aiErrDetail(r){ try{ const j=await r.json(); const m=(j&&j.error&&j.error.message)||''; return m?(' · '+String(m).slice(0,160)):''; }catch(e){ return ''; } }
 async function _aiCallAnthropic(key,system,msgs){
   const r=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:_aiModel(),max_tokens:800,system,messages:msgs})
   });
-  if(!r.ok){ throw new Error(_aiErrMsg(r.status)); }
+  if(!r.ok){ throw new Error(_aiErrMsg(r.status)+(await _aiErrDetail(r))); }
   const j=await r.json();
   return ((j&&j.content&&j.content.map(c=>c.text||'').join('').trim())||'')||'(לא התקבלה תשובה)';
 }
@@ -9899,7 +9901,7 @@ async function _aiCallGemini(key,system,msgs){
     contents:msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:String(m.content||'')}]})),
     generationConfig:{maxOutputTokens:800} };
   const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
-  if(!r.ok){ throw new Error(_aiErrMsg(r.status)); }
+  if(!r.ok){ throw new Error(_aiErrMsg(r.status)+(await _aiErrDetail(r))); }
   const j=await r.json();
   let txt='';
   try{ const cand=(j.candidates||[])[0]; const parts=(cand&&cand.content&&cand.content.parts)||[]; txt=parts.map(p=>p.text||'').join('').trim(); }catch(e){}
@@ -9911,8 +9913,9 @@ function _aiClearChat(){ _aiChat=[]; _aiRenderChat(false); }
 function _aiRenderChat(thinking){
   const box=document.getElementById('ai-answer'); if(!box)return;
   if(!_aiChat.length&&!thinking){ box.innerHTML=''; return; }
+  const aiName='🤖 '+(_aiProvider()==='gemini'?'Gemini':'Claude');
   const bubbles=_aiChat.map(m=>{const me=m.role==='user';
-    return `<div style="margin-bottom:7px"><div style="font-size:10px;font-weight:800;color:${me?'#4cc9f0':'#a78bfa'};margin-bottom:2px">${me?'🧑 אתה':'🤖 Claude'}</div>
+    return `<div style="margin-bottom:7px"><div style="font-size:10px;font-weight:800;color:${me?'#4cc9f0':'#a78bfa'};margin-bottom:2px">${me?'🧑 אתה':aiName}</div>
     <div style="font-size:12.5px;color:var(--text);line-height:1.6;white-space:pre-wrap;background:${me?'rgba(76,201,240,.08)':'rgba(167,139,250,.1)'};border:1px solid ${me?'rgba(76,201,240,.2)':'rgba(167,139,250,.3)'};border-radius:10px;padding:8px 11px">${esc(m.content)}</div></div>`;}).join('');
   box.innerHTML=`<div id="ai-thread" style="max-height:300px;overflow:auto;margin-bottom:8px">${bubbles}${thinking?'<div style="font-size:12px;color:#a78bfa;padding:4px">🤖 חושב…</div>':''}</div>`
     +(_aiChat.length?`<button class="btn btns" onclick="_aiClearChat()" style="font-size:10px;margin-bottom:10px">🗑 נקה שיחה</button>`:'');
