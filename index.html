@@ -1189,6 +1189,12 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 @media(max-width:480px){
   body.logged-in #mob-fab{display:block}
 }
+/* ── AI FAB — עוזר חכם תמיד נגיש בכל מסך ── */
+#ai-fab{display:none;position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));right:16px;width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;z-index:51;background:linear-gradient(135deg,#a78bfa,#4cc9f0);color:#fff;font-size:23px;line-height:1;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(167,139,250,.5),0 2px 8px rgba(0,0,0,.4);transition:transform .22s cubic-bezier(.34,1.56,.64,1);-webkit-tap-highlight-color:transparent}
+#ai-fab:active{transform:scale(.9)}
+#ai-fab:hover{transform:scale(1.08)}
+body.logged-in #ai-fab{display:flex}
+@media(min-width:481px){ #ai-fab{bottom:24px} }
 
 /* ── Mobile nav active glow pulse ── */
 @keyframes navDotPulse{0%,100%{box-shadow:0 0 8px var(--gold),0 0 16px rgba(200,169,110,.3)}50%{box-shadow:0 0 14px var(--gold2),0 0 28px rgba(200,169,110,.55)}}
@@ -9661,25 +9667,101 @@ function _aiInsights(){
   if(tPend.length) ins.push({icon:'📋',tone:'crit',title:'מכרזים דחופים',text:`${tPend.length} מכרזים עם הגשה בשבוע הקרוב שטרם הוגשו.`,act:"nav('tenders')"});
   return ins;
 }
-function _aiAsk(q){
-  q=(q||'').trim().toLowerCase(); if(!q) return null;
+// מנוע שאלות דינמי: מזהה ישויות (מספר פרויקט, שם לקוח/חברה, מוצר), חודש, ומדד — ומחשב תשובה אמיתית.
+function _aiAsk(qRaw){
+  const raw=(qRaw||'').trim(); const q=raw.toLowerCase(); if(!q) return null;
   const cur=nd().substring(0,7);
+  const prevM=(function(){const d=new Date();d.setMonth(d.getMonth()-1);return ymd(d).substring(0,7);})();
   const has=(...ws)=>ws.some(w=>q.includes(w));
-  if(has('גבייה','גביה','חייב','יתרה','כסף','לגבות')){
+  const AD=[...(D.deals||[]),...(D.archivedDeals||[])], AX=[...(D.dists||[]),...(D.archivedDists||[])], AS=[...(D.salary||[]),...(D.archivedSalary||[])];
+
+  // ── מסנן חודש מהשאלה: "החודש"/"חודש שעבר"/שם חודש עברי ──
+  let monthF=null, monthLbl='';
+  if(has('החודש','חודש נוכחי','this month')){ monthF=cur; monthLbl=' החודש'; }
+  else if(has('חודש שעבר','חודש קודם','שעבר')){ monthF=prevM; monthLbl=' בחודש שעבר'; }
+  else { const mi=(MONTH_HE||[]).findIndex(mn=>mn&&q.includes(mn.toLowerCase())); if(mi>=0){ const y=nd().substring(0,4); monthF=y+'-'+String(mi+1).padStart(2,'0'); monthLbl=' ב'+MONTH_HE[mi]; } }
+  const inM=(dateStr)=>!monthF||((dateStr||'').substring(0,7)===monthF);
+
+  // ── 1) מספר פרויקט מפורש (4+ ספרות) ──
+  const numMatch=raw.match(/\d{4,}/);
+  if(numMatch){
+    const num=numMatch[0];
+    const dist=AX.find(d=>String(d.no||'')===num), deal=AD.find(d=>String(d.num||'')===num), sal=AS.find(s=>String(s.pj||'')===num);
+    if(dist||deal||sal){
+      const parts=[];
+      if(dist)parts.push(`🚀 הפצה: ${esc(dist.co||'')}${dist.so?' · '+esc(dist.so):''} — ${esc(dist.st||'')}${dist.dt?' · '+fmtDate(dist.dt):''}`);
+      if(deal)parts.push(`💼 עסקה: ${esc(deal.co||'')} — ${esc(deal.st||'')} · ${fmt(+deal.mv||+deal.v||0)}`);
+      if(sal)parts.push(`💰 שכר: ${esc(sal.cl||'')} — נסגר ${fmt(+sal.cl2||0)}${(+sal.pv||0)>0?' · יתרה '+fmt(+sal.pv):''}`);
+      return {icon:'🔎',title:`פרויקט ${esc(num)}`,text:parts.join(' | '),act:dist?"nav('dists')":deal?"nav('deals')":"nav('salary')"};
+    }
+    return {icon:'🔎',title:`פרויקט ${esc(num)}`,text:'לא נמצא פרויקט עם מספר זה במערכת.',act:null};
+  }
+
+  // ── 2) ישות לקוח/חברה שמופיעה בשאלה ──
+  const names=new Set();
+  (D.clients||[]).forEach(c=>c.name&&names.add(c.name));
+  AD.forEach(d=>d.co&&names.add(d.co)); AX.forEach(d=>{d.co&&names.add(d.co);d.cl&&names.add(d.cl);}); AS.forEach(s=>s.cl&&names.add(s.cl));
+  let entity=null;
+  for(const nm of names){ const l=(nm||'').toLowerCase(); if(l.length>=2&&q.includes(l)&&(!entity||nm.length>entity.length))entity=nm; }
+  if(entity){
+    const el=entity.toLowerCase();
+    const deals=AD.filter(d=>(d.co||'').toLowerCase()===el);
+    const dists=AX.filter(d=>(d.co||'').toLowerCase()===el||(d.cl||'').toLowerCase()===el);
+    const sals=AS.filter(s=>(s.cl||'').toLowerCase()===el);
+    const bal=sals.reduce((a,s)=>a+(+s.pv||0),0), coll=sals.reduce((a,s)=>a+(+s.cl2||0),0), dealsV=deals.reduce((a,d)=>a+(+d.v||0),0);
+    if(has('לגבות','יתרה','חייב','חוב')) return {icon:'💰',title:`יתרה — ${esc(entity)}`,text:bal>0?`${fmt(bal)} לגבייה ב-${sals.filter(s=>(+s.pv||0)>0).length} פרויקטים.`:'אין יתרה פתוחה 🎉',act:"nav('salary')"};
+    const bits=[];
+    if(deals.length)bits.push(`${deals.length} עסקאות (${fmt(dealsV)})`);
+    if(dists.length)bits.push(`${dists.length} הפצות`);
+    if(sals.length)bits.push(`שכר: נגבה ${fmt(coll)}${bal>0?' · יתרה '+fmt(bal):''}`);
+    return {icon:'🏢',title:esc(entity),text:bits.length?bits.join(' · '):'לא נמצאו רשומות ללקוח זה.',act:dists.length?"nav('dists')":deals.length?"nav('deals')":"nav('clients')"};
+  }
+
+  // ── 3) מוצר/שירות (Starlink, 365, Forti, Cisco...) ──
+  const prodTokens=['starlink','סטארלינק','365','microsoft','forti','פורטי','cisco','סיסקו','cybiz','pbx','מרכזי','hp','aruba','juniper','starlink'];
+  const pT=prodTokens.find(t=>q.includes(t));
+  if(pT&&has('כמה','הכנס','הרווח','כסף','שווי','מ-','סה')){
+    const md=AD.filter(d=>((d.srv||'')+' '+(d.inf||'')).toLowerCase().includes(pT));
+    const mx=AX.filter(d=>((d.so||'')+' '+(d.co||'')).toLowerCase().includes(pT));
+    const closed=md.filter(d=>d.st==='נסגר');
+    const v=closed.reduce((a,d)=>a+(+d.v||0),0)+mx.reduce((a,d)=>a+(+d.inc||0),0);
+    return {icon:'📦',title:`מוצר: ${esc(pT)}`,text:`${md.length} עסקאות (${closed.length} נסגרו) · ${mx.length} הפצות · שווי מצטבר ${fmt(v)}.`,act:"nav('deals')"};
+  }
+
+  // ── יעדים / תוכנית להצלחה החודש ──
+  if(has('יעד','עמיד','חסר','תוכנית','להשיג','להצליח','לעמוד','מה נשאר','איך אני')){
+    const plan=_aiGoalPlan();
+    const behind=plan.items.filter(it=>it.gap>0);
+    const txt=behind.length
+      ? 'כדי לעמוד ביעדים החודש: '+behind.map(it=>`${it.icon} ${it.name} — חסר ${it.isCount?it.gap:fmt(it.gap)}`).join(' · ')+`. נותרו ${plan.daysLeft} ימים.`
+      : '🎉 אתה עומד בכל היעדים החודש! המשך כך.';
+    return {icon:'🎯',title:'תוכנית להשגת היעדים',text:txt,act:"nav('dashboard')"};
+  }
+  // ── 4) עסקאות/הכנסות (עם מסנן חודש אופציונלי) ──
+  if(has('עסקא','נסגר','סגרתי','מכיר','הכנס','הרווח','שווי','כמה כסף')){
+    let deals=AD.filter(d=>d.st==='נסגר'&&inM(d.date));
+    const v=deals.reduce((a,d)=>a+(+d.mv||0),0), vt=deals.reduce((a,d)=>a+(+d.v||0),0);
+    return {icon:'📈',title:`עסקאות שנסגרו${monthLbl||''}`,text:`${deals.length} עסקאות · ${fmt(v)} (חודשי)${vt!==v?` · ${fmt(vt)} שווי כולל`:''}.`,act:"nav('deals')"};
+  }
+  // ── גבייה כללית ──
+  if(has('גבייה','גביה','חייב','יתרה','לגבות')){
     const salOpen=(D.salary||[]).filter(x=>x.st!=='סגור'&&(+x.pv||0)>0);
     const tot=salOpen.reduce((a,x)=>a+(+x.pv||0),0);
     const top=salOpen.slice().sort((a,b)=>(+b.pv||0)-(+a.pv||0)).slice(0,3);
     return {icon:'💰',title:'יתרות לגבייה',text:`סה"כ ${fmt(tot)} ב-${salOpen.length} פרויקטים.`+(top.length?' הגדולים: '+top.map(x=>`${esc(x.cl||'—')} (${fmt(+x.pv)})`).join(' · '):''),act:"nav('salary')"};
   }
-  if(has('פגיש')){ const held=heldThisMonth(); return {icon:'🤝',title:'פגישות',text:`${held}/${MEETING_GOAL} התקיימו החודש (${Math.round(held/MEETING_GOAL*100)}%).`,act:"nav('meetings')"}; }
-  if(has('נסגר','סגרתי','עסקא','מכיר')){ const c=(D.deals||[]).filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=cur); const v=c.reduce((a,d)=>a+(+d.mv||0),0); return {icon:'📈',title:'עסקאות שנסגרו החודש',text:`${c.length} עסקאות · ${fmt(v)}.`,act:"nav('deals')"}; }
+  // ── פגישות (עם חודש) ──
+  if(has('פגיש')){ const m=monthF||cur; const held=(D.meetings||[]).concat(D.archivedMeetings||[]).filter(x=>x.hl==='כן'&&(x.dt||'').substring(0,7)===m).length; return {icon:'🤝',title:`פגישות${monthLbl||' החודש'}`,text:`${held} פגישות התקיימו${monthF?'':` (יעד ${MEETING_GOAL})`}.`,act:"nav('meetings')"}; }
   if(has('חוזה','חידוש','מתחדש','תפוגה')){ const ren=(D.salary||[]).map(s=>salExpiry(s)).filter(Boolean).map(e=>db(nd(),e)).filter(d=>d>=0&&d<=90); return {icon:'🔄',title:'חוזים לחידוש',text:`${ren.length} חוזים מתחדשים ב-90 יום.`,act:"nav('salary')"}; }
-  if(has('הפצ')){ const done=(D.dists||[]).filter(d=>d.st==='הושלם'&&(d.dt||'').substring(0,7)===cur); const inp=(D.dists||[]).filter(d=>d.st!=='הושלם'); return {icon:'🚀',title:'הפצות',text:`${done.length} הושלמו החודש · ${inp.length} בתהליך.`,act:"nav('dists')"}; }
+  if(has('הפצ')){ let done=AX.filter(d=>d.st==='הושלם'); if(monthF)done=done.filter(d=>(d.dt||'').substring(0,7)===monthF); const inp=(D.dists||[]).filter(d=>d.st!=='הושלם'); return {icon:'🚀',title:`הפצות${monthLbl||''}`,text:`${done.length} הושלמו${monthLbl||' (כולל ארכיון)'} · ${inp.length} בתהליך.`,act:"nav('dists')"}; }
   if(has('מכרז')){ const t=(D.tenders||[]); const pend=t.filter(x=>x.submitted!=='כן'); return {icon:'📋',title:'מכרזים',text:`${t.length} מכרזים · ${pend.length} טרם הוגשו.`,act:"nav('tenders')"}; }
+  if(has('הכי גדול','מוביל','הכי טוב','top','גדול ביותר')){ const by={}; AX.forEach(d=>{const k=(d.cl||d.co||'').trim();if(k)by[k]=(by[k]||0)+1;}); AD.forEach(d=>{const k=(d.co||'').trim();if(k)by[k]=(by[k]||0)+1;}); const top=Object.entries(by).sort((a,b)=>b[1]-a[1])[0]; return {icon:'🏆',title:'לקוח מוביל',text:top?`${esc(top[0])} — ${top[1]} פרויקטים/עסקאות.`:'אין מספיק נתונים.',act:"nav('clients')"}; }
   if(has('לקוח')){ const n=(D.clients||[]).length; return {icon:'🏢',title:'לקוחות',text:`${n} לקוחות במערכת.`,act:"nav('clients')"}; }
   if(has('תקוע','בעיה','דחוף','התרא')){ const al=getAlerts(); const crit=al.filter(a=>a.type==='crit').length; return {icon:'⚠️',title:'התראות',text:`${al.length} התראות פעילות (${crit} קריטיות).`,act:"nav('alerts')"}; }
-  if(has('סיכום','מצב','דוח','דו"ח','הכל','סקיר')){ const s=_monthCloseSummary(); return {icon:'📊',title:`סיכום ${curMonthStr()}`,text:`עסקאות: ${s.dClosedN} (${fmt(s.dClosedMv)}) · שכר שירות: ${fmt(s.svcClosed)} · שכר ציוד: ${fmt(s.eqClosed)} · הפצות: ${s.distThisN} · פגישות: ${s.held}/${s.goal}.`,act:"nav('dashboard')"}; }
-  return {icon:'🤖',title:'לא בטוח שהבנתי',text:'אפשר לשאול על: גבייה · פגישות · עסקאות שנסגרו · חוזים לחידוש · הפצות · מכרזים · לקוחות · סיכום החודש.',act:null};
+  if(has('בריאות','ציון','מדד')){ const h=_aiHealth(); return {icon:'🎯',title:'מדד בריאות עסקי',text:`${h.score}/100 — ${h.label}. פירוק: ${h.parts.map(p=>p[0]+' '+p[1]).join(' · ')}.`,act:null}; }
+  if(has('סיכום','מצב','דוח','דו"ח','הכל','סקיר','מה קורה')){ const s=_monthCloseSummary(); return {icon:'📊',title:`סיכום ${curMonthStr()}`,text:`עסקאות: ${s.dClosedN} (${fmt(s.dClosedMv)}) · שכר שירות: ${fmt(s.svcClosed)} · שכר ציוד: ${fmt(s.eqClosed)} · הפצות: ${s.distThisN} · פגישות: ${s.held}/${s.goal}.`,act:"nav('dashboard')"}; }
+  // ── לא זוהה: הצעה חכמה לפי מה שיש במערכת ──
+  return {icon:'🤖',title:'לא בטוח שהבנתי — נסה שוב',text:'אפשר לשאול חופשי, למשל: "כמה הכנסתי מ-Starlink", "מה עם לקוח [שם]", "כמה עסקאות סגרתי במאי", "מה הסטטוס של [מספר פרויקט]", "מי הלקוח הכי גדול", "כמה יש לי לגבות".',act:null};
 }
 // הכנסות שנסגרו לפי חודש — 6 החודשים האחרונים (עסקאות פעילות + ארכיון, לפי חודש העסקה)
 function _aiMonthlyRevenue(){
@@ -9707,6 +9789,34 @@ function _aiHealth(){
   const label=score>=80?'מצוין':score>=60?'טוב':score>=40?'סביר':'דורש תשומת לב';
   const col=score>=80?'#06d6a0':score>=60?'#4cc9f0':score>=40?'#f4a261':'#e63946';
   return {score,label,col,parts:[['פגישות',mtg],['גבייה',collect],['עסקאות',deals],['תגובתיות',resp]]};
+}
+// תוכנית להשגת היעדים החודשיים: לכל יעד — הישג מול יעד, פער, וההמלצה הקונקרטית לסגור אותו
+function _aiGoalItem(icon,name,ach,goal,rec,isCount){
+  const gap=Math.max(0,goal-ach), pct=goal>0?Math.round(ach/goal*100):100;
+  return {icon,name,ach,goal,gap,pct,isCount:!!isCount,rec:gap<=0?'✅ ביעד! כל הכבוד':rec(gap)};
+}
+function _aiGoalPlan(){
+  const cur=nd().substring(0,7);
+  const g=Object.assign({deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000},D.goals||{});
+  const day=now().getDate(), dim=new Date(now().getFullYear(),now().getMonth()+1,0).getDate(), daysLeft=Math.max(1,dim-day);
+  const cd=[...(D.deals||[]),...(D.archivedDeals||[])].filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)===cur);
+  const dealsAch=cd.reduce((a,d)=>a+(+d.mv||0),0), dealsEqAch=cd.reduce((a,d)=>a+(+d.otc||0),0);
+  const dd=[...(D.dists||[]),...(D.archivedDists||[])].filter(d=>d.st==='הושלם'&&(d.dt||'').substring(0,7)===cur);
+  const distAch=dd.reduce((a,d)=>a+(+d.inc||0),0);
+  const salSvcAch=(D.salary||[]).filter(x=>x.ty!=='equipment').reduce((a,s)=>a+(+s.cl2||0),0);
+  const salEqAch=(D.salary||[]).filter(x=>x.ty==='equipment').reduce((a,s)=>a+(+s.cl2||0),0);
+  const held=heldThisMonth();
+  const pipe=(D.deals||[]).filter(d=>d.st!=='נסגר'&&(+d.mv||0)>0).map(d=>({d,ev:(+d.mv||0)*(d.ch||0.5)})).sort((a,b)=>b.ev-a.ev);
+  const dealRec=gap=>{ const picks=[]; let acc=0; for(const p of pipe){ if(acc>=gap)break; picks.push(p.d); acc+=(+p.d.mv||0);} return picks.length?('סגור מהצנרת: '+picks.slice(0,3).map(d=>`${esc(d.co||'—')} (${fmt(+d.mv)})`).join(' · ')):'הכנס עסקאות חדשות לצנרת'; };
+  const items=[];
+  items.push(_aiGoalItem('💼','עסקאות (שירות)',dealsAch,g.deals,gap=>`חסרים ${fmt(gap)}. ${dealRec(gap)}`));
+  if(g.dealsEq) items.push(_aiGoalItem('📦','עסקאות ציוד (OTC)',dealsEqAch,g.dealsEq,gap=>`חסרים ${fmt(gap)} — קדם עסקאות ציוד פתוחות`));
+  items.push(_aiGoalItem('🚀','הפצות',distAch,g.dists,gap=>`חסרים ${fmt(gap)} — השלם הפצות בתהליך`));
+  items.push(_aiGoalItem('💰','שכר שירות',salSvcAch,g.sal,gap=>`חסרים ${fmt(gap)} — גבה יתרות פתוחות`));
+  if(g.salEq) items.push(_aiGoalItem('🧰','שכר ציוד',salEqAch,g.salEq,gap=>`חסרים ${fmt(gap)}`));
+  const need=Math.max(0,MEETING_GOAL-held);
+  items.push(_aiGoalItem('🤝','פגישות',held,MEETING_GOAL,()=>`חסרות ${need} — קבע ~${Math.ceil(need/daysLeft)} ליום (${daysLeft} ימים נותרו)`,true));
+  return {items,daysLeft};
 }
 function _aiSubmit(){
   const inp=document.getElementById('ai-q'); const ans=_aiAsk(inp?inp.value:'');
@@ -9752,9 +9862,12 @@ function _aiTrend(){
   return {curV,prevV,proj,pctVsPrev};
 }
 function _aiCopySummary(){
-  const ins=_aiInsights(), acts=_aiActions().slice(0,5), tr=_aiTrend();
+  const ins=_aiInsights(), acts=_aiActions().slice(0,5), tr=_aiTrend(), plan=_aiGoalPlan();
   const L=['🤖 סיכום תובנות — '+curMonthStr(),''];
   L.push(`📊 נסגר החודש: ${fmt(tr.curV)} (חודש קודם: ${fmt(tr.prevV)}${tr.prevV>0?` · ${tr.pctVsPrev>=0?'▲':'▼'}${Math.abs(tr.pctVsPrev)}%`:''}) · צפי לסוף החודש: ${fmt(tr.proj)}`,'');
+  L.push(`🎯 עמידה ביעדים (${plan.daysLeft} ימים לסוף החודש):`);
+  plan.items.forEach(it=>L.push(`  ${it.icon} ${it.name}: ${it.isCount?it.ach+'/'+it.goal:fmt(it.ach)+'/'+fmt(it.goal)} (${it.pct}%)${it.gap>0?' — '+String(it.rec).replace(/<[^>]+>/g,''):' ✅'}`));
+  L.push('');
   if(acts.length){ L.push('🎯 פעולות מומלצות:'); acts.forEach(a=>L.push(`  ${a.icon} ${a.text}`)); L.push(''); }
   L.push('📌 תובנות:'); ins.forEach(i=>L.push(`  ${i.icon} ${i.title}: ${String(i.text).replace(/<[^>]+>/g,'')}`));
   L.push('','— HOT Business CRM');
@@ -9778,6 +9891,15 @@ function openAiAssistant(){
       <div style="font-size:13px;font-weight:800;color:${h.col}">מדד בריאות עסקי — ${h.label}</div>
       <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:4px">${h.parts.map(([n,v])=>`<span style="font-size:10px;color:var(--text3)">${n}: <b style="color:var(--text2)">${v}/25</b></span>`).join('')}</div>
     </div></div>`;
+  // תוכנית להשגת היעדים
+  const plan=_aiGoalPlan();
+  const planHtml=`<div style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.22);border-radius:11px;padding:11px 13px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:800;color:#fbbf24;margin-bottom:8px">🎯 עמידה ביעדים + תוכנית <span style="font-weight:400;color:var(--text3)">(${plan.daysLeft} ימים לסוף החודש)</span></div>
+    ${plan.items.map(it=>{const col=it.pct>=100?'#06d6a0':it.pct>=60?'#f4a261':'#e63946';return `<div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;gap:8px;font-size:11.5px;margin-bottom:2px"><span style="color:var(--text2)">${it.icon} ${it.name}</span><b style="color:${col};white-space:nowrap">${it.isCount?it.ach+'/'+it.goal:fmt(it.ach)+' / '+fmt(it.goal)} · ${it.pct}%</b></div>
+      <div style="height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin-bottom:3px"><div style="height:100%;width:${Math.min(100,it.pct)}%;background:${col};transition:width .3s"></div></div>
+      <div style="font-size:10px;color:var(--text3);line-height:1.4">${it.rec}</div></div>`;}).join('')}
+  </div>`;
   // מגמת הכנסות 6 חודשים
   const rev=_aiMonthlyRevenue(); const maxV=Math.max(1,...rev.map(r=>r.value));
   const curM=nd().substring(0,7);
@@ -9799,7 +9921,7 @@ function openAiAssistant(){
   const actHtml=acts.length?`<div style="font-size:11px;font-weight:800;color:#a78bfa;letter-spacing:.5px;margin:2px 0 8px">🎯 פעולות מומלצות</div>
     <div style="display:grid;gap:6px;margin-bottom:14px">`+acts.map(a=>`<div onclick="document.getElementById('ai-popup').remove();${a.act}" style="display:flex;align-items:center;gap:8px;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);border-radius:9px;padding:8px 11px;cursor:pointer">
       <span style="font-size:15px">${a.icon}</span><span style="font-size:12px;color:var(--text);line-height:1.4;flex:1">${a.text}</span><span style="color:#a78bfa;font-size:13px">→</span></div>`).join('')+`</div>`:'';
-  const sugg=['סיכום החודש','כמה יש לי לגבות','פגישות','חוזים לחידוש','עסקאות שנסגרו','מכרזים'];
+  const sugg=['איך אני עומד ביעד','סיכום החודש','כמה יש לי לגבות','חוזים לחידוש','עסקאות שנסגרו','מכרזים'];
   const chips=sugg.map(c=>`<button class="btn btns" style="font-size:11px" onclick="var e=document.getElementById('ai-q');e.value='${c}';_aiSubmit()">${c}</button>`).join(' ');
   const el=document.createElement('div');
   el.id='ai-popup';
@@ -9811,8 +9933,9 @@ function openAiAssistant(){
     </div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:12px">מנתח את הנתונים שלך במכשיר — ללא ענן 🔒 פרטי לחלוטין</div>
     ${healthHtml}
+    ${planHtml}
     <div style="display:flex;gap:6px;margin-bottom:10px">
-      <input id="ai-q" placeholder="שאל אותי: כמה יש לי לגבות? מה המצב החודש?" onkeydown="if(event.key==='Enter')_aiSubmit()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:9px 11px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
+      <input id="ai-q" placeholder="שאל חופשי: כמה הכנסתי מ-Starlink? מה עם לקוח [שם]? כמה סגרתי במאי?" onkeydown="if(event.key==='Enter')_aiSubmit()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:9px 11px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none">
       <button class="btn btnp" onclick="_aiSubmit()" style="background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:800;font-size:12px">שאל</button>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${chips}</div>
@@ -12748,6 +12871,7 @@ function seedData(){
 <!-- Mobile FAB — quick add button (visible only on mobile when logged in) -->
 <div id="mob-fab" style="display:none">
   <div id="mob-fab-menu" style="display:none;position:fixed;bottom:calc(130px + env(safe-area-inset-bottom));left:16px;z-index:51;flex-direction:column;gap:8px;align-items:flex-start">
+    <button class="fab-item" onclick="closeFab();openAiAssistant()">🤖 <span>עוזר חכם</span></button>
     <button class="fab-item" onclick="closeFab();openM('deal',null)">💼 <span>עסקה חדשה</span></button>
     <button class="fab-item" onclick="closeFab();openM('meeting',null)">🤝 <span>פגישה חדשה</span></button>
     <button class="fab-item" onclick="closeFab();openClientModal(null)">🏢 <span>לקוח חדש</span></button>
@@ -12755,6 +12879,8 @@ function seedData(){
   </div>
   <button id="mob-fab-btn" onclick="toggleFab()" aria-label="הוסף">＋</button>
 </div>
+<!-- AI FAB — עוזר חכם, נגיש מכל מסך במערכת -->
+<button id="ai-fab" onclick="openAiAssistant()" aria-label="עוזר חכם" title="🤖 עוזר חכם — שאל אותי כל דבר על המערכת">🤖</button>
 
 <!-- Custom confirm dialog (replaces window.confirm which is blocked on iOS standalone) -->
 <div id="cbar">
