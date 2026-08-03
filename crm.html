@@ -9847,18 +9847,33 @@ function _aiDataSnapshot(){
     goalPlan:_aiGoalPlan().items.map(i=>({name:i.name,ach:i.ach,goal:i.goal,gap:i.gap,pct:i.pct}))
   };
 }
-async function _aiLLM(question){
+// messages = מערך היסטוריית שיחה [{role:'user'|'assistant',content}] — לתמיכה בשאלות המשך עם זיכרון
+async function _aiLLM(messages){
   const key=_aiKey(); if(!key) throw new Error('אין מפתח');
-  const system='אתה העוזר החכם המשובץ במערכת CRM עסקית בעברית (HOT Business). ענה בעברית, קצר, מדויק ומעשי, אך ורק לפי נתוני המערכת המצורפים. אל תמציא נתונים; אם חסר מידע — אמור זאת. כשרלוונטי תן מספרים והמלצה קונקרטית.\n\nנתוני המערכת (JSON):\n'+JSON.stringify(_aiDataSnapshot());
+  const msgs=Array.isArray(messages)?messages:[{role:'user',content:String(messages||'')}];
+  const system='אתה העוזר החכם המשובץ במערכת CRM עסקית בעברית (HOT Business). ענה בעברית, קצר, מדויק ומעשי, אך ורק לפי נתוני המערכת המצורפים. שמור על הקשר השיחה — שאלות המשך מתייחסות למה שנאמר קודם. אל תמציא נתונים; אם חסר מידע — אמור זאת. כשרלוונטי תן מספרים והמלצה קונקרטית.\n\nנתוני המערכת (JSON):\n'+JSON.stringify(_aiDataSnapshot());
   const r=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:_aiModel(),max_tokens:800,system,messages:[{role:'user',content:String(question||'')}]})
+    body:JSON.stringify({model:_aiModel(),max_tokens:800,system,messages:msgs})
   });
   if(!r.ok){ let t=''; try{t=await r.text();}catch(e){} throw new Error('API '+r.status+(t?' · '+t.slice(0,140):'')); }
   const j=await r.json();
   const txt=(j&&j.content&&j.content.map(c=>c.text||'').join('').trim())||'';
   return txt||'(לא התקבלה תשובה)';
+}
+// שיחה מתמשכת עם Claude (זיכרון לפי סשן)
+let _aiChat=[];
+function _aiClearChat(){ _aiChat=[]; _aiRenderChat(false); }
+function _aiRenderChat(thinking){
+  const box=document.getElementById('ai-answer'); if(!box)return;
+  if(!_aiChat.length&&!thinking){ box.innerHTML=''; return; }
+  const bubbles=_aiChat.map(m=>{const me=m.role==='user';
+    return `<div style="margin-bottom:7px"><div style="font-size:10px;font-weight:800;color:${me?'#4cc9f0':'#a78bfa'};margin-bottom:2px">${me?'🧑 אתה':'🤖 Claude'}</div>
+    <div style="font-size:12.5px;color:var(--text);line-height:1.6;white-space:pre-wrap;background:${me?'rgba(76,201,240,.08)':'rgba(167,139,250,.1)'};border:1px solid ${me?'rgba(76,201,240,.2)':'rgba(167,139,250,.3)'};border-radius:10px;padding:8px 11px">${esc(m.content)}</div></div>`;}).join('');
+  box.innerHTML=`<div id="ai-thread" style="max-height:300px;overflow:auto;margin-bottom:8px">${bubbles}${thinking?'<div style="font-size:12px;color:#a78bfa;padding:4px">🤖 חושב…</div>':''}</div>`
+    +(_aiChat.length?`<button class="btn btns" onclick="_aiClearChat()" style="font-size:10px;margin-bottom:10px">🗑 נקה שיחה</button>`:'');
+  const th=document.getElementById('ai-thread'); if(th)th.scrollTop=th.scrollHeight;
 }
 function _aiLocalAnswerHtml(ans){
   if(!ans) return '';
@@ -9872,14 +9887,17 @@ async function _aiSubmit(){
   const inp=document.getElementById('ai-q'); const q=inp?String(inp.value||'').trim():'';
   const box=document.getElementById('ai-answer'); if(!box||!q)return;
   if(_aiKey()){
-    box.innerHTML=`<div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.3);border-radius:10px;padding:11px 13px;margin-bottom:12px;font-size:12.5px;color:#a78bfa">🤖 Claude חושב…</div>`;
+    if(inp)inp.value='';
+    _aiChat.push({role:'user',content:q});
+    _aiRenderChat(true);
     try{
-      const ans=await _aiLLM(q);
-      box.innerHTML=`<div style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.35);border-radius:10px;padding:12px 14px;margin-bottom:12px">
-        <div style="font-size:12px;font-weight:800;color:#a78bfa;margin-bottom:5px">🤖 Claude</div>
-        <div style="font-size:12.5px;color:var(--text);line-height:1.6;white-space:pre-wrap">${esc(ans)}</div></div>`;
+      const reply=await _aiLLM(_aiChat.slice(-12)); // שולח את 12 ההודעות האחרונות כהקשר
+      _aiChat.push({role:'assistant',content:reply});
+      _aiRenderChat(false);
     }catch(e){
-      box.innerHTML=`<div style="background:rgba(244,162,97,.1);border:1px solid rgba(244,162,97,.3);border-radius:10px;padding:9px 12px;margin-bottom:8px;font-size:11px;color:#f4a261">⚠️ AI חכם לא זמין (${esc(String(e&&e.message||e).slice(0,90))}) — מציג תשובה מקומית:</div>`+_aiLocalAnswerHtml(_aiAsk(q));
+      const loc=_aiAsk(q); const lt=loc?(loc.title+': '+String(loc.text).replace(/<[^>]+>/g,'')):'';
+      _aiChat.push({role:'assistant',content:'⚠️ AI חכם לא זמין ('+String(e&&e.message||e).slice(0,80)+').'+(lt?'\n\nתשובה מקומית — '+lt:'')});
+      _aiRenderChat(false);
     }
     return;
   }
@@ -10048,6 +10066,7 @@ function openAiAssistant(){
   </div>`;
   el.addEventListener('click',()=>el.remove());
   document.body.appendChild(el);
+  if(_aiKey()&&_aiChat.length)_aiRenderChat(false); // שחזור השיחה בפתיחה מחדש (זיכרון סשן)
   setTimeout(()=>{const q=document.getElementById('ai-q');if(q)q.focus();},60);
 }
 
