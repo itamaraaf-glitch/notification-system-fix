@@ -4854,6 +4854,9 @@ function _finishLoad(){
   // שכר שהושלם ("תקין"/סגור) → ארכיון בכל טעינה, גם אם המחזור החודשי כבר רץ החודש
   const _sweptSal=_sweepDoneSalary();
   if(_sweptSal){ saveAll(); setTimeout(()=>{try{showToast('📦 '+_sweptSal+' פרויקטי שכר שהושלמו הועברו לארכיון (שכר ← 📦 ארכיון)','ok');}catch(e){}},2200); }
+  // הפצות שהושלמו ("תקין") מחודשים קודמים → ארכיון בכל טעינה
+  const _sweptDist=_sweepDoneDists();
+  if(_sweptDist){ saveAll(); setTimeout(()=>{try{showToast('📦 '+_sweptDist+' הפצות שהושלמו מחודשים קודמים הועברו לארכיון (הפצות ← 📦 ארכיון)','ok');}catch(e){}},2600); }
   if(!localStorage.getItem(LS_KEY+'_init')){
     localStorage.setItem(LS_KEY+'_init','1');
     saveAll();
@@ -9325,6 +9328,22 @@ function _sweepDoneSalary(){
   ids.forEach(id=>{D._deletedIds.salary[String(id)]=Date.now();});
   return done.length;
 }
+// טאטוא הפצות שהושלמו מחודשים קודמים: הפצה בסטטוס 'הושלם' ("תקין") עם תאריך הפצה בחודש קודם
+// עוברת לארכיון בכל טעינה — ללא תלות במחזור החודשי. הפצות שהושלמו החודש נשארות פעילות עד סגירת החודש.
+function _sweepDoneDists(){
+  const cur=nd().substring(0,7);
+  const done=(D.dists||[]).filter(d=>d.st==='הושלם'&&/^\d{4}-\d{2}/.test(d.dt||'')&&(d.dt||'').substring(0,7)<cur);
+  if(!done.length)return 0;
+  if(!D.archivedDists)D.archivedDists=[];
+  done.forEach(d=>{ d._archivedAt=(d.dt||'').substring(0,7); }); // חודש לפי תאריך ההפצה (יולי)
+  D.archivedDists=[...D.archivedDists,...done];
+  const ids=new Set(done.map(d=>d.id));
+  D.dists=(D.dists||[]).filter(d=>!ids.has(d.id));
+  if(!D._deletedIds)D._deletedIds={};
+  if(!D._deletedIds.dists)D._deletedIds.dists={};
+  ids.forEach(id=>{D._deletedIds.dists[String(id)]=Date.now();});
+  return done.length;
+}
 function archiveOldMeetings(force,includeCurrent){
   const cur=nd().substring(0,7);
   if(!force&&(D.lastMeetCycle||'')>=cur)return 0;
@@ -9369,6 +9388,21 @@ function runMonthlyCycle(force,includeCurrent){
     setTimeout(()=>{
       showToast('📦 '+archDeals.length+' עסקאות שנסגרו הועברו לארכיון החודשי — לא נמחקו! (ארכיון ← עסקאות)','ok');
     },1500);
+  }
+  // ארכוב הפצות שהושלמו — כמו עסקאות: אוטומטי מארכב חודשים קודמים (<cur), סגירה ידנית גם את החודש הנוכחי (<=cur).
+  if(!D.archivedDists)D.archivedDists=[];
+  const archDists=D.dists.filter(d=>d.st==='הושלם'&&/^\d{4}-\d{2}/.test(d.dt||'')&&(includeCurrent?(d.dt||'').substring(0,7)<=cur:(d.dt||'').substring(0,7)<cur));
+  if(archDists.length){
+    archDists.forEach(d=>{d._archivedAt=(d.dt||'').substring(0,7);}); // חודש לפי תאריך ההפצה
+    D.archivedDists=[...D.archivedDists,...archDists];
+    const dids=new Set(archDists.map(d=>d.id));
+    D.dists=D.dists.filter(d=>!dids.has(d.id));
+    if(!D._deletedIds)D._deletedIds={};
+    if(!D._deletedIds.dists)D._deletedIds.dists={};
+    dids.forEach(id=>{D._deletedIds.dists[String(id)]=Date.now();});
+    setTimeout(()=>{
+      showToast('📦 '+archDists.length+' הפצות שהושלמו הועברו לארכיון — לא נמחקו! (ארכיון ← הפצות)','ok');
+    },1650);
   }
   // ארכוב פרויקטי שכר (לשכר אין תאריך-חודש):
   //  • הושלם (סטטוס 'סגור' = "תקין", או נגבה במלואו) → הרשומה כולה לארכיון — גם במחזור האוטומטי (חודש התחלף)
