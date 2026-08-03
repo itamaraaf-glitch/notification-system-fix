@@ -9826,10 +9826,22 @@ function _aiKey(){ try{return localStorage.getItem(_AI_KEY_LS)||'';}catch(e){ret
 function _aiModel(){ try{return localStorage.getItem(_AI_MODEL_LS)||'claude-sonnet-5';}catch(e){return 'claude-sonnet-5';} }
 function _aiShowConnect(){ const el=document.getElementById('ai-connect'); if(el)el.style.display=el.style.display==='none'?'block':'none'; }
 function _aiConnect(){
-  const k=(document.getElementById('ai-key-inp')||{}).value||''; const m=(document.getElementById('ai-model-inp')||{}).value||'';
-  if(!k.trim()){ showToast('⚠️ יש להזין מפתח API','warn'); return; }
-  try{ localStorage.setItem(_AI_KEY_LS,k.trim()); if(m.trim())localStorage.setItem(_AI_MODEL_LS,m.trim()); }catch(e){}
+  // ניקוי המפתח: הסרת רווחים/שורות חדשות/מרכאות שנדבקו בהעתקה (סיבה נפוצה לשגיאת 401)
+  let k=((document.getElementById('ai-key-inp')||{}).value||'').replace(/\s+/g,'').replace(/^["']+|["']+$/g,'');
+  const m=((document.getElementById('ai-model-inp')||{}).value||'').trim();
+  if(!k){ showToast('⚠️ יש להזין מפתח API','warn'); return; }
+  if(!/^sk-ant-/.test(k)){ showToast('⚠️ מפתח לא תקין — מפתח Anthropic מתחיל ב-sk-ant-. העתק שוב את כולו מהקונסול','warn'); return; }
+  try{ localStorage.setItem(_AI_KEY_LS,k); if(m)localStorage.setItem(_AI_MODEL_LS,m); }catch(e){}
   showToast('🟢 AI חכם (Claude) חובר — שאלות ייענו על ידו','ok'); openAiAssistant();
+}
+// הודעת שגיאה ידידותית ומעשית לפי קוד הסטטוס מ-Anthropic
+function _aiErrMsg(status){
+  if(status===401) return 'המפתח שגוי / בוטל. בדוק שהעתקת את כולו (מתחיל ב-sk-ant-), ושהוא פעיל ב-console.anthropic.com ← API Keys';
+  if(status===400) return 'בקשה שגויה — ייתכן שם מודל לא תקין. נסה claude-sonnet-5 או claude-haiku-4-5-20251001 בשדה המודל';
+  if(status===402||status===403) return 'אין קרדיט/הרשאה בחשבון — הוסף אמצעי תשלום/קרדיט ב-Billing בקונסול';
+  if(status===429) return 'חריגה ממכסה/קצב הבקשות — נסה שוב בעוד רגע';
+  if(status>=500) return 'שירות Anthropic זמנית לא זמין — נסה שוב מאוחר יותר';
+  return 'שגיאת API '+status;
 }
 function _aiDisconnect(){ try{localStorage.removeItem(_AI_KEY_LS);}catch(e){} showToast('נותק מ-AI החכם — חזרה למנוע המקומי','ok'); openAiAssistant(); }
 // תמונת-מצב תמציתית של הנתונים לשליחה ל-LLM (ללא טלפונים/אימיילים/הערות — צמצום חשיפת PII)
@@ -9857,7 +9869,7 @@ async function _aiLLM(messages){
     headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:_aiModel(),max_tokens:800,system,messages:msgs})
   });
-  if(!r.ok){ let t=''; try{t=await r.text();}catch(e){} throw new Error('API '+r.status+(t?' · '+t.slice(0,140):'')); }
+  if(!r.ok){ throw new Error(_aiErrMsg(r.status)); }
   const j=await r.json();
   const txt=(j&&j.content&&j.content.map(c=>c.text||'').join('').trim())||'';
   return txt||'(לא התקבלה תשובה)';
