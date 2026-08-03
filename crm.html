@@ -2350,6 +2350,7 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
     <div class="g"><label>סוג</label><select id="sty"><option value="service">שירות</option><option value="equipment">ציוד (OTC)</option></select></div>
     <div class="g"><label>תקופת חוזה <span style="font-size:9px;color:var(--teal);font-weight:400">חידוש</span></label><select id="sterm" onchange="salExpUpdate()"><option value="0">ללא</option><option value="6">6 חודשים</option><option value="12">12 חודשים</option><option value="24">24 חודשים</option><option value="36">36 חודשים</option></select></div>
     <div class="g"><label>תאריך התחלה <span style="font-size:9px;color:var(--teal);font-weight:400">אוטומטי בסגירה</span></label><input type="date" id="sstart" onchange="salExpUpdate()"></div>
+    <div class="g"><label>📅 צפי סגירה <span style="font-size:9px;color:#f4a261;font-weight:400">תאריך רחוק = מחוץ לסיכום החודש</span></label><input type="date" id="secd"></div>
     <div class="gf"><div id="sexp-box" style="display:none;font-size:12px;background:rgba(6,214,160,.07);border:1px solid rgba(6,214,160,.25);border-radius:9px;padding:8px 12px;color:var(--text2)"></div></div>
     <div class="gf"><label>הערות</label><textarea id="sno" rows="2"></textarea></div>
     <div class="gf"><label>📎 קבצים מצורפים (Word / PDF / Excel / תמונה)</label>
@@ -5884,7 +5885,8 @@ function renderMonthSummary(){
   // הכרטיס מציג "נסגר מתוך הפעיל" — ולכן סופר אך ורק שכר פעיל. שכר שהושלם ועבר לארכיון
   // אינו מוצג כאן יותר (הוא בלשונית 📦 ארכיון ובדו"ח החודשי).
   const _isEq=x=>x.ty==='equipment';                       // כל השאר = שירות (כולל רשומות ישנות ללא ty)
-  const svcAll=D.salary.filter(x=>!_isEq(x)), eqAll=D.salary.filter(_isEq);
+  // פרויקטים שנדחו לחודש עתידי (ecd) יוצאים מסיכום החודש — עקבי עם מסך פרויקטי השכר
+  const svcAll=D.salary.filter(x=>!_isEq(x)&&!_salDeferred(x)), eqAll=D.salary.filter(x=>_isEq(x)&&!_salDeferred(x));
   const svcClosed=svcAll.reduce((a,x)=>a+(x.cl2||0),0);
   const svcOpen=svcAll.filter(x=>x.st!=='סגור'&&(x.pv||0)>0);
   const svcOpenV=svcOpen.reduce((a,x)=>a+(x.pv||0),0);
@@ -6835,11 +6837,15 @@ function rSalary(){
   updatePriChipCounts('sec-salary',D.salary,'sal');
   // סיכומים אוטומטיים לפרויקטי שכר — שירות וציוד בנפרד, מחושבים מכל הטבלה
   const _salTile=(lbl,val,clr,bg)=>`<div class="stat-mini" style="background:${bg};border:1px solid ${clr}33"><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${lbl}</div><div style="font-size:18px;font-weight:900;color:${clr}">${val}</div></div>`;
-  const _salGroup=(title,accent,items)=>{
+  const _salGroup=(title,accent,allItems)=>{
+    // מפרידים פרויקטים שנדחו לחודש עתידי (ecd) — הסיכום מציג רק את הרלוונטי לחודש הנוכחי
+    const items=allItems.filter(i=>!_salDeferred(i)), deferred=allItems.filter(_salDeferred);
     const tt=items.reduce((s,i)=>s+(+i.tr||0),0),tc=items.reduce((s,i)=>s+(+i.cl2||0),0);
     const tp=items.reduce((s,i)=>s+Math.max(0,(+i.tr||0)-(+i.cl2||0)),0);
     const pct=tt?Math.round(tc/tt*100):0;
     const pcol=pct>=100?'var(--teal)':pct>=50?'#f4a261':'#e63946';
+    const dTt=deferred.reduce((s,i)=>s+(+i.tr||0),0), dTp=deferred.reduce((s,i)=>s+Math.max(0,(+i.tr||0)-(+i.cl2||0)),0);
+    const defLine=deferred.length?`<div style="margin-top:6px;font-size:10.5px;color:#f4a261;display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span>⏭️ נדחו לחודשים הבאים:</span><b>${deferred.length}</b><span>פרויקטים · יעד</span><b>${fmt(dTt)}</b>${dTp?`<span>· יתרה</span><b>${fmt(dTp)}</b>`:''}<span style="color:var(--text3)">(מחוץ לסיכום החודש)</span></div>`:'';
     return`<div style="margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">
       <div style="font-size:10px;font-weight:800;color:${accent};letter-spacing:.7px;margin-bottom:6px">${title}</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">
@@ -6848,6 +6854,7 @@ function rSalary(){
         ${_salTile('⏳ סיכום יתרה',fmt(tp),'#e63946','rgba(230,57,70,.06)')}
         ${_salTile('📈 עמידה ביעד',pct+'%',pcol,'rgba(255,255,255,.03)')}
       </div>
+      ${defLine}
     </div>`;
   };
   const _svc=D.salary.filter(s=>s.ty==='service'),_eq=D.salary.filter(s=>s.ty==='equipment');
@@ -6866,11 +6873,16 @@ function rSalary(){
       const chk=SEL[sk]&&SEL[sk].has(s.id)?'checked':'';
       const _exp=salExpiry(s);let _expChip='';
       if(_exp){const _d=db(nd(),_exp);const _c=_d<0?'#e63946':_d<=90?'#f4a261':'var(--teal)';_expChip=`<div style="font-size:9px;font-weight:700;color:${_c};margin-top:2px;white-space:nowrap" title="חוזה ${s.term} חודשים · התחלה ${fmtDate(s.cstart)}">🔄 חוזה עד ${fmtDate(_exp)}${_d<0?' · פג!':_d<=90?` · ${_d}י`:''}</div>`;}
-      return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td><span onclick="event.stopPropagation();advanceSalaryStatus('${s.id}')" title="לחץ לקידום הסטטוס (פתוח → בתהליך → סגור)" style="cursor:pointer">${sB(s.st)}</span></td><td>${s.qt||1}</td><td style="font-size:10px">${esc(s.pj||'')}${_expChip}</td><td style="font-weight:600">${esc(s.cl||'')}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${(+s.pv>0)?`<span onclick="event.stopPropagation();collectSalaryBalance('${s.id}')" title="לחץ לרישום גבייה — מלאה או חלקית" style="cursor:pointer;text-decoration:underline dotted">${fmt(s.pv)} ✓</span>`:fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${esc(s.no||'–')}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
+      let _ecdChip='';
+      if(s.ecd){const _def=_salDeferred(s);_ecdChip=`<div style="font-size:9px;font-weight:700;color:${_def?'#f4a261':'var(--text3)'};margin-top:2px;white-space:nowrap" title="צפי סגירה${_def?' — מחוץ לסיכום החודש':''}">⏭️ צפי ${fmtDate(s.ecd)}${_def?' · נדחה':''}</div>`;}
+      return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td><span onclick="event.stopPropagation();advanceSalaryStatus('${s.id}')" title="לחץ לקידום הסטטוס (פתוח → בתהליך → סגור)" style="cursor:pointer">${sB(s.st)}</span></td><td>${s.qt||1}</td><td style="font-size:10px">${esc(s.pj||'')}${_expChip}${_ecdChip}</td><td style="font-weight:600">${esc(s.cl||'')}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${(+s.pv>0)?`<span onclick="event.stopPropagation();collectSalaryBalance('${s.id}')" title="לחץ לרישום גבייה — מלאה או חלקית" style="cursor:pointer;text-decoration:underline dotted">${fmt(s.pv)} ✓</span>`:fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${esc(s.no||'–')}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
     }).join('')||emptyRow(12,'💰',"אין פרויקטים","openM('salary',null)");
-    const tt=items.reduce((s,i)=>s+(i.tr||0),0),tc=items.reduce((s,i)=>s+(i.cl2||0),0),tp=items.reduce((s,i)=>s+(i.pv||0),0);
+    // הסיכום בתחתית מתייחס רק לפרויקטים הרלוונטיים לחודש; פרויקטים שנדחו לחודש עתידי (ecd) מופרדים
+    const curItems=items.filter(i=>!_salDeferred(i)), defItems=items.filter(_salDeferred);
+    const tt=curItems.reduce((s,i)=>s+(i.tr||0),0),tc=curItems.reduce((s,i)=>s+(i.cl2||0),0),tp=curItems.reduce((s,i)=>s+(i.pv||0),0);
     const p2=tt?Math.round((tc/tt)*100):0;
-    document.getElementById(ftId).innerHTML=`<span class="fi">פרויקטים: <b>${items.length}</b></span><span class="fi">יעד: <b>${fmt(tt)}</b></span><span class="fi">נסגר: <b>${fmt(tc)}</b></span><span class="fi">יתרה: <b style="color:#e63946">${fmt(tp)}</b></span><span class="fi">עמידה: <b style="color:${p2>=100?'var(--teal)':p2>=50?'#f4a261':'#e63946'}">${p2}%</b></span>`;
+    const _defNote=defItems.length?`<span class="fi" style="color:#f4a261">⏭️ נדחו: <b>${defItems.length}</b> · יעד <b>${fmt(defItems.reduce((s,i)=>s+(i.tr||0),0))}</b></span>`:'';
+    document.getElementById(ftId).innerHTML=`<span class="fi">פרויקטים: <b>${curItems.length}</b></span><span class="fi">יעד: <b>${fmt(tt)}</b></span><span class="fi">נסגר: <b>${fmt(tc)}</b></span><span class="fi">יתרה: <b style="color:#e63946">${fmt(tp)}</b></span><span class="fi">עמידה: <b style="color:${p2>=100?'var(--teal)':p2>=50?'#f4a261':'#e63946'}">${p2}%</b></span>${_defNote}`;
     updateSelBar(sk);
   });
 }
@@ -9286,6 +9298,8 @@ function _salaryDone(s){ return s && (s.st==='סגור' || ((+s.pv||0)<=0 && (+s
 // חודש הארכיון של פרויקט שכר = חודש תחילת החוזה (cstart) — כך שפרויקט של יולי מתויק תחת יולי,
 // גם אם הועבר לארכיון בפועל בחודש מאוחר יותר. נפילה לחודש הנוכחי רק כשאין תאריך חוזה.
 function _salaryArchMonth(s){ const m=((s&&s.cstart)||'').substring(0,7); return /^\d{4}-\d{2}$/.test(m)?m:nd().substring(0,7); }
+// פרויקט שכר "נדחה": צפי הסגירה (ecd) נמצא בחודש עתידי — יוצא מסיכום החודש הנוכחי (עדיין מוצג בטבלה).
+function _salDeferred(s){ const m=((s&&s.ecd)||'').substring(0,7); return /^\d{4}-\d{2}$/.test(m) && m>nd().substring(0,7); }
 // טאטוא שכר שהושלם: פרויקטי שכר "תקין"/סגור (או שנגבו במלואם) עוברים לארכיון — נקרא בכל טעינה,
 // כדי שהמסך הפעיל יציג רק עבודה פתוחה, ללא תלות במחזור החודשי. אינו מפצל חלקיים (פיצול = פעולה ידנית).
 function _sweepDoneSalary(){
@@ -9397,7 +9411,7 @@ function _monthCloseSummary(){
   // שכר — שירות/ציוד(OTC) בנפרד: נסגר בפועל (cl2) ויתרה לגבייה (pv) — זהה לדשבורד.
   // שכר פעיל בלבד; שכר שהושלם ועבר לארכיון אינו נספר כאן (הוא בארכיון ובדו"ח החודשי).
   const _isEq=x=>x.ty==='equipment';
-  const svcAll=(D.salary||[]).filter(x=>!_isEq(x)), eqAll=(D.salary||[]).filter(_isEq);
+  const svcAll=(D.salary||[]).filter(x=>!_isEq(x)&&!_salDeferred(x)), eqAll=(D.salary||[]).filter(x=>_isEq(x)&&!_salDeferred(x));
   const svcOpenV=svcAll.filter(x=>x.st!=='סגור'&&(+x.pv||0)>0).reduce((a,x)=>a+(+x.pv||0),0);
   const eqOpenV=eqAll.filter(x=>x.st!=='סגור'&&(+x.pv||0)>0).reduce((a,x)=>a+(+x.pv||0),0);
   // הפצות — הושלמו החודש (זהה לדשבורד) מול בתהליך
@@ -10129,7 +10143,7 @@ function openM(type,id){
     document.getElementById('sttit').textContent=isNew?'פרויקט לשכר':'עריכת פרויקט';
     const s=isNew?{}:(D.salary.find(x=>x.id==id)||(D.archivedSalary||[]).find(x=>x.id==id)||{});
     document.getElementById('spj').value=s.pj||'';document.getElementById('scl').value=s.cl||'';document.getElementById('sqt').value=s.qt||1;document.getElementById('str').value=s.tr||0;document.getElementById('scl2').value=s.cl2||0;document.getElementById('spv').value=s.pv||0;document.getElementById('sst').value=s.st||'פתוח';document.getElementById('sty').value=s.ty||'service';document.getElementById('sno').value=s.no||'';
-    document.getElementById('sterm').value=String(s.term||0);document.getElementById('sstart').value=s.cstart||'';salExpUpdate();
+    document.getElementById('sterm').value=String(s.term||0);document.getElementById('sstart').value=s.cstart||'';document.getElementById('secd').value=s.ecd||'';salExpUpdate();
     // אתחול האוטומטיקה של "יתרה": ערך ידני קיים ששונה מהחישוב — נשמר ולא נדרס
     const _spv=document.getElementById('spv');
     if(_spv){
@@ -10841,7 +10855,7 @@ function advanceSalaryStatus(id){
   dbUpdate('salary',id,{st:'בתהליך'}); rAll(); showToast('💰 סטטוס עודכן ל"בתהליך"','ok');
 }
 function saveSal(){
-  const row={pj:document.getElementById('spj').value,cl:document.getElementById('scl').value,qt:+document.getElementById('sqt').value,tr:+document.getElementById('str').value,cl2:+document.getElementById('scl2').value,pv:+document.getElementById('spv').value,st:document.getElementById('sst').value,ty:document.getElementById('sty').value,no:document.getElementById('sno').value,term:+document.getElementById('sterm').value||0,cstart:document.getElementById('sstart').value||'',files:_attPending['salary']||[]};
+  const row={pj:document.getElementById('spj').value,cl:document.getElementById('scl').value,qt:+document.getElementById('sqt').value,tr:+document.getElementById('str').value,cl2:+document.getElementById('scl2').value,pv:+document.getElementById('spv').value,st:document.getElementById('sst').value,ty:document.getElementById('sty').value,no:document.getElementById('sno').value,term:+document.getElementById('sterm').value||0,cstart:document.getElementById('sstart').value||'',ecd:document.getElementById('secd').value||'',files:_attPending['salary']||[]};
   // אוטומציה: פרויקט שהסתיים (סגור) — קובע תאריך התחלת חוזה אוטומטית אם לא הוזן
   if(row.st==='סגור'&&!row.cstart)row.cstart=nd();
   if(!row.cl){alert('יש להזין שם לקוח');return;}
