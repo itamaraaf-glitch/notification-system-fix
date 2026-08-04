@@ -9920,15 +9920,37 @@ function _aiActionProtocol(){
     +'- add_meeting (פגישה): cl=לקוח (חובה), dt=YYYY-MM-DD, time=HH:MM, mtype=סוג, no=הערות\n'
     +'- add_client (לקוח): name=שם (חובה), contact=איש קשר, phone=טלפון, email=אימייל, address=כתובת, genNotes=הערות\n'
     +'- add_salary (פרויקט שכר): cl=לקוח (חובה), pj=מספר/שם פרויקט, tr=סכום כולל (₪), cl2=נגבה (₪), pv=יתרה (₪), ty="service"/"equipment", no=הערות\n'
-    +'כללים: בלוק פעולה אחד לכל בקשה; מלא רק שדות שהמשתמש מסר (אל תמציא ערכים); סכומים כמספרים ללא סימני מטבע. אם המשתמש רק שואל/מבקש מידע (לא ליצור) — אל תוסיף בלוק פעולה.';
+    +'- close_deal (סגירת עסקה קיימת): co=שם החברה של העסקה הפתוחה (חובה)\n'
+    +'- mark_meeting_held (סימון פגישה שהתקיימה): cl=שם הלקוח (חובה), dt=תאריך הפגישה (אופציונלי, YYYY-MM-DD)\n'
+    +'כללים: בלוק פעולה אחד לכל בקשה; מלא רק שדות שהמשתמש מסר (אל תמציא ערכים); סכומים כמספרים ללא סימני מטבע. פעולות עדכון (close_deal, mark_meeting_held) פועלות על רשומה קיימת לפי שם. אם המשתמש רק שואל/מבקש מידע (לא לבצע) — אל תוסיף בלוק פעולה.';
 }
 // הגדרות הפעולות: כותרת, אייקון, שדות חובה, ורשימת שדות לתצוגה
 const _AI_ACT_DEFS={
   add_deal:{icon:'💼',title:'הוספת עסקה',req:['co'],fields:[['co','חברה'],['srv','שירות'],['v','תשלום חד-פעמי ₪'],['mv','תשלום חודשי ₪'],['ot','ציוד ₪'],['otc','עלות ציוד ₪'],['ch','עמלה %'],['ty','סוג'],['st','סטטוס'],['cp','איש קשר'],['date','תאריך'],['no','הערות']]},
   add_meeting:{icon:'📅',title:'קביעת פגישה',req:['cl'],fields:[['cl','לקוח'],['dt','תאריך'],['time','שעה'],['mtype','סוג'],['no','הערות']]},
   add_client:{icon:'👤',title:'הוספת לקוח',req:['name'],fields:[['name','שם'],['contact','איש קשר'],['phone','טלפון'],['email','אימייל'],['address','כתובת'],['status','סטטוס'],['genNotes','הערות']]},
-  add_salary:{icon:'💰',title:'פרויקט שכר',req:['cl'],fields:[['cl','לקוח'],['pj','פרויקט'],['tr','סכום כולל ₪'],['cl2','נגבה ₪'],['pv','יתרה ₪'],['ty','סוג'],['no','הערות']]}
+  add_salary:{icon:'💰',title:'פרויקט שכר',req:['cl'],fields:[['cl','לקוח'],['pj','פרויקט'],['tr','סכום כולל ₪'],['cl2','נגבה ₪'],['pv','יתרה ₪'],['ty','סוג'],['no','הערות']]},
+  close_deal:{icon:'🔒',title:'סגירת עסקה',update:true,req:['co'],fields:[['co','חברה']]},
+  mark_meeting_held:{icon:'✅',title:'סימון פגישה כהתקיימה',update:true,req:['cl'],fields:[['cl','לקוח'],['dt','תאריך']]}
 };
+// איתור הרשומה הקיימת שפעולת-עדכון מתייחסת אליה (לפי שם) — כדי להציג ולעדכן את הנכונה
+function _aiResolveTarget(act){
+  const f=act.fields||{};
+  if(act.action==='close_deal'){
+    const cands=(D.deals||[]).filter(d=>d.co&&sameCo(d.co,f.co||'')&&d.st!=='נסגר');
+    if(!cands.length)return{ok:false,msg:'לא נמצאה עסקה פתוחה עבור "'+(f.co||'')+'"'};
+    const d=cands.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0))[0];
+    return{ok:true,id:d.id,label:(d.co||'')+(d.num?' #'+d.num:'')+(d.srv?' · '+d.srv:'')};
+  }
+  if(act.action==='mark_meeting_held'){
+    let cands=(D.meetings||[]).filter(m=>m.cl&&sameCo(m.cl,f.cl||'')&&m.hl!=='כן');
+    if(f.dt){ const byDate=cands.filter(m=>m.dt===f.dt); if(byDate.length)cands=byDate; }
+    if(!cands.length)return{ok:false,msg:'לא נמצאה פגישה שטרם התקיימה עבור "'+(f.cl||'')+'"'};
+    const m=cands.sort((a,b)=>new Date(b.dt||0)-new Date(a.dt||0))[0];
+    return{ok:true,id:m.id,label:(m.cl||'')+(m.dt?' · '+fmtDate(m.dt):'')};
+  }
+  return{ok:true}; // פעולות יצירה — אין יעד קיים לאתר
+}
 let _aiPendingAction=null;
 // חילוץ אובייקט JSON מאוזן (סוגריים) שמכיל "action" מתוך טקסט התשובה
 function _aiExtractJson(text){
@@ -9983,6 +10005,18 @@ function _aiRunAction(act){
       dbInsert('salary',row); rAll();
       return{ok:true,msg:'נוסף פרויקט שכר עבור '+row.cl+'. המסכים עודכנו.'};
     }
+    if(t==='close_deal'){
+      const d=(D.deals||[]).find(x=>x.id===act._targetId); if(!d)return{ok:false,msg:'העסקה לא נמצאה (ייתכן שהשתנתה)'};
+      dbUpdate('deals',d.id,{st:'נסגר'});
+      const saved=(D.deals||[]).find(x=>x.id===d.id);
+      if(saved){ syncDealToClient(saved); syncDealToSalary(saved); syncDealToDist(saved); saveAll(); }
+      rAll(); return{ok:true,msg:'העסקה '+(d.co||'')+(d.num?' #'+d.num:'')+' נסגרה. המסכים עודכנו.'};
+    }
+    if(t==='mark_meeting_held'){
+      const m=(D.meetings||[]).find(x=>x.id===act._targetId); if(!m)return{ok:false,msg:'הפגישה לא נמצאה'};
+      dbUpdate('meetings',m.id,{hl:'כן'}); rAll();
+      return{ok:true,msg:'הפגישה עם '+(m.cl||'')+' סומנה כהתקיימה. המסכים עודכנו.'};
+    }
     return{ok:false,msg:'פעולה לא נתמכת'};
   }catch(e){ return{ok:false,msg:'שגיאה בביצוע: '+String(e&&e.message||e)}; }
 }
@@ -9991,7 +10025,10 @@ function _aiRenderActionCard(){
   const box=document.getElementById('ai-answer'); const act=_aiPendingAction; if(!box||!act)return;
   const def=_AI_ACT_DEFS[act.action]; if(!def)return; const f=act.fields||{};
   const disp=(k,v)=>k==='ty'?(v==='short'?'טווח קצר':v==='long'?'טווח ארוך':v==='service'?'שירות':v==='equipment'?'ציוד':v):String(v);
-  const rows=def.fields.filter(([k])=>f[k]!=null&&f[k]!=='').map(([k,lbl])=>
+  // בפעולת עדכון — הצג את הרשומה המזוהה; אחרת הצג את שדות הרשומה החדשה
+  const rows=def.update&&act._targetLabel
+    ? `<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:var(--text3);font-size:11px">רשומה</span><span style="font-weight:700;font-size:12.5px;text-align:left">${esc(act._targetLabel)}</span></div>`
+    : def.fields.filter(([k])=>f[k]!=null&&f[k]!=='').map(([k,lbl])=>
     `<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:var(--text3);font-size:11px">${esc(lbl)}</span><span style="font-weight:700;font-size:12.5px;text-align:left">${esc(disp(k,f[k]))}</span></div>`).join('');
   const card=document.createElement('div');
   card.id='ai-action-card';
@@ -10115,11 +10152,21 @@ async function _aiSubmit(){
     try{
       const reply=await _aiLLM(_aiChat.slice(-12)); // שולח את 12 ההודעות האחרונות כהקשר
       const act=_aiParseAction(reply);              // האם ה-AI ביקש לבצע פעולה במערכת?
-      const shown=act?_aiStripAction(reply):reply;
-      _aiChat.push({role:'assistant',content:shown||'הכנתי פעולה לאישור למטה 👇'});
-      _aiPendingAction=act||null;
-      _aiRenderChat(false);
-      if(act)_aiRenderActionCard();
+      if(act){
+        const shown=_aiStripAction(reply);
+        const res=_aiResolveTarget(act); // לפעולת-עדכון: איתור הרשומה הקיימת
+        if(!res.ok){ // לא נמצאה רשומה תואמת — הצג הודעה, ללא כרטיס אישור
+          _aiChat.push({role:'assistant',content:(shown?shown+'\n\n':'')+'⚠️ '+res.msg});
+          _aiPendingAction=null; _aiRenderChat(false);
+        }else{
+          act._targetId=res.id; act._targetLabel=res.label;
+          _aiChat.push({role:'assistant',content:shown||'הכנתי פעולה לאישור למטה 👇'});
+          _aiPendingAction=act; _aiRenderChat(false); _aiRenderActionCard();
+        }
+      }else{
+        _aiChat.push({role:'assistant',content:reply});
+        _aiRenderChat(false);
+      }
     }catch(e){
       const loc=_aiAsk(q); const lt=loc?(loc.title+': '+String(loc.text).replace(/<[^>]+>/g,'')):'';
       _aiChat.push({role:'assistant',content:'⚠️ AI חכם לא זמין ('+String(e&&e.message||e).slice(0,80)+').'+(lt?'\n\nתשובה מקומית — '+lt:'')});
