@@ -9830,7 +9830,7 @@ const _AI_PROVIDERS={
   gemini:{label:'Gemini (Google · חינם)',keyPre:'',ph:'מפתח Google AI (מ-AI Studio)',model:'gemini-2.0-flash',free:true,
     models:['gemini-2.0-flash','gemini-1.5-flash','gemini-2.5-flash','gemini-flash-latest'],
     link:'https://aistudio.google.com/app/apikey',linkLabel:'aistudio.google.com',
-    note:'🎁 ל-Google Gemini יש שכבה חינמית — מפתח חינם מ-Google AI Studio, ללא חיוב וללא כרטיס אשראי.'}
+    note:'🎁 ל-Google Gemini יש שכבה חינמית, ללא חיוב וללא כרטיס אשראי. ב-AI Studio לחץ "Create API key" — המפתח הנכון מתחיל ב-AIza (לא טוקן זמני שמתחיל ב-AQ.).'}
 };
 function _aiPickModel(m){ const el=document.getElementById('ai-model-inp'); if(el)el.value=m; }
 function _aiProvider(){ try{const p=localStorage.getItem(_AI_PROVIDER_LS); return _AI_PROVIDERS[p]?p:'anthropic';}catch(e){return 'anthropic';} }
@@ -9846,6 +9846,8 @@ function _aiConnect(){
   const m=((document.getElementById('ai-model-inp')||{}).value||'').trim();
   if(!k){ showToast('⚠️ יש להזין מפתח API','warn'); return; }
   if(cfg.keyPre&&k.indexOf(cfg.keyPre)!==0){ showToast('⚠️ המפתח לא תואם ל'+cfg.label+' (מתחיל ב-'+cfg.keyPre+'). '+(cfg.free?'קבל מפתח חינם מ-'+cfg.linkLabel:'צריך מפתח API מ-'+cfg.linkLabel),'warn'); return; }
+  // Gemini: מפתח שמתחיל ב-AQ. הוא "טוקן זמני" (Live API) ולא מפתח API אמיתי — Google דוחה אותו ב-generateContent
+  if(_aiProvider()==='gemini'&&/^AQ\./i.test(k)){ showToast('⚠️ זהו טוקן זמני (Live), לא מפתח API. ב-AI Studio לחץ "Create API key" — המפתח הנכון מתחיל ב-AIza. פרטים בכפתור "?"','warn'); return; }
   try{ localStorage.setItem(_AI_KEY_LS,k); localStorage.setItem(_AI_MODEL_LS,m||cfg.model); }catch(e){}
   showToast('🟢 חובר ל-'+cfg.label+' — שאלות ייענו על ידו','ok'); openAiAssistant();
 }
@@ -9853,7 +9855,9 @@ function _aiConnect(){
 function _aiErrMsg(status){
   const cfg=_aiProvCfg();
   if(status===401||status===403) return 'המפתח שגוי/בוטל או ללא הרשאה. בדוק שהעתקת את כולו ושהוא פעיל ב-'+cfg.linkLabel;
-  if(status===400) return 'בקשה שגויה — ייתכן שם מודל לא תקין. נסה '+cfg.model+' בשדה המודל';
+  if(status===400) return cfg.free
+    ? 'המפתח לא תקין ל-generateContent. ודא שזה מפתח API אמיתי (מתחיל ב-AIza), שנוצר עם "Create API key" ב-'+cfg.linkLabel+' — ולא טוקן זמני (AQ.)'
+    : 'בקשה שגויה — ייתכן שם מודל לא תקין. נסה '+cfg.model+' בשדה המודל';
   if(status===402) return 'אין קרדיט/חיוב בחשבון — הוסף אמצעי תשלום';
   if(status===429) return 'חריגה במכסה/קצב — המתן דקה ונסה שוב'+(cfg.free?'. אם חוזר: החלף מודל ל-gemini-1.5-flash בשדה המודל (מכסה חינמית נדיבה יותר)':'');
   if(status>=500) return 'שירות ה-AI זמנית לא זמין — נסה שוב מאוחר יותר';
