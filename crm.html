@@ -10115,9 +10115,10 @@ function _aiFmt(raw){
   const lines=esc(String(raw==null?'':raw)).split(/\r?\n/);
   const inline=t=>t
     .replace(/`([^`]+)`/g,'<code style="background:rgba(255,255,255,.12);padding:1px 5px;border-radius:4px;font-size:.9em">$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
-    .replace(/__([^_]+)__/g,'<strong>$1</strong>')
-    .replace(/\*\*/g,''); // הסרת סימוני-הדגשה יתומים (מתשובה שנקטעה) שלא ישתקפו כטקסט
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')   // **מודגש** (גם עם תווים מיוחדים בפנים)
+    .replace(/__(.+?)__/g,'<strong>$1</strong>')       // __מודגש__
+    .replace(/(^|[^*])\*(?!\s)([^*\n]+?)\*(?!\*)/g,'$1<strong>$2</strong>') // *מודגש* בודד
+    .replace(/\*\*|__/g,'');                            // הסרת סימוני-הדגשה יתומים (מתשובה שנקטעה)
   let html='',inUl=false,inOl=false;
   const closeLists=()=>{ if(inUl){html+='</ul>';inUl=false;} if(inOl){html+='</ol>';inOl=false;} };
   for(const ln of lines){
