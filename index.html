@@ -2500,6 +2500,7 @@ body.logged-in #ai-fab{display:flex}
     <label style="font-size:11px;font-weight:800;color:var(--text3)">🔢 מספר פרויקט</label>
     <input type="text" id="sum-proj" placeholder="לא חובה" style="width:120px">
     <button class="btn btns" onclick="regenSummary()" style="border-color:#a78bfa;color:#a78bfa" title="בנה מחדש את הסיכום מנתוני המערכת">🔄 צור מחדש</button>
+    <button class="btn btns" id="sum-ai-btn" onclick="aiMeetingSummary()" style="border-color:#a78bfa;color:#a78bfa" title="נסח סיכום מקצועי עם AI לפי הנושאים וההערות">✨ סיכום AI</button>
     <button class="btn btns" id="sum-read-file-btn" onclick="enrichSummaryFromFile()" style="border-color:#06d6a0;color:#06d6a0;display:none" title="קרא תוכן מקובץ מצורף לפגישה ושלב בסיכום">📖 קרא מהקובץ</button>
     <span style="font-size:10px;color:var(--text3)">סיכום ללקוח = בלי מידע פנימי · נבנה לפי הנושאים שנבחרו בפגישה · ניתן לערוך</span>
   </div>
@@ -10073,10 +10074,10 @@ function _aiVoice(){
   try{ rec.start(); showToast('🎤 מקשיב… דבר עכשיו','ok'); }catch(e){ _aiRec=null; setIdle(); showToast('🎤 לא ניתן להפעיל מיקרופון','warn'); }
 }
 // messages = מערך היסטוריית שיחה [{role:'user'|'assistant',content}] — נתב לפי הספק הנבחר
-async function _aiLLM(messages){
+async function _aiLLM(messages,systemOverride){
   const key=_aiKey(); if(!key) throw new Error('אין מפתח');
   const msgs=Array.isArray(messages)?messages:[{role:'user',content:String(messages||'')}];
-  const system=_aiSystemPrompt();
+  const system=systemOverride||_aiSystemPrompt();
   return _aiProvider()==='gemini' ? _aiCallGemini(key,system,msgs) : _aiCallAnthropic(key,system,msgs);
 }
 // חילוץ הודעת השגיאה האמיתית מגוף התשובה (Anthropic: error.message · Google: error.message)
@@ -12394,6 +12395,34 @@ function regenSummary(){
   if(!m)return;
   document.getElementById('sum-text').value=buildMeetingSummary(m,document.getElementById('sum-proj').value.trim(),_sumMode);
   showToast(_sumMode==='client'?'🤝 נוצר סיכום ללקוח — בלי מידע פנימי':'🏢 נוצר סיכום פנימי מלא','ok');
+}
+// ניסוח סיכום פגישה מקצועי באמצעות מנוע ה-AI המחובר — לפי הנושאים, ההערות והתוכן הקיים
+async function aiMeetingSummary(){
+  const m=[...D.meetings,...(D.archivedMeetings||[])].find(x=>x.id==_sumMeetingId);
+  if(!m){showToast('⚠️ פגישה לא נמצאה','warn');return;}
+  if(!_aiKey()){ showToast('✨ כדי לנסח עם AI — חבר תחילה מנוע AI (🤖). בינתיים "🔄 צור מחדש" בונה סיכום מהתבנית','warn'); openAiAssistant(); return; }
+  const btn=document.getElementById('sum-ai-btn'), ta=document.getElementById('sum-text');
+  const orig=btn?btn.textContent:''; if(btn){btn.textContent='✨ מנסח…';btn.disabled=true;}
+  const topics=(m.topics||[]).map(k=>ITEM_CFG[k]?ITEM_CFG[k].label:k).filter(Boolean);
+  const modeClient=_sumMode==='client';
+  const details=[
+    'לקוח: '+(m.cl||'—'),
+    'תאריך: '+(m.dt?fmtDate(m.dt):'—'),
+    'סוג: '+_typeLabel(m.mtype||'פגישה'),
+    m.nu?('מספר פרויקט: '+m.nu):'',
+    topics.length?('נושאים שנדונו: '+topics.join(', ')):'',
+    'הערות/תוכן קיים:\n'+((ta&&ta.value.trim())||m.no||'(אין הערות — נסח לפי הנושאים)')
+  ].filter(Boolean).join('\n');
+  const system='אתה עוזר שמנסח סיכומי פגישה עסקיים בעברית עבור HOT Business (שירותי תקשורת/סלולר/סטארלינק לעסקים). כתוב סיכום '
+    +(modeClient?'ללקוח — מקצועי, אדיב וברור, ללא מידע פנימי רגיש כמו עלויות/עמלות':'פנימי מלא — כולל דגשים תפעוליים ומשימות המשך')
+    +'. מבנה: כותרת, פסקת פתיחה קצרה, רשימת נקודות עיקריות, וסיכום עם צעדים הבאים. עברית תקינה ותמציתית. אל תמציא פרטים שלא נמסרו.';
+  try{
+    const out=await _aiLLM([{role:'user',content:'נסח סיכום פגישה מהפרטים הבאים:\n\n'+details}],system);
+    if(ta)ta.value=String(out||'').trim();
+    showToast('✨ נוסח סיכום AI — ניתן לערוך ולשמור','ok');
+  }catch(e){
+    showToast('⚠️ ניסוח AI נכשל: '+String(e&&e.message||e).slice(0,80),'warn');
+  }finally{ if(btn){btn.textContent=orig;btn.disabled=false;} }
 }
 function saveSummaryToMeeting(){
   const m=D.meetings.find(x=>x.id==_sumMeetingId);
