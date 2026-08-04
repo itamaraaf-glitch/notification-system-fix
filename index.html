@@ -9923,7 +9923,8 @@ function _aiActionProtocol(){
     +'- add_salary (פרויקט שכר): cl=לקוח (חובה), pj=מספר/שם פרויקט, tr=סכום כולל (₪), cl2=נגבה (₪), pv=יתרה (₪), ty="service"/"equipment", no=הערות\n'
     +'- close_deal (סגירת עסקה קיימת): co=שם החברה של העסקה הפתוחה (חובה)\n'
     +'- mark_meeting_held (סימון פגישה שהתקיימה): cl=שם הלקוח (חובה), dt=תאריך הפגישה (אופציונלי, YYYY-MM-DD)\n'
-    +'כללים: בלוק פעולה אחד לכל בקשה; מלא רק שדות שהמשתמש מסר (אל תמציא ערכים); סכומים כמספרים ללא סימני מטבע. פעולות עדכון (close_deal, mark_meeting_held) פועלות על רשומה קיימת לפי שם. אם המשתמש רק שואל/מבקש מידע (לא לבצע) — אל תוסיף בלוק פעולה.';
+    +'- collect_salary (גביית תשלום מפרויקט שכר קיים): cl=שם הלקוח (חובה), amount=סכום לגבייה (₪; אם המשתמש אמר "הכל"/"מלוא היתרה" — השאר ריק כדי לגבות את כל היתרה)\n'
+    +'כללים: בלוק פעולה אחד לכל בקשה; מלא רק שדות שהמשתמש מסר (אל תמציא ערכים); סכומים כמספרים ללא סימני מטבע. פעולות עדכון (close_deal, mark_meeting_held, collect_salary) פועלות על רשומה קיימת לפי שם. אם המשתמש רק שואל/מבקש מידע (לא לבצע) — אל תוסיף בלוק פעולה.';
 }
 // הגדרות הפעולות: כותרת, אייקון, שדות חובה, ורשימת שדות לתצוגה
 const _AI_ACT_DEFS={
@@ -9932,7 +9933,8 @@ const _AI_ACT_DEFS={
   add_client:{icon:'👤',title:'הוספת לקוח',req:['name'],fields:[['name','שם'],['contact','איש קשר'],['phone','טלפון'],['email','אימייל'],['address','כתובת'],['status','סטטוס'],['genNotes','הערות']]},
   add_salary:{icon:'💰',title:'פרויקט שכר',req:['cl'],fields:[['cl','לקוח'],['pj','פרויקט'],['tr','סכום כולל ₪'],['cl2','נגבה ₪'],['pv','יתרה ₪'],['ty','סוג'],['no','הערות']]},
   close_deal:{icon:'🔒',title:'סגירת עסקה',update:true,req:['co'],fields:[['co','חברה']]},
-  mark_meeting_held:{icon:'✅',title:'סימון פגישה כהתקיימה',update:true,req:['cl'],fields:[['cl','לקוח'],['dt','תאריך']]}
+  mark_meeting_held:{icon:'✅',title:'סימון פגישה כהתקיימה',update:true,req:['cl'],fields:[['cl','לקוח'],['dt','תאריך']]},
+  collect_salary:{icon:'💰',title:'גביית תשלום',update:true,req:['cl'],fields:[['cl','לקוח'],['amount','סכום לגבייה ₪']]}
 };
 // איתור הרשומה הקיימת שפעולת-עדכון מתייחסת אליה (לפי שם) — כדי להציג ולעדכן את הנכונה
 function _aiResolveTarget(act){
@@ -9949,6 +9951,12 @@ function _aiResolveTarget(act){
     if(!cands.length)return{ok:false,msg:'לא נמצאה פגישה שטרם התקיימה עבור "'+(f.cl||'')+'"'};
     const m=cands.sort((a,b)=>new Date(b.dt||0)-new Date(a.dt||0))[0];
     return{ok:true,id:m.id,label:(m.cl||'')+(m.dt?' · '+fmtDate(m.dt):'')};
+  }
+  if(act.action==='collect_salary'){
+    const cands=(D.salary||[]).filter(s=>s.cl&&sameCo(s.cl,f.cl||'')&&s.st!=='סגור'&&(+s.pv||0)>0);
+    if(!cands.length)return{ok:false,msg:'לא נמצא פרויקט שכר עם יתרה פתוחה עבור "'+(f.cl||'')+'"'};
+    const s=cands.sort((a,b)=>(+b.pv||0)-(+a.pv||0))[0];
+    return{ok:true,id:s.id,label:(s.cl||'')+(s.pj?' · פרויקט '+s.pj:'')+' · יתרה '+fmt(+s.pv||0)};
   }
   return{ok:true}; // פעולות יצירה — אין יעד קיים לאתר
 }
@@ -10018,6 +10026,14 @@ function _aiRunAction(act){
       dbUpdate('meetings',m.id,{hl:'כן'}); rAll();
       return{ok:true,msg:'הפגישה עם '+(m.cl||'')+' סומנה כהתקיימה. המסכים עודכנו.'};
     }
+    if(t==='collect_salary'){
+      const s=(D.salary||[]).find(x=>x.id===act._targetId); if(!s)return{ok:false,msg:'פרויקט השכר לא נמצא'};
+      const bal=+s.pv||0; let amt=+f.amount||0; if(amt<=0)amt=bal; if(amt>bal)amt=bal; // לא גובים מעבר ליתרה
+      const newPv=Math.max(0,bal-amt), newCl2=(+s.cl2||0)+amt;
+      const patch={cl2:newCl2,pv:newPv}; if(newPv<=0){ patch.st='סגור'; if(!s.cstart)patch.cstart=nd(); } // גבייה מלאה → נסגר
+      dbUpdate('salary',s.id,patch); rAll();
+      return{ok:true,msg:'נגבו '+fmt(amt)+' מ-'+(s.cl||'לקוח')+(newPv>0?' · נותרה יתרה '+fmt(newPv):' · שולם במלואו ✓')+'. המסכים עודכנו.'};
+    }
     return{ok:false,msg:'פעולה לא נתמכת'};
   }catch(e){ return{ok:false,msg:'שגיאה בביצוע: '+String(e&&e.message||e)}; }
 }
@@ -10025,12 +10041,13 @@ function _aiRunAction(act){
 function _aiRenderActionCard(){
   const box=document.getElementById('ai-answer'); const act=_aiPendingAction; if(!box||!act)return;
   const def=_AI_ACT_DEFS[act.action]; if(!def)return; const f=act.fields||{};
-  const disp=(k,v)=>k==='ty'?(v==='short'?'טווח קצר':v==='long'?'טווח ארוך':v==='service'?'שירות':v==='equipment'?'ציוד':v):String(v);
-  // בפעולת עדכון — הצג את הרשומה המזוהה; אחרת הצג את שדות הרשומה החדשה
+  const disp=(k,v)=>k==='amount'?fmt(+v||0):k==='ty'?(v==='short'?'טווח קצר':v==='long'?'טווח ארוך':v==='service'?'שירות':v==='equipment'?'ציוד':v):String(v);
+  const rowHtml=(lbl,val)=>`<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:var(--text3);font-size:11px">${esc(lbl)}</span><span style="font-weight:700;font-size:12.5px;text-align:left">${esc(val)}</span></div>`;
+  const idFields=new Set(['co','cl','dt']); // שדות שמשמשים רק לזיהוי הרשומה — לא מציגים שוב
+  // בפעולת עדכון — הצג את הרשומה המזוהה + שדות נוספים (למשל סכום גבייה); אחרת שדות הרשומה החדשה
   const rows=def.update&&act._targetLabel
-    ? `<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:var(--text3);font-size:11px">רשומה</span><span style="font-weight:700;font-size:12.5px;text-align:left">${esc(act._targetLabel)}</span></div>`
-    : def.fields.filter(([k])=>f[k]!=null&&f[k]!=='').map(([k,lbl])=>
-    `<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:var(--text3);font-size:11px">${esc(lbl)}</span><span style="font-weight:700;font-size:12.5px;text-align:left">${esc(disp(k,f[k]))}</span></div>`).join('');
+    ? rowHtml('רשומה',act._targetLabel)+def.fields.filter(([k])=>!idFields.has(k)&&f[k]!=null&&f[k]!=='').map(([k,lbl])=>rowHtml(lbl,disp(k,f[k]))).join('')
+    : def.fields.filter(([k])=>f[k]!=null&&f[k]!=='').map(([k,lbl])=>rowHtml(lbl,disp(k,f[k]))).join('');
   const card=document.createElement('div');
   card.id='ai-action-card';
   card.style.cssText='background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.4);border-radius:12px;padding:13px 15px;margin-bottom:12px';
