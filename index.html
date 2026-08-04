@@ -9945,6 +9945,27 @@ async function _aiCallGemini(key,system,msgs){
   try{ const cand=(j.candidates||[])[0]; const parts=(cand&&cand.content&&cand.content.parts)||[]; txt=parts.map(p=>p.text||'').join('').trim(); }catch(e){}
   return txt||'(לא התקבלה תשובה)';
 }
+// עיצוב טקסט התשובה: תמיכה קלה ב-Markdown (מודגש/רשימות/כותרות) — בטוח (esc קודם, ואז רק תגיות משלנו)
+function _aiFmt(raw){
+  const lines=esc(String(raw==null?'':raw)).split(/\r?\n/);
+  const inline=t=>t
+    .replace(/`([^`]+)`/g,'<code style="background:rgba(255,255,255,.12);padding:1px 5px;border-radius:4px;font-size:.9em">$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/__([^_]+)__/g,'<strong>$1</strong>');
+  let html='',inUl=false,inOl=false;
+  const closeLists=()=>{ if(inUl){html+='</ul>';inUl=false;} if(inOl){html+='</ol>';inOl=false;} };
+  for(const ln of lines){
+    const t=ln.trim(); let m;
+    if((m=t.match(/^[-*•]\s+(.+)/))){ if(!inUl){closeLists();html+='<ul style="margin:5px 0;padding-inline-start:20px">';inUl=true;} html+='<li style="margin:3px 0">'+inline(m[1])+'</li>'; continue; }
+    if((m=t.match(/^(\d+)[.)]\s+(.+)/))){ if(!inOl){closeLists();html+='<ol style="margin:5px 0;padding-inline-start:22px">';inOl=true;} html+='<li style="margin:3px 0">'+inline(m[2])+'</li>'; continue; }
+    closeLists();
+    if(!t){ html+='<div style="height:7px"></div>'; continue; }
+    if((m=t.match(/^#{1,6}\s*(.+)/))){ html+='<div style="font-weight:800;margin:5px 0 2px">'+inline(m[1])+'</div>'; continue; }
+    html+='<div>'+inline(t)+'</div>';
+  }
+  closeLists();
+  return html;
+}
 // שיחה מתמשכת עם Claude (זיכרון לפי סשן)
 let _aiChat=[];
 function _aiClearChat(){ _aiChat=[]; _aiRenderChat(false); }
@@ -9958,8 +9979,10 @@ function _aiRenderChat(thinking){
     ? {fs:'13.5px',lh:'1.9',pad:'12px 15px',gap:'13px',br:'12px',max:'440px'}
     : {fs:'12.5px',lh:'1.55',pad:'8px 11px',gap:'7px',br:'10px',max:'300px'};
   const bubbles=_aiChat.map(m=>{const me=m.role==='user';
+    // הודעת המשתמש: טקסט פשוט (esc + שמירת שורות). תשובת ה-AI: עיצוב Markdown קל
+    const body=me?`<span style="white-space:pre-wrap">${esc(m.content)}</span>`:_aiFmt(m.content);
     return `<div style="margin-bottom:${S.gap}"><div style="font-size:10.5px;font-weight:800;color:${me?'#4cc9f0':'#a78bfa'};margin-bottom:${comfy?'5px':'2px'}">${me?'🧑 אתה':aiName}</div>
-    <div style="font-size:${S.fs};color:var(--text);line-height:${S.lh};white-space:pre-wrap;word-break:break-word;background:${me?'rgba(76,201,240,.08)':'rgba(167,139,250,.1)'};border:1px solid ${me?'rgba(76,201,240,.2)':'rgba(167,139,250,.3)'};border-radius:${S.br};padding:${S.pad}">${esc(m.content)}</div></div>`;}).join('');
+    <div style="font-size:${S.fs};color:var(--text);line-height:${S.lh};word-break:break-word;background:${me?'rgba(76,201,240,.08)':'rgba(167,139,250,.1)'};border:1px solid ${me?'rgba(76,201,240,.2)':'rgba(167,139,250,.3)'};border-radius:${S.br};padding:${S.pad}">${body}</div></div>`;}).join('');
   box.innerHTML=`<div id="ai-thread" style="max-height:${S.max};overflow:auto;margin-bottom:8px">${bubbles}${thinking?'<div style="font-size:12px;color:#a78bfa;padding:4px">🤖 חושב…</div>':''}</div>`
     +(_aiChat.length?`<div style="display:flex;gap:6px;margin-bottom:10px">
         <button class="btn btns" onclick="_aiClearChat()" style="font-size:10px">🗑 נקה שיחה</button>
