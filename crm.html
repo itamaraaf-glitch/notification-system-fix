@@ -9910,7 +9910,113 @@ function _aiDataSnapshot(){
   };
 }
 function _aiSystemPrompt(){
-  return 'אתה העוזר החכם המשובץ במערכת CRM עסקית בעברית (HOT Business). ענה בעברית, קצר, מדויק ומעשי, אך ורק לפי נתוני המערכת המצורפים. שמור על הקשר השיחה — שאלות המשך מתייחסות למה שנאמר קודם. אל תמציא נתונים; אם חסר מידע — אמור זאת. כשרלוונטי תן מספרים והמלצה קונקרטית.\n\nנתוני המערכת (JSON):\n'+JSON.stringify(_aiDataSnapshot());
+  return 'אתה העוזר החכם המשובץ במערכת CRM עסקית בעברית (HOT Business). ענה בעברית, קצר, מדויק ומעשי, אך ורק לפי נתוני המערכת המצורפים. שמור על הקשר השיחה — שאלות המשך מתייחסות למה שנאמר קודם. אל תמציא נתונים; אם חסר מידע — אמור זאת. כשרלוונטי תן מספרים והמלצה קונקרטית.\n\n'+_aiActionProtocol()+'\n\nנתוני המערכת (JSON):\n'+JSON.stringify(_aiDataSnapshot());
+}
+// פרוטוקול ביצוע פעולות — הנחיה ל-LLM כיצד ליצור רשומות במערכת
+function _aiActionProtocol(){
+  return 'יכולת ביצוע פעולות: כאשר המשתמש מבקש במפורש ליצור/להוסיף רשומה (עסקה, פגישה, לקוח, פרויקט שכר), הוסף בסוף תשובתך — אחרי משפט אישור קצר בעברית — בלוק פעולה בפורמט מדויק:\n```action\n{"action":"add_deal","fields":{"co":"שם חברה","srv":"שירות","mv":500}}\n```\n'
+    +'פעולות ושדות נתמכים:\n'
+    +'- add_deal (עסקה): co=שם חברה (חובה), srv=שירות, v=תשלום חד-פעמי (₪), mv=תשלום חודשי (₪), ot=ציוד (₪), otc=עלות ציוד (₪), ch=עמלה (%), ty="long"/"short", st=סטטוס, cp=איש קשר, date=YYYY-MM-DD, no=הערות\n'
+    +'- add_meeting (פגישה): cl=לקוח (חובה), dt=YYYY-MM-DD, time=HH:MM, mtype=סוג, no=הערות\n'
+    +'- add_client (לקוח): name=שם (חובה), contact=איש קשר, phone=טלפון, email=אימייל, address=כתובת, genNotes=הערות\n'
+    +'- add_salary (פרויקט שכר): cl=לקוח (חובה), pj=מספר/שם פרויקט, tr=סכום כולל (₪), cl2=נגבה (₪), pv=יתרה (₪), ty="service"/"equipment", no=הערות\n'
+    +'כללים: בלוק פעולה אחד לכל בקשה; מלא רק שדות שהמשתמש מסר (אל תמציא ערכים); סכומים כמספרים ללא סימני מטבע. אם המשתמש רק שואל/מבקש מידע (לא ליצור) — אל תוסיף בלוק פעולה.';
+}
+// הגדרות הפעולות: כותרת, אייקון, שדות חובה, ורשימת שדות לתצוגה
+const _AI_ACT_DEFS={
+  add_deal:{icon:'💼',title:'הוספת עסקה',req:['co'],fields:[['co','חברה'],['srv','שירות'],['v','תשלום חד-פעמי ₪'],['mv','תשלום חודשי ₪'],['ot','ציוד ₪'],['otc','עלות ציוד ₪'],['ch','עמלה %'],['ty','סוג'],['st','סטטוס'],['cp','איש קשר'],['date','תאריך'],['no','הערות']]},
+  add_meeting:{icon:'📅',title:'קביעת פגישה',req:['cl'],fields:[['cl','לקוח'],['dt','תאריך'],['time','שעה'],['mtype','סוג'],['no','הערות']]},
+  add_client:{icon:'👤',title:'הוספת לקוח',req:['name'],fields:[['name','שם'],['contact','איש קשר'],['phone','טלפון'],['email','אימייל'],['address','כתובת'],['status','סטטוס'],['genNotes','הערות']]},
+  add_salary:{icon:'💰',title:'פרויקט שכר',req:['cl'],fields:[['cl','לקוח'],['pj','פרויקט'],['tr','סכום כולל ₪'],['cl2','נגבה ₪'],['pv','יתרה ₪'],['ty','סוג'],['no','הערות']]}
+};
+let _aiPendingAction=null;
+// חילוץ אובייקט JSON מאוזן (סוגריים) שמכיל "action" מתוך טקסט התשובה
+function _aiExtractJson(text){
+  const s=String(text||''); const i=s.indexOf('"action"'); if(i<0)return null;
+  let start=s.lastIndexOf('{',i); if(start<0)return null;
+  let depth=0;
+  for(let j=start;j<s.length;j++){ const c=s[j]; if(c==='{')depth++; else if(c==='}'){ depth--; if(depth===0)return s.slice(start,j+1); } }
+  return null;
+}
+// זיהוי פעולה מתוך תשובת ה-LLM (בלוק מגודר או JSON חופשי) — רק אם הפעולה נתמכת
+function _aiParseAction(text){
+  if(!text)return null;
+  let raw=null;
+  const fenced=String(text).match(/```(?:action|json)?\s*(\{[\s\S]*?\})\s*```/i);
+  raw=fenced?fenced[1]:_aiExtractJson(text);
+  if(!raw)return null;
+  try{ const o=JSON.parse(raw); if(o&&typeof o.action==='string'&&_AI_ACT_DEFS[o.action]) return {action:o.action,fields:(o.fields&&typeof o.fields==='object')?o.fields:{}}; }catch(e){}
+  return null;
+}
+// הסרת בלוק הפעולה מהטקסט המוצג למשתמש (משאיר רק את המשפט המילולי)
+function _aiStripAction(text){
+  let s=String(text||'').replace(/```(?:action|json)?\s*\{[\s\S]*?\}\s*```/ig,'');
+  const j=_aiExtractJson(s); if(j)s=s.replace(j,'');
+  return s.replace(/```/g,'').trim();
+}
+// ביצוע הפעולה בפועל — יצירת הרשומה ורענון המסכים
+function _aiRunAction(act){
+  try{
+    const t=act&&act.action, f=(act&&act.fields)||{};
+    if(t==='add_deal'){
+      if(!f.co)return{ok:false,msg:'חסר שם חברה — לא נוצרה עסקה'};
+      const row={date:f.date||nd(),co:String(f.co),cp:f.cp||'',srv:f.srv||'',v:+f.v||0,mv:+f.mv||0,di:0,dn:0,ot:+f.ot||0,otc:+f.otc||0,ct:f.ct||'',ch:+f.ch||0,ptype:f.ptype||'',st:f.st||'ליד',ty:(f.ty==='short'?'short':'long'),no:f.no||''};
+      row.num=nextDealNum(); const saved=dbInsert('deals',row);
+      if(saved&&saved.st==='נסגר'){ syncDealToClient(saved); syncDealToSalary(saved); syncDealToDist(saved); saveAll(); }
+      rAll(); return{ok:true,msg:'נוספה עסקה עבור '+row.co+(row.num?' (#'+row.num+')':'')+'. המסכים עודכנו.'};
+    }
+    if(t==='add_meeting'){
+      if(!f.cl)return{ok:false,msg:'חסר שם לקוח — לא נקבעה פגישה'};
+      const row={dt:f.dt||nd(),time:f.time||'',mtype:f.mtype||'פגישה',cl:String(f.cl),nu:f.nu||'',hl:f.hl||'לא',no:f.no||'',topics:[]};
+      dbInsert('meetings',row); rAll();
+      return{ok:true,msg:'נקבעה פגישה עם '+row.cl+(row.dt?' ל-'+fmtDate(row.dt):'')+'. המסכים עודכנו.'};
+    }
+    if(t==='add_client'){
+      if(!f.name)return{ok:false,msg:'חסר שם — לא נוסף לקוח'};
+      const row={name:String(f.name),cp:f.cp||'',contact:f.contact||'',phone:f.phone||'',email:f.email||'',address:f.address||'',status:f.status||'פעיל',genNotes:f.genNotes||'',potential:[]};
+      dbInsert('clients',row); rAll();
+      return{ok:true,msg:'נוסף לקוח '+row.name+'. המסכים עודכנו.'};
+    }
+    if(t==='add_salary'){
+      if(!f.cl)return{ok:false,msg:'חסר שם לקוח — לא נוצר פרויקט שכר'};
+      const row={pj:f.pj||'',cl:String(f.cl),qt:+f.qt||1,tr:+f.tr||0,cl2:+f.cl2||0,pv:+f.pv||0,st:f.st||'פתוח',ty:(f.ty==='equipment'?'equipment':'service'),no:f.no||''};
+      dbInsert('salary',row); rAll();
+      return{ok:true,msg:'נוסף פרויקט שכר עבור '+row.cl+'. המסכים עודכנו.'};
+    }
+    return{ok:false,msg:'פעולה לא נתמכת'};
+  }catch(e){ return{ok:false,msg:'שגיאה בביצוע: '+String(e&&e.message||e)}; }
+}
+// כרטיס אישור הפעולה — מוצג לפני ביצוע (המשתמש מאשר/מבטל)
+function _aiRenderActionCard(){
+  const box=document.getElementById('ai-answer'); const act=_aiPendingAction; if(!box||!act)return;
+  const def=_AI_ACT_DEFS[act.action]; if(!def)return; const f=act.fields||{};
+  const disp=(k,v)=>k==='ty'?(v==='short'?'טווח קצר':v==='long'?'טווח ארוך':v==='service'?'שירות':v==='equipment'?'ציוד':v):String(v);
+  const rows=def.fields.filter(([k])=>f[k]!=null&&f[k]!=='').map(([k,lbl])=>
+    `<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:var(--text3);font-size:11px">${esc(lbl)}</span><span style="font-weight:700;font-size:12.5px;text-align:left">${esc(disp(k,f[k]))}</span></div>`).join('');
+  const card=document.createElement('div');
+  card.id='ai-action-card';
+  card.style.cssText='background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.4);border-radius:12px;padding:13px 15px;margin-bottom:12px';
+  card.innerHTML=`<div style="font-size:13px;font-weight:800;color:#2ecc71;margin-bottom:8px">${def.icon} ${esc(def.title)} — אישור לפני ביצוע</div>
+    <div style="margin-bottom:11px">${rows||'<span style="color:var(--text3);font-size:12px">אין פרטים</span>'}</div>
+    <div style="display:flex;gap:7px">
+      <button class="btn btnp" onclick="_aiConfirmAction()" style="flex:1;background:#2ecc71;border-color:#2ecc71;color:#04120a;font-weight:800;font-size:12px">✓ בצע והוסף למערכת</button>
+      <button class="btn btns" onclick="_aiCancelAction()" style="font-size:12px">בטל</button>
+    </div>`;
+  box.appendChild(card);
+}
+function _aiConfirmAction(){
+  const act=_aiPendingAction; _aiPendingAction=null;
+  const card=document.getElementById('ai-action-card'); if(card)card.remove();
+  const res=_aiRunAction(act);
+  _aiChat.push({role:'assistant',content:(res.ok?'✅ ':'⚠️ ')+res.msg});
+  _aiRenderChat(false);
+  if(res.ok)showToast('✅ '+res.msg,'ok');
+}
+function _aiCancelAction(){
+  _aiPendingAction=null;
+  const card=document.getElementById('ai-action-card'); if(card)card.remove();
+  _aiChat.push({role:'assistant',content:'בוטל — לא בוצעה פעולה.'});
+  _aiRenderChat(false);
 }
 // messages = מערך היסטוריית שיחה [{role:'user'|'assistant',content}] — נתב לפי הספק הנבחר
 async function _aiLLM(messages){
@@ -9968,7 +10074,7 @@ function _aiFmt(raw){
 }
 // שיחה מתמשכת עם Claude (זיכרון לפי סשן)
 let _aiChat=[];
-function _aiClearChat(){ _aiChat=[]; _aiRenderChat(false); }
+function _aiClearChat(){ _aiChat=[]; _aiPendingAction=null; const c=document.getElementById('ai-action-card'); if(c)c.remove(); _aiRenderChat(false); }
 function _aiRenderChat(thinking){
   const box=document.getElementById('ai-answer'); if(!box)return;
   if(!_aiChat.length&&!thinking){ box.innerHTML=''; return; }
@@ -9989,6 +10095,7 @@ function _aiRenderChat(thinking){
         <button class="btn btns" onclick="_aiToggleDensity()" style="font-size:10px" title="החלף בין תצוגה מרווחת לצפופה">${comfy?'🔎 תצוגה רגילה':'📖 תצוגה מרווחת'}</button>
       </div>`:'');
   const th=document.getElementById('ai-thread'); if(th)th.scrollTop=th.scrollHeight;
+  if(_aiPendingAction)_aiRenderActionCard(); // שמירת כרטיס האישור גלוי גם אחרי רינדור מחדש
 }
 function _aiLocalAnswerHtml(ans){
   if(!ans) return '';
@@ -10007,8 +10114,12 @@ async function _aiSubmit(){
     _aiRenderChat(true);
     try{
       const reply=await _aiLLM(_aiChat.slice(-12)); // שולח את 12 ההודעות האחרונות כהקשר
-      _aiChat.push({role:'assistant',content:reply});
+      const act=_aiParseAction(reply);              // האם ה-AI ביקש לבצע פעולה במערכת?
+      const shown=act?_aiStripAction(reply):reply;
+      _aiChat.push({role:'assistant',content:shown||'הכנתי פעולה לאישור למטה 👇'});
+      _aiPendingAction=act||null;
       _aiRenderChat(false);
+      if(act)_aiRenderActionCard();
     }catch(e){
       const loc=_aiAsk(q); const lt=loc?(loc.title+': '+String(loc.text).replace(/<[^>]+>/g,'')):'';
       _aiChat.push({role:'assistant',content:'⚠️ AI חכם לא זמין ('+String(e&&e.message||e).slice(0,80)+').'+(lt?'\n\nתשובה מקומית — '+lt:'')});
@@ -10177,7 +10288,7 @@ function openAiAssistant(){
     ${healthHtml}
     ${planHtml}
     <div style="display:flex;gap:6px;margin-bottom:10px">
-      <input id="ai-q" placeholder="שאל חופשי: כמה הכנסתי מ-Starlink? מה עם לקוח [שם]? כמה סגרתי במאי?" onkeydown="if(event.key==='Enter')_aiSubmit()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:9px 11px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none">
+      <input id="ai-q" placeholder="שאל או בקש פעולה: כמה סגרתי במאי? · צור עסקה סגורה לאלפא, סטארלינק, 500₪/חודש" onkeydown="if(event.key==='Enter')_aiSubmit()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:9px 11px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none">
       <button class="btn btnp" onclick="_aiSubmit()" style="background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:800;font-size:12px">שאל</button>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${chips}</div>
