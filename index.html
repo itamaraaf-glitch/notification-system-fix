@@ -10367,6 +10367,57 @@ function _aiFabInit(){
   fab.addEventListener('click',e=>{ if(moved){ e.preventDefault(); e.stopPropagation(); moved=false; return; } openAiAssistant(); });
 }
 document.addEventListener('DOMContentLoaded',_aiFabInit);
+// ===== חלון AI נפרד (Pop-out) — חלון דפדפן אמיתי שניתן לגרור לכל מסך פיזי =====
+// בתוך הדף אי אפשר לצאת מגבולות חלון הדפדפן; חלון נפרד הוא חלון OS אמיתי הנגרר בין מסכים.
+let _aiPopWin=null;
+function _aiExtThreadHtml(thinking){
+  const name='🤖 '+(_aiProvider()==='gemini'?'Gemini':'Claude');
+  const bubbles=_aiChat.map(m=>{const me=m.role==='user';
+    const body=me?esc(m.content).replace(/\n/g,'<br>'):_aiFmt(m.content);
+    return '<div style="margin-bottom:13px"><div style="font-size:11px;font-weight:800;color:'+(me?'#4cc9f0':'#a78bfa')+';margin-bottom:4px">'+(me?'🧑 אתה':name)+'</div>'
+      +'<div style="font-size:14px;line-height:1.85;background:'+(me?'rgba(76,201,240,.08)':'rgba(167,139,250,.1)')+';border:1px solid '+(me?'rgba(76,201,240,.2)':'rgba(167,139,250,.3)')+';border-radius:11px;padding:11px 14px">'+body+'</div></div>';
+  }).join('');
+  return bubbles+(thinking?'<div style="color:#a78bfa;font-size:13px;padding:6px">🤖 חושב…</div>':'')
+    +(_aiChat.length?'':'<div style="color:#6b7080;font-size:13px;text-align:center;padding:20px">שאל אותי כל דבר על המערכת — השיחה משותפת עם החלון הראשי.</div>');
+}
+// עיבוד שאלה מהחלון הנפרד — משתמש באותו מנוע ובאותה שיחה כמו החלון הראשי
+async function _aiExternalAsk(text,render){
+  _aiChat.push({role:'user',content:text});
+  render(_aiExtThreadHtml(true));
+  try{
+    let reply;
+    if(_aiKey()){ reply=await _aiLLM(_aiChat.slice(-12)); const act=_aiParseAction(reply); if(act)reply=_aiStripAction(reply)||'הבנתי — לביצוע פעולות במערכת השתמש בחלון הראשי.'; }
+    else{ const loc=_aiAsk(text); reply=loc?(loc.title+'\n'+String(loc.text).replace(/<[^>]+>/g,'')):'לא בטוח שהבנתי — נסה לנסח אחרת.'; }
+    _aiChat.push({role:'assistant',content:reply});
+  }catch(e){ _aiChat.push({role:'assistant',content:'⚠️ '+String(e&&e.message||e).slice(0,120)}); }
+  render(_aiExtThreadHtml(false));
+  if(document.getElementById('ai-answer'))_aiRenderChat(false); // סנכרון עם החלון הראשי אם פתוח
+}
+function _aiPopout(){
+  if(_aiPopWin&&!_aiPopWin.closed){ try{_aiPopWin.focus();}catch(e){} return; }
+  const w=window.open('','hotai_ext','width=470,height=720');
+  if(!w){ showToast('⚠️ הדפדפן חסם חלון קופץ — אשר חלונות קופצים לאתר ונסה שוב','warn'); return; }
+  _aiPopWin=w;
+  const conn=_aiKey()?('🟢 מחובר · '+esc(_aiProvCfg().label)):'🔒 מנוע מקומי · פרטי';
+  w.document.write('<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>עוזר חכם — HOT Business</title></head>'
+    +'<body style="margin:0;font-family:system-ui,-apple-system,Arial,sans-serif;background:#0a0e1c;color:#e8eaf0;display:flex;flex-direction:column;height:100vh;overflow:hidden">'
+    +'<div style="padding:12px 15px;background:linear-gradient(135deg,#101525,#0a0e1c);border-bottom:1px solid rgba(167,139,250,.3);display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="font-size:16px;font-weight:900;color:#a78bfa">🤖 עוזר חכם</div><div style="font-size:11px;color:#8b90a0">'+conn+'</div></div>'
+    +'<div id="ans" style="flex:1;overflow:auto;padding:16px"></div>'
+    +'<div style="font-size:10px;color:#6b7080;text-align:center;padding:2px 10px 6px">גרור חלון זה לכל מסך · שיחה משותפת עם החלון הראשי</div>'
+    +'<div style="display:flex;gap:7px;padding:10px 14px 14px;border-top:1px solid rgba(255,255,255,.08)"><input id="q" placeholder="שאל אותי כל דבר…" style="flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:9px;padding:10px 12px;color:#e8eaf0;font-size:14px;outline:none"><button id="send" style="background:#a78bfa;border:none;border-radius:9px;padding:0 16px;color:#0a0e1c;font-weight:800;font-size:14px;cursor:pointer">שאל</button></div>'
+    +'</body></html>');
+  w.document.close();
+  const render=html=>{ try{ const a=w.document.getElementById('ans'); if(a){a.innerHTML=html;a.scrollTop=a.scrollHeight;} }catch(e){} };
+  const bind=()=>{
+    const qEl=w.document.getElementById('q'), sendEl=w.document.getElementById('send'); if(!qEl||!sendEl)return;
+    const ask=()=>{ const t=(qEl.value||'').trim(); if(!t)return; qEl.value=''; _aiExternalAsk(t,render); };
+    sendEl.onclick=ask;
+    qEl.addEventListener('keydown',e=>{ if(e.key==='Enter')ask(); });
+    try{qEl.focus();}catch(e){}
+    render(_aiExtThreadHtml(false));
+  };
+  if(w.document.getElementById('q'))bind(); else w.addEventListener('load',bind);
+}
 function openAiAssistant(){
   const old=document.getElementById('ai-popup'); if(old)old.remove();
   const ins=_aiInsights();
@@ -10423,6 +10474,7 @@ function openAiAssistant(){
     <div id="ai-win-head" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 15px;cursor:move;background:rgba(167,139,250,.08);border-bottom:1px solid rgba(167,139,250,.2);touch-action:none;user-select:none;-webkit-user-select:none">
       <div style="font-size:15px;font-weight:900;color:#a78bfa">🤖 עוזר חכם</div>
       <div style="display:flex;gap:2px;align-items:center">
+        <button onclick="_aiPopout()" id="ai-win-pop" title="פתח בחלון נפרד — לגרירה למסך אחר" style="background:none;border:none;color:var(--text3);font-size:15px;cursor:pointer;line-height:1;padding:3px 8px">⧉</button>
         <button onclick="_aiToggleMin()" id="ai-win-min" title="מזער / הגדל" style="background:none;border:none;color:var(--text3);font-size:17px;cursor:pointer;line-height:1;padding:3px 8px">▁</button>
         <button onclick="document.getElementById('ai-popup').remove()" title="סגור" style="background:none;border:none;color:var(--text3);font-size:19px;cursor:pointer;line-height:1;padding:3px 8px">✕</button>
       </div>
