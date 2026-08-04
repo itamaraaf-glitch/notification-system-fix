@@ -10194,6 +10194,37 @@ async function _aiSubmit(){
   }
   box.innerHTML=_aiLocalAnswerHtml(_aiAsk(q));
 }
+// תדריך יומי — אוסף את דחיפויות היום (מגמה, פערי יעד, גבייה, משימות) ומנסח תדריך ממוקד
+async function _aiDailyBriefing(){
+  const box=document.getElementById('ai-answer'); if(!box)return;
+  const tr=_aiTrend(); const acts=_aiActions().slice(0,6); const held=heldThisMonth();
+  const plan=_aiGoalPlan(); const items=(plan&&plan.items)||[];
+  const gaps=items.filter(i=>i.gap>0).slice(0,4).map(i=>i.name+' חסר '+fmt(i.gap)+' ('+i.pct+'%)');
+  const collect=(D.salary||[]).filter(s=>s.st!=='סגור'&&(+s.pv||0)>0&&!_salDeferred(s)).sort((a,b)=>(+b.pv||0)-(+a.pv||0)).slice(0,4).map(s=>(s.cl||'לקוח')+' '+fmt(+s.pv));
+  const facts=[
+    'תאריך: '+fmtDate(nd()),
+    'נסגר החודש: '+fmt(tr.curV)+' | חודש קודם: '+fmt(tr.prevV)+' | צפי לסוף החודש: '+fmt(tr.proj),
+    'פגישות החודש: '+held+'/'+MEETING_GOAL,
+    gaps.length?('פערים ביעדים: '+gaps.join(' · ')):'',
+    collect.length?('לגבייה: '+collect.join(' · ')):'',
+    acts.length?('משימות דחופות: '+acts.map(a=>String(a.text).replace(/<[^>]+>/g,'')).join(' · ')):''
+  ].filter(Boolean).join('\n');
+  _aiChat.push({role:'user',content:'📋 תדריך יומי'});
+  if(_aiKey()){
+    _aiRenderChat(true);
+    try{
+      const sys='אתה נותן תדריך בוקר קצר, ממוקד וממריץ למנהל עסקי בעברית. על סמך הנתונים בלבד: פתח במשפט אחד על המצב, ואז 3-5 נקודות "לעשות היום" לפי סדר עדיפות, וסיים במשפט מוטיבציה קצר. אל תמציא נתונים.';
+      const reply=await _aiLLM([{role:'user',content:'נתוני היום:\n'+facts}],sys);
+      _aiChat.push({role:'assistant',content:String(reply||'').trim()||facts});
+    }catch(e){
+      _aiChat.push({role:'assistant',content:'⚠️ לא ניתן לנסח עם AI כרגע — הנה התדריך מהנתונים:\n\n'+facts});
+    }
+    _aiRenderChat(false);
+  }else{
+    _aiChat.push({role:'assistant',content:'📋 תדריך יומי (מנוע מקומי):\n\n'+facts+'\n\n💡 לחיבור AI לניסוח חכם — כפתור "חבר AI אמיתי".'});
+    _aiRenderChat(false);
+  }
+}
 // פעולות מומלצות — רשימת "מה לעשות עכשיו", מדורגת לפי דחיפות/ערך (ניקוד גבוה = דחוף יותר)
 function _aiActions(){
   const acts=[];
@@ -10318,7 +10349,8 @@ function openAiAssistant(){
     <div style="display:grid;gap:6px;margin-bottom:14px">`+acts.map(a=>`<div onclick="document.getElementById('ai-popup').remove();${a.act}" style="display:flex;align-items:center;gap:8px;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);border-radius:9px;padding:8px 11px;cursor:pointer">
       <span style="font-size:15px">${a.icon}</span><span style="font-size:12px;color:var(--text);line-height:1.4;flex:1">${a.text}</span><span style="color:#a78bfa;font-size:13px">→</span></div>`).join('')+`</div>`:'';
   const sugg=['איך אני עומד ביעד','סיכום החודש','כמה יש לי לגבות','חוזים לחידוש','עסקאות שנסגרו','מכרזים'];
-  const chips=sugg.map(c=>`<button class="btn btns" style="font-size:11px" onclick="var e=document.getElementById('ai-q');e.value='${c}';_aiSubmit()">${c}</button>`).join(' ');
+  const chips=`<button class="btn btns" style="font-size:11px;border-color:#4cc9f0;color:#4cc9f0;font-weight:800" onclick="_aiDailyBriefing()" title="תדריך בוקר ממוקד — מה הכי חשוב היום">📋 תדריך יומי</button> `
+    +sugg.map(c=>`<button class="btn btns" style="font-size:11px" onclick="var e=document.getElementById('ai-q');e.value='${c}';_aiSubmit()">${c}</button>`).join(' ');
   const el=document.createElement('div');
   el.id='ai-popup';
   el.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.8);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto';
