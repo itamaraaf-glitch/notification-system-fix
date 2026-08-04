@@ -10134,8 +10134,15 @@ function _aiFmt(raw){
   return html;
 }
 // שיחה מתמשכת עם Claude (זיכרון לפי סשן)
-let _aiChat=[];
-function _aiClearChat(){ _aiChat=[]; _aiPendingAction=null; const c=document.getElementById('ai-action-card'); if(c)c.remove(); _aiRenderChat(false); }
+let _aiChat=(function(){ try{ const a=JSON.parse(localStorage.getItem('hot_ai_chat')); return Array.isArray(a)?a:[]; }catch(e){ return []; } })();
+function _aiPersist(){ try{ localStorage.setItem('hot_ai_chat',JSON.stringify(_aiChat.slice(-40))); }catch(e){} }
+function _aiClearChat(){ _aiChat=[]; _aiPendingAction=null; try{localStorage.removeItem('hot_ai_chat');}catch(e){} const c=document.getElementById('ai-action-card'); if(c)c.remove(); _aiRenderChat(false); }
+// העתקת תשובת AI ללוח (נוח להדבקה בוואטסאפ/מייל)
+function _aiCopyMsg(i){
+  const m=_aiChat[i]; if(!m)return; const txt=String(m.content||'');
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(()=>showToast('📋 הועתק ללוח','ok')).catch(()=>fallbackCopySummary(txt)); }
+  else fallbackCopySummary(txt);
+}
 function _aiRenderChat(thinking){
   const box=document.getElementById('ai-answer'); if(!box)return;
   if(!_aiChat.length&&!thinking){ box.innerHTML=''; return; }
@@ -10145,10 +10152,11 @@ function _aiRenderChat(thinking){
   const S=comfy
     ? {fs:'13.5px',lh:'1.9',pad:'12px 15px',gap:'13px',br:'12px',max:'440px'}
     : {fs:'12.5px',lh:'1.55',pad:'8px 11px',gap:'7px',br:'10px',max:'300px'};
-  const bubbles=_aiChat.map(m=>{const me=m.role==='user';
+  const bubbles=_aiChat.map((m,mi)=>{const me=m.role==='user';
     // הודעת המשתמש: טקסט פשוט (esc + שמירת שורות). תשובת ה-AI: עיצוב Markdown קל
     const body=me?`<span style="white-space:pre-wrap">${esc(m.content)}</span>`:_aiFmt(m.content);
-    return `<div style="margin-bottom:${S.gap}"><div style="font-size:10.5px;font-weight:800;color:${me?'#4cc9f0':'#a78bfa'};margin-bottom:${comfy?'5px':'2px'}">${me?'🧑 אתה':aiName}</div>
+    const copyBtn=me?'':`<button onclick="_aiCopyMsg(${mi})" title="העתק תשובה" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:0 4px;line-height:1">📋</button>`;
+    return `<div style="margin-bottom:${S.gap}"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${comfy?'5px':'2px'}"><span style="font-size:10.5px;font-weight:800;color:${me?'#4cc9f0':'#a78bfa'}">${me?'🧑 אתה':aiName}</span>${copyBtn}</div>
     <div style="font-size:${S.fs};color:var(--text);line-height:${S.lh};word-break:break-word;background:${me?'rgba(76,201,240,.08)':'rgba(167,139,250,.1)'};border:1px solid ${me?'rgba(76,201,240,.2)':'rgba(167,139,250,.3)'};border-radius:${S.br};padding:${S.pad}">${body}</div></div>`;}).join('');
   box.innerHTML=`<div id="ai-thread" style="max-height:${S.max};overflow:auto;margin-bottom:8px">${bubbles}${thinking?'<div style="font-size:12px;color:#a78bfa;padding:4px">🤖 חושב…</div>':''}</div>`
     +(_aiChat.length?`<div style="display:flex;gap:6px;margin-bottom:10px">
@@ -10157,6 +10165,7 @@ function _aiRenderChat(thinking){
       </div>`:'');
   const th=document.getElementById('ai-thread'); if(th)th.scrollTop=th.scrollHeight;
   if(_aiPendingAction)_aiRenderActionCard(); // שמירת כרטיס האישור גלוי גם אחרי רינדור מחדש
+  _aiPersist(); // שמירת השיחה כדי שתישרד רענון
 }
 function _aiLocalAnswerHtml(ans){
   if(!ans) return '';
@@ -10391,6 +10400,7 @@ async function _aiExternalAsk(text,render){
     _aiChat.push({role:'assistant',content:reply});
   }catch(e){ _aiChat.push({role:'assistant',content:'⚠️ '+String(e&&e.message||e).slice(0,120)}); }
   render(_aiExtThreadHtml(false));
+  _aiPersist();
   if(document.getElementById('ai-answer'))_aiRenderChat(false); // סנכרון עם החלון הראשי אם פתוח
 }
 function _aiPopout(){
@@ -10523,7 +10533,7 @@ function openAiAssistant(){
   _aiPositionWin(el);                 // מיקום שמור / ברירת מחדל
   _aiWinDrag();                       // חלון נגרר לפי הכותרת
   _aiMin=false; if(localStorage.getItem('hot_ai_winmin')==='1')_aiToggleMin(); // שחזור מצב מזעור
-  if(_aiKey()&&_aiChat.length)_aiRenderChat(false); // שחזור השיחה בפתיחה מחדש (זיכרון סשן)
+  if(_aiChat.length)_aiRenderChat(false); // שחזור השיחה בפתיחה מחדש (נשמרת בין רענונים)
   if(!_aiMin)setTimeout(()=>{const q=document.getElementById('ai-q');if(q)q.focus();},60);
 }
 
