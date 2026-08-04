@@ -10086,25 +10086,29 @@ async function _aiCallAnthropic(key,system,msgs){
   const r=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:_aiModel(),max_tokens:1400,system,messages:msgs})
+    body:JSON.stringify({model:_aiModel(),max_tokens:4096,system,messages:msgs})
   });
   if(!r.ok){ throw new Error(_aiErrMsg(r.status)+(await _aiErrDetail(r))); }
   const j=await r.json();
-  return ((j&&j.content&&j.content.map(c=>c.text||'').join('').trim())||'')||'(לא התקבלה תשובה)';
+  let txt=((j&&j.content&&j.content.map(c=>c.text||'').join('').trim())||'')||'(לא התקבלה תשובה)';
+  if(j&&j.stop_reason==='max_tokens')txt+='\n\n…(התשובה ארוכה ונקטעה — כתוב "המשך" לקבלת ההמשך)';
+  return txt;
 }
 async function _aiCallGemini(key,system,msgs){
   const model=_aiModel();
   const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent';
   const body={ systemInstruction:{parts:[{text:system}]},
     contents:msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:String(m.content||'')}]})),
-    generationConfig:{maxOutputTokens:1400} };
+    generationConfig:{maxOutputTokens:4096} };
   // המפתח נשלח ב-header (x-goog-api-key) — השיטה הרשמית הנוכחית, תואמת גם למפתחות בפורמט החדש (AQ.) וגם לישן (AIza)
   const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},body:JSON.stringify(body)});
   if(!r.ok){ throw new Error(_aiErrMsg(r.status)+(await _aiErrDetail(r))); }
   const j=await r.json();
-  let txt='';
-  try{ const cand=(j.candidates||[])[0]; const parts=(cand&&cand.content&&cand.content.parts)||[]; txt=parts.map(p=>p.text||'').join('').trim(); }catch(e){}
-  return txt||'(לא התקבלה תשובה)';
+  let txt='',cand=null;
+  try{ cand=(j.candidates||[])[0]; const parts=(cand&&cand.content&&cand.content.parts)||[]; txt=parts.map(p=>p.text||'').join('').trim(); }catch(e){}
+  if(!txt)return '(לא התקבלה תשובה)';
+  if(cand&&cand.finishReason==='MAX_TOKENS')txt+='\n\n…(התשובה ארוכה ונקטעה — כתוב "המשך" לקבלת ההמשך)';
+  return txt;
 }
 // עיצוב טקסט התשובה: תמיכה קלה ב-Markdown (מודגש/רשימות/כותרות) — בטוח (esc קודם, ואז רק תגיות משלנו)
 function _aiFmt(raw){
@@ -10112,7 +10116,8 @@ function _aiFmt(raw){
   const inline=t=>t
     .replace(/`([^`]+)`/g,'<code style="background:rgba(255,255,255,.12);padding:1px 5px;border-radius:4px;font-size:.9em">$1</code>')
     .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
-    .replace(/__([^_]+)__/g,'<strong>$1</strong>');
+    .replace(/__([^_]+)__/g,'<strong>$1</strong>')
+    .replace(/\*\*/g,''); // הסרת סימוני-הדגשה יתומים (מתשובה שנקטעה) שלא ישתקפו כטקסט
   let html='',inUl=false,inOl=false;
   const closeLists=()=>{ if(inUl){html+='</ul>';inUl=false;} if(inOl){html+='</ol>';inOl=false;} };
   for(const ln of lines){
