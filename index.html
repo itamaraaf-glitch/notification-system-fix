@@ -10308,6 +10308,65 @@ function _aiSpotAsk(){
   openAiAssistant();
   if(q){ setTimeout(()=>{ const f=document.getElementById('ai-q'); if(f){ f.value=q; _aiSubmit(); } },80); }
 }
+// מיקום חלון ה-AI — משחזר מיקום שמור או ברירת מחדל (צד ימין למעלה), עם הצמדה לגבולות המסך
+function _aiPositionWin(el){
+  let pos=null; try{pos=JSON.parse(localStorage.getItem('hot_ai_winpos')||'null');}catch(e){}
+  if(pos&&pos.left&&pos.top){
+    el.style.left=pos.left; el.style.top=pos.top; el.style.right='auto'; el.style.bottom='auto';
+    requestAnimationFrame(()=>{ const r=el.getBoundingClientRect();
+      el.style.left=Math.max(4,Math.min(window.innerWidth-60,r.left))+'px';
+      el.style.top=Math.max(4,Math.min(window.innerHeight-40,r.top))+'px'; });
+  }else{ el.style.right='18px'; el.style.top='54px'; el.style.left='auto'; el.style.bottom='auto'; }
+}
+// הפיכת חלון ה-AI לנגרר לפי סרגל הכותרת (עכבר + מגע), עם שמירת המיקום
+function _aiWinDrag(){
+  const win=document.getElementById('ai-popup'), head=document.getElementById('ai-win-head'); if(!win||!head)return;
+  let sx,sy,ox,oy,drag=false;
+  const move=e=>{ if(!drag)return; const p=e.touches?e.touches[0]:e; if(e.cancelable)e.preventDefault();
+    let nx=Math.max(4,Math.min(window.innerWidth-60,ox+(p.clientX-sx))), ny=Math.max(4,Math.min(window.innerHeight-40,oy+(p.clientY-sy)));
+    win.style.left=nx+'px'; win.style.top=ny+'px'; };
+  const up=()=>{ if(!drag)return; drag=false;
+    document.removeEventListener('mousemove',move); document.removeEventListener('touchmove',move);
+    document.removeEventListener('mouseup',up); document.removeEventListener('touchend',up);
+    try{localStorage.setItem('hot_ai_winpos',JSON.stringify({left:win.style.left,top:win.style.top}));}catch(e){} };
+  const down=e=>{ if(e.target&&e.target.closest&&e.target.closest('button'))return; const p=e.touches?e.touches[0]:e; drag=true; sx=p.clientX; sy=p.clientY;
+    const r=win.getBoundingClientRect(); ox=r.left; oy=r.top; win.style.right='auto'; win.style.bottom='auto'; win.style.left=ox+'px'; win.style.top=oy+'px';
+    document.addEventListener('mousemove',move); document.addEventListener('touchmove',move,{passive:false});
+    document.addEventListener('mouseup',up); document.addEventListener('touchend',up); };
+  head.addEventListener('mousedown',down); head.addEventListener('touchstart',down,{passive:false});
+}
+// מזעור/הגדלה של חלון ה-AI לחלון קטן (רק סרגל הכותרת)
+let _aiMin=false;
+function _aiToggleMin(){
+  const body=document.getElementById('ai-win-body'), btn=document.getElementById('ai-win-min'), win=document.getElementById('ai-popup'); if(!body)return;
+  _aiMin=!_aiMin;
+  body.style.display=_aiMin?'none':'';
+  if(btn)btn.textContent=_aiMin?'▢':'▁';
+  if(win)win.style.maxHeight=_aiMin?'none':'92vh';
+  try{localStorage.setItem('hot_ai_winmin',_aiMin?'1':'0');}catch(e){}
+}
+// הפיכת האייקון הצף (FAB) לנגרר — הקשה פותחת, גרירה מזיזה (מבחין בין השניים)
+function _aiFabInit(){
+  const fab=document.getElementById('ai-fab'); if(!fab||fab._dragInit)return; fab._dragInit=true;
+  try{const p=JSON.parse(localStorage.getItem('hot_ai_fabpos')||'null'); if(p&&p.left&&p.top){fab.style.left=p.left;fab.style.top=p.top;fab.style.right='auto';fab.style.bottom='auto';}}catch(e){}
+  let sx,sy,ox,oy,moved=false,dragging=false;
+  const move=e=>{ if(!dragging)return; const p=e.touches?e.touches[0]:e; const dx=p.clientX-sx, dy=p.clientY-sy;
+    if(Math.abs(dx)>4||Math.abs(dy)>4)moved=true;
+    if(moved){ if(e.cancelable)e.preventDefault();
+      fab.style.left=Math.max(4,Math.min(window.innerWidth-54,ox+dx))+'px';
+      fab.style.top=Math.max(4,Math.min(window.innerHeight-54,oy+dy))+'px'; fab.style.right='auto'; fab.style.bottom='auto'; } };
+  const up=()=>{ if(!dragging)return; dragging=false;
+    document.removeEventListener('mousemove',move); document.removeEventListener('touchmove',move);
+    document.removeEventListener('mouseup',up); document.removeEventListener('touchend',up);
+    if(moved){ try{localStorage.setItem('hot_ai_fabpos',JSON.stringify({left:fab.style.left,top:fab.style.top}));}catch(e){} } };
+  const down=e=>{ const p=e.touches?e.touches[0]:e; dragging=true; moved=false; sx=p.clientX; sy=p.clientY;
+    const r=fab.getBoundingClientRect(); ox=r.left; oy=r.top;
+    document.addEventListener('mousemove',move); document.addEventListener('touchmove',move,{passive:false});
+    document.addEventListener('mouseup',up); document.addEventListener('touchend',up); };
+  fab.addEventListener('mousedown',down); fab.addEventListener('touchstart',down,{passive:false});
+  fab.addEventListener('click',e=>{ if(moved){ e.preventDefault(); e.stopPropagation(); moved=false; return; } openAiAssistant(); });
+}
+document.addEventListener('DOMContentLoaded',_aiFabInit);
 function openAiAssistant(){
   const old=document.getElementById('ai-popup'); if(old)old.remove();
   const ins=_aiInsights();
@@ -10359,12 +10418,16 @@ function openAiAssistant(){
     +sugg.map(c=>`<button class="btn btns" style="font-size:11px" onclick="var e=document.getElementById('ai-q');e.value='${c}';_aiSubmit()">${c}</button>`).join(' ');
   const el=document.createElement('div');
   el.id='ai-popup';
-  el.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.8);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto';
-  el.innerHTML=`<div style="background:linear-gradient(135deg,#101525,#0a0e1c);border:1px solid rgba(167,139,250,.35);border-radius:16px;max-width:520px;width:100%;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.6);max-height:92vh;overflow:auto" onclick="event.stopPropagation()">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <div style="font-size:17px;font-weight:900;color:#a78bfa">🤖 עוזר חכם</div>
-      <button onclick="document.getElementById('ai-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+  el.style.cssText='position:fixed;z-index:100000;width:min(520px,94vw);max-height:92vh;display:flex;flex-direction:column;background:linear-gradient(135deg,#101525,#0a0e1c);border:1px solid rgba(167,139,250,.35);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.6);overflow:hidden';
+  el.innerHTML=`
+    <div id="ai-win-head" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 15px;cursor:move;background:rgba(167,139,250,.08);border-bottom:1px solid rgba(167,139,250,.2);touch-action:none;user-select:none;-webkit-user-select:none">
+      <div style="font-size:15px;font-weight:900;color:#a78bfa">🤖 עוזר חכם</div>
+      <div style="display:flex;gap:2px;align-items:center">
+        <button onclick="_aiToggleMin()" id="ai-win-min" title="מזער / הגדל" style="background:none;border:none;color:var(--text3);font-size:17px;cursor:pointer;line-height:1;padding:3px 8px">▁</button>
+        <button onclick="document.getElementById('ai-popup').remove()" title="סגור" style="background:none;border:none;color:var(--text3);font-size:19px;cursor:pointer;line-height:1;padding:3px 8px">✕</button>
+      </div>
     </div>
+    <div id="ai-win-body" style="padding:16px;overflow:auto;flex:1 1 auto">
     <div style="font-size:11px;color:var(--text3);margin-bottom:10px">${_aiKey()?('🟢 מחובר ל-'+esc(_aiProvCfg().label)+' — שאלות חופשיות נענות ע"י ה-AI'):'מנתח את הנתונים שלך במכשיר — ללא ענן 🔒 פרטי לחלוטין'}</div>
     ${_aiKey()
       ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(6,214,160,.07);border:1px solid rgba(6,214,160,.25);border-radius:9px;padding:7px 11px;margin-bottom:12px;font-size:11px">
@@ -10404,10 +10467,12 @@ function openAiAssistant(){
     <div style="display:grid;gap:8px">${cards||'<div style="color:var(--text3);font-size:12px">אין מספיק נתונים לניתוח עדיין — הוסף עסקאות, שכר או פגישות.</div>'}</div>
     <button class="btn btns" onclick="_aiCopySummary()" style="width:100%;margin-top:12px;font-size:12px;border-color:#a78bfa;color:#a78bfa">📋 העתק סיכום תובנות</button>
   </div>`;
-  el.addEventListener('click',()=>el.remove());
   document.body.appendChild(el);
+  _aiPositionWin(el);                 // מיקום שמור / ברירת מחדל
+  _aiWinDrag();                       // חלון נגרר לפי הכותרת
+  _aiMin=false; if(localStorage.getItem('hot_ai_winmin')==='1')_aiToggleMin(); // שחזור מצב מזעור
   if(_aiKey()&&_aiChat.length)_aiRenderChat(false); // שחזור השיחה בפתיחה מחדש (זיכרון סשן)
-  setTimeout(()=>{const q=document.getElementById('ai-q');if(q)q.focus();},60);
+  if(!_aiMin)setTimeout(()=>{const q=document.getElementById('ai-q');if(q)q.focus();},60);
 }
 
 // product-type helpers (key ↔ label) for display + Excel round-trip
@@ -13366,7 +13431,7 @@ function seedData(){
   <button id="mob-fab-btn" onclick="toggleFab()" aria-label="הוסף">＋</button>
 </div>
 <!-- AI FAB — עוזר חכם, נגיש מכל מסך במערכת -->
-<button id="ai-fab" onclick="openAiAssistant()" aria-label="עוזר חכם" title="🤖 עוזר חכם — שאל אותי כל דבר על המערכת">🤖</button>
+<button id="ai-fab" aria-label="עוזר חכם" title="🤖 עוזר חכם — גרור להזזה · הקש לפתיחה">🤖</button>
 
 <!-- Custom confirm dialog (replaces window.confirm which is blocked on iOS standalone) -->
 <div id="cbar">
