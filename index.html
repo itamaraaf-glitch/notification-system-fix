@@ -9836,6 +9836,10 @@ function _aiPickModel(m){ const el=document.getElementById('ai-model-inp'); if(e
 function _aiProvider(){ try{const p=localStorage.getItem(_AI_PROVIDER_LS); return _AI_PROVIDERS[p]?p:'anthropic';}catch(e){return 'anthropic';} }
 function _aiProvCfg(){ return _AI_PROVIDERS[_aiProvider()]; }
 function _aiKey(){ try{return localStorage.getItem(_AI_KEY_LS)||'';}catch(e){return '';} }
+// צפיפות תצוגת התשובות: 'comfy' (מרווח, ברירת מחדל) או 'compact' (רגיל/צפוף)
+const _AI_DENSITY_LS='hot_ai_density';
+function _aiDensity(){ try{return localStorage.getItem(_AI_DENSITY_LS)==='compact'?'compact':'comfy';}catch(e){return 'comfy';} }
+function _aiToggleDensity(){ try{localStorage.setItem(_AI_DENSITY_LS,_aiDensity()==='comfy'?'compact':'comfy');}catch(e){} _aiRenderChat(false); }
 function _aiModel(){ try{return localStorage.getItem(_AI_MODEL_LS)||_aiProvCfg().model;}catch(e){return _aiProvCfg().model;} }
 function _aiShowConnect(){ const el=document.getElementById('ai-connect'); if(el)el.style.display=el.style.display==='none'?'block':'none'; }
 function _aiSetProvider(p){ if(!_AI_PROVIDERS[p])return; try{localStorage.setItem(_AI_PROVIDER_LS,p);}catch(e){} openAiAssistant(); setTimeout(()=>{const el=document.getElementById('ai-connect');if(el)el.style.display='block';},30); }
@@ -9921,7 +9925,7 @@ async function _aiCallAnthropic(key,system,msgs){
   const r=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:_aiModel(),max_tokens:800,system,messages:msgs})
+    body:JSON.stringify({model:_aiModel(),max_tokens:1400,system,messages:msgs})
   });
   if(!r.ok){ throw new Error(_aiErrMsg(r.status)+(await _aiErrDetail(r))); }
   const j=await r.json();
@@ -9932,7 +9936,7 @@ async function _aiCallGemini(key,system,msgs){
   const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent';
   const body={ systemInstruction:{parts:[{text:system}]},
     contents:msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:String(m.content||'')}]})),
-    generationConfig:{maxOutputTokens:800} };
+    generationConfig:{maxOutputTokens:1400} };
   // המפתח נשלח ב-header (x-goog-api-key) — השיטה הרשמית הנוכחית, תואמת גם למפתחות בפורמט החדש (AQ.) וגם לישן (AIza)
   const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},body:JSON.stringify(body)});
   if(!r.ok){ throw new Error(_aiErrMsg(r.status)+(await _aiErrDetail(r))); }
@@ -9948,11 +9952,19 @@ function _aiRenderChat(thinking){
   const box=document.getElementById('ai-answer'); if(!box)return;
   if(!_aiChat.length&&!thinking){ box.innerHTML=''; return; }
   const aiName='🤖 '+(_aiProvider()==='gemini'?'Gemini':'Claude');
+  const comfy=_aiDensity()==='comfy';
+  // תצוגה מרווחת מול צפופה — משפיעה על גובה שורה, ריפוד, מרווח בין בועות וגודל גופן
+  const S=comfy
+    ? {fs:'13.5px',lh:'1.9',pad:'12px 15px',gap:'13px',br:'12px',max:'440px'}
+    : {fs:'12.5px',lh:'1.55',pad:'8px 11px',gap:'7px',br:'10px',max:'300px'};
   const bubbles=_aiChat.map(m=>{const me=m.role==='user';
-    return `<div style="margin-bottom:7px"><div style="font-size:10px;font-weight:800;color:${me?'#4cc9f0':'#a78bfa'};margin-bottom:2px">${me?'🧑 אתה':aiName}</div>
-    <div style="font-size:12.5px;color:var(--text);line-height:1.6;white-space:pre-wrap;background:${me?'rgba(76,201,240,.08)':'rgba(167,139,250,.1)'};border:1px solid ${me?'rgba(76,201,240,.2)':'rgba(167,139,250,.3)'};border-radius:10px;padding:8px 11px">${esc(m.content)}</div></div>`;}).join('');
-  box.innerHTML=`<div id="ai-thread" style="max-height:300px;overflow:auto;margin-bottom:8px">${bubbles}${thinking?'<div style="font-size:12px;color:#a78bfa;padding:4px">🤖 חושב…</div>':''}</div>`
-    +(_aiChat.length?`<button class="btn btns" onclick="_aiClearChat()" style="font-size:10px;margin-bottom:10px">🗑 נקה שיחה</button>`:'');
+    return `<div style="margin-bottom:${S.gap}"><div style="font-size:10.5px;font-weight:800;color:${me?'#4cc9f0':'#a78bfa'};margin-bottom:${comfy?'5px':'2px'}">${me?'🧑 אתה':aiName}</div>
+    <div style="font-size:${S.fs};color:var(--text);line-height:${S.lh};white-space:pre-wrap;word-break:break-word;background:${me?'rgba(76,201,240,.08)':'rgba(167,139,250,.1)'};border:1px solid ${me?'rgba(76,201,240,.2)':'rgba(167,139,250,.3)'};border-radius:${S.br};padding:${S.pad}">${esc(m.content)}</div></div>`;}).join('');
+  box.innerHTML=`<div id="ai-thread" style="max-height:${S.max};overflow:auto;margin-bottom:8px">${bubbles}${thinking?'<div style="font-size:12px;color:#a78bfa;padding:4px">🤖 חושב…</div>':''}</div>`
+    +(_aiChat.length?`<div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="btn btns" onclick="_aiClearChat()" style="font-size:10px">🗑 נקה שיחה</button>
+        <button class="btn btns" onclick="_aiToggleDensity()" style="font-size:10px" title="החלף בין תצוגה מרווחת לצפופה">${comfy?'🔎 תצוגה רגילה':'📖 תצוגה מרווחת'}</button>
+      </div>`:'');
   const th=document.getElementById('ai-thread'); if(th)th.scrollTop=th.scrollHeight;
 }
 function _aiLocalAnswerHtml(ans){
