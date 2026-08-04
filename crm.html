@@ -10055,6 +10055,23 @@ function _aiCancelAction(){
   _aiChat.push({role:'assistant',content:'בוטל — לא בוצעה פעולה.'});
   _aiRenderChat(false);
 }
+// קלט קולי (דיבור לטקסט) — ממלא את שדה השאלה. עברית (he-IL). לחיצה שנייה עוצרת.
+let _aiRec=null;
+function _aiVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const btn=document.getElementById('ai-mic');
+  const setIdle=()=>{ if(btn){btn.textContent='🎤';btn.style.background='';btn.style.borderColor='';btn.style.color='';} };
+  if(!SR){ showToast('🎤 קלט קולי לא נתמך בדפדפן זה — נסה Chrome','warn'); return; }
+  if(_aiRec){ try{_aiRec.stop();}catch(e){} _aiRec=null; setIdle(); return; }
+  let rec; try{ rec=new SR(); }catch(e){ showToast('🎤 לא ניתן להפעיל מיקרופון','warn'); return; }
+  _aiRec=rec; rec.lang='he-IL'; rec.interimResults=true; rec.continuous=false; rec.maxAlternatives=1;
+  const inp=document.getElementById('ai-q');
+  if(btn){ btn.textContent='⏹'; btn.style.background='#e74c3c'; btn.style.borderColor='#e74c3c'; btn.style.color='#fff'; }
+  rec.onresult=e=>{ let t=''; for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript; if(inp)inp.value=t; };
+  rec.onerror=e=>{ const er=e&&e.error; if(er!=='aborted'&&er!=='no-speech')showToast('🎤 שגיאת קלט קולי'+(er?' ('+er+')':''),'warn'); };
+  rec.onend=()=>{ _aiRec=null; setIdle(); if(inp&&inp.value.trim())inp.focus(); };
+  try{ rec.start(); showToast('🎤 מקשיב… דבר עכשיו','ok'); }catch(e){ _aiRec=null; setIdle(); showToast('🎤 לא ניתן להפעיל מיקרופון','warn'); }
+}
 // messages = מערך היסטוריית שיחה [{role:'user'|'assistant',content}] — נתב לפי הספק הנבחר
 async function _aiLLM(messages){
   const key=_aiKey(); if(!key) throw new Error('אין מפתח');
@@ -10336,6 +10353,7 @@ function openAiAssistant(){
     ${planHtml}
     <div style="display:flex;gap:6px;margin-bottom:10px">
       <input id="ai-q" placeholder="שאל או בקש פעולה: כמה סגרתי במאי? · צור עסקה סגורה לאלפא, סטארלינק, 500₪/חודש" onkeydown="if(event.key==='Enter')_aiSubmit()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:9px 11px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none">
+      <button id="ai-mic" class="btn btns" onclick="_aiVoice()" title="דיבור במקום הקלדה" style="font-size:15px;padding:0 11px">🎤</button>
       <button class="btn btnp" onclick="_aiSubmit()" style="background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:800;font-size:12px">שאל</button>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${chips}</div>
