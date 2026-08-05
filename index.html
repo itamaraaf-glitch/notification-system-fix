@@ -8908,27 +8908,29 @@ function _trackDbBase(){
 }
 // פרסום/עדכון רשומת המעקב הציבורית (שדות לא-רגישים בלבד) בנתיב track/<token>.
 // נקרא בשיתוף ובכל שינוי סטטוס של הפצה משותפת — כך שאותו קישור מציג תמיד את הסטטוס העדכני.
+// מחזיר: 'ok' = פורסם לענן (קישור חי מתעדכן לבד) · 'nocloud' = אין ענן (הקישור עדיין תקין כתמונת-מצב)
+// · 'fail' = תקלת רשת/הרשאות (הקישור עדיין תקין כתמונת-מצב, פשוט לא מתעדכן לבד)
 async function _publishTrack(d){
-  const base=_trackDbBase(); if(!base||!d||!d._trackTok) return false;
+  const base=_trackDbBase(); if(!base||!d||!d._trackTok) return 'nocloud';
   const url=base+'/track/'+encodeURIComponent(d._trackTok)+'.json';
   const body=JSON.stringify(_distTrackPayload(d));
   // ניסיון עם ריטריי קצר — כדי שתקלת רשת חולפת לא תשאיר את קישור הלקוח מיושן
   for(let attempt=0;attempt<3;attempt++){
     try{
       const r=await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json'},body});
-      if(r.ok) return true;
+      if(r.ok) return 'ok';
     }catch(e){}
     if(attempt<2) await new Promise(res=>setTimeout(res,600*(attempt+1)));
   }
-  return false;
+  return 'fail';
 }
-// פרסום + סימון "לקוח עודכן" בהצלחה — עבור קישור חי, פרסום מוצלח = הלקוח כבר מעודכן אוטומטית,
-// כך שהתג בטבלה יציג "✓ לקוח עודכן" (ולא "⚠ ממתין לעדכון" המטעה לקישור שמתעדכן לבד).
+// פרסום + סימון "לקוח עודכן" — מחזיר את תוצאת הפרסום כדי שהקורא יחליט על ההודעה.
+// אין כאן הודעת שגיאה: קישור התמונת-מצב תמיד תקין; רק העדכון-החי עלול להיכשל, וזה מטופל אצל הקורא.
 async function _publishTrackAndMark(d){
-  if(!d||!d._trackTok) return;
-  const ok=await _publishTrack(d);
-  if(ok){ d._cliSyncSt=d.st; d._cliSyncAt=Date.now(); saveAll(); if(currentSec==='dists')rDists(); }
-  else{ try{showToast('⚠️ עדכון קישור המעקב נכשל (רשת) — הפריט מסומן "ממתין לעדכון"; ינסה שוב בעריכה/שיתוף','warn');}catch(e){} }
+  if(!d||!d._trackTok) return 'nocloud';
+  const res=await _publishTrack(d);
+  if(res==='ok'){ d._cliSyncSt=d.st; d._cliSyncAt=Date.now(); saveAll(); if(currentSec==='dists')rDists(); }
+  return res;
 }
 function _distTrackURL(d){
   const enc=_b64urlEncode(JSON.stringify(_distTrackPayload(d)));
@@ -11774,7 +11776,10 @@ function saveDist(){
   // אם ההפצה כבר שותפה (יש טוקן) — הקישור הקיים של הלקוח מתעדכן לבד; מפרסמים מחדש בכל עריכה
   // (סטטוס, מוצר, חברה, לקוח, כתובת...) — כל שדה שמופיע בעמוד המעקב — כדי שהלקוח יראה תמיד עדכני.
   if(savedDist && savedDist._trackTok && _wasEdit){
-    _publishTrackAndMark(savedDist); showToast('🔄 קישור המעקב של הלקוח עודכן אוטומטית — אין צורך לשלוח שוב','ok');
+    _publishTrackAndMark(savedDist).then(res=>{
+      if(res==='ok') showToast('🔄 קישור המעקב של הלקוח עודכן אוטומטית — אין צורך לשלוח שוב','ok');
+      else _promptSendTrack(savedDist, _statusChanged); // אין ערוץ חי — הצע לשלוח קישור מעודכן (הקישור תקין, פשוט לא מתעדכן לבד)
+    });
   } else if(savedDist && _hasClient && (_statusChanged || _newForClient)){
     _promptSendTrack(savedDist, _statusChanged); // טרם שותף — הצעה לשלוח את הקישור הראשון
   }
@@ -11800,7 +11805,12 @@ function advanceDistStatus(id){
   showToast('📦 סטטוס ההפצה עודכן ל"'+next+'"','ok');
   const hasClient=!!(nd2&&(String(nd2.cle||'').trim()||String(nd2.cl||'').trim()));
   // אם כבר שותף — הקישור הקיים מתעדכן לבד (פרסום מחדש); אחרת תזכורת לשלוח קישור ראשון
-  if(nd2&&nd2._trackTok){ _publishTrackAndMark(nd2); showToast('🔄 קישור המעקב של הלקוח עודכן אוטומטית','ok'); }
+  if(nd2&&nd2._trackTok){
+    _publishTrackAndMark(nd2).then(res=>{
+      if(res==='ok') showToast('🔄 קישור המעקב של הלקוח עודכן אוטומטית','ok');
+      else _promptSendTrack(nd2,true); // אין ערוץ חי — הצע לשלוח קישור מעודכן
+    });
+  }
   else if(hasClient)_promptSendTrack(nd2,true);
 }
 // סימון שהחוסרים בהפצה התקבלו — מנקה את שדה החוסרים בלחיצה (מסיר את חסימת ה"תקוע")
