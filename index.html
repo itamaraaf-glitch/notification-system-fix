@@ -5227,8 +5227,12 @@ function swTab(el,tabsId,t1,t2,t3,t4){
   const idx=Array.from(document.getElementById(tabsId).querySelectorAll('.tab')).indexOf(el);
   [t1,t2,t3,t4].forEach((id,i)=>{const e=document.getElementById(id);if(e)e.style.display=i===idx?'':'none';});
 }
-function filt(ev,...ids){
-  const raw=ev.target.value.trim(),q=raw.toLowerCase();
+// דיבאונס לחיפושים — מריץ את העבודה הכבדה רק אחרי הפסקת הקלדה קצרה, כדי שההקלדה תישאר חלקה
+const _srchTimers={};
+function _srchDebounce(key,fn,ms){ clearTimeout(_srchTimers[key]); _srchTimers[key]=setTimeout(fn,ms==null?110:ms); }
+function filt(ev,...ids){ const raw=ev.target.value; _srchDebounce('filt',()=>_filtRun(raw,ids),90); }
+function _filtRun(raw0,ids){
+  const raw=String(raw0||'').trim(),q=raw.toLowerCase();
   ids.forEach(id=>{
     const tb=document.getElementById(id);if(!tb)return;
     const prev=tb.querySelector('tr[data-noresults]');if(prev)prev.remove(); // מסירים שורת "אין תוצאות" קודמת
@@ -5247,7 +5251,8 @@ function filt(ev,...ids){
   });
 }
 // חיפוש בארכיון: מסנן שורות ומסתיר בלוקים של חודשים שנשארו ריקים
-function filtArch(q,contId){
+function filtArch(q,contId){ _srchDebounce('arch',()=>_filtArchRun(q,contId),90); }
+function _filtArchRun(q,contId){
   q=(q||'').trim().toLowerCase();
   const cont=document.getElementById(contId);if(!cont)return;
   cont.querySelectorAll('tbody tr').forEach(r=>{r.style.display=!q||r.textContent.toLowerCase().includes(q)?'':'none';});
@@ -5257,7 +5262,8 @@ function filtArch(q,contId){
   });
 }
 // חיפוש בכרטיסים (התראות): מסנן לפי הטקסט המלא של כל כרטיס
-function filtCards(q,contId){
+function filtCards(q,contId){ _srchDebounce('cards',()=>_filtCardsRun(q,contId),90); }
+function _filtCardsRun(q,contId){
   q=(q||'').trim().toLowerCase();
   const cont=document.getElementById(contId);if(!cont)return;
   Array.from(cont.children).forEach(c=>{c.style.display=!q||c.textContent.toLowerCase().includes(q)?'':'none';});
@@ -5333,7 +5339,12 @@ function updateNavBadges(){
 // ===== GLOBAL SEARCH =====
 let _gsRes=[];
 let _gsSel=-1; // התוצאה המסומנת לניווט מקלדת (חצים + Enter)
+// ניקוי מיידי בשדה ריק; חיפוש כבד (סריקת כל הנתונים) בדיבאונס — כדי שההקלדה תישאר חלקה
 function globalSearch(q){
+  if(!q||!q.trim()){ clearTimeout(_srchTimers.gs); const box=document.getElementById('gsres'); if(box){box.classList.remove('show');box.innerHTML='';} _gsRes=[]; _gsSel=-1; return; }
+  _srchDebounce('gs',()=>_globalSearchRun(q),120);
+}
+function _globalSearchRun(q){
   q=(q||'').trim().toLowerCase();
   const box=document.getElementById('gsres'); if(!box)return;
   _gsRes=[];
@@ -8250,8 +8261,10 @@ function saveClient(){
   else doSave();
 }
 
-function filterClients(){
-  const q=document.getElementById('client-search').value.trim().toLowerCase();
+function filterClients(){ _srchDebounce('cli',_filterClientsRun,90); }
+function _filterClientsRun(){
+  const el0=document.getElementById('client-search'); if(!el0)return;
+  const q=el0.value.trim().toLowerCase();
   // חיפוש הוא פעולת רשת — אם מחפשים בזמן קרוסלה, חוזרים אוטומטית לתצוגת רשת
   if(q&&_clientsView==='carousel'){toggleClientsView();}
   const cards=document.querySelectorAll('#clients-grid .client-card');
