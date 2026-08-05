@@ -13397,8 +13397,13 @@ document.addEventListener('keydown',e=>{
     e.preventDefault(); const gsi=document.getElementById('gsi'); if(gsi){gsi.focus();gsi.select();} return;
   }
   if(e.key==='Escape'){
+    // הקשה ראשונה בזמן כתיבת שאלה ל-AI מנקה את הטיוטה; הקשה נוספת סוגרת את החלון
+    const aiq=document.getElementById('ai-q');
+    if(aiq && document.activeElement===aiq && aiq.value){ aiq.value=''; return; }
     document.querySelectorAll('.mw.open').forEach(m=>m.classList.remove('open'));
     const gb=document.getElementById('gsres'); if(gb)gb.classList.remove('show');
+    const tsp=document.getElementById('track-share-popup'); if(tsp)tsp.remove(); // חלון שיתוף קישור-מעקב
+    const aip=document.getElementById('ai-popup'); if(aip)aip.remove();           // חלון עוזר ה-AI
     return;
   }
   // the rest are single-key shortcuts — ignore while typing or when a modal is open
