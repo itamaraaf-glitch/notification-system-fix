@@ -8978,11 +8978,19 @@ function trackDistById(id){
   const d=D.dists.find(x=>x.id==id); if(!d){ toast('⚠️ ההפצה לא נמצאה','warn'); return; }
   promptTrackShare(d);
 }
+// משפט סטטוס ידידותי ללקוח לפי שלב ההפצה — נכלל בהודעת השיתוף כדי שהלקוח יראה מיד היכן ההזמנה
+function _distClientStatusLine(st){
+  return ({'ממתין להפצה':'ההזמנה נקלטה ואנו נערכים לביצוע.',
+    'בהתקנה':'הצוות שלנו בתהליך התקנה/ביצוע.',
+    'הושלם':'ההזמנה הושלמה בהצלחה — תודה על האמון!',
+    'בעיה':'קיימת עצירה זמנית ואנו פועלים לפתרון מהיר.'})[st]||'';
+}
 function _trackSharePopup(url, d){
   const old=document.getElementById('track-share-popup'); if(old)old.remove();
   window._trackShareCtx={url,cl:d.cl||'',no:d.no||'',co:d.co||'',cle:(d.cle||'').trim(),id:d.id||null,st:d.st||''};
   const qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data='+encodeURIComponent(url);
-  const waTxt=`שלום${d.cl?' '+d.cl:''}, למעקב אחר סטטוס ההזמנה שלכם (${d.no||d.co||''}) בזמן אמת:\n${url}`;
+  const _stMsg=_distClientStatusLine(d.st);
+  const waTxt=`שלום${d.cl?' '+d.cl:''}, למעקב אחר סטטוס ההזמנה שלכם (${d.no||d.co||''}) בזמן אמת:${_stMsg?`\nסטטוס נוכחי: ${d.st} — ${_stMsg}`:''}\n${url}`;
   // אם ידוע מספר הטלפון של הלקוח (מכרטיס הלקוח) — שולחים וואטסאפ ישירות אליו; אחרת בורר שיתוף כללי
   const _cliCard=(typeof findClientByName==='function')?(findClientByName(d.co)||findClientByName(d.cl)):null;
   const _cliPhone=_cliCard&&_cliCard.phone?String(_cliCard.phone).trim():'';
@@ -9030,7 +9038,8 @@ function _trackMail(){
   const cle=(c.cle||'').trim();
   if(!cle){ toast('⚠️ אין אימייל לקוח','warn'); return; }
   const subject=`מעקב הזמנה – ${c.no||c.co||''}`;
-  const body=[`שלום ${c.cl||'לקוח יקר'},`,``,`למעקב אחר סטטוס ההזמנה שלכם בזמן אמת, היכנסו לקישור הבא:`,c.url,``,`נשמח לעמוד לרשותכם בכל שאלה.`,``,`בברכה,`,`איתמר ונדן`,`HOT Business`,`Itamar.venden@hot.net.il`].join('\n');
+  const _stMsg=_distClientStatusLine(c.st);
+  const body=[`שלום ${c.cl||'לקוח יקר'},`,``,`למעקב אחר סטטוס ההזמנה שלכם בזמן אמת, היכנסו לקישור הבא:`,c.url,...(_stMsg?[``,`סטטוס נוכחי: ${c.st} — ${_stMsg}`]:[]),``,`נשמח לעמוד לרשותכם בכל שאלה.`,``,`בברכה,`,`איתמר ונדן`,`HOT Business`,`Itamar.venden@hot.net.il`].join('\n');
   openMail(cle, subject, body);
   _trackMarkSynced();
 }

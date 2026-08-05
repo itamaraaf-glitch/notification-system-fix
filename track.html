@@ -302,20 +302,33 @@
     });
   }
 
+  // הודעה ברורה כשנפתח קישור אך לא ניתן היה לטעון אותו (נחתך בשיתוף / פג) — במקום "אין מעקבים"
+  function showLinkError(){
+    var list=document.getElementById('list'), upd=document.getElementById('upd');
+    if(load().length) return; // יש כבר מעקב תקין — לא מציגים שגיאה
+    if(list) list.innerHTML='<div class="empty"><div class="em">🔗</div><h2>לא הצלחנו לטעון את הקישור</h2>'
+      +'<p>ייתכן שהקישור נחתך בעת השליחה.<br>בקשו מ-HOT Business לשלוח את הקישור <b>המלא</b> שוב, או פתחו אותו ישירות מההודעה המקורית.</p></div>';
+    if(upd) upd.textContent='';
+  }
   (function init(){
     var enc = getParam('t');
     if(!enc && location.hash) enc = location.hash.replace(/^#/,'').replace(/^t=/,'');
     var id = getParam('id');
     var dbEnc = getParam('d');
     var dbBase = dbEnc ? (b64urlToStr(dbEnc)||'') : '';
+    var hadLink = !!(enc || (id && dbBase)); // האם המשתמש הגיע דרך קישור מעקב?
+    var parsedOk = false;
     // 1) תמונת-המצב מהקישור מוצגת מיד (מהיר / אופליין)
-    if(enc){ var o=parsePayload(enc); if(o){ upsert(o); setActiveOrder(o); } }
+    if(enc){ var o=parsePayload(enc); if(o){ upsert(o); setActiveOrder(o); parsedOk=true; } }
     render();
     // 2) אם יש מקור חי — מושכים את הסטטוס העדכני ומעדכנים את אותו כרטיס
     if(id && dbBase){
       fetchLive(dbBase,id,function(rec){
         if(rec){ ingestLive(rec,dbBase,id); setActiveOrder(rec); render(); }
+        else if(!parsedOk && !load().length){ showLinkError(); } // קישור נפתח אך נכשל לגמרי
       });
+    } else if(hadLink && !parsedOk && !load().length){
+      showLinkError();
     }
     try{history.replaceState(null,'',location.pathname);}catch(e){}
     // רענון תקופתי + בכל חזרה לדף — כך שאין צורך לשלוח קישור חדש בכל שינוי
