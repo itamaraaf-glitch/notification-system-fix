@@ -10184,6 +10184,17 @@ function _aiCopyMsg(i){
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(()=>showToast('📋 הועתק ללוח','ok')).catch(()=>fallbackCopySummary(txt)); }
   else fallbackCopySummary(txt);
 }
+// הקראת תשובת AI בקול (עברית) — לחיצה שנייה עוצרת. נופל בחן אם הדפדפן לא תומך.
+function _aiSpeak(i){
+  const m=_aiChat[i]; if(!m)return;
+  const synth=window.speechSynthesis;
+  if(!synth||typeof SpeechSynthesisUtterance==='undefined'){ showToast('🔊 הקראה קולית לא נתמכת בדפדפן זה','warn'); return; }
+  if(synth.speaking){ synth.cancel(); return; } // עצירה בלחיצה שנייה
+  const txt=String(m.content||'').replace(/```[\s\S]*?```/g,' ').replace(/[*_`#>]/g,'').replace(/\n{2,}/g,'. ').replace(/\n/g,' ').trim();
+  if(!txt)return;
+  try{ const u=new SpeechSynthesisUtterance(txt); u.lang='he-IL'; u.rate=1; synth.cancel(); synth.speak(u); }
+  catch(e){ showToast('🔊 לא ניתן להקריא כרגע','warn'); }
+}
 function _aiRenderChat(thinking){
   const box=document.getElementById('ai-answer'); if(!box)return;
   if(!_aiChat.length&&!thinking){ box.innerHTML=''; return; }
@@ -10196,8 +10207,10 @@ function _aiRenderChat(thinking){
   const bubbles=_aiChat.map((m,mi)=>{const me=m.role==='user';
     // הודעת המשתמש: טקסט פשוט (esc + שמירת שורות). תשובת ה-AI: עיצוב Markdown קל
     const body=me?`<span style="white-space:pre-wrap">${esc(m.content)}</span>`:_aiFmt(m.content);
-    const copyBtn=me?'':`<button onclick="_aiCopyMsg(${mi})" title="העתק תשובה" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:0 4px;line-height:1">📋</button>`;
-    return `<div style="margin-bottom:${S.gap}"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${comfy?'5px':'2px'}"><span style="font-size:10.5px;font-weight:800;color:${me?'#4cc9f0':'#a78bfa'}">${me?'🧑 אתה':aiName}</span>${copyBtn}</div>
+    const actBtns=me?'':`<span style="display:flex;gap:1px">
+      <button onclick="_aiSpeak(${mi})" title="הקרא תשובה בקול" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:0 4px;line-height:1">🔊</button>
+      <button onclick="_aiCopyMsg(${mi})" title="העתק תשובה" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:0 4px;line-height:1">📋</button></span>`;
+    return `<div style="margin-bottom:${S.gap}"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${comfy?'5px':'2px'}"><span style="font-size:10.5px;font-weight:800;color:${me?'#4cc9f0':'#a78bfa'}">${me?'🧑 אתה':aiName}</span>${actBtns}</div>
     <div style="font-size:${S.fs};color:var(--text);line-height:${S.lh};word-break:break-word;background:${me?'rgba(76,201,240,.08)':'rgba(167,139,250,.1)'};border:1px solid ${me?'rgba(76,201,240,.2)':'rgba(167,139,250,.3)'};border-radius:${S.br};padding:${S.pad}">${body}</div></div>`;}).join('');
   box.innerHTML=`<div id="ai-thread" style="max-height:${S.max};overflow:auto;margin-bottom:8px">${bubbles}${thinking?'<div style="font-size:12px;color:#a78bfa;padding:4px">🤖 חושב…</div>':''}</div>`
     +(_aiChat.length?`<div style="display:flex;gap:6px;margin-bottom:10px">
