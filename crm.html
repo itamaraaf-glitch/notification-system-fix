@@ -2499,6 +2499,12 @@ body.logged-in #ai-fab{display:flex}
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
     <label style="font-size:11px;font-weight:800;color:var(--text3)">🔢 מספר פרויקט</label>
     <input type="text" id="sum-proj" placeholder="לא חובה" style="width:120px">
+    <label style="font-size:11px;font-weight:800;color:var(--text3)">📏 אורך</label>
+    <select id="sum-len" onchange="_sumLen=this.value" style="width:auto" title="אורך הסיכום שה-AI יפיק">
+      <option value="short">קצר</option>
+      <option value="normal" selected>רגיל</option>
+      <option value="detailed">מפורט</option>
+    </select>
     <button class="btn btns" onclick="regenSummary()" style="border-color:#a78bfa;color:#a78bfa" title="בנה מחדש את הסיכום מנתוני המערכת">🔄 צור מחדש</button>
     <button class="btn btns" id="sum-ai-btn" onclick="aiMeetingSummary()" style="border-color:#a78bfa;color:#a78bfa" title="נסח סיכום מקצועי עם AI לפי הנושאים וההערות">✨ סיכום AI</button>
     <button class="btn btns" id="sum-improve-btn" onclick="aiImproveSummary()" style="border-color:#06d6a0;color:#06d6a0" title="קח את המלל החופשי שכתבת/הכתבת בתיבה ושפר אותו לסיכום מקצועי — בלי להמציא פרטים">✍️ שפר ניסוח</button>
@@ -12654,7 +12660,7 @@ async function aiMeetingSummary(){
   ].filter(Boolean).join('\n');
   const system='אתה עוזר שמנסח סיכומי פגישה עסקיים בעברית עבור HOT Business (שירותי תקשורת/סלולר/סטארלינק לעסקים). כתוב סיכום '
     +(modeClient?'ללקוח — מקצועי, אדיב וברור, ללא מידע פנימי רגיש כמו עלויות/עמלות':'פנימי מלא — כולל דגשים תפעוליים ומשימות המשך')
-    +'. מבנה: כותרת, פסקת פתיחה קצרה, רשימת נקודות עיקריות, וסיכום עם צעדים הבאים. עברית תקינה ותמציתית. אל תמציא פרטים שלא נמסרו.';
+    +'. מבנה: כותרת, פסקת פתיחה קצרה, רשימת נקודות עיקריות, וסיכום עם צעדים הבאים. עברית תקינה ותמציתית. אל תמציא פרטים שלא נמסרו.'+_sumLenText();
   try{
     const out=await _aiLLM([{role:'user',content:'נסח סיכום פגישה מהפרטים הבאים:\n\n'+details}],system);
     if(ta)ta.value=String(out||'').trim();
@@ -12663,6 +12669,9 @@ async function aiMeetingSummary(){
     showToast('⚠️ ניסוח AI נכשל: '+String(e&&e.message||e).slice(0,80),'warn');
   }finally{ if(btn){btn.textContent=orig;btn.disabled=false;} }
 }
+// בקרת אורך לסיכום ה-AI (קצר / רגיל / מפורט)
+let _sumLen='normal';
+function _sumLenText(){ return _sumLen==='short'?' שמור על סיכום קצר ותמציתי — 3-5 שורות בלבד, ללא כותרות משנה.':_sumLen==='detailed'?' פרט היטב: כל נקודה, דגש ומשימה, במבנה מלא.':' אורך רגיל, ממוקד ולעניין.'; }
 // שיפור ניסוח: לוקח את המלל החופשי שהמשתמש כתב/הכתיב בתיבה ומשכתב אותו לסיכום מקצועי — בלי להמציא
 async function aiImproveSummary(){
   const ta=document.getElementById('sum-text');
@@ -12675,7 +12684,7 @@ async function aiImproveSummary(){
   const head=m?('פגישה מול '+(m.cl||'לקוח')+(m.dt?' בתאריך '+fmtDate(m.dt):'')+(m.nu?' · פרויקט '+m.nu:'')):'';
   const system='אתה עורך לשוני מקצועי. קיבלת מלל גולמי שכתב נציג HOT Business (שירותי תקשורת/סלולר/סטארלינק לעסקים) אחרי פגישה. שכתב אותו לסיכום פגישה '
     +(modeClient?'ללקוח — אדיב, מקצועי וברור, ללא מידע פנימי רגיש כמו עלויות/עמלות':'פנימי — ענייני ומסודר, כולל צעדים הבאים')
-    +' בעברית תקינה. חשוב: שמור על כל העובדות והנקודות שנמסרו — אל תמציא פרטים חדשים ואל תשמיט מידע קיים. שפר ניסוח, ארגון, מבנה ופיסוק בלבד. מבנה מוצע: כותרת קצרה, פסקת פתיחה, נקודות עיקריות, וצעדים הבאים.';
+    +' בעברית תקינה. חשוב: שמור על כל העובדות והנקודות שנמסרו — אל תמציא פרטים חדשים ואל תשמיט מידע קיים. שפר ניסוח, ארגון, מבנה ופיסוק בלבד. מבנה מוצע: כותרת קצרה, פסקת פתיחה, נקודות עיקריות, וצעדים הבאים.'+_sumLenText();
   try{
     const out=await _aiLLM([{role:'user',content:(head?head+'\n\n':'')+'המלל הגולמי לשיפור:\n'+raw}],system);
     if(ta)ta.value=String(out||'').trim();
