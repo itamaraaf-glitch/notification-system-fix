@@ -2501,6 +2501,7 @@ body.logged-in #ai-fab{display:flex}
     <input type="text" id="sum-proj" placeholder="לא חובה" style="width:120px">
     <button class="btn btns" onclick="regenSummary()" style="border-color:#a78bfa;color:#a78bfa" title="בנה מחדש את הסיכום מנתוני המערכת">🔄 צור מחדש</button>
     <button class="btn btns" id="sum-ai-btn" onclick="aiMeetingSummary()" style="border-color:#a78bfa;color:#a78bfa" title="נסח סיכום מקצועי עם AI לפי הנושאים וההערות">✨ סיכום AI</button>
+    <button class="btn btns" id="sum-mic-btn" onclick="_sumVoice()" style="border-color:#4cc9f0;color:#4cc9f0" title="הכתב הערות פגישה בקול (עברית) — נוסף לתיבה, ואז אפשר לנסח עם AI">🎤 הכתבה</button>
     <button class="btn btns" id="sum-read-file-btn" onclick="enrichSummaryFromFile()" style="border-color:#06d6a0;color:#06d6a0;display:none" title="קרא תוכן מקובץ מצורף לפגישה ושלב בסיכום">📖 קרא מהקובץ</button>
     <span style="font-size:10px;color:var(--text3)">סיכום ללקוח = בלי מידע פנימי · נבנה לפי הנושאים שנבחרו בפגישה · ניתן לערוך</span>
   </div>
@@ -12635,12 +12636,19 @@ async function aiMeetingSummary(){
   const orig=btn?btn.textContent:''; if(btn){btn.textContent='✨ מנסח…';btn.disabled=true;}
   const topics=(m.topics||[]).map(k=>ITEM_CFG[k]?ITEM_CFG[k].label:k).filter(Boolean);
   const modeClient=_sumMode==='client';
+  // רקע לקוח — עסקאות פתוחות ומוצרים שברשותו, כדי שהסיכום יהיה ממוקד ומבוסס (לא המצאה)
+  const cli=(typeof findClientByName==='function')?findClientByName(m.cl):null;
+  const openDeals=(D.deals||[]).filter(d=>d.co&&sameCo(d.co,m.cl||'')&&d.st!=='נסגר').map(d=>d.srv||d.co).filter(Boolean);
+  const products=[];
+  if(cli){ Object.keys(ITEM_CFG).forEach(t=>{ const n=(cli[t]||[]).length; if(n)products.push(ITEM_CFG[t].label+(n>1?' ×'+n:'')); }); }
   const details=[
     'לקוח: '+(m.cl||'—'),
     'תאריך: '+(m.dt?fmtDate(m.dt):'—'),
     'סוג: '+_typeLabel(m.mtype||'פגישה'),
     m.nu?('מספר פרויקט: '+m.nu):'',
     topics.length?('נושאים שנדונו: '+topics.join(', ')):'',
+    openDeals.length?('עסקאות פתוחות מול הלקוח: '+openDeals.join(', ')):'',
+    (!modeClient&&products.length)?('מוצרים שברשות הלקוח: '+products.join(', ')):'',
     'הערות/תוכן קיים:\n'+((ta&&ta.value.trim())||m.no||'(אין הערות — נסח לפי הנושאים)')
   ].filter(Boolean).join('\n');
   const system='אתה עוזר שמנסח סיכומי פגישה עסקיים בעברית עבור HOT Business (שירותי תקשורת/סלולר/סטארלינק לעסקים). כתוב סיכום '
@@ -12653,6 +12661,24 @@ async function aiMeetingSummary(){
   }catch(e){
     showToast('⚠️ ניסוח AI נכשל: '+String(e&&e.message||e).slice(0,80),'warn');
   }finally{ if(btn){btn.textContent=orig;btn.disabled=false;} }
+}
+// הכתבת הערות פגישה בקול (עברית) ישירות לתיבת הסיכום — רציף, נוסף לתוכן הקיים
+let _sumRec=null;
+function _sumVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const btn=document.getElementById('sum-mic-btn'), ta=document.getElementById('sum-text');
+  const setIdle=()=>{ if(btn){btn.textContent='🎤 הכתבה';btn.style.background='';btn.style.borderColor='#4cc9f0';btn.style.color='#4cc9f0';} };
+  if(!SR){ showToast('🎤 קלט קולי לא נתמך בדפדפן זה — נסה Chrome','warn'); return; }
+  if(_sumRec){ try{_sumRec.stop();}catch(e){} _sumRec=null; setIdle(); return; }
+  let rec; try{rec=new SR();}catch(e){ showToast('🎤 לא ניתן להפעיל מיקרופון','warn'); return; }
+  _sumRec=rec; rec.lang='he-IL'; rec.interimResults=false; rec.continuous=true; // רציף — מתאים להכתבה ארוכה
+  if(btn){ btn.textContent='⏹ עצור';btn.style.background='#e74c3c';btn.style.borderColor='#e74c3c';btn.style.color='#fff'; }
+  rec.onresult=e=>{ let t=''; for(let i=e.resultIndex;i<e.results.length;i++){ if(e.results[i].isFinal)t+=e.results[i][0].transcript+' '; }
+    if(t&&ta){ ta.value=(ta.value.trim()?ta.value.replace(/\s*$/,'')+'\n':'')+t.trim(); ta.scrollTop=ta.scrollHeight; } };
+  rec.onerror=e=>{ const er=e&&e.error; if(er!=='aborted'&&er!=='no-speech')showToast('🎤 שגיאת קלט קולי'+(er?' ('+er+')':''),'warn'); };
+  rec.onend=()=>{ _sumRec=null; setIdle(); };
+  try{ rec.start(); showToast('🎤 מקשיב — הכתב את הערות הפגישה. לחץ שוב לעצירה, ואז "✨ סיכום AI"','ok'); }
+  catch(e){ _sumRec=null; setIdle(); showToast('🎤 לא ניתן להפעיל מיקרופון','warn'); }
 }
 function saveSummaryToMeeting(){
   const m=D.meetings.find(x=>x.id==_sumMeetingId);
