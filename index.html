@@ -2515,6 +2515,7 @@ body.logged-in #ai-fab{display:flex}
   <textarea id="sum-text" rows="18" style="width:100%;font-size:12px;line-height:1.7;direction:rtl"></textarea>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">
     <button class="btn" onclick="closeM('msummary')">סגור</button>
+    <button class="btn btns" onclick="scheduleFollowupFromSummary()" style="border-color:#a78bfa;color:#a78bfa" title="קבע פגישת המשך עם אותו לקוח (תאריך ברירת מחדל: שבוע קדימה)">📅 פגישת המשך</button>
     <button class="btn btns" onclick="copySummary()" style="border-color:#f4a261;color:#f4a261">📋 העתק</button>
     <button class="btn btns" onclick="emailSummary()" style="border-color:#4cc9f0;color:#4cc9f0">📧 שלח במייל</button>
     <button class="btn btnp" onclick="saveSummaryToMeeting()">💾 שמור בפגישה</button>
@@ -12668,6 +12669,22 @@ async function aiMeetingSummary(){
   }catch(e){
     showToast('⚠️ ניסוח AI נכשל: '+String(e&&e.message||e).slice(0,80),'warn');
   }finally{ if(btn){btn.textContent=orig;btn.disabled=false;} }
+}
+// קביעת פגישת המשך מתוך חלון הסיכום — פותח טופס פגישה חדש עם אותו לקוח ותאריך ברירת מחדל שבוע קדימה
+function scheduleFollowupFromSummary(){
+  const m=[...D.meetings,...(D.archivedMeetings||[])].find(x=>x.id==_sumMeetingId);
+  const cl=m?(m.cl||''):'';
+  closeM('msummary');
+  setTimeout(()=>{
+    openM('meeting',null);
+    setTimeout(()=>{
+      const clEl=document.getElementById('mcl'); if(clEl)clEl.value=cl;
+      const d=new Date(); d.setDate(d.getDate()+7); while(d.getDay()===5||d.getDay()===6)d.setDate(d.getDate()+1); // מדלג שישי/שבת
+      const dtEl=document.getElementById('mdt'); if(dtEl){ dtEl.value=ymd(d); if(dtEl._dhintUpd)dtEl._dhintUpd(); }
+      const noEl=document.getElementById('mno'); if(noEl&&!noEl.value)noEl.value='פגישת המשך'+(m&&m.dt?' (לפגישה מ-'+fmtDate(m.dt)+')':'');
+      if(clEl)clEl.focus();
+    },70);
+  },130);
 }
 // בקרת אורך לסיכום ה-AI (קצר / רגיל / מפורט)
 let _sumLen='normal';
