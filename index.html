@@ -2501,9 +2501,10 @@ body.logged-in #ai-fab{display:flex}
     <input type="text" id="sum-proj" placeholder="לא חובה" style="width:120px">
     <button class="btn btns" onclick="regenSummary()" style="border-color:#a78bfa;color:#a78bfa" title="בנה מחדש את הסיכום מנתוני המערכת">🔄 צור מחדש</button>
     <button class="btn btns" id="sum-ai-btn" onclick="aiMeetingSummary()" style="border-color:#a78bfa;color:#a78bfa" title="נסח סיכום מקצועי עם AI לפי הנושאים וההערות">✨ סיכום AI</button>
+    <button class="btn btns" id="sum-improve-btn" onclick="aiImproveSummary()" style="border-color:#06d6a0;color:#06d6a0" title="קח את המלל החופשי שכתבת/הכתבת בתיבה ושפר אותו לסיכום מקצועי — בלי להמציא פרטים">✍️ שפר ניסוח</button>
     <button class="btn btns" id="sum-mic-btn" onclick="_sumVoice()" style="border-color:#4cc9f0;color:#4cc9f0" title="הכתב הערות פגישה בקול (עברית) — נוסף לתיבה, ואז אפשר לנסח עם AI">🎤 הכתבה</button>
     <button class="btn btns" id="sum-read-file-btn" onclick="enrichSummaryFromFile()" style="border-color:#06d6a0;color:#06d6a0;display:none" title="קרא תוכן מקובץ מצורף לפגישה ושלב בסיכום">📖 קרא מהקובץ</button>
-    <span style="font-size:10px;color:var(--text3)">סיכום ללקוח = בלי מידע פנימי · נבנה לפי הנושאים שנבחרו בפגישה · ניתן לערוך</span>
+    <span style="font-size:10px;color:var(--text3)">💡 אפשר לכתוב/להכתיב מלל חופשי ואז "✍️ שפר ניסוח" — ה-AI ישכתב אותו לסיכום מקצועי בלי להמציא · "סיכום ללקוח" = בלי מידע פנימי · ניתן לערוך</span>
   </div>
   <textarea id="sum-text" rows="18" style="width:100%;font-size:12px;line-height:1.7;direction:rtl"></textarea>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">
@@ -12661,6 +12662,26 @@ async function aiMeetingSummary(){
   }catch(e){
     showToast('⚠️ ניסוח AI נכשל: '+String(e&&e.message||e).slice(0,80),'warn');
   }finally{ if(btn){btn.textContent=orig;btn.disabled=false;} }
+}
+// שיפור ניסוח: לוקח את המלל החופשי שהמשתמש כתב/הכתיב בתיבה ומשכתב אותו לסיכום מקצועי — בלי להמציא
+async function aiImproveSummary(){
+  const ta=document.getElementById('sum-text');
+  const raw=(ta&&ta.value.trim())||'';
+  if(!raw){ showToast('✍️ כתוב או הכתב תחילה מלל חופשי בתיבה — ואז אשפר אותו לסיכום','warn'); if(ta)ta.focus(); return; }
+  if(!_aiKey()){ showToast('✍️ לשיפור הניסוח יש לחבר תחילה מנוע AI (🤖)','warn'); openAiAssistant(); return; }
+  const m=[...D.meetings,...(D.archivedMeetings||[])].find(x=>x.id==_sumMeetingId);
+  const btn=document.getElementById('sum-improve-btn'); const orig=btn?btn.textContent:''; if(btn){btn.textContent='✍️ משפר…';btn.disabled=true;}
+  const modeClient=_sumMode==='client';
+  const head=m?('פגישה מול '+(m.cl||'לקוח')+(m.dt?' בתאריך '+fmtDate(m.dt):'')+(m.nu?' · פרויקט '+m.nu:'')):'';
+  const system='אתה עורך לשוני מקצועי. קיבלת מלל גולמי שכתב נציג HOT Business (שירותי תקשורת/סלולר/סטארלינק לעסקים) אחרי פגישה. שכתב אותו לסיכום פגישה '
+    +(modeClient?'ללקוח — אדיב, מקצועי וברור, ללא מידע פנימי רגיש כמו עלויות/עמלות':'פנימי — ענייני ומסודר, כולל צעדים הבאים')
+    +' בעברית תקינה. חשוב: שמור על כל העובדות והנקודות שנמסרו — אל תמציא פרטים חדשים ואל תשמיט מידע קיים. שפר ניסוח, ארגון, מבנה ופיסוק בלבד. מבנה מוצע: כותרת קצרה, פסקת פתיחה, נקודות עיקריות, וצעדים הבאים.';
+  try{
+    const out=await _aiLLM([{role:'user',content:(head?head+'\n\n':'')+'המלל הגולמי לשיפור:\n'+raw}],system);
+    if(ta)ta.value=String(out||'').trim();
+    showToast('✍️ הניסוח שופר — ניתן לערוך ולשמור','ok');
+  }catch(e){ showToast('⚠️ שיפור הניסוח נכשל: '+String(e&&e.message||e).slice(0,80),'warn'); }
+  finally{ if(btn){btn.textContent=orig;btn.disabled=false;} }
 }
 // הכתבת הערות פגישה בקול (עברית) ישירות לתיבת הסיכום — רציף, נוסף לתוכן הקיים
 let _sumRec=null;
