@@ -8375,6 +8375,7 @@ function rClients(){
             ${(c.files&&c.files.length)?`<button class="btn btns" onclick="event.stopPropagation();rowFilesMenu('clients','${c.id}',event)" title="${c.files.length} קבצים מצורפים" style="font-size:9px;border-color:#06d6a0;color:#06d6a0">📎${c.files.length>1?c.files.length:''}</button>`:''}
             ${c.phone?`<button class="btn btns" onclick="event.stopPropagation();callClient('${c.id}')" title="חייג ${esc(c.phone)}" style="font-size:9px;border-color:#4cc9f0;color:#4cc9f0">📞</button><button class="btn btns" onclick="event.stopPropagation();waClient('${c.id}')" title="וואטסאפ ${esc(c.phone)}" style="font-size:9px;border-color:#25D366;color:#25D366">💬</button>`:''}
             <button class="btn btns" onclick="event.stopPropagation();shareClientSummary('${c.id}')" title="שתף סיכום לקוח בוואטסאפ" style="font-size:9px;border-color:#25D366;color:#25D366">📤</button>
+            <button class="btn btns" onclick="event.stopPropagation();aiClientBriefing('${escJs(c.name||'')}')" title="תדריך AI על הלקוח — לפני שיחה/פגישה" style="font-size:9px;border-color:#a78bfa;color:#a78bfa">🤖</button>
             ${emailBtn}
             <button class="btn btns btnd" onclick="event.stopPropagation();dbDelete('clients','${c.id}')" style="font-size:9px">🗑</button>
           </div>
@@ -10379,6 +10380,17 @@ function _aiSpotAsk(){
   const inp=document.getElementById('ai-spot-q'); const q=inp?inp.value.trim():'';
   openAiAssistant();
   if(q){ setTimeout(()=>{ const f=document.getElementById('ai-q'); if(f){ f.value=q; _aiSubmit(); } },80); }
+}
+// פותח את העוזר ושואל שאלה נתונה (לשימוש חוזר — למשל תדריך לקוח מכרטיס הלקוח)
+function _aiAskAbout(q){
+  if(typeof closeM==='function'){ document.querySelectorAll('.mw.open').forEach(m=>m.classList.remove('open')); }
+  openAiAssistant();
+  if(q){ setTimeout(()=>{ const f=document.getElementById('ai-q'); if(f){ f.value=q; _aiSubmit(); } },90); }
+}
+// תדריך לקוח מהיר — פותח את העוזר עם שאלה ממוקדת על הלקוח (לפני שיחה/פגישה)
+function aiClientBriefing(name){
+  const cl=String(name||'').trim(); if(!cl){ showToast('⚠️ שם לקוח חסר','warn'); return; }
+  _aiAskAbout('תן לי תדריך קצר על הלקוח '+cl+': מה יש לו אצלנו, אילו עסקאות פתוחות, יתרות לגבייה, פגישות אחרונות, ומה הכי כדאי להציע לו עכשיו.');
 }
 // מיקום חלון ה-AI — משחזר מיקום שמור או ברירת מחדל (צד ימין למעלה), עם הצמדה לגבולות המסך
 function _aiPositionWin(el){
