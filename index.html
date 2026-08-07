@@ -2499,6 +2499,12 @@ body.logged-in #ai-fab{display:flex}
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
     <label style="font-size:11px;font-weight:800;color:var(--text3)">🔢 מספר פרויקט</label>
     <input type="text" id="sum-proj" placeholder="לא חובה" style="width:120px">
+    <label style="font-size:11px;font-weight:800;color:var(--text3)">📏 אורך</label>
+    <select id="sum-len" onchange="_sumLen=this.value" style="width:auto" title="אורך הסיכום שה-AI יפיק">
+      <option value="short">קצר</option>
+      <option value="normal" selected>רגיל</option>
+      <option value="detailed">מפורט</option>
+    </select>
     <button class="btn btns" onclick="regenSummary()" style="border-color:#a78bfa;color:#a78bfa" title="בנה מחדש את הסיכום מנתוני המערכת">🔄 צור מחדש</button>
     <button class="btn btns" id="sum-ai-btn" onclick="aiMeetingSummary()" style="border-color:#a78bfa;color:#a78bfa" title="נסח סיכום מקצועי עם AI לפי הנושאים וההערות">✨ סיכום AI</button>
     <button class="btn btns" id="sum-improve-btn" onclick="aiImproveSummary()" style="border-color:#06d6a0;color:#06d6a0" title="קח את המלל החופשי שכתבת/הכתבת בתיבה ושפר אותו לסיכום מקצועי — בלי להמציא פרטים">✍️ שפר ניסוח</button>
@@ -2509,6 +2515,7 @@ body.logged-in #ai-fab{display:flex}
   <textarea id="sum-text" rows="18" style="width:100%;font-size:12px;line-height:1.7;direction:rtl"></textarea>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">
     <button class="btn" onclick="closeM('msummary')">סגור</button>
+    <button class="btn btns" onclick="scheduleFollowupFromSummary()" style="border-color:#a78bfa;color:#a78bfa" title="קבע פגישת המשך עם אותו לקוח (תאריך ברירת מחדל: שבוע קדימה)">📅 פגישת המשך</button>
     <button class="btn btns" onclick="copySummary()" style="border-color:#f4a261;color:#f4a261">📋 העתק</button>
     <button class="btn btns" onclick="emailSummary()" style="border-color:#4cc9f0;color:#4cc9f0">📧 שלח במייל</button>
     <button class="btn btnp" onclick="saveSummaryToMeeting()">💾 שמור בפגישה</button>
@@ -12654,7 +12661,7 @@ async function aiMeetingSummary(){
   ].filter(Boolean).join('\n');
   const system='אתה עוזר שמנסח סיכומי פגישה עסקיים בעברית עבור HOT Business (שירותי תקשורת/סלולר/סטארלינק לעסקים). כתוב סיכום '
     +(modeClient?'ללקוח — מקצועי, אדיב וברור, ללא מידע פנימי רגיש כמו עלויות/עמלות':'פנימי מלא — כולל דגשים תפעוליים ומשימות המשך')
-    +'. מבנה: כותרת, פסקת פתיחה קצרה, רשימת נקודות עיקריות, וסיכום עם צעדים הבאים. עברית תקינה ותמציתית. אל תמציא פרטים שלא נמסרו.';
+    +'. מבנה: כותרת, פסקת פתיחה קצרה, רשימת נקודות עיקריות, וסיכום עם צעדים הבאים. עברית תקינה ותמציתית. אל תמציא פרטים שלא נמסרו.'+_sumLenText();
   try{
     const out=await _aiLLM([{role:'user',content:'נסח סיכום פגישה מהפרטים הבאים:\n\n'+details}],system);
     if(ta)ta.value=String(out||'').trim();
@@ -12663,6 +12670,25 @@ async function aiMeetingSummary(){
     showToast('⚠️ ניסוח AI נכשל: '+String(e&&e.message||e).slice(0,80),'warn');
   }finally{ if(btn){btn.textContent=orig;btn.disabled=false;} }
 }
+// קביעת פגישת המשך מתוך חלון הסיכום — פותח טופס פגישה חדש עם אותו לקוח ותאריך ברירת מחדל שבוע קדימה
+function scheduleFollowupFromSummary(){
+  const m=[...D.meetings,...(D.archivedMeetings||[])].find(x=>x.id==_sumMeetingId);
+  const cl=m?(m.cl||''):'';
+  closeM('msummary');
+  setTimeout(()=>{
+    openM('meeting',null);
+    setTimeout(()=>{
+      const clEl=document.getElementById('mcl'); if(clEl)clEl.value=cl;
+      const d=new Date(); d.setDate(d.getDate()+7); while(d.getDay()===5||d.getDay()===6)d.setDate(d.getDate()+1); // מדלג שישי/שבת
+      const dtEl=document.getElementById('mdt'); if(dtEl){ dtEl.value=ymd(d); if(dtEl._dhintUpd)dtEl._dhintUpd(); }
+      const noEl=document.getElementById('mno'); if(noEl&&!noEl.value)noEl.value='פגישת המשך'+(m&&m.dt?' (לפגישה מ-'+fmtDate(m.dt)+')':'');
+      if(clEl)clEl.focus();
+    },70);
+  },130);
+}
+// בקרת אורך לסיכום ה-AI (קצר / רגיל / מפורט)
+let _sumLen='normal';
+function _sumLenText(){ return _sumLen==='short'?' שמור על סיכום קצר ותמציתי — 3-5 שורות בלבד, ללא כותרות משנה.':_sumLen==='detailed'?' פרט היטב: כל נקודה, דגש ומשימה, במבנה מלא.':' אורך רגיל, ממוקד ולעניין.'; }
 // שיפור ניסוח: לוקח את המלל החופשי שהמשתמש כתב/הכתיב בתיבה ומשכתב אותו לסיכום מקצועי — בלי להמציא
 async function aiImproveSummary(){
   const ta=document.getElementById('sum-text');
@@ -12675,7 +12701,7 @@ async function aiImproveSummary(){
   const head=m?('פגישה מול '+(m.cl||'לקוח')+(m.dt?' בתאריך '+fmtDate(m.dt):'')+(m.nu?' · פרויקט '+m.nu:'')):'';
   const system='אתה עורך לשוני מקצועי. קיבלת מלל גולמי שכתב נציג HOT Business (שירותי תקשורת/סלולר/סטארלינק לעסקים) אחרי פגישה. שכתב אותו לסיכום פגישה '
     +(modeClient?'ללקוח — אדיב, מקצועי וברור, ללא מידע פנימי רגיש כמו עלויות/עמלות':'פנימי — ענייני ומסודר, כולל צעדים הבאים')
-    +' בעברית תקינה. חשוב: שמור על כל העובדות והנקודות שנמסרו — אל תמציא פרטים חדשים ואל תשמיט מידע קיים. שפר ניסוח, ארגון, מבנה ופיסוק בלבד. מבנה מוצע: כותרת קצרה, פסקת פתיחה, נקודות עיקריות, וצעדים הבאים.';
+    +' בעברית תקינה. חשוב: שמור על כל העובדות והנקודות שנמסרו — אל תמציא פרטים חדשים ואל תשמיט מידע קיים. שפר ניסוח, ארגון, מבנה ופיסוק בלבד. מבנה מוצע: כותרת קצרה, פסקת פתיחה, נקודות עיקריות, וצעדים הבאים.'+_sumLenText();
   try{
     const out=await _aiLLM([{role:'user',content:(head?head+'\n\n':'')+'המלל הגולמי לשיפור:\n'+raw}],system);
     if(ta)ta.value=String(out||'').trim();
