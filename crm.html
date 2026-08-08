@@ -12021,16 +12021,17 @@ function deleteAll(section){
 }
 
 // ===== DRAG SCROLL =====
+// מאזין mouseup גלובלי יחיד (במקום אחד לכל אלמנט) — מונע דליפת מאזינים שהצטברה בכל רינדור
+let _dragScrollEl=null,_dsX,_dsY,_dsL,_dsT;
+window.addEventListener('mouseup',()=>{ if(_dragScrollEl){_dragScrollEl.classList.remove('dragging');_dragScrollEl=null;} });
 function enableDragScroll(el){
   if(el._dragInit)return;el._dragInit=true;
-  let drag=false,sx,sy,sl,st;
   el.addEventListener('mousedown',e=>{
     if(['INPUT','BUTTON','A','SELECT'].includes(e.target.tagName))return;
-    drag=true;el.classList.add('dragging');
-    sx=e.clientX;sy=e.clientY;sl=el.scrollLeft;st=el.scrollTop;e.preventDefault();
+    _dragScrollEl=el;el.classList.add('dragging');
+    _dsX=e.clientX;_dsY=e.clientY;_dsL=el.scrollLeft;_dsT=el.scrollTop;e.preventDefault();
   });
-  window.addEventListener('mouseup',()=>{drag=false;el.classList.remove('dragging');});
-  el.addEventListener('mousemove',e=>{if(!drag)return;el.scrollLeft=sl-(e.clientX-sx);el.scrollTop=st-(e.clientY-sy);});
+  el.addEventListener('mousemove',e=>{if(_dragScrollEl!==el)return;el.scrollLeft=_dsL-(e.clientX-_dsX);el.scrollTop=_dsT-(e.clientY-_dsY);});
 }
 function initDragScrolls(){document.querySelectorAll('.tscroll').forEach(enableDragScroll);}
 
