@@ -10457,7 +10457,12 @@ function aiClientBriefing(name){
 function aiCollectionReminder(id){
   const s=(D.salary||[]).find(x=>x.id==id); if(!s){ showToast('⚠️ פרויקט לא נמצא','warn'); return; }
   const bal=+s.pv||0; if(bal<=0){ showToast('אין יתרה לגבייה בפרויקט זה','warn'); return; }
-  _aiAskAbout('נסח הודעת תזכורת גבייה מנומסת ומקצועית ללקוח '+(s.cl||'')+' על יתרה לתשלום של '+fmt(bal)+(s.pj?' (פרויקט '+s.pj+')':'')+'. קצרה, אדיבה ומתאימה לוואטסאפ, בעברית, בחתימת HOT Business / איתמר ונדן. בלי לחשוף מידע פנימי.');
+  // פותח את מחולל ההודעות ללקוח (קול-מותג אחיד + שליחה בוואטסאפ/מייל), מנוסח מראש לנושא "תזכורת תשלום"
+  openClientMsg(s.cl||'');
+  setTimeout(()=>{
+    const ctxEl=document.getElementById('cm-context'); if(ctxEl)ctxEl.value='תזכורת לתשלום יתרה פתוחה של '+fmt(bal)+(s.pj?' (פרויקט '+s.pj+')':'');
+    if(_aiKey())_cmDraft('collect');
+  },130);
 }
 // ===== מחולל הודעות ללקוח (AI) — קול-מותג אחיד ותשובות איכותיות בכל הנושאים =====
 // קול-המותג המשותף לכל ההודעות היוצאות ללקוח — כדי שהניסוח יהיה עקבי, מקצועי וחם בכל מקום במערכת.
