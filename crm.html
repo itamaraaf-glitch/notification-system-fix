@@ -9023,14 +9023,14 @@ function _trackSharePopup(url, d){
   window._trackShareCtx={url,cl:d.cl||'',no:d.no||'',co:d.co||'',cle:(d.cle||'').trim(),id:d.id||null,st:d.st||''};
   const qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data='+encodeURIComponent(url);
   const _stMsg=_distClientStatusLine(d.st);
-  const waTxt=`שלום${d.cl?' '+d.cl:''}, למעקב אחר סטטוס ההזמנה שלכם (${d.no||d.co||''}) בזמן אמת:${_stMsg?`\nסטטוס נוכחי: ${d.st} — ${_stMsg}`:''}\n${url}`;
   // אם ידוע מספר הטלפון של הלקוח (מכרטיס הלקוח) — שולחים וואטסאפ ישירות אליו; אחרת בורר שיתוף כללי
   const _cliCard=(typeof findClientByName==='function')?(findClientByName(d.co)||findClientByName(d.cl)):null;
   const _cliPhone=_cliCard&&_cliCard.phone?String(_cliCard.phone).trim():'';
   const _waBase=_cliPhone?_waNum(_cliPhone):'';
-  const wa=(_waBase||'https://wa.me/')+'?text='+encodeURIComponent(waTxt);
   const waLabel=_cliPhone?'💬 וואטסאפ ללקוח':'💬 וואטסאפ';
   const cle=(d.cle||'').trim();
+  // שמירת ההקשר לשליחה — כדי לבנות את ההודעה בזמן הלחיצה (כולל המלל החופשי שהמשתמש יקליד)
+  Object.assign(window._trackShareCtx,{waBase:_waBase,phone:_cliPhone,stMsg:_stMsg});
   // חיווי: האם הקישור "חי" (מתעדכן לבד מהענן) או "תמונת-מצב" (מקודד בקישור, דורש שליחה מחדש בכל שינוי)
   const _isLive=!!(_trackDbBase()&&d._trackTok);
   const liveChip=_isLive
@@ -9050,10 +9050,11 @@ function _trackSharePopup(url, d){
     ${liveChip}
     <div style="text-align:center;margin-bottom:12px"><img src="${qr}" alt="QR" style="width:170px;height:170px;border-radius:10px;background:#fff;padding:6px"></div>
     <div style="font-size:10.5px;color:var(--text3);margin-bottom:5px">${liveDesc}</div>
-    <input id="track-share-url" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;box-sizing:border-box;padding:9px 11px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text2);font-size:10.5px;direction:ltr;margin-bottom:11px">
+    <input id="track-share-url" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;box-sizing:border-box;padding:9px 11px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text2);font-size:10.5px;direction:ltr;margin-bottom:9px">
+    <textarea id="track-custom-msg" placeholder="✍️ הוסף הודעה אישית ללקוח (לא חובה) — תופיע מעל הקישור בוואטסאפ/מייל" style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);font-family:inherit;font-size:11.5px;direction:rtl;margin-bottom:10px;resize:vertical;min-height:44px"></textarea>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btnp" onclick="_trackCopy()" style="font-size:12px">📋 העתק קישור</button>
-      <button class="btn btns" onclick="window.open('${wa}','_blank','noopener');_trackMarkSynced()" title="${_cliPhone?'שליחה ישירה ל-'+esc(_cliPhone):'בחירת נמען'}" style="border-color:#25d366;color:#25d366;font-size:12px">${waLabel}</button>
+      <button class="btn btns" onclick="_trackWaSend()" title="${_cliPhone?'שליחה ישירה ל-'+esc(_cliPhone):'בחירת נמען'}" style="border-color:#25d366;color:#25d366;font-size:12px">${waLabel}</button>
       ${cle?`<button class="btn btns" onclick="_trackMail()" style="grid-column:1/-1;border-color:#4cc9f0;color:#4cc9f0;font-size:12px">📧 שלח במייל ללקוח (${esc(cle)})</button>`:''}
     </div>
   </div>`;
@@ -9066,13 +9067,26 @@ function _trackCopy(){
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(i.value).then(done).catch(()=>{i.select();document.execCommand('copy');done();}); }
   else{ i.select(); document.execCommand('copy'); done(); }
 }
+// המלל החופשי שהמשתמש הקליד בחלון השיתוף (אם קיים)
+function _trackCustomMsg(){ const t=document.getElementById('track-custom-msg'); return t?String(t.value||'').trim():''; }
+// שליחת קישור המעקב בוואטסאפ — בונה את ההודעה בזמן הלחיצה כולל המלל החופשי (מעל הקישור)
+function _trackWaSend(){
+  const c=window._trackShareCtx||{};
+  const custom=_trackCustomMsg();
+  const base='שלום'+(c.cl?' '+c.cl:'')+', למעקב אחר סטטוס ההזמנה שלכם ('+(c.no||c.co||'')+') בזמן אמת:'
+    +(c.stMsg?'\nסטטוס נוכחי: '+c.st+' — '+c.stMsg:'')+'\n'+c.url;
+  const full=custom?(custom+'\n\n'+base):base;
+  window.open((c.waBase||'https://wa.me/')+'?text='+encodeURIComponent(full),'_blank','noopener');
+  _trackMarkSynced();
+}
 function _trackMail(){
   const c=window._trackShareCtx||{};
   const cle=(c.cle||'').trim();
   if(!cle){ toast('⚠️ אין אימייל לקוח','warn'); return; }
   const subject=`מעקב הזמנה – ${c.no||c.co||''}`;
   const _stMsg=_distClientStatusLine(c.st);
-  const body=[`שלום ${c.cl||'לקוח יקר'},`,``,`למעקב אחר סטטוס ההזמנה שלכם בזמן אמת, היכנסו לקישור הבא:`,c.url,...(_stMsg?[``,`סטטוס נוכחי: ${c.st} — ${_stMsg}`]:[]),``,`נשמח לעמוד לרשותכם בכל שאלה.`,``,`בברכה,`,`איתמר ונדן`,`HOT Business`,`Itamar.venden@hot.net.il`].join('\n');
+  const custom=_trackCustomMsg();
+  const body=[`שלום ${c.cl||'לקוח יקר'},`,...(custom?[``,custom]:[]),``,`למעקב אחר סטטוס ההזמנה שלכם בזמן אמת, היכנסו לקישור הבא:`,c.url,...(_stMsg?[``,`סטטוס נוכחי: ${c.st} — ${_stMsg}`]:[]),``,`נשמח לעמוד לרשותכם בכל שאלה.`,``,`בברכה,`,`איתמר ונדן`,`HOT Business`,`Itamar.venden@hot.net.il`].join('\n');
   openMail(cle, subject, body);
   _trackMarkSynced();
 }
