@@ -9061,7 +9061,7 @@ function _trackSharePopup(url, d){
     <input id="track-share-url" type="hidden" value="${esc(url)}">
     <textarea id="track-custom-msg" placeholder="✍️ הוסף הודעה אישית ללקוח (לא חובה) — תופיע מעל הקישור בוואטסאפ/מייל" style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);font-family:inherit;font-size:11.5px;direction:rtl;margin-bottom:10px;resize:vertical;min-height:44px"></textarea>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button class="btn btnp" onclick="_trackCopy()" style="font-size:12px">📋 העתק קישור</button>
+      <button class="btn btnp" onclick="_trackCopy()" title="מעתיק את ההודעה עם הקישור (כולל ההערה החופשית אם נכתבה)" style="font-size:12px">📋 העתק הודעה</button>
       <button class="btn btns" onclick="_trackWaSend()" title="${_cliPhone?'שליחה ישירה ל-'+esc(_cliPhone):'בחירת נמען'}" style="border-color:#25d366;color:#25d366;font-size:12px">${waLabel}</button>
       ${cle?`<button class="btn btns" onclick="_trackMail()" style="grid-column:1/-1;border-color:#4cc9f0;color:#4cc9f0;font-size:12px">📧 שלח במייל ללקוח (${esc(cle)})</button>`:''}
     </div>
@@ -9071,22 +9071,29 @@ function _trackSharePopup(url, d){
 }
 function _trackCopy(){
   const url=(window._trackShareCtx&&window._trackShareCtx.url)||((document.getElementById('track-share-url')||{}).value)||'';
-  if(!url)return;
-  const done=()=>{toast('✅ הקישור הועתק','ok');_trackMarkSynced();};
-  const fallback=()=>{ const ta=document.createElement('textarea');ta.value=url;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}ta.remove();done(); };
-  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(done).catch(fallback); }
+  const custom=_trackCustomMsg();
+  // אם נכתבה הערה חופשית — מעתיקים את ההודעה המלאה (הערה + קישור); אחרת את הקישור בלבד
+  const text=custom?_trackFullMsg():url;
+  if(!text)return;
+  const done=()=>{toast(custom?'✅ ההודעה + הקישור הועתקו':'✅ הקישור הועתק','ok');_trackMarkSynced();};
+  const fallback=()=>{ const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}ta.remove();done(); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done).catch(fallback); }
   else fallback();
 }
 // המלל החופשי שהמשתמש הקליד בחלון השיתוף (אם קיים)
 function _trackCustomMsg(){ const t=document.getElementById('track-custom-msg'); return t?String(t.value||'').trim():''; }
-// שליחת קישור המעקב בוואטסאפ — בונה את ההודעה בזמן הלחיצה כולל המלל החופשי (מעל הקישור)
-function _trackWaSend(){
+// ההודעה המלאה שנשלחת ללקוח — הערה חופשית (אם יש) מעל, ואז שורת המעקב + סטטוס + קישור
+function _trackFullMsg(){
   const c=window._trackShareCtx||{};
   const custom=_trackCustomMsg();
   const base='שלום'+(c.cl?' '+c.cl:'')+', למעקב אחר סטטוס ההזמנה שלכם ('+(c.no||c.co||'')+') בזמן אמת:'
-    +(c.stMsg?'\nסטטוס נוכחי: '+c.st+' — '+c.stMsg:'')+'\n'+c.url;
-  const full=custom?(custom+'\n\n'+base):base;
-  window.open((c.waBase||'https://wa.me/')+'?text='+encodeURIComponent(full),'_blank','noopener');
+    +(c.stMsg?'\nסטטוס נוכחי: '+c.st+' — '+c.stMsg:'')+'\n'+(c.url||'');
+  return custom?(custom+'\n\n'+base):base;
+}
+// שליחת קישור המעקב בוואטסאפ — כולל המלל החופשי
+function _trackWaSend(){
+  const c=window._trackShareCtx||{};
+  window.open((c.waBase||'https://wa.me/')+'?text='+encodeURIComponent(_trackFullMsg()),'_blank','noopener');
   _trackMarkSynced();
 }
 function _trackMail(){
