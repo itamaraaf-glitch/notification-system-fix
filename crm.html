@@ -6919,7 +6919,7 @@ function rSalary(){
       if(_exp){const _d=db(nd(),_exp);const _c=_d<0?'#e63946':_d<=90?'#f4a261':'var(--teal)';_expChip=`<div style="font-size:9px;font-weight:700;color:${_c};margin-top:2px;white-space:nowrap" title="חוזה ${s.term} חודשים · התחלה ${fmtDate(s.cstart)}">🔄 חוזה עד ${fmtDate(_exp)}${_d<0?' · פג!':_d<=90?` · ${_d}י`:''}</div>`;}
       let _ecdChip='';
       if(s.ecd){const _def=_salDeferred(s);_ecdChip=`<div style="font-size:9px;font-weight:700;color:${_def?'#f4a261':'var(--text3)'};margin-top:2px;white-space:nowrap" title="צפי סגירה${_def?' — מחוץ לסיכום החודש':''}">⏭️ צפי ${fmtDate(s.ecd)}${_def?' · נדחה':''}</div>`;}
-      return`<tr class="${pC(p)}" data-pri="${p}"${_salDeferred(s)?' style="opacity:.62" title="נדחה לחודש עתידי — מחוץ לסיכום החודש"':''}><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td><span onclick="event.stopPropagation();advanceSalaryStatus('${s.id}')" title="לחץ לקידום הסטטוס (פתוח → בתהליך → סגור)" style="cursor:pointer">${sB(s.st)}</span></td><td>${s.qt||1}</td><td style="font-size:10px">${esc(s.pj||'')}${_expChip}${_ecdChip}</td><td style="font-weight:600">${esc(s.cl||'')}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${(+s.pv>0)?`<span onclick="event.stopPropagation();collectSalaryBalance('${s.id}')" title="לחץ לרישום גבייה — מלאה או חלקית" style="cursor:pointer;text-decoration:underline dotted">${fmt(s.pv)} ✓</span>`:fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${esc(s.no||'–')}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}${(+s.pv>0)?`<button class="btn btns" onclick="aiCollectionReminder('${s.id}')" title="נסח תזכורת גבייה עם AI" style="border-color:#a78bfa;color:#a78bfa">🤖</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
+      return`<tr class="${pC(p)}" data-pri="${p}"${_salDeferred(s)?' style="opacity:.62" title="נדחה לחודש עתידי — מחוץ לסיכום החודש"':''}><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td><span onclick="event.stopPropagation();advanceSalaryStatus('${s.id}')" title="לחץ לקידום הסטטוס (פתוח → בתהליך → סגור)" style="cursor:pointer">${sB(s.st)}</span></td><td>${s.qt||1}</td><td style="font-size:10px">${esc(s.pj||'')}${_expChip}${_ecdChip}</td><td style="font-weight:600">${esc(s.cl||'')}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${(+s.pv>0)?`<span onclick="event.stopPropagation();collectSalaryBalance('${s.id}')" title="לחץ לרישום גבייה — מלאה או חלקית" style="cursor:pointer;text-decoration:underline dotted">${fmt(s.pv)} ✓</span>`:fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${esc(s.no||'–')}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
     }).join('')||emptyRow(12,'💰',"אין פרויקטים","openM('salary',null)");
     // הסיכום בתחתית מתייחס רק לפרויקטים הרלוונטיים לחודש; פרויקטים שנדחו לחודש עתידי (ecd) מופרדים
     const curItems=items.filter(i=>!_salDeferred(i)), defItems=items.filter(_salDeferred);
@@ -10453,23 +10453,14 @@ function aiClientBriefing(name){
   const cl=String(name||'').trim(); if(!cl){ showToast('⚠️ שם לקוח חסר','warn'); return; }
   _aiAskAbout('תן לי תדריך קצר על הלקוח '+cl+': מה יש לו אצלנו, אילו עסקאות פתוחות, יתרות לגבייה, פגישות אחרונות, ומה הכי כדאי להציע לו עכשיו.');
 }
-// ניסוח תזכורת גבייה מנומסת ללקוח על יתרה פתוחה — לוחצים 📋 בתשובה ושולחים בוואטסאפ/מייל
-function aiCollectionReminder(id){
-  const s=(D.salary||[]).find(x=>x.id==id); if(!s){ showToast('⚠️ פרויקט לא נמצא','warn'); return; }
-  const bal=+s.pv||0; if(bal<=0){ showToast('אין יתרה לגבייה בפרויקט זה','warn'); return; }
-  // פותח את מחולל ההודעות ללקוח (קול-מותג אחיד + שליחה בוואטסאפ/מייל), מנוסח מראש לנושא "תזכורת תשלום"
-  openClientMsg(s.cl||'');
-  setTimeout(()=>{
-    const ctxEl=document.getElementById('cm-context'); if(ctxEl)ctxEl.value='תזכורת לתשלום יתרה פתוחה של '+fmt(bal)+(s.pj?' (פרויקט '+s.pj+')':'');
-    if(_aiKey())_cmDraft('collect');
-  },130);
-}
+// הערה: אין גבייה מלקוחות במודל העסקי — ה"יתרה" בפרויקטי שכר היא הכנסה פנימה לחברה,
+// והלקוח מחויב רק לאחר קבלת הפתרון. לכן אין פיצ'ר "תזכורת גבייה/תשלום" ללקוח.
 // ===== מחולל הודעות ללקוח (AI) — קול-מותג אחיד ותשובות איכותיות בכל הנושאים =====
 // קול-המותג המשותף לכל ההודעות היוצאות ללקוח — כדי שהניסוח יהיה עקבי, מקצועי וחם בכל מקום במערכת.
-const _AI_CLIENT_VOICE='אתה כותב הודעות ללקוחות עסקיים בעברית מטעם HOT Business (שירותי תקשורת/סלולר/סטארלינק/ציוד תקשורת לעסקים), בשם איתמר ונדן. הקול: מקצועי, אדיב, חם ואנושי, ברור ותמציתי, בגובה העיניים — לא רובוטי ולא מנופח. עברית תקינה ומכבדת, פנייה בלשון "אתם". אל תמציא עובדות, ואל תחשוף מידע פנימי (עלויות/עמלות/מרווחים). התאם אורך לפלטפורמה. סיים בנימה חיובית.';
+const _AI_CLIENT_VOICE='אתה כותב הודעות ללקוחות עסקיים בעברית מטעם HOT Business (שירותי תקשורת/סלולר/סטארלינק/ציוד תקשורת לעסקים), בשם איתמר ונדן. הקול: מקצועי, אדיב, חם ואנושי, ברור ותמציתי, בגובה העיניים — לא רובוטי ולא מנופח. עברית תקינה ומכבדת, פנייה בלשון "אתם". אל תמציא עובדות, ואל תחשוף מידע פנימי (עלויות/עמלות/מרווחים). חשוב: אל תבקש מהלקוח תשלום ואל תזכיר חוב/יתרה — המודל הוא אספקה קודם, והחיוב מתבצע רק לאחר שהלקוח מקבל את הפתרון. התאם אורך לפלטפורמה. סיים בנימה חיובית.';
 const _AI_CLIENT_TOPICS=[
   {key:'status',  label:'📦 עדכון סטטוס',      guide:'עדכן את הלקוח על מצב ההזמנה/השירות בצורה מרגיעה וברורה, וציין מה השלב הבא.'},
-  {key:'collect', label:'💰 תזכורת תשלום',     guide:'תזכורת עדינה ומכבדת לתשלום יתרה פתוחה, בלי לחץ, עם נכונות לסייע בכל שאלה.'},
+  {key:'ready',   label:'✅ הפתרון מוכן/סופק',   guide:'עדכן את הלקוח שהפתרון/השירות סופק והופעל בהצלחה, והוא זמין לשימוש. חם ומזמין להמשך ליווי.'},
   {key:'thanks',  label:'🙏 תודה',             guide:'הודעת תודה חמה על האמון/העסקה שמחזקת את הקשר לטווח ארוך.'},
   {key:'renew',   label:'🔄 חידוש / הצעה',      guide:'הצעה עדינה לחידוש חוזה / שדרוג / מוצר משלים, ממוקדת בערך ובתועלת ללקוח.'},
   {key:'delay',   label:'⏳ עיכוב / התנצלות',   guide:'עדכון כן ומרגיע על עיכוב זמני, לקיחת אחריות, והתחייבות לעדכון בהקדם.'},
@@ -10483,9 +10474,9 @@ function openClientMsg(name){
   const cli=(typeof findClientByName==='function')?findClientByName(cl):null;
   const products=[]; if(cli){ Object.keys(ITEM_CFG).forEach(t=>{ const n=(cli[t]||[]).length; if(n)products.push(ITEM_CFG[t].label+(n>1?' ×'+n:'')); }); }
   const openDeals=(D.deals||[]).filter(d=>d.co&&sameCo(d.co,cl)&&d.st!=='נסגר').map(d=>d.srv||d.co).filter(Boolean);
-  const bal=(D.salary||[]).filter(s=>s.cl&&sameCo(s.cl,cl)&&s.st!=='סגור'&&(+s.pv||0)>0).reduce((a,s)=>a+(+s.pv||0),0);
+  // הערה: לא מעבירים "יתרה" להקשר ההודעה ללקוח — זו הכנסה פנימית לחברה, לא חוב של הלקוח
   window._cmCtx={name:cl,phone:cli&&cli.phone?String(cli.phone).trim():'',email:cli&&cli.email?String(cli.email).trim():'',
-    products:products.join(', '),openDeals:openDeals.join(', '),balance:bal>0?fmt(bal):''};
+    products:products.join(', '),openDeals:openDeals.join(', ')};
   const chips=_AI_CLIENT_TOPICS.map(t=>`<button id="cm-t-${t.key}" onclick="_cmDraft('${t.key}')" class="btn btns" style="font-size:11px;border-color:#a78bfa;color:#a78bfa">${t.label}</button>`).join(' ');
   const el=document.createElement('div');
   el.id='cm-popup';
@@ -10517,8 +10508,7 @@ async function _cmDraft(topicKey){
   const extra=(document.getElementById('cm-context')||{}).value||'';
   const details=['לקוח: '+(c.name||'—'),
     c.products?('מוצרים שברשות הלקוח: '+c.products):'',
-    c.openDeals?('עסקאות פתוחות מולו: '+c.openDeals):'',
-    c.balance?('יתרה פתוחה לתשלום: '+c.balance):'',
+    c.openDeals?('עסקאות/שירותים בתהליך מולו: '+c.openDeals):'',
     extra?('בקשת המשתמש/הקשר: '+extra):''
   ].filter(Boolean).join('\n');
   const sys=_AI_CLIENT_VOICE+'\n\nנושא ההודעה: '+topic.label.replace(/^\S+\s*/,'')+' — '+topic.guide+' כתוב הודעה אחת מוכנה לשליחה, ללא סוגריים מרובעים או מצייני-מיקום (placeholders).';
