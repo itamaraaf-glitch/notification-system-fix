@@ -9023,6 +9023,9 @@ function _trackSharePopup(url, d){
   window._trackShareCtx={url,cl:d.cl||'',no:d.no||'',co:d.co||'',cle:(d.cle||'').trim(),id:d.id||null,st:d.st||''};
   const qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data='+encodeURIComponent(url);
   const _stMsg=_distClientStatusLine(d.st);
+  // כותרת ידידותית במקום כתובת המערכת: שם ההפצה/שירות + מספר הפרויקט (למשל "קו תקשורת · פרויקט 123")
+  const _trackName=(String(d.so||'').trim())||_distProductLabel(d,'he')||d.co||'הזמנה';
+  const _trackTitle=_trackName+(d.no?' · פרויקט '+d.no:(d.co&&_trackName!==d.co?' · '+d.co:''));
   // אם ידוע מספר הטלפון של הלקוח (מכרטיס הלקוח) — שולחים וואטסאפ ישירות אליו; אחרת בורר שיתוף כללי
   const _cliCard=(typeof findClientByName==='function')?(findClientByName(d.co)||findClientByName(d.cl)):null;
   const _cliPhone=_cliCard&&_cliCard.phone?String(_cliCard.phone).trim():'';
@@ -9050,7 +9053,12 @@ function _trackSharePopup(url, d){
     ${liveChip}
     <div style="text-align:center;margin-bottom:12px"><img src="${qr}" alt="QR" style="width:170px;height:170px;border-radius:10px;background:#fff;padding:6px"></div>
     <div style="font-size:10.5px;color:var(--text3);margin-bottom:5px">${liveDesc}</div>
-    <input id="track-share-url" readonly value="${esc(url)}" onclick="this.select()" style="width:100%;box-sizing:border-box;padding:9px 11px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text2);font-size:10.5px;direction:ltr;margin-bottom:9px">
+    <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:9px;border:1px solid rgba(6,214,160,.28);background:rgba(6,214,160,.06);margin-bottom:9px">
+      <span style="font-size:15px">🔗</span>
+      <div style="min-width:0"><div style="font-size:13px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(_trackTitle)}</div>
+      <div style="font-size:9.5px;color:var(--text3)">קישור מעקב מאובטח · הכתובת מוסתרת ותישלח ללקוח</div></div>
+    </div>
+    <input id="track-share-url" type="hidden" value="${esc(url)}">
     <textarea id="track-custom-msg" placeholder="✍️ הוסף הודעה אישית ללקוח (לא חובה) — תופיע מעל הקישור בוואטסאפ/מייל" style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);font-family:inherit;font-size:11.5px;direction:rtl;margin-bottom:10px;resize:vertical;min-height:44px"></textarea>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btnp" onclick="_trackCopy()" style="font-size:12px">📋 העתק קישור</button>
@@ -9062,10 +9070,12 @@ function _trackSharePopup(url, d){
   document.body.appendChild(el);
 }
 function _trackCopy(){
-  const i=document.getElementById('track-share-url'); if(!i)return;
+  const url=(window._trackShareCtx&&window._trackShareCtx.url)||((document.getElementById('track-share-url')||{}).value)||'';
+  if(!url)return;
   const done=()=>{toast('✅ הקישור הועתק','ok');_trackMarkSynced();};
-  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(i.value).then(done).catch(()=>{i.select();document.execCommand('copy');done();}); }
-  else{ i.select(); document.execCommand('copy'); done(); }
+  const fallback=()=>{ const ta=document.createElement('textarea');ta.value=url;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}ta.remove();done(); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(done).catch(fallback); }
+  else fallback();
 }
 // המלל החופשי שהמשתמש הקליד בחלון השיתוף (אם קיים)
 function _trackCustomMsg(){ const t=document.getElementById('track-custom-msg'); return t?String(t.value||'').trim():''; }
