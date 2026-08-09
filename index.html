@@ -9059,7 +9059,11 @@ function _trackSharePopup(url, d){
       <div style="font-size:9.5px;color:var(--text3)">קישור מעקב מאובטח · הכתובת מוסתרת ותישלח ללקוח</div></div>
     </div>
     <input id="track-share-url" type="hidden" value="${esc(url)}">
-    <textarea id="track-custom-msg" placeholder="✍️ הוסף הודעה אישית ללקוח (לא חובה) — תופיע מעל הקישור בוואטסאפ/מייל" style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);font-family:inherit;font-size:11.5px;direction:rtl;margin-bottom:10px;resize:vertical;min-height:44px"></textarea>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <span style="font-size:10px;color:var(--text3)">✍️ הודעה אישית ללקוח (לא חובה)</span>
+      <button id="track-ai-btn" onclick="_trackAiDraft()" class="btn btns" style="font-size:10px;border-color:#a78bfa;color:#a78bfa;padding:2px 9px">✨ נסח עם AI</button>
+    </div>
+    <textarea id="track-custom-msg" placeholder="תופיע מעל הקישור בוואטסאפ/מייל — או לחץ ✨ לניסוח אוטומטי" style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);font-family:inherit;font-size:11.5px;direction:rtl;margin-bottom:10px;resize:vertical;min-height:44px"></textarea>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btnp" onclick="_trackCopy()" title="מעתיק את ההודעה עם הקישור (כולל ההערה החופשית אם נכתבה)" style="font-size:12px">📋 העתק הודעה</button>
       <button class="btn btns" onclick="_trackWaSend()" title="${_cliPhone?'שליחה ישירה ל-'+esc(_cliPhone):'בחירת נמען'}" style="border-color:#25d366;color:#25d366;font-size:12px">${waLabel}</button>
@@ -9082,6 +9086,21 @@ function _trackCopy(){
 }
 // המלל החופשי שהמשתמש הקליד בחלון השיתוף (אם קיים)
 function _trackCustomMsg(){ const t=document.getElementById('track-custom-msg'); return t?String(t.value||'').trim():''; }
+// ניסוח ההודעה האישית ללקוח באמצעות AI — הודעת עדכון קצרה לפי שם/מוצר/סטטוס (בלי הקישור עצמו)
+async function _trackAiDraft(){
+  const c=window._trackShareCtx||{};
+  const ta=document.getElementById('track-custom-msg'); if(!ta)return;
+  if(!_aiKey()){ showToast('✨ לניסוח עם AI — חבר תחילה מנוע AI (🤖)','warn'); return; }
+  const btn=document.getElementById('track-ai-btn'); const orig=btn?btn.textContent:''; if(btn){btn.textContent='✨ מנסח…';btn.disabled=true;}
+  const sys='אתה כותב הודעת עדכון קצרה, אדיבה ומקצועית ללקוח עסקי בעברית מטעם HOT Business, שתלווה קישור מעקב אחר הזמנה. משפט עד שניים בלבד, חם ולעניין, בלי לחשוף מידע פנימי (עלויות/עמלות). אל תכלול את הקישור עצמו — הוא יתווסף בנפרד.';
+  const details='לקוח: '+(c.cl||'—')+'\nהזמנה/שירות: '+(c.no||c.co||'—')+'\nסטטוס נוכחי: '+(c.st||'—')+(c.stMsg?' — '+c.stMsg:'');
+  try{
+    const out=await _aiLLM([{role:'user',content:'נסח הודעת עדכון קצרה ללקוח לפי הפרטים:\n'+details}],sys);
+    ta.value=String(out||'').trim();
+    showToast('✨ נוסחה הודעה — ניתן לערוך ולשלוח','ok');
+  }catch(e){ showToast('⚠️ ניסוח נכשל: '+String(e&&e.message||e).slice(0,70),'warn'); }
+  finally{ if(btn){btn.textContent=orig;btn.disabled=false;} }
+}
 // ההודעה המלאה שנשלחת ללקוח — הערה חופשית (אם יש) מעל, ואז שורת המעקב + סטטוס + קישור
 function _trackFullMsg(){
   const c=window._trackShareCtx||{};
