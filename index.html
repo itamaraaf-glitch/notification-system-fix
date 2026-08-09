@@ -8386,6 +8386,7 @@ function rClients(){
             ${c.phone?`<button class="btn btns" onclick="event.stopPropagation();callClient('${c.id}')" title="חייג ${esc(c.phone)}" style="font-size:9px;border-color:#4cc9f0;color:#4cc9f0">📞</button><button class="btn btns" onclick="event.stopPropagation();waClient('${c.id}')" title="וואטסאפ ${esc(c.phone)}" style="font-size:9px;border-color:#25D366;color:#25D366">💬</button>`:''}
             <button class="btn btns" onclick="event.stopPropagation();shareClientSummary('${c.id}')" title="שתף סיכום לקוח בוואטסאפ" style="font-size:9px;border-color:#25D366;color:#25D366">📤</button>
             <button class="btn btns" onclick="event.stopPropagation();aiClientBriefing('${escJs(c.name||'')}')" title="תדריך AI על הלקוח — לפני שיחה/פגישה" style="font-size:9px;border-color:#a78bfa;color:#a78bfa">🤖</button>
+            <button class="btn btns" onclick="event.stopPropagation();openClientMsg('${escJs(c.name||'')}')" title="נסח הודעה ללקוח עם AI — בכל נושא (עדכון/גבייה/תודה/הצעה...)" style="font-size:9px;border-color:#4cc9f0;color:#4cc9f0">✉️</button>
             ${emailBtn}
             <button class="btn btns btnd" onclick="event.stopPropagation();dbDelete('clients','${c.id}')" style="font-size:9px">🗑</button>
           </div>
@@ -9092,7 +9093,7 @@ async function _trackAiDraft(){
   const ta=document.getElementById('track-custom-msg'); if(!ta)return;
   if(!_aiKey()){ showToast('✨ לניסוח עם AI — חבר תחילה מנוע AI (🤖)','warn'); return; }
   const btn=document.getElementById('track-ai-btn'); const orig=btn?btn.textContent:''; if(btn){btn.textContent='✨ מנסח…';btn.disabled=true;}
-  const sys='אתה כותב הודעת עדכון קצרה, אדיבה ומקצועית ללקוח עסקי בעברית מטעם HOT Business, שתלווה קישור מעקב אחר הזמנה. משפט עד שניים בלבד, חם ולעניין, בלי לחשוף מידע פנימי (עלויות/עמלות). אל תכלול את הקישור עצמו — הוא יתווסף בנפרד.';
+  const sys=(typeof _AI_CLIENT_VOICE!=='undefined'?_AI_CLIENT_VOICE+'\n\n':'')+'משימה: הודעת עדכון קצרה (משפט עד שניים) שתלווה קישור מעקב אחר הזמנה. אל תכלול את הקישור עצמו — הוא יתווסף בנפרד.';
   const details='לקוח: '+(c.cl||'—')+'\nהזמנה/שירות: '+(c.no||c.co||'—')+'\nסטטוס נוכחי: '+(c.st||'—')+(c.stMsg?' — '+c.stMsg:'');
   try{
     const out=await _aiLLM([{role:'user',content:'נסח הודעת עדכון קצרה ללקוח לפי הפרטים:\n'+details}],sys);
@@ -10457,6 +10458,83 @@ function aiCollectionReminder(id){
   const s=(D.salary||[]).find(x=>x.id==id); if(!s){ showToast('⚠️ פרויקט לא נמצא','warn'); return; }
   const bal=+s.pv||0; if(bal<=0){ showToast('אין יתרה לגבייה בפרויקט זה','warn'); return; }
   _aiAskAbout('נסח הודעת תזכורת גבייה מנומסת ומקצועית ללקוח '+(s.cl||'')+' על יתרה לתשלום של '+fmt(bal)+(s.pj?' (פרויקט '+s.pj+')':'')+'. קצרה, אדיבה ומתאימה לוואטסאפ, בעברית, בחתימת HOT Business / איתמר ונדן. בלי לחשוף מידע פנימי.');
+}
+// ===== מחולל הודעות ללקוח (AI) — קול-מותג אחיד ותשובות איכותיות בכל הנושאים =====
+// קול-המותג המשותף לכל ההודעות היוצאות ללקוח — כדי שהניסוח יהיה עקבי, מקצועי וחם בכל מקום במערכת.
+const _AI_CLIENT_VOICE='אתה כותב הודעות ללקוחות עסקיים בעברית מטעם HOT Business (שירותי תקשורת/סלולר/סטארלינק/ציוד תקשורת לעסקים), בשם איתמר ונדן. הקול: מקצועי, אדיב, חם ואנושי, ברור ותמציתי, בגובה העיניים — לא רובוטי ולא מנופח. עברית תקינה ומכבדת, פנייה בלשון "אתם". אל תמציא עובדות, ואל תחשוף מידע פנימי (עלויות/עמלות/מרווחים). התאם אורך לפלטפורמה. סיים בנימה חיובית.';
+const _AI_CLIENT_TOPICS=[
+  {key:'status',  label:'📦 עדכון סטטוס',      guide:'עדכן את הלקוח על מצב ההזמנה/השירות בצורה מרגיעה וברורה, וציין מה השלב הבא.'},
+  {key:'collect', label:'💰 תזכורת תשלום',     guide:'תזכורת עדינה ומכבדת לתשלום יתרה פתוחה, בלי לחץ, עם נכונות לסייע בכל שאלה.'},
+  {key:'thanks',  label:'🙏 תודה',             guide:'הודעת תודה חמה על האמון/העסקה שמחזקת את הקשר לטווח ארוך.'},
+  {key:'renew',   label:'🔄 חידוש / הצעה',      guide:'הצעה עדינה לחידוש חוזה / שדרוג / מוצר משלים, ממוקדת בערך ובתועלת ללקוח.'},
+  {key:'delay',   label:'⏳ עיכוב / התנצלות',   guide:'עדכון כן ומרגיע על עיכוב זמני, לקיחת אחריות, והתחייבות לעדכון בהקדם.'},
+  {key:'followup',label:'📞 מעקב אחרי פגישה',   guide:'הודעת מעקב קצרה אחרי שיחה/פגישה — תודה, סיכום מה סוכם, והצעד הבא.'},
+  {key:'general', label:'✉️ כללי',              guide:'הודעה כללית ומותאמת ללקוח לפי ההקשר שסופק על ידי המשתמש.'}
+];
+// פתיחת מחולל ההודעה ללקוח
+function openClientMsg(name){
+  const cl=String(name||'').trim(); if(!cl){ showToast('⚠️ שם לקוח חסר','warn'); return; }
+  const old=document.getElementById('cm-popup'); if(old)old.remove();
+  const cli=(typeof findClientByName==='function')?findClientByName(cl):null;
+  const products=[]; if(cli){ Object.keys(ITEM_CFG).forEach(t=>{ const n=(cli[t]||[]).length; if(n)products.push(ITEM_CFG[t].label+(n>1?' ×'+n:'')); }); }
+  const openDeals=(D.deals||[]).filter(d=>d.co&&sameCo(d.co,cl)&&d.st!=='נסגר').map(d=>d.srv||d.co).filter(Boolean);
+  const bal=(D.salary||[]).filter(s=>s.cl&&sameCo(s.cl,cl)&&s.st!=='סגור'&&(+s.pv||0)>0).reduce((a,s)=>a+(+s.pv||0),0);
+  window._cmCtx={name:cl,phone:cli&&cli.phone?String(cli.phone).trim():'',email:cli&&cli.email?String(cli.email).trim():'',
+    products:products.join(', '),openDeals:openDeals.join(', '),balance:bal>0?fmt(bal):''};
+  const chips=_AI_CLIENT_TOPICS.map(t=>`<button id="cm-t-${t.key}" onclick="_cmDraft('${t.key}')" class="btn btns" style="font-size:11px;border-color:#a78bfa;color:#a78bfa">${t.label}</button>`).join(' ');
+  const el=document.createElement('div');
+  el.id='cm-popup';
+  el.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.75);z-index:100001;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto';
+  el.innerHTML=`<div style="background:linear-gradient(135deg,#101525,#0a0e1c);border:1px solid rgba(167,139,250,.35);border-radius:16px;max-width:460px;width:100%;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.6);max-height:92vh;overflow:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div style="font-size:16px;font-weight:900;color:#a78bfa">✉️ הודעה ללקוח — ${esc(cl)}</div>
+      <button onclick="document.getElementById('cm-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">בחר נושא — ה-AI ינסח הודעה מקצועית ומותאמת. ניתן לערוך לפני שליחה.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${chips}</div>
+    <input id="cm-context" placeholder="פרטים/בקשה נוספת (לא חובה): על מה לכתוב, טון, דגשים..." style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:8px 11px;color:var(--text);font-family:inherit;font-size:12px;outline:none;margin-bottom:10px">
+    <textarea id="cm-out" placeholder="כאן תופיע ההודעה שה-AI ינסח — בחר נושא למעלה" style="width:100%;box-sizing:border-box;min-height:150px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:9px;padding:10px 12px;color:var(--text);font-family:inherit;font-size:12.5px;line-height:1.7;direction:rtl;outline:none;resize:vertical;margin-bottom:12px"></textarea>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end">
+      <button class="btn btns" onclick="_cmCopy()" style="border-color:#f4a261;color:#f4a261;font-size:12px">📋 העתק</button>
+      <button class="btn btns" onclick="_cmWa()" style="border-color:#25d366;color:#25d366;font-size:12px">💬 וואטסאפ${window._cmCtx.phone?'':' (בחר נמען)'}</button>
+      ${window._cmCtx.email?`<button class="btn btns" onclick="_cmMail()" style="border-color:#4cc9f0;color:#4cc9f0;font-size:12px">📧 מייל</button>`:''}
+    </div>
+  </div>`;
+  el.addEventListener('click',()=>el.remove());
+  document.body.appendChild(el);
+}
+async function _cmDraft(topicKey){
+  const c=window._cmCtx||{};
+  if(!_aiKey()){ showToast('✨ לניסוח עם AI — חבר תחילה מנוע AI (🤖)','warn'); openAiAssistant(); return; }
+  const topic=_AI_CLIENT_TOPICS.find(t=>t.key===topicKey)||_AI_CLIENT_TOPICS[6];
+  _AI_CLIENT_TOPICS.forEach(t=>{ const bb=document.getElementById('cm-t-'+t.key); if(bb)bb.style.background=(t.key===topicKey)?'rgba(167,139,250,.18)':''; });
+  const btn=document.getElementById('cm-t-'+topicKey); const orig=btn?btn.textContent:''; if(btn){btn.textContent='✨ מנסח…';btn.disabled=true;}
+  const extra=(document.getElementById('cm-context')||{}).value||'';
+  const details=['לקוח: '+(c.name||'—'),
+    c.products?('מוצרים שברשות הלקוח: '+c.products):'',
+    c.openDeals?('עסקאות פתוחות מולו: '+c.openDeals):'',
+    c.balance?('יתרה פתוחה לתשלום: '+c.balance):'',
+    extra?('בקשת המשתמש/הקשר: '+extra):''
+  ].filter(Boolean).join('\n');
+  const sys=_AI_CLIENT_VOICE+'\n\nנושא ההודעה: '+topic.label.replace(/^\S+\s*/,'')+' — '+topic.guide+' כתוב הודעה אחת מוכנה לשליחה, ללא סוגריים מרובעים או מצייני-מיקום (placeholders).';
+  try{
+    const out=await _aiLLM([{role:'user',content:'נסח הודעה ללקוח לפי הפרטים:\n'+details}],sys);
+    const ta=document.getElementById('cm-out'); if(ta)ta.value=String(out||'').trim();
+    showToast('✨ נוסחה הודעה — ניתן לערוך ולשלוח','ok');
+  }catch(e){ showToast('⚠️ הניסוח נכשל: '+String(e&&e.message||e).slice(0,70),'warn'); }
+  finally{ if(btn){btn.textContent=orig;btn.disabled=false;} }
+}
+function _cmText(){ return String((document.getElementById('cm-out')||{}).value||'').trim(); }
+function _cmCopy(){ const t=_cmText(); if(!t){ showToast('נסח הודעה קודם','warn'); return; }
+  const done=()=>showToast('📋 ההודעה הועתקה','ok');
+  const fb=()=>{ const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}ta.remove();done(); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(done).catch(fb); } else fb();
+}
+function _cmWa(){ const c=window._cmCtx||{}; const t=_cmText(); if(!t){ showToast('נסח הודעה קודם','warn'); return; }
+  window.open((c.phone?_waNum(c.phone):'https://wa.me/')+'?text='+encodeURIComponent(t),'_blank','noopener');
+}
+function _cmMail(){ const c=window._cmCtx||{}; const t=_cmText(); if(!t){ showToast('נסח הודעה קודם','warn'); return; }
+  openMail(c.email||'', 'הודעה מ-HOT Business', t);
 }
 // מיקום חלון ה-AI — משחזר מיקום שמור או ברירת מחדל (צד ימין למעלה), עם הצמדה לגבולות המסך
 function _aiPositionWin(el){
