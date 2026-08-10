@@ -1611,7 +1611,8 @@ body.logged-in #ai-fab{display:flex}
   <div class="krow" id="krow"></div>
   <div id="month-summary" style="margin-bottom:14px"></div>
   <div class="dgrid">
-    <div class="dpanel" style="grid-column:1/-1"><h4 style="--h4-accent:#4cc9f0;--h4-color:#4cc9f0">📈 מגמת הכנסות — 6 חודשים אחרונים</h4><div id="dash-revchart"></div></div>
+    <div class="dpanel"><h4 style="--h4-accent:#4cc9f0;--h4-color:#4cc9f0">📈 מגמת הכנסות — 6 חודשים</h4><div id="dash-revchart"></div></div>
+    <div class="dpanel"><h4 style="--h4-accent:#a78bfa;--h4-color:#a78bfa">🔻 צנרת עסקאות לפי שלב</h4><div id="dash-pipeline"></div></div>
   </div>
   <div class="dgrid">
     <div class="dpanel"><h4 style="--h4-accent:#e63946;--h4-color:#ff7a84">📌 עדיפות פעולה</h4><div id="prilist" style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto"></div></div>
@@ -6119,6 +6120,7 @@ function rDash(){
   renderQuickActions();
   renderAiSpotlight();
   renderDashRevChart();
+  renderDashPipeline();
 }
 // מיני-גרף מגמת הכנסות (6 חודשים) בדשבורד — עמודות בגרדיאנט, החודש הנוכחי מודגש
 function renderDashRevChart(){
@@ -6137,6 +6139,28 @@ function renderDashRevChart(){
     </div>`;
   }).join('');
   el.innerHTML=`<div style="display:flex;align-items:flex-end;gap:7px;height:${H+42}px;padding:6px 2px 0">${bars}</div>`;
+}
+// צנרת עסקאות לפי שלב (pipeline) — סרגלים אופקיים צבועים לפי סטטוס, עם ספירה ושווי
+function renderDashPipeline(){
+  const el=document.getElementById('dash-pipeline'); if(!el)return;
+  const stages=[
+    {st:'הוצאת הצעה',col:'#4cc9f0'},{st:'ממתין לתשובה',col:'#f4a261'},
+    {st:'בטיפול',col:'#a78bfa'},{st:'נסגר',col:'#06d6a0'},{st:'בעיה',col:'#e63946'}
+  ];
+  if(!(D.deals||[]).length){ el.innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;padding:22px">אין עסקאות עדיין</div>'; return; }
+  const rows=stages.map(s=>{ const arr=(D.deals||[]).filter(d=>(d.st||'')===s.st);
+    return {st:s.st,col:s.col,count:arr.length,val:arr.reduce((a,d)=>a+(+d.v||0),0)}; }).filter(r=>r.count>0);
+  const max=Math.max(1,...rows.map(r=>r.count));
+  el.innerHTML='<div style="display:flex;flex-direction:column;gap:9px;padding:6px 0">'+rows.map(r=>{
+    const w=Math.max(8,Math.round(r.count/max*100));
+    return `<div onclick="nav('deals')" style="cursor:pointer">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:11px;margin-bottom:3px">
+        <span style="color:var(--text2);font-weight:700">${esc(r.st)}</span>
+        <span style="color:${r.col};font-weight:800">${r.count}${r.val?' · '+fmt(r.val):''}</span></div>
+      <div style="height:9px;border-radius:6px;background:rgba(255,255,255,.05);overflow:hidden">
+        <div style="height:100%;width:${w}%;border-radius:6px;background:linear-gradient(90deg,${r.col},${r.col}aa)"></div></div>
+    </div>`;
+  }).join('')+'</div>';
 }
 
 // ===== DEALS =====
