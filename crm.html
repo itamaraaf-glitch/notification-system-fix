@@ -1615,6 +1615,9 @@ body.logged-in #ai-fab{display:flex}
     <div class="dpanel"><h4 style="--h4-accent:#a78bfa;--h4-color:#a78bfa">🔻 צנרת עסקאות לפי שלב</h4><div id="dash-pipeline"></div></div>
   </div>
   <div class="dgrid">
+    <div class="dpanel" style="grid-column:1/-1"><h4 style="--h4-accent:#06d6a0;--h4-color:#06d6a0">🧩 התפלגות מוצרים אצל לקוחות</h4><div id="dash-products"></div></div>
+  </div>
+  <div class="dgrid">
     <div class="dpanel"><h4 style="--h4-accent:#e63946;--h4-color:#ff7a84">📌 עדיפות פעולה</h4><div id="prilist" style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto"></div></div>
     <div class="dpanel">
       <h4 style="--h4-accent:#06d6a0;--h4-color:#06d6a0">🎯 יעד פגישות חודשי</h4>
@@ -6121,6 +6124,26 @@ function rDash(){
   renderAiSpotlight();
   renderDashRevChart();
   renderDashPipeline();
+  renderDashProducts();
+}
+// התפלגות מוצרים אצל לקוחות — סרגלים אופקיים לפי כמות, צבועים בצבע המוצר (עד 8 מובילים)
+function renderDashProducts(){
+  const el=document.getElementById('dash-products'); if(!el)return;
+  const counts={};
+  (D.clients||[]).forEach(c=>{ Object.keys(ITEM_CFG).forEach(t=>{ const n=(c[t]||[]).length; if(n)counts[t]=(counts[t]||0)+n; }); });
+  const keys=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]).slice(0,8);
+  if(!keys.length){ el.innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;padding:22px">אין מוצרים רשומים אצל לקוחות עדיין</div>'; return; }
+  const max=Math.max(1,...keys.map(k=>counts[k]));
+  el.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px 18px;padding:6px 0">'+keys.map(k=>{
+    const cfg=ITEM_CFG[k], col=cfg.color||'#4cc9f0', w=Math.max(8,Math.round(counts[k]/max*100));
+    return `<div onclick="nav('clients')" style="cursor:pointer;min-width:0">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:11px;margin-bottom:3px;gap:6px">
+        <span style="color:var(--text2);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(cfg.label)}</span>
+        <span style="color:${col};font-weight:800">${counts[k]}</span></div>
+      <div style="height:8px;border-radius:5px;background:rgba(255,255,255,.05);overflow:hidden">
+        <div style="height:100%;width:${w}%;border-radius:5px;background:${col};opacity:.85"></div></div>
+    </div>`;
+  }).join('')+'</div>';
 }
 // מיני-גרף מגמת הכנסות (6 חודשים) בדשבורד — עמודות בגרדיאנט, החודש הנוכחי מודגש
 function renderDashRevChart(){
