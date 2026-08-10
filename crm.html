@@ -10086,6 +10086,7 @@ function _aiDataSnapshot(){
     dists:trim(D.dists,['co','cl','no','so','st','dt','inc','eq','mi']),
     salary:trim(D.salary,['cl','pj','ty','st','tr','cl2','pv','ecd']),
     meetings:trim(D.meetings,['cl','dt','hl','mtype'],50),
+    tasks:trim(D.tasks,['t','dt','st','pr','cl'],40),
     tenders:trim(D.tenders,['name','proj','deadline','submitted','amount']),
     clients:(D.clients||[]).slice(-100).map(c=>c.name).filter(Boolean),
     summary:_monthCloseSummary(),
@@ -10093,11 +10094,13 @@ function _aiDataSnapshot(){
   };
 }
 function _aiSystemPrompt(){
-  return 'אתה העוזר החכם המשובץ במערכת CRM עסקית בעברית (HOT Business). ענה בעברית, קצר, מדויק ומעשי, אך ורק לפי נתוני המערכת המצורפים. שמור על הקשר השיחה — שאלות המשך מתייחסות למה שנאמר קודם. אל תמציא נתונים; אם חסר מידע — אמור זאת. כשרלוונטי תן מספרים והמלצה קונקרטית.\n\n'+_aiActionProtocol()+'\n\nנתוני המערכת (JSON):\n'+JSON.stringify(_aiDataSnapshot());
+  return 'אתה העוזר החכם המשובץ במערכת CRM עסקית בעברית (HOT Business), עוזר אישי לאיתמר ונדן. ענה אך ורק לפי נתוני המערכת המצורפים — אל תמציא נתונים; אם חסר מידע, אמור זאת בקצרה.\n'
+    +'סגנון התשובה: פתח ישר בתשובה או במספר החשוב (בלי הקדמות מיותרות). עברית טבעית, תמציתית ומקצועית, בטון חם. הדגש נתונים ומספרי-מפתח ב-**מודגש**. אם יש כמה פריטים — הצג רשימת תבליטים קצרה במקום פסקה ארוכה. כשרלוונטי סיים במשפט אחד של המלצה/צעד הבא קונקרטי. הימנע מחזרתיות וממילוי מיותר. שמור על הקשר השיחה — שאלות המשך מתייחסות למה שנאמר קודם.\n\n'
+    +_aiActionProtocol()+'\n\nנתוני המערכת (JSON):\n'+JSON.stringify(_aiDataSnapshot());
 }
 // פרוטוקול ביצוע פעולות — הנחיה ל-LLM כיצד ליצור רשומות במערכת
 function _aiActionProtocol(){
-  return 'יכולת ביצוע פעולות: כאשר המשתמש מבקש במפורש ליצור/להוסיף רשומה (עסקה, פגישה, לקוח, פרויקט שכר), הוסף בסוף תשובתך — אחרי משפט אישור קצר בעברית — בלוק פעולה בפורמט מדויק:\n```action\n{"action":"add_deal","fields":{"co":"שם חברה","srv":"שירות","mv":500}}\n```\n'
+  return 'יכולת ביצוע פעולות: כאשר המשתמש מבקש לבצע פעולה (ליצור/להוסיף/לעדכן רשומה — עסקה, פגישה, לקוח, פרויקט שכר, משימה), בצע אותה: כתוב משפט אישור קצר בעברית ואז בלוק פעולה בפורמט מדויק:\n```action\n{"action":"add_deal","fields":{"co":"שם חברה","srv":"שירות","mv":500}}\n```\n'
     +'פעולות ושדות נתמכים:\n'
     +'- add_deal (עסקה): co=שם חברה (חובה), srv=שירות, v=תשלום חד-פעמי (₪), mv=תשלום חודשי (₪), ot=ציוד (₪), otc=עלות ציוד (₪), ch=עמלה (%), ty="long"/"short", st=סטטוס, cp=איש קשר, date=YYYY-MM-DD, no=הערות\n'
     +'- add_meeting (פגישה): cl=לקוח (חובה), dt=YYYY-MM-DD, time=HH:MM, mtype=סוג, no=הערות\n'
@@ -10105,7 +10108,8 @@ function _aiActionProtocol(){
     +'- add_salary (פרויקט שכר): cl=לקוח (חובה), pj=מספר/שם פרויקט, tr=סכום כולל (₪), cl2=נגבה (₪), pv=יתרה (₪), ty="service"/"equipment", no=הערות\n'
     +'- close_deal (סגירת עסקה קיימת): co=שם החברה של העסקה הפתוחה (חובה)\n'
     +'- mark_meeting_held (סימון פגישה שהתקיימה): cl=שם הלקוח (חובה), dt=תאריך הפגישה (אופציונלי, YYYY-MM-DD)\n'
-    +'- collect_salary (גביית תשלום מפרויקט שכר קיים): cl=שם הלקוח (חובה), amount=סכום לגבייה (₪; אם המשתמש אמר "הכל"/"מלוא היתרה" — השאר ריק כדי לגבות את כל היתרה)\n'
+    +'- collect_salary (גביית תשלום מפרויקט שכר קיים — הכנסה פנימית, לא מהלקוח): cl=שם הלקוח (חובה), amount=סכום (₪; ריק=כל היתרה)\n'
+    +'- add_task (משימה/תזכורת): t=תיאור המשימה (חובה), dt=תאריך (YYYY-MM-DD), time=שעה (HH:MM), cl=לקוח קשור, pr="גבוהה"/"בינונית"/"נמוכה", no=הערות\n'
     +'כללים: בלוק פעולה אחד לכל בקשה; מלא רק שדות שהמשתמש מסר (אל תמציא ערכים); סכומים כמספרים ללא סימני מטבע. פעולות עדכון (close_deal, mark_meeting_held, collect_salary) פועלות על רשומה קיימת לפי שם. אם המשתמש רק שואל/מבקש מידע (לא לבצע) — אל תוסיף בלוק פעולה.';
 }
 // הגדרות הפעולות: כותרת, אייקון, שדות חובה, ורשימת שדות לתצוגה
@@ -10116,7 +10120,8 @@ const _AI_ACT_DEFS={
   add_salary:{icon:'💰',title:'פרויקט שכר',req:['cl'],fields:[['cl','לקוח'],['pj','פרויקט'],['tr','סכום כולל ₪'],['cl2','נגבה ₪'],['pv','יתרה ₪'],['ty','סוג'],['no','הערות']]},
   close_deal:{icon:'🔒',title:'סגירת עסקה',update:true,req:['co'],fields:[['co','חברה']]},
   mark_meeting_held:{icon:'✅',title:'סימון פגישה כהתקיימה',update:true,req:['cl'],fields:[['cl','לקוח'],['dt','תאריך']]},
-  collect_salary:{icon:'💰',title:'גביית תשלום',update:true,req:['cl'],fields:[['cl','לקוח'],['amount','סכום לגבייה ₪']]}
+  collect_salary:{icon:'💰',title:'גביית תשלום',update:true,req:['cl'],fields:[['cl','לקוח'],['amount','סכום לגבייה ₪']]},
+  add_task:{icon:'✅',title:'הוספת משימה',req:['t'],fields:[['t','משימה'],['dt','תאריך'],['time','שעה'],['cl','לקוח'],['pr','עדיפות'],['no','הערות']]}
 };
 // איתור הרשומה הקיימת שפעולת-עדכון מתייחסת אליה (לפי שם) — כדי להציג ולעדכן את הנכונה
 function _aiResolveTarget(act){
@@ -10195,6 +10200,13 @@ function _aiRunAction(act){
       const row={pj:f.pj||'',cl:String(f.cl),qt:+f.qt||1,tr:+f.tr||0,cl2:+f.cl2||0,pv:+f.pv||0,st:f.st||'פתוח',ty:(f.ty==='equipment'?'equipment':'service'),no:f.no||''};
       dbInsert('salary',row); rAll();
       return{ok:true,msg:'נוסף פרויקט שכר עבור '+row.cl+'. המסכים עודכנו.'};
+    }
+    if(t==='add_task'){
+      if(!f.t)return{ok:false,msg:'חסר תיאור משימה'};
+      const pr=['גבוהה','בינונית','נמוכה'].includes(f.pr)?f.pr:'בינונית';
+      const row={dt:f.dt||nd(),time:f.time||'',t:String(f.t),cl:f.cl||'',pr,st:'פתוח',no:f.no||''};
+      dbInsert('tasks',row); rAll();
+      return{ok:true,msg:'נוספה משימה: '+row.t+(row.dt?' ('+fmtDate(row.dt)+')':'')+'. המסכים עודכנו.'};
     }
     if(t==='close_deal'){
       const d=(D.deals||[]).find(x=>x.id===act._targetId); if(!d)return{ok:false,msg:'העסקה לא נמצאה (ייתכן שהשתנתה)'};
