@@ -10080,8 +10080,9 @@ function _aiDisconnect(){ try{localStorage.removeItem(_AI_KEY_LS);localStorage.r
 // תמונת-מצב תמציתית של הנתונים לשליחה ל-LLM (ללא טלפונים/אימיילים/הערות — צמצום חשיפת PII)
 function _aiDataSnapshot(){
   const trim=(arr,fields,n)=>(arr||[]).slice(-(n||70)).map(o=>{const r={};fields.forEach(f=>{if(o[f]!=null&&o[f]!=='')r[f]=o[f];});return r;});
+  const _wd=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'][new Date().getDay()];
   return {
-    today:nd(), month:nd().substring(0,7), goals:D.goals||{}, meetingGoal:MEETING_GOAL,
+    today:nd(), todayName:'יום '+_wd, month:nd().substring(0,7), goals:D.goals||{}, meetingGoal:MEETING_GOAL,
     deals:trim(D.deals,['co','srv','st','date','mv','v','otc','num','ch']),
     dists:trim(D.dists,['co','cl','no','so','st','dt','inc','eq','mi']),
     salary:trim(D.salary,['cl','pj','ty','st','tr','cl2','pv','ecd']),
@@ -10110,7 +10111,7 @@ function _aiActionProtocol(){
     +'- mark_meeting_held (סימון פגישה שהתקיימה): cl=שם הלקוח (חובה), dt=תאריך הפגישה (אופציונלי, YYYY-MM-DD)\n'
     +'- collect_salary (גביית תשלום מפרויקט שכר קיים — הכנסה פנימית, לא מהלקוח): cl=שם הלקוח (חובה), amount=סכום (₪; ריק=כל היתרה)\n'
     +'- add_task (משימה/תזכורת): t=תיאור המשימה (חובה), dt=תאריך (YYYY-MM-DD), time=שעה (HH:MM), cl=לקוח קשור, pr="גבוהה"/"בינונית"/"נמוכה", no=הערות\n'
-    +'כללים: בלוק פעולה אחד לכל בקשה; מלא רק שדות שהמשתמש מסר (אל תמציא ערכים); סכומים כמספרים ללא סימני מטבע. פעולות עדכון (close_deal, mark_meeting_held, collect_salary) פועלות על רשומה קיימת לפי שם. אם המשתמש רק שואל/מבקש מידע (לא לבצע) — אל תוסיף בלוק פעולה.';
+    +'כללים: בלוק פעולה אחד לכל בקשה; מלא רק שדות שהמשתמש מסר (אל תמציא ערכים); סכומים כמספרים ללא סימני מטבע. תאריכים יחסיים ("מחר", "מחרתיים", "בעוד שבוע", "ביום ראשון הבא") — המר לתאריך מוחלט YYYY-MM-DD לפי today ו-todayName שבנתונים. פעולות עדכון (close_deal, mark_meeting_held, collect_salary) פועלות על רשומה קיימת לפי שם. אם המשתמש רק שואל/מבקש מידע (לא לבצע) — אל תוסיף בלוק פעולה.';
 }
 // הגדרות הפעולות: כותרת, אייקון, שדות חובה, ורשימת שדות לתצוגה
 const _AI_ACT_DEFS={
