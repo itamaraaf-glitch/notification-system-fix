@@ -10080,8 +10080,9 @@ function _aiDisconnect(){ try{localStorage.removeItem(_AI_KEY_LS);localStorage.r
 // תמונת-מצב תמציתית של הנתונים לשליחה ל-LLM (ללא טלפונים/אימיילים/הערות — צמצום חשיפת PII)
 function _aiDataSnapshot(){
   const trim=(arr,fields,n)=>(arr||[]).slice(-(n||70)).map(o=>{const r={};fields.forEach(f=>{if(o[f]!=null&&o[f]!=='')r[f]=o[f];});return r;});
+  const _wd=['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'][new Date().getDay()];
   return {
-    today:nd(), month:nd().substring(0,7), goals:D.goals||{}, meetingGoal:MEETING_GOAL,
+    today:nd(), todayName:'יום '+_wd, month:nd().substring(0,7), goals:D.goals||{}, meetingGoal:MEETING_GOAL,
     deals:trim(D.deals,['co','srv','st','date','mv','v','otc','num','ch']),
     dists:trim(D.dists,['co','cl','no','so','st','dt','inc','eq','mi']),
     salary:trim(D.salary,['cl','pj','ty','st','tr','cl2','pv','ecd']),
@@ -10110,7 +10111,7 @@ function _aiActionProtocol(){
     +'- mark_meeting_held (סימון פגישה שהתקיימה): cl=שם הלקוח (חובה), dt=תאריך הפגישה (אופציונלי, YYYY-MM-DD)\n'
     +'- collect_salary (גביית תשלום מפרויקט שכר קיים — הכנסה פנימית, לא מהלקוח): cl=שם הלקוח (חובה), amount=סכום (₪; ריק=כל היתרה)\n'
     +'- add_task (משימה/תזכורת): t=תיאור המשימה (חובה), dt=תאריך (YYYY-MM-DD), time=שעה (HH:MM), cl=לקוח קשור, pr="גבוהה"/"בינונית"/"נמוכה", no=הערות\n'
-    +'כללים: בלוק פעולה אחד לכל בקשה; מלא רק שדות שהמשתמש מסר (אל תמציא ערכים); סכומים כמספרים ללא סימני מטבע. פעולות עדכון (close_deal, mark_meeting_held, collect_salary) פועלות על רשומה קיימת לפי שם. אם המשתמש רק שואל/מבקש מידע (לא לבצע) — אל תוסיף בלוק פעולה.';
+    +'כללים: בלוק פעולה אחד לכל בקשה; מלא רק שדות שהמשתמש מסר (אל תמציא ערכים); סכומים כמספרים ללא סימני מטבע. תאריכים יחסיים ("מחר", "מחרתיים", "בעוד שבוע", "ביום ראשון הבא") — המר לתאריך מוחלט YYYY-MM-DD לפי today ו-todayName שבנתונים. פעולות עדכון (close_deal, mark_meeting_held, collect_salary) פועלות על רשומה קיימת לפי שם. אם המשתמש רק שואל/מבקש מידע (לא לבצע) — אל תוסיף בלוק פעולה.';
 }
 // הגדרות הפעולות: כותרת, אייקון, שדות חובה, ורשימת שדות לתצוגה
 const _AI_ACT_DEFS={
@@ -10235,17 +10236,20 @@ function _aiRunAction(act){
 function _aiRenderActionCard(){
   const box=document.getElementById('ai-answer'); const act=_aiPendingAction; if(!box||!act)return;
   const def=_AI_ACT_DEFS[act.action]; if(!def)return; const f=act.fields||{};
-  const disp=(k,v)=>k==='amount'?fmt(+v||0):k==='ty'?(v==='short'?'טווח קצר':v==='long'?'טווח ארוך':v==='service'?'שירות':v==='equipment'?'ציוד':v):String(v);
   const rowHtml=(lbl,val)=>`<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:var(--text3);font-size:11px">${esc(lbl)}</span><span style="font-weight:700;font-size:12.5px;text-align:left">${esc(val)}</span></div>`;
-  const idFields=new Set(['co','cl','dt']); // שדות שמשמשים רק לזיהוי הרשומה — לא מציגים שוב
-  // בפעולת עדכון — הצג את הרשומה המזוהה + שדות נוספים (למשל סכום גבייה); אחרת שדות הרשומה החדשה
+  // שדה ניתן לעריכה — כדי לתקן ערך שה-AI מילא לא נכון לפני הביצוע
+  const rowEdit=(k,lbl,val)=>`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:var(--text3);font-size:11px;white-space:nowrap">${esc(lbl)}</span><input data-fk="${esc(k)}" value="${esc(val==null?'':String(val))}" spellcheck="false" style="flex:1;min-width:0;max-width:62%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:7px;padding:4px 8px;color:var(--text);font-family:inherit;font-size:12px;direction:rtl;text-align:right;outline:none"></div>`;
+  const req=new Set(def.req||[]), idFields=new Set(['co','cl','dt']);
+  const showField=([k])=>(f[k]!=null&&f[k]!=='')||req.has(k);
+  // בפעולת עדכון — רשומת היעד (לקריאה) + שדות נוספים לעריכה (למשל סכום); אחרת שדות הרשומה החדשה לעריכה
   const rows=def.update&&act._targetLabel
-    ? rowHtml('רשומה',act._targetLabel)+def.fields.filter(([k])=>!idFields.has(k)&&f[k]!=null&&f[k]!=='').map(([k,lbl])=>rowHtml(lbl,disp(k,f[k]))).join('')
-    : def.fields.filter(([k])=>f[k]!=null&&f[k]!=='').map(([k,lbl])=>rowHtml(lbl,disp(k,f[k]))).join('');
+    ? rowHtml('רשומה',act._targetLabel)+def.fields.filter(([k,l])=>!idFields.has(k)&&showField([k])).map(([k,lbl])=>rowEdit(k,lbl,f[k])).join('')
+    : def.fields.filter(showField).map(([k,lbl])=>rowEdit(k,lbl,f[k])).join('');
   const card=document.createElement('div');
   card.id='ai-action-card';
   card.style.cssText='background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.4);border-radius:12px;padding:13px 15px;margin-bottom:12px';
-  card.innerHTML=`<div style="font-size:13px;font-weight:800;color:#2ecc71;margin-bottom:8px">${def.icon} ${esc(def.title)} — אישור לפני ביצוע</div>
+  card.innerHTML=`<div style="font-size:13px;font-weight:800;color:#2ecc71;margin-bottom:3px">${def.icon} ${esc(def.title)} — אישור לפני ביצוע</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:8px">✏️ ניתן לערוך כל שדה לפני הביצוע</div>
     <div style="margin-bottom:11px">${rows||'<span style="color:var(--text3);font-size:12px">אין פרטים</span>'}</div>
     <div style="display:flex;gap:7px">
       <button class="btn btnp" onclick="_aiConfirmAction()" style="flex:1;background:#2ecc71;border-color:#2ecc71;color:#04120a;font-weight:800;font-size:12px">✓ בצע והוסף למערכת</button>
@@ -10254,8 +10258,12 @@ function _aiRenderActionCard(){
   box.appendChild(card);
 }
 function _aiConfirmAction(){
-  const act=_aiPendingAction; _aiPendingAction=null;
-  const card=document.getElementById('ai-action-card'); if(card)card.remove();
+  const act=_aiPendingAction;
+  const card=document.getElementById('ai-action-card');
+  // קליטת עריכות המשתמש מהשדות לפני הביצוע
+  if(card&&act){ act.fields=act.fields||{}; card.querySelectorAll('input[data-fk]').forEach(inp=>{ const v=String(inp.value||'').trim(); if(v!=='')act.fields[inp.dataset.fk]=v; else delete act.fields[inp.dataset.fk]; }); }
+  _aiPendingAction=null;
+  if(card)card.remove();
   const res=_aiRunAction(act);
   _aiChat.push({role:'assistant',content:(res.ok?'✅ ':'⚠️ ')+res.msg});
   _aiRenderChat(false);
