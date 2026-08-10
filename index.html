@@ -1611,6 +1611,9 @@ body.logged-in #ai-fab{display:flex}
   <div class="krow" id="krow"></div>
   <div id="month-summary" style="margin-bottom:14px"></div>
   <div class="dgrid">
+    <div class="dpanel" style="grid-column:1/-1"><h4 style="--h4-accent:#4cc9f0;--h4-color:#4cc9f0">📈 מגמת הכנסות — 6 חודשים אחרונים</h4><div id="dash-revchart"></div></div>
+  </div>
+  <div class="dgrid">
     <div class="dpanel"><h4 style="--h4-accent:#e63946;--h4-color:#ff7a84">📌 עדיפות פעולה</h4><div id="prilist" style="display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto"></div></div>
     <div class="dpanel">
       <h4 style="--h4-accent:#06d6a0;--h4-color:#06d6a0">🎯 יעד פגישות חודשי</h4>
@@ -6115,6 +6118,25 @@ function rDash(){
   renderUpcomingMeetings();
   renderQuickActions();
   renderAiSpotlight();
+  renderDashRevChart();
+}
+// מיני-גרף מגמת הכנסות (6 חודשים) בדשבורד — עמודות בגרדיאנט, החודש הנוכחי מודגש
+function renderDashRevChart(){
+  const el=document.getElementById('dash-revchart'); if(!el)return;
+  const data=_aiMonthlyRevenue();
+  const total=data.reduce((s,d)=>s+(+d.value||0),0);
+  if(!total){ el.innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;padding:22px">אין הכנסות שנסגרו ב-6 החודשים האחרונים עדיין</div>'; return; }
+  const max=Math.max(1,...data.map(d=>+d.value||0)), H=96, curM=nd().substring(0,7);
+  const bars=data.map(d=>{
+    const v=+d.value||0, h=Math.max(3,Math.round(v/max*H)), isCur=d.m===curM;
+    const grad=isCur?'linear-gradient(180deg,#4cc9f0,#a78bfa)':'linear-gradient(180deg,rgba(76,201,240,.6),rgba(167,139,250,.32))';
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0">
+      <div style="font-size:10px;font-weight:800;color:${isCur?'#4cc9f0':'var(--text3)'};white-space:nowrap">${v?('₪'+Math.round(v/1000)+'K'):'—'}</div>
+      <div title="${esc(d.label)}: ${fmt(v)}" style="width:100%;max-width:36px;height:${h}px;background:${grad};border-radius:6px 6px 3px 3px;box-shadow:${isCur?'0 0 14px rgba(76,201,240,.4)':'none'}"></div>
+      <div style="font-size:10px;color:${isCur?'#4cc9f0':'var(--text3)'};font-weight:${isCur?'800':'600'}">${esc(d.label)}${isCur?' •':''}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div style="display:flex;align-items:flex-end;gap:7px;height:${H+42}px;padding:6px 2px 0">${bars}</div>`;
 }
 
 // ===== DEALS =====
