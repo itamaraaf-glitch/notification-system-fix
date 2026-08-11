@@ -10112,6 +10112,7 @@ function _aiActionProtocol(){
     +'- collect_salary (גביית תשלום מפרויקט שכר קיים — הכנסה פנימית, לא מהלקוח): cl=שם הלקוח (חובה), amount=סכום (₪; ריק=כל היתרה)\n'
     +'- add_task (משימה/תזכורת): t=תיאור המשימה (חובה), dt=תאריך (YYYY-MM-DD), time=שעה (HH:MM), cl=לקוח קשור, pr="גבוהה"/"בינונית"/"נמוכה", no=הערות\n'
     +'- update_client (עדכון פרטי לקוח קיים): cl=שם הלקוח (חובה), ומלא רק את השדות לעדכון: contact=איש קשר, phone=טלפון, email=אימייל, address=כתובת, status=סטטוס, genNotes=הערות\n'
+    +'- update_deal (עדכון עסקה קיימת): co=שם החברה של העסקה (חובה), ומלא רק שדות לעדכון: srv=שירות, v=תשלום חד-פעמי (₪), mv=תשלום חודשי (₪), ot=ציוד (₪), otc=עלות ציוד (₪), ch=עמלה (%), st=סטטוס, cp=איש קשר, no=הערות\n'
     +'כללים: בלוק פעולה אחד לכל בקשה; מלא רק שדות שהמשתמש מסר (אל תמציא ערכים); סכומים כמספרים ללא סימני מטבע. תאריכים יחסיים ("מחר", "מחרתיים", "בעוד שבוע", "ביום ראשון הבא") — המר לתאריך מוחלט YYYY-MM-DD לפי today ו-todayName שבנתונים. פעולות עדכון (close_deal, mark_meeting_held, collect_salary) פועלות על רשומה קיימת לפי שם. אם המשתמש רק שואל/מבקש מידע (לא לבצע) — אל תוסיף בלוק פעולה.';
 }
 // הגדרות הפעולות: כותרת, אייקון, שדות חובה, ורשימת שדות לתצוגה
@@ -10124,7 +10125,8 @@ const _AI_ACT_DEFS={
   mark_meeting_held:{icon:'✅',title:'סימון פגישה כהתקיימה',update:true,req:['cl'],fields:[['cl','לקוח'],['dt','תאריך']]},
   collect_salary:{icon:'💰',title:'גביית תשלום',update:true,req:['cl'],fields:[['cl','לקוח'],['amount','סכום לגבייה ₪']]},
   add_task:{icon:'✅',title:'הוספת משימה',req:['t'],fields:[['t','משימה'],['dt','תאריך'],['time','שעה'],['cl','לקוח'],['pr','עדיפות'],['no','הערות']]},
-  update_client:{icon:'📝',title:'עדכון פרטי לקוח',update:true,req:['cl'],fields:[['cl','לקוח'],['contact','איש קשר'],['phone','טלפון'],['email','אימייל'],['address','כתובת'],['status','סטטוס'],['genNotes','הערות']]}
+  update_client:{icon:'📝',title:'עדכון פרטי לקוח',update:true,req:['cl'],fields:[['cl','לקוח'],['contact','איש קשר'],['phone','טלפון'],['email','אימייל'],['address','כתובת'],['status','סטטוס'],['genNotes','הערות']]},
+  update_deal:{icon:'✏️',title:'עדכון עסקה',update:true,req:['co'],fields:[['co','חברה'],['srv','שירות'],['v','תשלום חד-פעמי ₪'],['mv','תשלום חודשי ₪'],['ot','ציוד ₪'],['otc','עלות ציוד ₪'],['ch','עמלה %'],['st','סטטוס'],['cp','איש קשר'],['no','הערות']]}
 };
 // איתור הרשומה הקיימת שפעולת-עדכון מתייחסת אליה (לפי שם) — כדי להציג ולעדכן את הנכונה
 function _aiResolveTarget(act){
@@ -10153,6 +10155,12 @@ function _aiResolveTarget(act){
     if(!cands.length)return{ok:false,msg:'לא נמצא לקוח בשם "'+(f.cl||'')+'"'};
     const c=cands[0];
     return{ok:true,id:c.id,label:(c.name||'')+(c.contact?' · '+c.contact:'')};
+  }
+  if(act.action==='update_deal'){
+    const cands=(D.deals||[]).filter(d=>d.co&&sameCo(d.co,f.co||''));
+    if(!cands.length)return{ok:false,msg:'לא נמצאה עסקה עבור "'+(f.co||'')+'"'};
+    const d=cands.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0))[0];
+    return{ok:true,id:d.id,label:(d.co||'')+(d.num?' #'+d.num:'')+(d.srv?' · '+d.srv:'')};
   }
   return{ok:true}; // פעולות יצירה — אין יעד קיים לאתר
 }
@@ -10245,6 +10253,19 @@ function _aiRunAction(act){
       dbUpdate('clients',c.id,patch); rAll();
       const lblMap={contact:'איש קשר',phone:'טלפון',email:'אימייל',address:'כתובת',status:'סטטוס',genNotes:'הערות'};
       return{ok:true,msg:'עודכנו פרטי '+(c.name||'הלקוח')+' ('+changed.map(k=>lblMap[k]||k).join(', ')+'). המסכים עודכנו.'};
+    }
+    if(t==='update_deal'){
+      const d=(D.deals||[]).find(x=>x.id===act._targetId); if(!d)return{ok:false,msg:'העסקה לא נמצאה'};
+      const numKeys=['v','mv','ot','otc','ch'], txtKeys=['srv','st','cp','no']; const patch={}; const changed=[];
+      const lblMap={srv:'שירות',v:'תשלום חד-פעמי',mv:'תשלום חודשי',ot:'ציוד',otc:'עלות ציוד',ch:'עמלה',st:'סטטוס',cp:'איש קשר',no:'הערות'};
+      numKeys.forEach(k=>{ if(f[k]!=null&&String(f[k]).trim()!==''){ patch[k]=+f[k]||0; changed.push(k); } });
+      txtKeys.forEach(k=>{ if(f[k]!=null&&String(f[k]).trim()!==''){ patch[k]=String(f[k]).trim(); changed.push(k); } });
+      if(!changed.length)return{ok:false,msg:'לא צוינו שדות לעדכון'};
+      dbUpdate('deals',d.id,patch);
+      const saved=(D.deals||[]).find(x=>x.id===d.id);
+      if(saved&&saved.st==='נסגר'){ syncDealToClient(saved); syncDealToSalary(saved); syncDealToDist(saved); saveAll(); } // עדכון לסטטוס "נסגר" → סנכרון
+      rAll();
+      return{ok:true,msg:'עודכנה העסקה '+(d.co||'')+(d.num?' #'+d.num:'')+' ('+changed.map(k=>lblMap[k]||k).join(', ')+'). המסכים עודכנו.'};
     }
     return{ok:false,msg:'פעולה לא נתמכת'};
   }catch(e){ return{ok:false,msg:'שגיאה בביצוע: '+String(e&&e.message||e)}; }
