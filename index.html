@@ -10481,6 +10481,27 @@ async function _aiSubmit(){
   box.innerHTML=_aiLocalAnswerHtml(_aiAsk(q));
 }
 // תדריך יומי — אוסף את דחיפויות היום (מגמה, פערי יעד, גבייה, משימות) ומנסח תדריך ממוקד
+// מילוי תיבת השאלה בדוגמה (בלי לשלוח) — כדי שהמשתמש ישלים פרטים ואז ישלח
+function _aiFillQ(el){ const q=document.getElementById('ai-q'); if(!q)return;
+  q.value=el.getAttribute('data-ex')||''; q.focus();
+  try{q.setSelectionRange(q.value.length,q.value.length);}catch(e){}
+  try{showToast('✏️ השלם את הפרטים בתיבה ושלח','info');}catch(e){} }
+// כרטיס גילוי יכולות — מציג מה ה-AI יכול לבצע, עם דוגמאות שאפשר ללחוץ עליהן
+function _aiShowCapabilities(){
+  const box=document.getElementById('ai-answer'); if(!box)return;
+  const groups=[
+    ['💼 עסקאות',['צור עסקה סגורה לחברת [שם], שירות סטארלינק, 500 ש"ח לחודש','עדכן תשלום חודשי של [חברה] ל-800','סגור את העסקה של [חברה]']],
+    ['👤 לקוחות',['הוסף לקוח [שם], איש קשר [שם], טלפון [מספר]','עדכן טלפון של [לקוח] ל-050-0000000']],
+    ['📅 פגישות ומשימות',['קבע פגישה עם [לקוח] מחר בשעה 10:00','הוסף משימה להתקשר ל[לקוח] ביום ראשון']],
+    ['💰 שכר וגבייה',['גבה 2000 מ[לקוח]']]
+  ];
+  const html=groups.map(([title,exs])=>`<div style="margin-bottom:9px"><div style="font-size:11.5px;font-weight:800;color:#a78bfa;margin-bottom:4px">${title}</div>`
+    +exs.map(x=>`<button class="btn btns" data-ex="${esc(x)}" onclick="_aiFillQ(this)" style="display:block;width:100%;text-align:right;font-size:11px;margin-bottom:4px;border-color:rgba(167,139,250,.3)">${esc(x)}</button>`).join('')+`</div>`).join('');
+  box.innerHTML=`<div style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.3);border-radius:12px;padding:13px 15px;margin-bottom:12px">
+    <div style="font-size:13px;font-weight:800;color:#a78bfa;margin-bottom:3px">⚡ מה אפשר לבצע</div>
+    <div style="font-size:10.5px;color:var(--text3);margin-bottom:9px">לחץ על דוגמה — היא תיכנס לתיבת השאלה לעריכה. השלם פרטים ושלח. כל פעולה מוצגת לאישור לפני ביצוע.</div>
+    ${html}</div>`;
+}
 async function _aiDailyBriefing(){
   const box=document.getElementById('ai-answer'); if(!box)return;
   const tr=_aiTrend(); const acts=_aiActions().slice(0,6); const held=heldThisMonth();
@@ -10851,6 +10872,7 @@ function openAiAssistant(){
       <span style="font-size:15px">${a.icon}</span><span style="font-size:12px;color:var(--text);line-height:1.4;flex:1">${a.text}</span><span style="color:#a78bfa;font-size:13px">→</span></div>`).join('')+`</div>`:'';
   const sugg=['איך אני עומד ביעד','סיכום החודש','כמה יש לי לגבות','חוזים לחידוש','עסקאות שנסגרו','מכרזים'];
   const chips=`<button class="btn btns" style="font-size:11px;border-color:#4cc9f0;color:#4cc9f0;font-weight:800" onclick="_aiDailyBriefing()" title="תדריך בוקר ממוקד — מה הכי חשוב היום">📋 תדריך יומי</button> `
+    +`<button class="btn btns" style="font-size:11px;border-color:#06d6a0;color:#06d6a0;font-weight:800" onclick="_aiShowCapabilities()" title="מה העוזר יכול לבצע — עם דוגמאות">⚡ מה אפשר לבצע</button> `
     +sugg.map(c=>`<button class="btn btns" style="font-size:11px" onclick="var e=document.getElementById('ai-q');e.value='${c}';_aiSubmit()">${c}</button>`).join(' ');
   const el=document.createElement('div');
   el.id='ai-popup';
