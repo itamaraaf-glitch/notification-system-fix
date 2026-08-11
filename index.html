@@ -10111,6 +10111,7 @@ function _aiActionProtocol(){
     +'- mark_meeting_held (סימון פגישה שהתקיימה): cl=שם הלקוח (חובה), dt=תאריך הפגישה (אופציונלי, YYYY-MM-DD)\n'
     +'- collect_salary (גביית תשלום מפרויקט שכר קיים — הכנסה פנימית, לא מהלקוח): cl=שם הלקוח (חובה), amount=סכום (₪; ריק=כל היתרה)\n'
     +'- add_task (משימה/תזכורת): t=תיאור המשימה (חובה), dt=תאריך (YYYY-MM-DD), time=שעה (HH:MM), cl=לקוח קשור, pr="גבוהה"/"בינונית"/"נמוכה", no=הערות\n'
+    +'- update_client (עדכון פרטי לקוח קיים): cl=שם הלקוח (חובה), ומלא רק את השדות לעדכון: contact=איש קשר, phone=טלפון, email=אימייל, address=כתובת, status=סטטוס, genNotes=הערות\n'
     +'כללים: בלוק פעולה אחד לכל בקשה; מלא רק שדות שהמשתמש מסר (אל תמציא ערכים); סכומים כמספרים ללא סימני מטבע. תאריכים יחסיים ("מחר", "מחרתיים", "בעוד שבוע", "ביום ראשון הבא") — המר לתאריך מוחלט YYYY-MM-DD לפי today ו-todayName שבנתונים. פעולות עדכון (close_deal, mark_meeting_held, collect_salary) פועלות על רשומה קיימת לפי שם. אם המשתמש רק שואל/מבקש מידע (לא לבצע) — אל תוסיף בלוק פעולה.';
 }
 // הגדרות הפעולות: כותרת, אייקון, שדות חובה, ורשימת שדות לתצוגה
@@ -10122,7 +10123,8 @@ const _AI_ACT_DEFS={
   close_deal:{icon:'🔒',title:'סגירת עסקה',update:true,req:['co'],fields:[['co','חברה']]},
   mark_meeting_held:{icon:'✅',title:'סימון פגישה כהתקיימה',update:true,req:['cl'],fields:[['cl','לקוח'],['dt','תאריך']]},
   collect_salary:{icon:'💰',title:'גביית תשלום',update:true,req:['cl'],fields:[['cl','לקוח'],['amount','סכום לגבייה ₪']]},
-  add_task:{icon:'✅',title:'הוספת משימה',req:['t'],fields:[['t','משימה'],['dt','תאריך'],['time','שעה'],['cl','לקוח'],['pr','עדיפות'],['no','הערות']]}
+  add_task:{icon:'✅',title:'הוספת משימה',req:['t'],fields:[['t','משימה'],['dt','תאריך'],['time','שעה'],['cl','לקוח'],['pr','עדיפות'],['no','הערות']]},
+  update_client:{icon:'📝',title:'עדכון פרטי לקוח',update:true,req:['cl'],fields:[['cl','לקוח'],['contact','איש קשר'],['phone','טלפון'],['email','אימייל'],['address','כתובת'],['status','סטטוס'],['genNotes','הערות']]}
 };
 // איתור הרשומה הקיימת שפעולת-עדכון מתייחסת אליה (לפי שם) — כדי להציג ולעדכן את הנכונה
 function _aiResolveTarget(act){
@@ -10145,6 +10147,12 @@ function _aiResolveTarget(act){
     if(!cands.length)return{ok:false,msg:'לא נמצא פרויקט שכר עם יתרה פתוחה עבור "'+(f.cl||'')+'"'};
     const s=cands.sort((a,b)=>(+b.pv||0)-(+a.pv||0))[0];
     return{ok:true,id:s.id,label:(s.cl||'')+(s.pj?' · פרויקט '+s.pj:'')+' · יתרה '+fmt(+s.pv||0)};
+  }
+  if(act.action==='update_client'){
+    const cands=(D.clients||[]).filter(c=>c.name&&sameCo(c.name,f.cl||''));
+    if(!cands.length)return{ok:false,msg:'לא נמצא לקוח בשם "'+(f.cl||'')+'"'};
+    const c=cands[0];
+    return{ok:true,id:c.id,label:(c.name||'')+(c.contact?' · '+c.contact:'')};
   }
   return{ok:true}; // פעולות יצירה — אין יעד קיים לאתר
 }
@@ -10228,6 +10236,15 @@ function _aiRunAction(act){
       const patch={cl2:newCl2,pv:newPv}; if(newPv<=0){ patch.st='סגור'; if(!s.cstart)patch.cstart=nd(); } // גבייה מלאה → נסגר
       dbUpdate('salary',s.id,patch); rAll();
       return{ok:true,msg:'נגבו '+fmt(amt)+' מ-'+(s.cl||'לקוח')+(newPv>0?' · נותרה יתרה '+fmt(newPv):' · שולם במלואו ✓')+'. המסכים עודכנו.'};
+    }
+    if(t==='update_client'){
+      const c=(D.clients||[]).find(x=>x.id===act._targetId); if(!c)return{ok:false,msg:'הלקוח לא נמצא'};
+      const keys=['contact','phone','email','address','status','genNotes']; const patch={}; const changed=[];
+      keys.forEach(k=>{ if(f[k]!=null&&String(f[k]).trim()!==''){ patch[k]=String(f[k]).trim(); changed.push(k); } });
+      if(!changed.length)return{ok:false,msg:'לא צוינו שדות לעדכון'};
+      dbUpdate('clients',c.id,patch); rAll();
+      const lblMap={contact:'איש קשר',phone:'טלפון',email:'אימייל',address:'כתובת',status:'סטטוס',genNotes:'הערות'};
+      return{ok:true,msg:'עודכנו פרטי '+(c.name||'הלקוח')+' ('+changed.map(k=>lblMap[k]||k).join(', ')+'). המסכים עודכנו.'};
     }
     return{ok:false,msg:'פעולה לא נתמכת'};
   }catch(e){ return{ok:false,msg:'שגיאה בביצוע: '+String(e&&e.message||e)}; }
