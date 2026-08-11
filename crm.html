@@ -6130,12 +6130,9 @@ function rDash(){
     qsRow('💰 שכר ממתין',fmt(so),'#f4a261','salary')+
     qsRow('📋 מכרזים פעילים',''+D.tenders.filter(t=>t.submitted!=='כן').length,'#f4a261','tenders')+
     qsRow('📋 הוגשו',''+D.tenders.filter(t=>t.submitted==='כן').length,'var(--teal)','tenders');
-  renderUpcomingMeetings();
-  renderQuickActions();
-  renderAiSpotlight();
-  renderDashRevChart();
-  renderDashPipeline();
-  renderDashProducts();
+  // כל סקשן עצמאי — כשל בחישוב של אחד (על נתון חריג) לא ימחק את השאר (במיוחד את העוזר החכם)
+  [renderUpcomingMeetings,renderQuickActions,renderAiSpotlight,renderDashRevChart,renderDashPipeline,renderDashProducts]
+    .forEach(fn=>{ try{ fn(); }catch(e){ console.error('rDash section failed:',fn.name,e); } });
 }
 // התפלגות מוצרים אצל לקוחות — סרגלים אופקיים לפי כמות, צבועים בצבע המוצר (עד 8 מובילים)
 function renderDashProducts(){
@@ -10597,10 +10594,12 @@ function _aiCopySummary(){
 // ספוטלייט AI בלוח הבקרה — מדד בריאות + הפעולה החשובה ביותר + תיבת שאלה מהירה, חי במסך הראשי
 function renderAiSpotlight(){
   const box=document.getElementById('ai-spotlight'); if(!box)return;
-  const h=_aiHealth();
-  const top=_aiActions()[0];
-  const plan=_aiGoalPlan();
-  const behind=plan.items.filter(it=>it.gap>0).length;
+  // חישובי-אנליטיקה עטופים — אם אחד נכשל על נתון חריג, העוזר עדיין מוצג (בלי לרוקן את הדשבורד)
+  let h,top,behind=0;
+  try{ h=_aiHealth(); }catch(e){ console.error('_aiHealth',e); }
+  if(!h||h.col==null)h={col:'#a78bfa',score:'—'};
+  try{ top=_aiActions()[0]; }catch(e){ console.error('_aiActions',e); top=null; }
+  try{ const plan=_aiGoalPlan(); behind=(plan&&plan.items||[]).filter(it=>it.gap>0).length; }catch(e){ console.error('_aiGoalPlan',e); }
   box.innerHTML=`<div style="background:linear-gradient(135deg,rgba(167,139,250,.14),rgba(76,201,240,.08));border:1px solid rgba(167,139,250,.3);border-radius:14px;padding:12px 15px;margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
       <div onclick="openAiAssistant()" style="width:48px;height:48px;border-radius:50%;border:3px solid ${h.col};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer" title="פתח עוזר חכם">
