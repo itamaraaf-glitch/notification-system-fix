@@ -1514,7 +1514,7 @@ body.logged-in #ai-fab{display:flex}
       <button onclick="_resetLoginLock()" style="background:none;border:none;color:rgba(200,169,110,.6);font-size:11px;cursor:pointer;text-decoration:underline;font-family:inherit">שחרר נעילה וסנכרן</button>
     </div>
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(200,169,110,.1);display:flex;align-items:center;justify-content:center;gap:12px">
-      <span style="font-size:9px;color:rgba(74,82,110,.5);letter-spacing:.8px;text-transform:uppercase">HOT Business · v3.7 · 2026</span>
+      <span onclick="_forceUpdate()" title="לחץ לרענון לגרסה האחרונה (עוקף מטמון)" style="font-size:9px;color:rgba(74,82,110,.5);letter-spacing:.8px;text-transform:uppercase;cursor:pointer">HOT Business · v3.8 · build 2026-08-11</span>
       <span style="width:3px;height:3px;border-radius:50%;background:rgba(200,169,110,.3)"></span>
       <span style="font-size:9px;color:rgba(74,82,110,.4);letter-spacing:.5px">מאובטח ומוצפן</span>
     </div>
@@ -1570,6 +1570,10 @@ body.logged-in #ai-fab{display:flex}
         <button onclick="clipboardBackup();toggleBkMenu()" class="bk-item" style="color:#f4a261">📋 העתק גיבוי ללוח</button>
         <div style="border-top:1px solid rgba(255,255,255,.06);margin:4px 0"></div>
         <button onclick="openSendToMobile();toggleBkMenu()" class="bk-item" style="color:#a78bfa">📱 שלח למובייל</button>
+        <div style="border-top:1px solid rgba(255,255,255,.06);margin:4px 0"></div>
+        <div style="font-size:10px;font-weight:800;color:rgba(200,169,110,.55);padding:5px 10px 3px;text-transform:uppercase;letter-spacing:.8px">גרסה</div>
+        <button onclick="_forceUpdate()" class="bk-item" style="color:#4cc9f0" title="עוקף מטמון וטוען את הגרסה האחרונה">🔄 רענן לגרסה האחרונה</button>
+        <div style="font-size:9px;color:rgba(74,82,110,.7);padding:3px 10px 5px;letter-spacing:.4px">HOT Business · v3.8 · build 2026-08-11</div>
       </div>
     </div>
     <button class="abtn" onclick="nav('alerts')">⚠ <span id="acnt">0</span></button>
@@ -4368,6 +4372,13 @@ function _smobDownloadJSON(){
 // ── בדיקת עדכון גרסה: טאב שנשאר פתוח ימים לא מקבל עדכונים עד רענון ידני ──
 // בודקים מול השרת (ETag) לכל היותר פעם בחצי שעה; כשיש גרסה חדשה — מרעננים
 // אוטומטית אם הדף ברקע, או מציעים רענון בלחיצה אם המשתמש בעבודה פעילה
+// רענון יזום לגרסה האחרונה — שומר תחילה ואז טוען מחדש עם פרמטר עוקף-מטמון
+// (טעינת URL טרי מכריחה את הדפדפן להביא את ה-HTML העדכני, לא את הגרסה השמורה)
+function _forceUpdate(){
+  try{_bgSave&&_bgSave();}catch(e){}
+  try{ if(window.caches&&caches.keys)caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))); }catch(e){}
+  location.replace(location.pathname+'?fresh='+Date.now());
+}
 let _verEtag=null,_verLast=0;
 async function checkAppVersion(){
   if(Date.now()-_verLast<30*60*1000)return;
