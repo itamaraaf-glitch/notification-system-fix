@@ -4381,7 +4381,7 @@ function _forceUpdate(){
 }
 let _verEtag=null,_verLast=0;
 async function checkAppVersion(){
-  if(Date.now()-_verLast<30*60*1000)return;
+  if(Date.now()-_verLast<90*1000)return;   // בדיקה לכל היותר פעם ב-90 שנ' (היה 30 דק' — איטי מדי אחרי דיפלוי)
   _verLast=Date.now();
   try{
     const r=await fetch(location.pathname+'?vchk='+Date.now(),{method:'HEAD',cache:'no-store'});
@@ -4390,16 +4390,16 @@ async function checkAppVersion(){
     if(!et)return;
     if(_verEtag===null){_verEtag=et;return;}
     if(et!==_verEtag){
-      // לא מעדכנים את הבסיס — אם המשתמש מתעלם, ההצעה תחזור בבדיקה הבאה
-      try{_bgSave();}catch(e){}
-      if(document.visibilityState==='hidden'){location.reload();return;}
-      showToastWithAction('🔄 גרסה חדשה של המערכת זמינה','רענן עכשיו',()=>{try{_bgSave();}catch(e){}location.reload();});
+      // זוהתה גרסה חדשה בשרת — טוענים אותה בוודאות דרך רענון עוקף-מטמון (לא reload רגיל שעלול להגיש מטמון)
+      if(document.visibilityState==='hidden'){_forceUpdate();return;}
+      showToastWithAction('🔄 גרסה חדשה של המערכת זמינה','רענן עכשיו',()=>_forceUpdate());
     }
   }catch(e){}
 }
 setTimeout(checkAppVersion,6000);
-setInterval(checkAppVersion,35*60*1000);
+setInterval(checkAppVersion,3*60*1000);   // בדיקה תקופתית כל 3 דקות — קליטת דיפלוי מהירה
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkAppVersion();});
+window.addEventListener('focus',checkAppVersion);  // גם בכל חזרה לחלון — קליטה מיידית של גרסה חדשה
 
 // ═══ אימות דו-שלבי אמיתי (TOTP — Google Authenticator וכל אפליקציית אימות) ═══
 const B32A='ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
