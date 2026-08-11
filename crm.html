@@ -10359,12 +10359,13 @@ function _aiFmt(raw){
   const closeLists=()=>{ if(inUl){html+='</ul>';inUl=false;} if(inOl){html+='</ol>';inOl=false;} };
   for(const ln of lines){
     const t=ln.trim(); let m;
-    if((m=t.match(/^[-*•]\s+(.+)/))){ if(!inUl){closeLists();html+='<ul style="margin:5px 0;padding-inline-start:20px">';inUl=true;} html+='<li style="margin:3px 0">'+inline(m[1])+'</li>'; continue; }
-    if((m=t.match(/^(\d+)[.)]\s+(.+)/))){ if(!inOl){closeLists();html+='<ol style="margin:5px 0;padding-inline-start:22px">';inOl=true;} html+='<li style="margin:3px 0">'+inline(m[2])+'</li>'; continue; }
+    // dir="auto" — פותר סדר תווים דו-כיווני בשורות מעורבות (עברית + מספרים/₪/טלפון/מייל)
+    if((m=t.match(/^[-*•]\s+(.+)/))){ if(!inUl){closeLists();html+='<ul style="margin:5px 0;padding-inline-start:20px">';inUl=true;} html+='<li dir="auto" style="margin:3px 0">'+inline(m[1])+'</li>'; continue; }
+    if((m=t.match(/^(\d+)[.)]\s+(.+)/))){ if(!inOl){closeLists();html+='<ol style="margin:5px 0;padding-inline-start:22px">';inOl=true;} html+='<li dir="auto" style="margin:3px 0">'+inline(m[2])+'</li>'; continue; }
     closeLists();
     if(!t){ html+='<div style="height:7px"></div>'; continue; }
-    if((m=t.match(/^#{1,6}\s*(.+)/))){ html+='<div style="font-weight:800;margin:5px 0 2px">'+inline(m[1])+'</div>'; continue; }
-    html+='<div>'+inline(t)+'</div>';
+    if((m=t.match(/^#{1,6}\s*(.+)/))){ html+='<div dir="auto" style="font-weight:800;margin:5px 0 2px">'+inline(m[1])+'</div>'; continue; }
+    html+='<div dir="auto">'+inline(t)+'</div>';
   }
   closeLists();
   return html;
