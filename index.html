@@ -10189,13 +10189,16 @@ function _aiStripAction(text){
   const j=_aiExtractJson(s); if(j)s=s.replace(j,'');
   return s.replace(/```/g,'').trim();
 }
+// המרת ערך שדה למספר — סובלנית לפסיקים/סימני מטבע/רווחים שהמשתמש עלול להקליד בעריכה
+// (בלי זה "1,500" או "1500 ₪" הופכים ל-NaN→0, ובגבייה זה נהפך לגביית כל היתרה)
+function _aiNum(v){ if(v==null||v==='')return 0; const n=parseFloat(String(v).replace(/[^\d.\-]/g,'')); return isNaN(n)?0:n; }
 // ביצוע הפעולה בפועל — יצירת הרשומה ורענון המסכים
 function _aiRunAction(act){
   try{
     const t=act&&act.action, f=(act&&act.fields)||{};
     if(t==='add_deal'){
       if(!f.co)return{ok:false,msg:'חסר שם חברה — לא נוצרה עסקה'};
-      const row={date:f.date||nd(),co:String(f.co),cp:f.cp||'',srv:f.srv||'',v:+f.v||0,mv:+f.mv||0,di:0,dn:0,ot:+f.ot||0,otc:+f.otc||0,ct:f.ct||'',ch:+f.ch||0,ptype:f.ptype||'',st:f.st||'ליד',ty:(f.ty==='short'?'short':'long'),no:f.no||''};
+      const row={date:f.date||nd(),co:String(f.co),cp:f.cp||'',srv:f.srv||'',v:_aiNum(f.v),mv:_aiNum(f.mv),di:0,dn:0,ot:_aiNum(f.ot),otc:_aiNum(f.otc),ct:f.ct||'',ch:_aiNum(f.ch),ptype:f.ptype||'',st:f.st||'ליד',ty:(f.ty==='short'?'short':'long'),no:f.no||''};
       row.num=nextDealNum(); const saved=dbInsert('deals',row);
       if(saved&&saved.st==='נסגר'){ syncDealToClient(saved); syncDealToSalary(saved); syncDealToDist(saved); saveAll(); }
       rAll(); return{ok:true,msg:'נוספה עסקה עבור '+row.co+(row.num?' (#'+row.num+')':'')+'. המסכים עודכנו.'};
@@ -10214,7 +10217,7 @@ function _aiRunAction(act){
     }
     if(t==='add_salary'){
       if(!f.cl)return{ok:false,msg:'חסר שם לקוח — לא נוצר פרויקט שכר'};
-      const row={pj:f.pj||'',cl:String(f.cl),qt:+f.qt||1,tr:+f.tr||0,cl2:+f.cl2||0,pv:+f.pv||0,st:f.st||'פתוח',ty:(f.ty==='equipment'?'equipment':'service'),no:f.no||''};
+      const row={pj:f.pj||'',cl:String(f.cl),qt:_aiNum(f.qt)||1,tr:_aiNum(f.tr),cl2:_aiNum(f.cl2),pv:_aiNum(f.pv),st:f.st||'פתוח',ty:(f.ty==='equipment'?'equipment':'service'),no:f.no||''};
       dbInsert('salary',row); rAll();
       return{ok:true,msg:'נוסף פרויקט שכר עבור '+row.cl+'. המסכים עודכנו.'};
     }
@@ -10239,7 +10242,7 @@ function _aiRunAction(act){
     }
     if(t==='collect_salary'){
       const s=(D.salary||[]).find(x=>x.id===act._targetId); if(!s)return{ok:false,msg:'פרויקט השכר לא נמצא'};
-      const bal=+s.pv||0; let amt=+f.amount||0; if(amt<=0)amt=bal; if(amt>bal)amt=bal; // לא גובים מעבר ליתרה
+      const bal=+s.pv||0; let amt=_aiNum(f.amount); if(amt<=0)amt=bal; if(amt>bal)amt=bal; // לא גובים מעבר ליתרה
       const newPv=Math.max(0,bal-amt), newCl2=(+s.cl2||0)+amt;
       const patch={cl2:newCl2,pv:newPv}; if(newPv<=0){ patch.st='סגור'; if(!s.cstart)patch.cstart=nd(); } // גבייה מלאה → נסגר
       dbUpdate('salary',s.id,patch); rAll();
@@ -10258,7 +10261,7 @@ function _aiRunAction(act){
       const d=(D.deals||[]).find(x=>x.id===act._targetId); if(!d)return{ok:false,msg:'העסקה לא נמצאה'};
       const numKeys=['v','mv','ot','otc','ch'], txtKeys=['srv','st','cp','no']; const patch={}; const changed=[];
       const lblMap={srv:'שירות',v:'תשלום חד-פעמי',mv:'תשלום חודשי',ot:'ציוד',otc:'עלות ציוד',ch:'עמלה',st:'סטטוס',cp:'איש קשר',no:'הערות'};
-      numKeys.forEach(k=>{ if(f[k]!=null&&String(f[k]).trim()!==''){ patch[k]=+f[k]||0; changed.push(k); } });
+      numKeys.forEach(k=>{ if(f[k]!=null&&String(f[k]).trim()!==''){ patch[k]=_aiNum(f[k]); changed.push(k); } });
       txtKeys.forEach(k=>{ if(f[k]!=null&&String(f[k]).trim()!==''){ patch[k]=String(f[k]).trim(); changed.push(k); } });
       if(!changed.length)return{ok:false,msg:'לא צוינו שדות לעדכון'};
       dbUpdate('deals',d.id,patch);
