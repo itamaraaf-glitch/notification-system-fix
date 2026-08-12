@@ -14066,6 +14066,7 @@ let navBusy = false;
 // ── CINEMATIC nav() — pure CSS transitions, no D3 ─────────────
 let _navPending=null;
 function nav(s){
+  try{checkAppVersion();}catch(e){} // כל מעבר מסך בודק אם יש גרסה חדשה (מווסת ל-90 שנ') — קליטת דיפלוי מהירה
   if(s === currentSec) return;
   // לחיצה מהירה בזמן מעבר — לא נזרקת: נזכרת ומתבצעת בסיום המעבר הנוכחי
   if(navBusy){ _navPending=s; return; }
