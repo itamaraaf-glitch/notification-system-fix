@@ -7014,7 +7014,7 @@ function rSalary(){
       if(_exp){const _d=db(nd(),_exp);const _c=_d<0?'#e63946':_d<=90?'#f4a261':'var(--teal)';_expChip=`<div style="font-size:9px;font-weight:700;color:${_c};margin-top:2px;white-space:nowrap" title="חוזה ${s.term} חודשים · התחלה ${fmtDate(s.cstart)}">🔄 חוזה עד ${fmtDate(_exp)}${_d<0?' · פג!':_d<=90?` · ${_d}י`:''}</div>`;}
       let _ecdChip='';
       if(s.ecd){const _def=_salDeferred(s);_ecdChip=`<div style="font-size:9px;font-weight:700;color:${_def?'#f4a261':'var(--text3)'};margin-top:2px;white-space:nowrap" title="צפי סגירה${_def?' — מחוץ לסיכום החודש':''}">⏭️ צפי ${fmtDate(s.ecd)}${_def?' · נדחה':''}</div>`;}
-      return`<tr class="${pC(p)}" data-pri="${p}"${_salDeferred(s)?' style="opacity:.62" title="נדחה לחודש עתידי — מחוץ לסיכום החודש"':''}><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td><span onclick="event.stopPropagation();advanceSalaryStatus('${s.id}')" title="לחץ לקידום הסטטוס (פתוח → בתהליך → סגור)" style="cursor:pointer">${sB(s.st)}</span></td><td>${s.qt||1}</td><td style="font-size:10px">${esc(s.pj||'')}${_expChip}${_ecdChip}</td><td style="font-weight:600">${esc(s.cl||'')}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${(+s.pv>0)?`<span onclick="event.stopPropagation();collectSalaryBalance('${s.id}')" title="לחץ לרישום גבייה — מלאה או חלקית" style="cursor:pointer;text-decoration:underline dotted">${fmt(s.pv)} ✓</span>`:fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${esc(s.no||'–')}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
+      return`<tr class="${pC(p)}" data-pri="${p}"${_salDeferred(s)?' style="opacity:.62" title="נדחה לחודש עתידי — מחוץ לסיכום החודש"':''}><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td><span onclick="event.stopPropagation();advanceSalaryStatus('${s.id}')" title="לחץ לקידום הסטטוס (פתוח → בתהליך → סגור)" style="cursor:pointer">${sB(s.st)}</span></td><td>${_cellSpan('salary',s.id,'qt',(s.qt||1),'num')}</td><td style="font-size:10px">${_cellSpan('salary',s.id,'pj',esc(s.pj||'—'))}${_expChip}${_ecdChip}</td><td style="font-weight:600">${_cellSpan('salary',s.id,'cl',esc(s.cl||'—'))}</td><td class="nb">${_cellSpan('salary',s.id,'tr',fmt(s.tr),'num')}</td><td class="ng">${_cellSpan('salary',s.id,'cl2',fmt(s.cl2),'num')}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${(+s.pv>0)?`<span onclick="event.stopPropagation();collectSalaryBalance('${s.id}')" title="לחץ לרישום גבייה — מלאה או חלקית" style="cursor:pointer;text-decoration:underline dotted">${fmt(s.pv)} ✓</span>`:fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${_cellSpan('salary',s.id,'no',esc(s.no||'–'))}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
     }).join('')||emptyRow(12,'💰',"אין פרויקטים","openM('salary',null)");
     // הסיכום בתחתית מתייחס רק לפרויקטים הרלוונטיים לחודש; פרויקטים שנדחו לחודש עתידי (ecd) מופרדים
     const curItems=items.filter(i=>!_salDeferred(i)), defItems=items.filter(_salDeferred);
@@ -12042,23 +12042,23 @@ function advanceDealStatus(id){
   rAll();
   showToast('💼 סטטוס העסקה עודכן ל"'+next+'"'+(next==='נסגר'?' — סונכרן ללקוח 🎉':''),'ok');
 }
-// ═══ עריכה מהירה בשורה — כל שדה בעסקה נערך במקום, בלי להיכנס לשורה ═══
+// ═══ עריכה מהירה בשורה — כל שדה בכל טבלה נערך במקום, בלי להיכנס לשורה ═══
 // שמירה אוטומטית (saveAll דרך dbUpdate) + רענון כל המסכים (rAll) בכל שינוי.
-// שמירת השינוי + סנכרון: אם הסטטוס עודכן ל"נסגר" מסנכרנים ללקוח/שכר/הפצות.
-function _commitDeal(id,field,nv){
-  dbUpdate('deals',id,{[field]:nv});
-  const d2=(D.deals||[]).find(d=>d.id===id);
-  if(field==='st'&&nv==='נסגר'&&d2){ try{syncDealToClient(d2);syncDealToSalary(d2);syncDealToDist(d2);saveAll();}catch(e){} }
+// סנכרון מיוחד: בעסקה שסטטוסה עודכן ל"נסגר" מסנכרנים ללקוח/שכר/הפצות.
+function _commitCell(table,id,field,nv){
+  dbUpdate(table,id,{[field]:nv});
+  if(table==='deals'){ const d2=(D.deals||[]).find(d=>d.id===id);
+    if(field==='st'&&nv==='נסגר'&&d2){ try{syncDealToClient(d2);syncDealToSalary(d2);syncDealToDist(d2);saveAll();}catch(e){} } }
   showToast('✓ עודכן — כל המסכים סונכרנו','ok'); rAll();
 }
-// עורך תא כללי: kind = 'num' | 'pct' | 'text' | 'date' | 'select'
-function editDealCell(id,field,el,kind,opts){
+// עורך תא כללי לכל טבלה: kind = 'num' | 'pct' | 'text' | 'date' | 'select'
+function editCell(table,id,field,el,kind,opts){
   if(!el||el._editing)return; el._editing=true;
-  const deal=(D.deals||[]).find(d=>d.id===id); if(!deal){el._editing=false;return;}
+  const rec=(D[table]||[]).find(x=>x.id===id); if(!rec){el._editing=false;return;}
   kind=kind||'text';
-  const cur = kind==='num' ? (+deal[field]||0)
-            : kind==='pct' ? Math.round((+deal[field]||0)*100)
-            : String(deal[field]==null?'':deal[field]);
+  const cur = kind==='num' ? (+rec[field]||0)
+            : kind==='pct' ? Math.round((+rec[field]||0)*100)
+            : String(rec[field]==null?'':rec[field]);
   let ctl;
   if(kind==='select'){
     ctl=document.createElement('select');
@@ -12080,7 +12080,7 @@ function editDealCell(id,field,el,kind,opts){
       if(kind==='num'){ nv=Math.max(0,_aiNum(ctl.value)); changed=(nv!==cur); }
       else if(kind==='pct'){ nv=Math.max(0,_aiNum(ctl.value))/100; changed=(Math.round(nv*100)!==cur); }
       else { nv=(kind==='select'?ctl.value:ctl.value.trim()); changed=(String(nv)!==String(cur)); }
-      if(changed){ _commitDeal(id,field,nv); return; }
+      if(changed){ _commitCell(table,id,field,nv); return; }
     }
     rAll(); // אין שינוי / בוטל — רינדור מחדש משחזר את התא
   };
@@ -12088,13 +12088,17 @@ function editDealCell(id,field,el,kind,opts){
   ctl.addEventListener('blur',()=>commit(true));
   if(kind==='select')ctl.addEventListener('change',()=>commit(true));
 }
-function editDealField(id,field,el){ return editDealCell(id,field,el,'num'); } // תאימות לאחור (שדות מספריים)
-function editDealValue(id,el){ return editDealCell(id,'v',el,'num'); }
-// עטיפת span לעריכה מהירה בתוך תא (טקסט/תאריך/אחוז/בחירה)
+// עטיפת span כללית לעריכה מהירה בתוך תא — לכל טבלה
+function _cellSpan(table,id,field,inner,kind){
+  return `<span onclick="event.stopPropagation();editCell('${table}','${id}','${field}',this,'${kind||'text'}')" title="לחץ לעריכה מהירה — יתעדכן בכל המסכים" style="cursor:pointer;border-bottom:1px dashed rgba(76,201,240,.4);padding-bottom:1px">${inner}</span>`;
+}
+// עטיפות לעסקאות (שמירת ה-onclick היציב של שורת העסקה)
+function editDealCell(id,field,el,kind,opts){ return editCell('deals',id,field,el,kind,opts); }
+function editDealField(id,field,el){ return editCell('deals',id,field,el,'num'); }
+function editDealValue(id,el){ return editCell('deals',id,'v',el,'num'); }
 function _editSpan(id,field,inner,kind,extra){
   return `<span onclick="event.stopPropagation();editDealCell('${id}','${field}',this,'${kind||'text'}')" title="לחץ לעריכה מהירה — יתעדכן בכל המסכים" style="cursor:pointer;border-bottom:1px dashed rgba(76,201,240,.4);padding-bottom:1px;${extra||''}">${inner}</span>`;
 }
-// תא מספרי לעריכה מהירה בשורה
 function _editNumCell(id,field,val,cls){
   return `<td class="${cls||''}">${_editSpan(id,field,fmt(val),'num')}</td>`;
 }
