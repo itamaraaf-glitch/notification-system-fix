@@ -24,6 +24,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # רשת ביטחון: index.html (מה ש-Pages מגיש בשורש) תמיד זהה ל-crm.html (מקור האמת),
+      # גם אם שכחו למראה ידנית — כדי שלא ייווצר מצב של גרסה ישנה בשורש.
+      - name: Ensure index.html mirrors crm.html
+        run: cp crm.html index.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
