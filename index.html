@@ -388,6 +388,11 @@ th.cb-th{width:32px;padding:4px 8px}
 td.cb-td{width:32px;padding:4px 8px}
 .fi{font-size:11px;color:var(--text2)}.fi b{color:var(--text)}
 
+/* תא הניתן לעריכה-בשורה — הדגשה בריחוף כדי שיהיה ברור שאפשר ללחוץ לעריכה */
+.ec{transition:background .12s,box-shadow .12s;border-radius:5px}
+.tscroll td:hover .ec{border-bottom-color:rgba(76,201,240,.75)}
+.ec:hover{background:rgba(76,201,240,.16);box-shadow:0 0 0 1px rgba(76,201,240,.45);border-bottom-color:transparent!important}
+
 /* ─── מצב קומפקטי לטבלאות: מכווץ ריפוד/גופן כדי שיותר עמודות ייכנסו בלי לגרור ימינה ─── */
 body.dense-tables table{font-size:11px}
 body.dense-tables th{padding:3px 6px;font-size:8px;letter-spacing:.3px}
@@ -12128,14 +12133,14 @@ function editCell(table,id,field,el,kind,opts){
 }
 // עטיפת span כללית לעריכה מהירה בתוך תא — לכל טבלה
 function _cellSpan(table,id,field,inner,kind){
-  return `<span onclick="event.stopPropagation();editCell('${table}','${id}','${field}',this,'${kind||'text'}')" title="לחץ לעריכה מהירה — יתעדכן בכל המסכים" style="cursor:pointer;border-bottom:1px dashed rgba(76,201,240,.4);padding-bottom:1px">${inner}</span>`;
+  return `<span class="ec" onclick="event.stopPropagation();editCell('${table}','${id}','${field}',this,'${kind||'text'}')" title="לחץ לעריכה מהירה — יתעדכן בכל המסכים" style="cursor:pointer;border-bottom:1px dashed rgba(76,201,240,.4);padding-bottom:1px">${inner}</span>`;
 }
 // עטיפות לעסקאות (שמירת ה-onclick היציב של שורת העסקה)
 function editDealCell(id,field,el,kind,opts){ return editCell('deals',id,field,el,kind,opts); }
 function editDealField(id,field,el){ return editCell('deals',id,field,el,'num'); }
 function editDealValue(id,el){ return editCell('deals',id,'v',el,'num'); }
 function _editSpan(id,field,inner,kind,extra){
-  return `<span onclick="event.stopPropagation();editDealCell('${id}','${field}',this,'${kind||'text'}')" title="לחץ לעריכה מהירה — יתעדכן בכל המסכים" style="cursor:pointer;border-bottom:1px dashed rgba(76,201,240,.4);padding-bottom:1px;${extra||''}">${inner}</span>`;
+  return `<span class="ec" onclick="event.stopPropagation();editDealCell('${id}','${field}',this,'${kind||'text'}')" title="לחץ לעריכה מהירה — יתעדכן בכל המסכים" style="cursor:pointer;border-bottom:1px dashed rgba(76,201,240,.4);padding-bottom:1px;${extra||''}">${inner}</span>`;
 }
 function _editNumCell(id,field,val,cls){
   return `<td class="${cls||''}">${_editSpan(id,field,fmt(val),'num')}</td>`;
