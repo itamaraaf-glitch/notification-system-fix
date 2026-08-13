@@ -1565,7 +1565,7 @@ body.logged-in #ai-fab{display:flex}
     <span class="save-ind" id="saveind">✦ נשמר</span>
     <button class="btn mob-hide" onclick="saveAll()" style="background:var(--tealdim);color:var(--teal);border:1px solid rgba(6,214,160,.4);font-size:11px;padding:4px 12px;border-radius:20px">💾 שמור</button>
     <button class="btn mob-hide" id="undo-btn" onclick="undoLast()" title="בטל את המחיקה האחרונה" style="display:none;background:rgba(244,162,97,.14);color:#f4a261;border:1px solid rgba(244,162,97,.45);font-size:11px;padding:4px 12px;border-radius:20px">↩ בטל מחיקה</button>
-    <button class="btn mob-hide" id="dense-btn" onclick="toggleDenseTables()" title="הקטן/הגדל שורות בטבלאות — כדי שהכול ייכנס בלי לגרור ימינה" style="background:rgba(76,201,240,.12);color:#4cc9f0;border:1px solid rgba(76,201,240,.4);font-size:11px;padding:4px 12px;border-radius:20px">🔎 קומפקטי</button>
+    <button class="btn" id="dense-btn" onclick="toggleDenseTables()" title="הקטן/הגדל שורות בטבלאות — כדי שהכול ייכנס בלי לגרור ימינה" style="background:rgba(76,201,240,.14);color:#4cc9f0;border:1px solid rgba(76,201,240,.5);font-size:11px;padding:4px 12px;border-radius:20px;white-space:nowrap">🔎 קומפקטי</button>
     <div style="position:relative" id="bk-dd-wrap" class="mob-hide">
       <button onclick="toggleBkMenu()" title="גיבוי ושחזור" style="background:rgba(6,214,160,.1);color:#06d6a0;border:1px solid rgba(6,214,160,.35);font-size:11px;padding:4px 12px;border-radius:20px;cursor:pointer;font-family:'Heebo',sans-serif;display:flex;align-items:center;gap:4px">🛡️ גיבוי <span style="font-size:9px;opacity:.7">▾</span></button>
       <div id="bk-dd" style="display:none;position:absolute;top:38px;left:0;background:linear-gradient(145deg,#0b0e1c,#090c16);border:1px solid rgba(200,169,110,.28);border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,.72),0 0 0 1px rgba(255,255,255,.03);z-index:2000;min-width:220px;padding:5px">
@@ -1580,6 +1580,9 @@ body.logged-in #ai-fab{display:flex}
         <button onclick="clipboardBackup();toggleBkMenu()" class="bk-item" style="color:#f4a261">📋 העתק גיבוי ללוח</button>
         <div style="border-top:1px solid rgba(255,255,255,.06);margin:4px 0"></div>
         <button onclick="openSendToMobile();toggleBkMenu()" class="bk-item" style="color:#a78bfa">📱 שלח למובייל</button>
+        <div style="border-top:1px solid rgba(255,255,255,.06);margin:4px 0"></div>
+        <div style="font-size:10px;font-weight:800;color:rgba(200,169,110,.55);padding:5px 10px 3px;text-transform:uppercase;letter-spacing:.8px">תצוגה</div>
+        <button onclick="toggleDenseTables();toggleBkMenu()" class="bk-item" style="color:#4cc9f0" title="הקטן/הגדל שורות בטבלאות — כדי שהכול ייכנס בלי לגרור ימינה">🔎 הקטן/הגדל שורות בטבלאות</button>
         <div style="border-top:1px solid rgba(255,255,255,.06);margin:4px 0"></div>
         <div style="font-size:10px;font-weight:800;color:rgba(200,169,110,.55);padding:5px 10px 3px;text-transform:uppercase;letter-spacing:.8px">גרסה</div>
         <button onclick="_forceUpdate()" class="bk-item" style="color:#4cc9f0" title="עוקף מטמון וטוען את הגרסה האחרונה">🔄 רענן לגרסה האחרונה</button>
