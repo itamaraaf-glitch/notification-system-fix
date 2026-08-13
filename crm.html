@@ -394,6 +394,10 @@ body.dense-tables th{padding:3px 6px;font-size:8px;letter-spacing:.3px}
 body.dense-tables td{padding:2px 6px;font-size:11px}
 body.dense-tables tr.mdiv>td{padding:3px 8px;font-size:9px}
 body.dense-tables th.cb-th,body.dense-tables td.cb-td{padding:1px 4px}
+/* מגביל עמודות רחבות (טקסט חופשי כמו כתובת/פתרון/חוסרים) עם חיתוך "…" כדי שכל השורה תיכנס למסך.
+   עמודת הפעולות (last-child) ותאי בחירה לא מוגבלים. ריחוף מציג את הטקסט המלא. */
+body.dense-tables .tscroll td:not(:last-child):not(.cb-td){max-width:110px;overflow:hidden;text-overflow:ellipsis}
+body.dense-tables .tscroll td:not(:last-child):not(.cb-td):hover{overflow:visible}
 body.dense-tables .tscroll .btn.btns{padding:1px 6px;font-size:9px}
 body.dense-tables .tscroll .badge{font-size:8px;padding:1px 4px}
 
