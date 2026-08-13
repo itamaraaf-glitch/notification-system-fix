@@ -388,6 +388,15 @@ th.cb-th{width:32px;padding:4px 8px}
 td.cb-td{width:32px;padding:4px 8px}
 .fi{font-size:11px;color:var(--text2)}.fi b{color:var(--text)}
 
+/* ─── מצב קומפקטי לטבלאות: מכווץ ריפוד/גופן כדי שיותר עמודות ייכנסו בלי לגרור ימינה ─── */
+body.dense-tables table{font-size:11px}
+body.dense-tables th{padding:3px 6px;font-size:8px;letter-spacing:.3px}
+body.dense-tables td{padding:2px 6px;font-size:11px}
+body.dense-tables tr.mdiv>td{padding:3px 8px;font-size:9px}
+body.dense-tables th.cb-th,body.dense-tables td.cb-td{padding:1px 4px}
+body.dense-tables .tscroll .btn.btns{padding:1px 6px;font-size:9px}
+body.dense-tables .tscroll .badge{font-size:8px;padding:1px 4px}
+
 /* ─── MONTH DIVIDERS ─── */
 tr.mdiv>td{padding:6px 14px;font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;border-top:1px solid;border-bottom:1px solid}
 tr.mdiv-carry>td{background:rgba(244,162,97,.08);color:#f4a261;border-color:rgba(244,162,97,.2)}
@@ -1556,6 +1565,7 @@ body.logged-in #ai-fab{display:flex}
     <span class="save-ind" id="saveind">✦ נשמר</span>
     <button class="btn mob-hide" onclick="saveAll()" style="background:var(--tealdim);color:var(--teal);border:1px solid rgba(6,214,160,.4);font-size:11px;padding:4px 12px;border-radius:20px">💾 שמור</button>
     <button class="btn mob-hide" id="undo-btn" onclick="undoLast()" title="בטל את המחיקה האחרונה" style="display:none;background:rgba(244,162,97,.14);color:#f4a261;border:1px solid rgba(244,162,97,.45);font-size:11px;padding:4px 12px;border-radius:20px">↩ בטל מחיקה</button>
+    <button class="btn mob-hide" id="dense-btn" onclick="toggleDenseTables()" title="הקטן/הגדל שורות בטבלאות — כדי שהכול ייכנס בלי לגרור ימינה" style="background:rgba(76,201,240,.12);color:#4cc9f0;border:1px solid rgba(76,201,240,.4);font-size:11px;padding:4px 12px;border-radius:20px">🔎 קומפקטי</button>
     <div style="position:relative" id="bk-dd-wrap" class="mob-hide">
       <button onclick="toggleBkMenu()" title="גיבוי ושחזור" style="background:rgba(6,214,160,.1);color:#06d6a0;border:1px solid rgba(6,214,160,.35);font-size:11px;padding:4px 12px;border-radius:20px;cursor:pointer;font-family:'Heebo',sans-serif;display:flex;align-items:center;gap:4px">🛡️ גיבוי <span style="font-size:9px;opacity:.7">▾</span></button>
       <div id="bk-dd" style="display:none;position:absolute;top:38px;left:0;background:linear-gradient(145deg,#0b0e1c,#090c16);border:1px solid rgba(200,169,110,.28);border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,.72),0 0 0 1px rgba(255,255,255,.03);z-index:2000;min-width:220px;padding:5px">
@@ -10773,6 +10783,20 @@ function _aiFabInit(){
   fab.addEventListener('click',e=>{ if(moved){ e.preventDefault(); e.stopPropagation(); moved=false; return; } openAiAssistant(); });
 }
 document.addEventListener('DOMContentLoaded',_aiFabInit);
+// ── מצב קומפקטי לטבלאות (מכווץ שורות כדי לא לגרור ימינה) — נשמר בהעדפות ──
+function _applyDenseTables(){
+  const on=localStorage.getItem('hot_dense_tables')==='1';
+  document.body.classList.toggle('dense-tables',on);
+  const b=document.getElementById('dense-btn');
+  if(b){ b.textContent=on?'🔎 רגיל':'🔎 קומפקטי'; b.title=on?'חזרה לשורות רגילות':'הקטן שורות בטבלאות — כדי שהכול ייכנס בלי לגרור ימינה'; }
+}
+function toggleDenseTables(){
+  const on=localStorage.getItem('hot_dense_tables')!=='1';
+  try{localStorage.setItem('hot_dense_tables',on?'1':'0');}catch(e){}
+  _applyDenseTables();
+  try{showToast(on?'🔎 מצב קומפקטי — שורות מוקטנות, פחות גלילה':'🔎 שורות רגילות','ok');}catch(e){}
+}
+document.addEventListener('DOMContentLoaded',_applyDenseTables);
 // אווטאר AI וקטורי (ניצוץ עם גרדיאנט + כוכבים) — מותאם, חד בכל רזולוציה, מחליף את האימוג'י הגולמי
 function _aiAvatar(size,fill){
   size=size||22; const g='aig'+Math.random().toString(36).slice(2,7);
