@@ -12127,20 +12127,32 @@ function editCell(table,id,field,el,kind,opts){
     }
     rAll(); // אין שינוי / בוטל — רינדור מחדש משחזר את התא
   };
-  ctl.addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();commit(true);} else if(e.key==='Escape'){e.preventDefault();commit(false);} });
+  ctl.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();commit(true);}
+    else if(e.key==='Escape'){e.preventDefault();commit(false);}
+    else if(e.key==='Tab'){ e.preventDefault(); commit(true); // שומר + מרנדר, ואז פותח את התא הבא בשורה (כמו אקסל)
+      try{
+        const sel='.ec[data-ecid="'+((window.CSS&&CSS.escape)?CSS.escape(id):id)+'"]';
+        const spans=[...document.querySelectorAll(sel)];
+        const i=spans.findIndex(s=>s.getAttribute('data-ecfield')===field&&s.getAttribute('data-ectab')===table);
+        const nxt=i>=0?spans[i+(e.shiftKey?-1:1)]:null;
+        if(nxt)editCell(nxt.getAttribute('data-ectab'),nxt.getAttribute('data-ecid'),nxt.getAttribute('data-ecfield'),nxt,nxt.getAttribute('data-eckind'));
+      }catch(err){}
+    }
+  });
   ctl.addEventListener('blur',()=>commit(true));
   if(kind==='select')ctl.addEventListener('change',()=>commit(true));
 }
 // עטיפת span כללית לעריכה מהירה בתוך תא — לכל טבלה
 function _cellSpan(table,id,field,inner,kind){
-  return `<span class="ec" onclick="event.stopPropagation();editCell('${table}','${id}','${field}',this,'${kind||'text'}')" title="לחץ לעריכה מהירה — יתעדכן בכל המסכים" style="cursor:pointer;border-bottom:1px dashed rgba(76,201,240,.4);padding-bottom:1px">${inner}</span>`;
+  return `<span class="ec" data-ectab="${table}" data-ecid="${esc(id)}" data-ecfield="${field}" data-eckind="${kind||'text'}" onclick="event.stopPropagation();editCell('${table}','${id}','${field}',this,'${kind||'text'}')" title="לחץ לעריכה מהירה · Tab לתא הבא — יתעדכן בכל המסכים" style="cursor:pointer;border-bottom:1px dashed rgba(76,201,240,.4);padding-bottom:1px">${inner}</span>`;
 }
 // עטיפות לעסקאות (שמירת ה-onclick היציב של שורת העסקה)
 function editDealCell(id,field,el,kind,opts){ return editCell('deals',id,field,el,kind,opts); }
 function editDealField(id,field,el){ return editCell('deals',id,field,el,'num'); }
 function editDealValue(id,el){ return editCell('deals',id,'v',el,'num'); }
 function _editSpan(id,field,inner,kind,extra){
-  return `<span class="ec" onclick="event.stopPropagation();editDealCell('${id}','${field}',this,'${kind||'text'}')" title="לחץ לעריכה מהירה — יתעדכן בכל המסכים" style="cursor:pointer;border-bottom:1px dashed rgba(76,201,240,.4);padding-bottom:1px;${extra||''}">${inner}</span>`;
+  return `<span class="ec" data-ectab="deals" data-ecid="${esc(id)}" data-ecfield="${field}" data-eckind="${kind||'text'}" onclick="event.stopPropagation();editDealCell('${id}','${field}',this,'${kind||'text'}')" title="לחץ לעריכה מהירה · Tab לתא הבא — יתעדכן בכל המסכים" style="cursor:pointer;border-bottom:1px dashed rgba(76,201,240,.4);padding-bottom:1px;${extra||''}">${inner}</span>`;
 }
 function _editNumCell(id,field,val,cls){
   return `<td class="${cls||''}">${_editSpan(id,field,fmt(val),'num')}</td>`;
