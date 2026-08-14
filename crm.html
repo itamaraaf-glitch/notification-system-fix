@@ -392,6 +392,13 @@ td.cb-td{width:32px;padding:4px 8px}
 .ec{transition:background .12s,box-shadow .12s;border-radius:5px}
 .tscroll td:hover .ec{border-bottom-color:rgba(76,201,240,.75)}
 .ec:hover{background:rgba(76,201,240,.16);box-shadow:0 0 0 1px rgba(76,201,240,.45);border-bottom-color:transparent!important}
+/* אריחי KPI בכרטיס הלקוח — לחיצים, עם הרמה עדינה בריחוף */
+.cl-kpi-tile{transition:transform .14s,box-shadow .14s,border-color .14s}
+.cl-kpi-tile:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.22);box-shadow:0 10px 26px rgba(0,0,0,.4)}
+@keyframes clSecFlash{0%{box-shadow:0 0 0 2px rgba(76,201,240,.75),0 0 24px rgba(76,201,240,.35)}100%{box-shadow:0 0 0 0 transparent}}
+.cl-sec-flash{animation:clSecFlash 1.2s ease-out;border-radius:12px}
+@media(prefers-reduced-motion:reduce){.cl-kpi-tile:hover{transform:none}.cl-sec-flash{animation:none}}
+
 /* הבהוב ירוק לאישור שמירה של תא (משוב לעבודה מהירה עם Tab) */
 @keyframes ecFlash{0%{background:rgba(46,204,113,.55);box-shadow:0 0 0 2px rgba(46,204,113,.6)}100%{background:transparent;box-shadow:0 0 0 0 transparent}}
 .ec-flash{animation:ecFlash 1s ease-out;border-radius:5px}
@@ -8357,6 +8364,13 @@ function uploadClientPhoto(ev){
     .then(d=>{_setClientPhoto(d);showToast('📷 התמונה נוספה — לחץ שמור כדי לקבע','ok');})
     .catch(()=>showToast('⚠️ קובץ תמונה לא תקין','warn'));
 }
+// גלילה חלקה לסקשן בכרטיס הלקוח + הדגשה קצרה — מלחיצה על אריח KPI
+function _clScrollTo(secId){
+  const el=document.getElementById(secId); if(!el)return;
+  try{el.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){el.scrollIntoView();}
+  el.classList.remove('cl-sec-flash'); void el.offsetWidth; el.classList.add('cl-sec-flash');
+  setTimeout(()=>el.classList.remove('cl-sec-flash'),1200);
+}
 // אריחי סיכום (KPI) בראש כרטיס הלקוח — נבנים מהנתונים האמיתיים של הלקוח (השראה: דשבורד מודרני)
 function renderClientKPI(c,isNew){
   const box=document.getElementById('cl-kpi'); if(!box)return;
@@ -8370,9 +8384,9 @@ function renderClientKPI(c,isNew){
   const potVal=potActive.reduce((s,p)=>s+(+p.estimatedValue||0),0);
   const salBal=(D.salary||[]).filter(s=>s.cl&&sameCo(s.cl,nm)).reduce((a,s)=>a+(+s.pv||0),0);
   const stCol=c.status==='לקוח פעיל'?'#06d6a0':c.status==='לקוח פוטנציאלי'?'#4cc9f0':c.status==='ליד חדש'?'#f4a261':'#e63946';
-  const tile=(icon,val,sub,col)=>`<div style="background:linear-gradient(145deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid var(--border);border-radius:14px;padding:12px 14px;min-width:0;position:relative;overflow:hidden">
+  const tile=(icon,val,sub,col,target)=>`<div class="cl-kpi-tile"${target?` onclick="_clScrollTo('${target}')" title="לחץ למעבר לפרטים"`:''} style="background:linear-gradient(145deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid var(--border);border-radius:14px;padding:12px 14px;min-width:0;position:relative;overflow:hidden;${target?'cursor:pointer':''}">
       <div style="position:absolute;top:0;right:0;width:3px;height:100%;background:${col}"></div>
-      <div style="font-size:10.5px;color:var(--text3);font-weight:700;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${icon}</div>
+      <div style="font-size:10.5px;color:var(--text3);font-weight:700;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${icon}${target?' <span style="opacity:.5">→</span>':''}</div>
       <div style="font-size:20px;font-weight:900;color:${col};line-height:1.05">${val}</div>
       ${sub?`<div style="font-size:9.5px;color:var(--text3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub}</div>`:''}</div>`;
   box.innerHTML=`<div style="padding:2px 2px 0">
@@ -8381,11 +8395,11 @@ function renderClientKPI(c,isNew){
       <span style="font-size:10px;font-weight:800;padding:2px 9px;border-radius:20px;background:${stCol}1e;color:${stCol};border:1px solid ${stCol}44">${esc(c.status||'')}</span>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin-bottom:14px">
-      ${tile('💰 הכנסה חודשית',fmt(mrev),'₪ לחודש קבוע','#06d6a0')}
-      ${tile('📦 מוצרים פעילים',prod,prod===1?'מוצר בתיק':'מוצרים בתיק','#4cc9f0')}
-      ${tile('💼 עסקאות',cDeals.length,closedN?closedN+' נסגרו':'בתהליך','#a78bfa')}
-      ${tile('🎯 פוטנציאל פתוח',fmt(potVal),potActive.length+(potActive.length===1?' הזדמנות':' הזדמנויות'),'#f4a261')}
-      ${salBal>0?tile('💰 יתרת שכר',fmt(salBal),'לגבייה לחברה','#e9c46a'):''}
+      ${tile('💰 הכנסה חודשית',fmt(mrev),'₪ לחודש קבוע','#06d6a0','client-sections')}
+      ${tile('📦 מוצרים פעילים',prod,prod===1?'מוצר בתיק':'מוצרים בתיק','#4cc9f0','client-sections')}
+      ${tile('💼 עסקאות',cDeals.length,closedN?closedN+' נסגרו':'בתהליך','#a78bfa','client-deals-section')}
+      ${tile('🎯 פוטנציאל פתוח',fmt(potVal),potActive.length+(potActive.length===1?' הזדמנות':' הזדמנויות'),'#f4a261','potential-container')}
+      ${salBal>0?tile('💰 יתרת שכר',fmt(salBal),'לגבייה לחברה','#e9c46a','client-projects-section'):''}
     </div></div>`;
 }
 function openClientModal(id){
