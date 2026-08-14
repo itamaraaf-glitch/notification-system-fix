@@ -8384,6 +8384,18 @@ function renderClientKPI(c,isNew){
   const potVal=potActive.reduce((s,p)=>s+(+p.estimatedValue||0),0);
   const salBal=(D.salary||[]).filter(s=>s.cl&&sameCo(s.cl,nm)).reduce((a,s)=>a+(+s.pv||0),0);
   const stCol=c.status==='לקוח פעיל'?'#06d6a0':c.status==='לקוח פוטנציאלי'?'#4cc9f0':c.status==='ליד חדש'?'#f4a261':'#e63946';
+  // ציר קשר — פגישה קרובה, אחרונה שהתקיימה, ועסקה אחרונה (חשוב לפני שיחה)
+  const _td=nd();
+  const _mtgs=(D.meetings||[]).filter(m=>m.cl&&sameCo(m.cl,nm));
+  const _next=_mtgs.filter(m=>m.dt>=_td&&m.hl!=='מבוטל'&&m.hl!=='כן').sort((a,b)=>(a.dt+(a.time||''))<(b.dt+(b.time||''))?-1:1)[0];
+  const _last=_mtgs.filter(m=>m.hl==='כן').sort((a,b)=>a.dt<b.dt?1:-1)[0];
+  const _lastDeal=cDeals.slice().filter(d=>d.date).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+  const _chip=(icon,txt,col)=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;padding:3px 11px;border-radius:20px;background:${col}14;color:${col};border:1px solid ${col}33;white-space:nowrap;font-weight:600">${icon} ${esc(txt)}</span>`;
+  const _strip=[
+    _next?_chip('📅','פגישה: '+fmtDate(_next.dt)+(_next.time?' '+_next.time:''),'#4cc9f0'):_chip('📅','אין פגישה קרובה','#8b90a0'),
+    _last?_chip('✓','אחרונה: '+fmtDate(_last.dt),'#06d6a0'):'',
+    (_lastDeal&&_lastDeal.date)?_chip('💼','עסקה אחרונה: '+fmtDate(_lastDeal.date),'#a78bfa'):''
+  ].filter(Boolean).join('');
   const tile=(icon,val,sub,col,target)=>`<div class="cl-kpi-tile"${target?` onclick="_clScrollTo('${target}')" title="לחץ למעבר לפרטים"`:''} style="background:linear-gradient(145deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid var(--border);border-radius:14px;padding:12px 14px;min-width:0;position:relative;overflow:hidden;${target?'cursor:pointer':''}">
       <div style="position:absolute;top:0;right:0;width:3px;height:100%;background:${col}"></div>
       <div style="font-size:10.5px;color:var(--text3);font-weight:700;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${icon}${target?' <span style="opacity:.5">→</span>':''}</div>
@@ -8400,7 +8412,8 @@ function renderClientKPI(c,isNew){
       ${tile('💼 עסקאות',cDeals.length,closedN?closedN+' נסגרו':'בתהליך','#a78bfa','client-deals-section')}
       ${tile('🎯 פוטנציאל פתוח',fmt(potVal),potActive.length+(potActive.length===1?' הזדמנות':' הזדמנויות'),'#f4a261','potential-container')}
       ${salBal>0?tile('💰 יתרת שכר',fmt(salBal),'לגבייה לחברה','#e9c46a','client-projects-section'):''}
-    </div></div>`;
+    </div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin:-4px 0 12px">${_strip}</div></div>`;
 }
 function openClientModal(id){
   EI=id;ET='client';
