@@ -392,6 +392,10 @@ td.cb-td{width:32px;padding:4px 8px}
 .ec{transition:background .12s,box-shadow .12s;border-radius:5px}
 .tscroll td:hover .ec{border-bottom-color:rgba(76,201,240,.75)}
 .ec:hover{background:rgba(76,201,240,.16);box-shadow:0 0 0 1px rgba(76,201,240,.45);border-bottom-color:transparent!important}
+/* הבהוב ירוק לאישור שמירה של תא (משוב לעבודה מהירה עם Tab) */
+@keyframes ecFlash{0%{background:rgba(46,204,113,.55);box-shadow:0 0 0 2px rgba(46,204,113,.6)}100%{background:transparent;box-shadow:0 0 0 0 transparent}}
+.ec-flash{animation:ecFlash 1s ease-out;border-radius:5px}
+@media(prefers-reduced-motion:reduce){.ec-flash{animation:none}}
 
 /* ─── מצב קומפקטי לטבלאות: מכווץ ריפוד/גופן כדי שיותר עמודות ייכנסו בלי לגרור ימינה ─── */
 body.dense-tables table{font-size:11px}
@@ -12090,6 +12094,11 @@ function _commitCell(table,id,field,nv){
     // אם ההפצה משותפת בקישור מעקב — מפרסמים מחדש בשקט כדי שהלקוח יראה תמיד עדכני
     if(d2&&d2._trackTok){ try{_publishTrackAndMark(d2);}catch(e){} } }
   showToast('✓ עודכן — כל המסכים סונכרנו','ok'); rAll();
+  // משוב ויזואלי: אחרי הרינדור מהבהבים בירוק את התא שנשמר (מאותר לפי ה-data-attributes)
+  try{ const idSel=(window.CSS&&CSS.escape)?CSS.escape(id):id;
+    const c=document.querySelector('.ec[data-ectab="'+table+'"][data-ecid="'+idSel+'"][data-ecfield="'+field+'"]');
+    if(c){ c.classList.remove('ec-flash'); void c.offsetWidth; c.classList.add('ec-flash'); setTimeout(()=>c.classList.remove('ec-flash'),1000); }
+  }catch(e){}
 }
 // אפשרויות ברירת-מחדל לשדות-בחירה בעריכה-בשורה (לפי שם השדה), כשלא הועברו opts
 const _CELL_SELECTS={ pr:[['גבוהה','גבוהה'],['בינונית','בינונית'],['נמוכה','נמוכה']] };
