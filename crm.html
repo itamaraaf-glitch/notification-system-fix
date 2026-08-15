@@ -2280,6 +2280,7 @@ body.logged-in #ai-fab{display:flex}
 <!-- DEAL MODAL -->
 <div class="mw" id="mdeal"><div class="modal">
   <div class="mhdr"><h3 id="dtit">עסקה חדשה</h3><button class="mcls" onclick="closeM('mdeal')">✕</button></div>
+  <div id="deal-kpi"></div>
   <div class="fg">
     <div class="g"><label>תאריך</label><input type="date" id="dd"></div>
     <div class="g"><label>שם חברה</label><input type="text" id="dco" list="co-list" autocomplete="off"></div>
@@ -11592,6 +11593,26 @@ function deleteArchRow(type,id){
     setTimeout(()=>{if(!undone){t.style.opacity='0';setTimeout(()=>t.remove(),400);}},6000);
   },'כן, מחק');
 }
+// סיכום פיננסי חי בראש מודאל העסקה — מתעדכן תוך כדי הקלדה (חד-פעמי/חודשי/שנתי/רווח ציוד/עמלה)
+function renderDealKPI(){
+  const box=document.getElementById('deal-kpi'); if(!box)return;
+  const num=id=>{const el=document.getElementById(id);return el?(_aiNum(el.value)):0;};
+  const v=num('dv'),mv=num('dmv'),ot=num('dot'),otc=num('dotc');
+  let ch=0; const che=document.getElementById('dch'); if(che)ch=parseFloat(che.value)||0;
+  const eqMargin=Math.max(0,ot-otc), annual=v+mv*12+eqMargin;
+  const tile=(icon,val,sub,col)=>`<div style="background:linear-gradient(145deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid var(--border);border-radius:13px;padding:10px 13px;min-width:0;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;right:0;width:3px;height:100%;background:${col}"></div>
+      <div style="font-size:10px;color:var(--text3);font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${icon}</div>
+      <div style="font-size:18px;font-weight:900;color:${col};line-height:1.05">${val}</div>
+      ${sub?`<div style="font-size:9px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub}</div>`:''}</div>`;
+  box.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px;margin-bottom:14px">
+    ${tile('💰 חד-פעמי',fmt(v),'תשלום ראשוני','#4cc9f0')}
+    ${tile('🔁 חודשי',fmt(mv),mv?('שנתי: '+fmt(mv*12)):'ללא מנוי','#06d6a0')}
+    ${tile('📦 רווח ציוד',fmt(eqMargin),ot?('מכירה '+fmt(ot)+' · עלות '+fmt(otc)):'ללא ציוד','#a78bfa')}
+    ${tile('📊 עמלה',(Math.round(ch*100))+'%','אחוז עמלה','#f4a261')}
+    ${tile('💵 שווי שנה א׳',fmt(annual),'חד-פעמי + חודשי×12 + ציוד','#e9c46a')}
+  </div>`;
+}
 function openM(type,id){
   if(typeof closeFab==='function')closeFab();
   EI=id;ET=type;const isNew=!id;
@@ -11609,6 +11630,8 @@ function openM(type,id){
     pendingQuote = d.quote || null;
     document.getElementById('dquote').value='';
     updateQuoteStatus();
+    renderDealKPI();
+    ['dv','dmv','dot','dotc','dch'].forEach(fid=>{ const el=document.getElementById(fid); if(el&&!el._kpiBound){ el._kpiBound=1; el.addEventListener('input',renderDealKPI); } });
   }else if(type==='tender'){
     document.getElementById('ttit').textContent=isNew?'מכרז חדש':'עריכת מכרז';
     const t=isNew?{}:(D.tenders.find(x=>x.id==id)||(D.archivedTenders||[]).find(x=>x.id==id)||{});
