@@ -6957,6 +6957,7 @@ function renderDistMonthSummary(){
 // פירוט קבוצת הפצות (מלחיצה על אריח בבאנר) — רשימה עם מס' פרויקט, לקוח, תאריך, שווי וסטטוס
 function closeDistDetail(){ const o=document.getElementById('dist-detail-ov'); if(o)o.remove(); }
 function showDistGroupDetail(which){
+  window._distDetailGroup=which; // לזכירה — כדי לרענן את הפופאפ אחרי עריכה בתוכו
   const curM=nd().substring(0,7), all=D.dists||[], mo=d=>String(d.dt||'').substring(0,7);
   const money=d=>(+d.inc||0)||(+d.tgt||0);
   let list,title,col;
@@ -6965,15 +6966,17 @@ function showDistGroupDetail(which){
   else { list=all.filter(d=>mo(d)===curM); title='💰 הכנסת הפצות — החודש'; col='var(--teal)'; }
   list=list.slice().sort((a,b)=>String(a.dt||'').localeCompare(String(b.dt||'')));
   const total=list.reduce((a,d)=>a+money(d),0);
-  const rows=list.map(d=>`<tr onclick="closeDistDetail();openM('dist','${d.id}')" style="cursor:pointer;border-bottom:1px solid rgba(255,255,255,.06)" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
-      <td style="padding:8px 10px;color:var(--blue);font-weight:700;font-size:11px;white-space:nowrap">${esc(d.no||'–')}</td>
-      <td style="padding:8px 10px;font-weight:600;font-size:12px">${esc(d.co||'—')}</td>
-      <td style="padding:8px 10px;font-size:11px;color:var(--text2)">${esc(d.cl||'–')}</td>
-      <td style="padding:8px 10px;font-size:11px">${esc(d.so||'–')}</td>
-      <td style="padding:8px 10px;font-size:11px;white-space:nowrap">${d.dt?fmtDate(d.dt):'–'}</td>
-      <td style="padding:8px 10px;font-weight:800;font-size:12px;color:${col};white-space:nowrap">${fmt(money(d))}</td>
-      <td style="padding:8px 10px;white-space:nowrap">${sB(d.st)}</td>
-    </tr>`).join('')||`<tr><td colspan="7" style="padding:22px;text-align:center;color:var(--text3)">אין הפצות בקבוצה זו</td></tr>`;
+  const rows=list.map(d=>`<tr style="border-bottom:1px solid rgba(255,255,255,.06)">
+      <td style="padding:7px 10px;color:var(--blue);font-weight:700;font-size:11px;white-space:nowrap">${_cellSpan('dists',d.id,'no',esc(d.no||'–'))}</td>
+      <td style="padding:7px 10px;font-weight:600;font-size:12px">${_cellSpan('dists',d.id,'co',esc(d.co||'—'))}</td>
+      <td style="padding:7px 10px;font-size:11px;color:var(--text2)">${_cellSpan('dists',d.id,'cl',esc(d.cl||'–'))}</td>
+      <td style="padding:7px 10px;font-size:11px">${_cellSpan('dists',d.id,'so',esc(d.so||'–'))}</td>
+      <td style="padding:7px 10px;font-size:11px;white-space:nowrap">${_cellSpan('dists',d.id,'dt',d.dt?fmtDate(d.dt):'–','date')}</td>
+      <td style="padding:7px 10px;font-weight:700;font-size:11.5px;white-space:nowrap">${_cellSpan('dists',d.id,'tgt',d.tgt?fmt(d.tgt):'–','num')}</td>
+      <td style="padding:7px 10px;font-weight:800;font-size:12px;color:${col};white-space:nowrap">${_cellSpan('dists',d.id,'inc',fmt(d.inc),'num')}</td>
+      <td style="padding:7px 10px;white-space:nowrap"><span onclick="event.stopPropagation();advanceDistStatus('${d.id}')" title="לחץ לקידום סטטוס" style="cursor:pointer">${sB(d.st)}</span></td>
+      <td style="padding:7px 8px;white-space:nowrap"><button class="btn btns" onclick="closeDistDetail();openM('dist','${d.id}')" title="פתח הפצה מלאה לעריכה" style="font-size:10px">✏️</button></td>
+    </tr>`).join('')||`<tr><td colspan="9" style="padding:22px;text-align:center;color:var(--text3)">אין הפצות בקבוצה זו</td></tr>`;
   closeDistDetail();
   const ov=document.createElement('div'); ov.id='dist-detail-ov';
   ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;padding:20px';
@@ -6986,12 +6989,12 @@ function showDistGroupDetail(which){
     <div style="overflow:auto;padding:4px 8px 10px">
       <table style="width:100%;border-collapse:collapse">
         <thead><tr style="color:var(--text3);font-size:10px;text-align:right;text-transform:uppercase;letter-spacing:.4px">
-          <th style="padding:7px 10px">מס׳ פרויקט</th><th style="padding:7px 10px">שם חברה</th><th style="padding:7px 10px">לקוח</th><th style="padding:7px 10px">פתרון</th><th style="padding:7px 10px">תאריך</th><th style="padding:7px 10px">שווי</th><th style="padding:7px 10px">סטטוס</th>
+          <th style="padding:7px 10px">מס׳ פרויקט</th><th style="padding:7px 10px">שם חברה</th><th style="padding:7px 10px">לקוח</th><th style="padding:7px 10px">פתרון</th><th style="padding:7px 10px">תאריך</th><th style="padding:7px 10px">יעד ₪</th><th style="padding:7px 10px">ביצוע ₪</th><th style="padding:7px 10px">סטטוס</th><th style="padding:7px 8px"></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
-    <div style="padding:9px 18px 14px;font-size:10.5px;color:var(--text3);border-top:1px solid rgba(255,255,255,.06)">💡 לחיצה על שורה פותחת את ההפצה המלאה</div>
+    <div style="padding:9px 18px 14px;font-size:10.5px;color:var(--text3);border-top:1px solid rgba(255,255,255,.06)">✏️ לחיצה על תא — עריכה מהירה (Tab לתא הבא) · הכפתור פותח את ההפצה המלאה</div>
   </div>`;
   document.body.appendChild(ov);
 }
@@ -12259,9 +12262,12 @@ function _commitCell(table,id,field,nv){
     // אם ההפצה משותפת בקישור מעקב — מפרסמים מחדש בשקט כדי שהלקוח יראה תמיד עדכני
     if(d2&&d2._trackTok){ try{_publishTrackAndMark(d2);}catch(e){} } }
   showToast('✓ עודכן — כל המסכים סונכרנו','ok'); rAll();
-  // משוב ויזואלי: אחרי הרינדור מהבהבים בירוק את התא שנשמר (מאותר לפי ה-data-attributes)
+  // אם חלון פירוט ההפצות פתוח — מרעננים אותו כדי שישקף את השינוי
+  if(table==='dists'&&window._distDetailGroup&&document.getElementById('dist-detail-ov')){ try{showDistGroupDetail(window._distDetailGroup);}catch(e){} }
+  // משוב ויזואלי: אחרי הרינדור מהבהבים בירוק את התא שנשמר (מאותר לפי ה-data-attributes) — בפופאפ אם פתוח
   try{ const idSel=(window.CSS&&CSS.escape)?CSS.escape(id):id;
-    const c=document.querySelector('.ec[data-ectab="'+table+'"][data-ecid="'+idSel+'"][data-ecfield="'+field+'"]');
+    const scope=document.getElementById('dist-detail-ov')||document;
+    const c=scope.querySelector('.ec[data-ectab="'+table+'"][data-ecid="'+idSel+'"][data-ecfield="'+field+'"]');
     if(c){ c.classList.remove('ec-flash'); void c.offsetWidth; c.classList.add('ec-flash'); setTimeout(()=>c.classList.remove('ec-flash'),1000); }
   }catch(e){}
 }
@@ -12304,10 +12310,13 @@ function editCell(table,id,field,el,kind,opts){
   ctl.addEventListener('keydown',e=>{
     if(e.key==='Enter'){e.preventDefault();commit(true);}
     else if(e.key==='Escape'){e.preventDefault();commit(false);}
-    else if(e.key==='Tab'){ e.preventDefault(); commit(true); // שומר + מרנדר, ואז פותח את התא הבא בשורה (כמו אקסל)
+    else if(e.key==='Tab'){ e.preventDefault();
+      const inPopup=!!(ctl.closest&&ctl.closest('#dist-detail-ov')); // עריכה בתוך חלון הפירוט — נשאר בו
+      commit(true); // שומר + מרנדר, ואז פותח את התא הבא בשורה (כמו אקסל)
       try{
+        const scope=inPopup?(document.getElementById('dist-detail-ov')||document):document;
         const sel='.ec[data-ecid="'+((window.CSS&&CSS.escape)?CSS.escape(id):id)+'"]';
-        const spans=[...document.querySelectorAll(sel)];
+        const spans=[...scope.querySelectorAll(sel)];
         const i=spans.findIndex(s=>s.getAttribute('data-ecfield')===field&&s.getAttribute('data-ectab')===table);
         const nxt=i>=0?spans[i+(e.shiftKey?-1:1)]:null;
         if(nxt)editCell(nxt.getAttribute('data-ectab'),nxt.getAttribute('data-ecid'),nxt.getAttribute('data-ecfield'),nxt,nxt.getAttribute('data-eckind'));
