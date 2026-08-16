@@ -1799,6 +1799,7 @@ body.logged-in #ai-fab{display:flex}
     </div>
   </div>
   <div id="dist-goal-top"></div>
+  <div id="dist-month-summary"></div>
   <div class="tabs" id="dists-tabs">
     <div class="tab active" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDists()">הפצות לטווח ארוך</div>
     <div class="tab" onclick="swTab(this,'dists-tabs','ldt','sdt','sumdt','archivdist');rDists()">הפצות – קצר</div>
@@ -6922,9 +6923,41 @@ function _distStatusFilterBar(){
     <span style="font-size:12px;font-weight:700;color:#a78bfa">מסונן: ${lbl}</span>
     <button class="btn btns" onclick="setDistStatusFilter('')" style="font-size:11px;border-color:#a78bfa;color:#a78bfa">✕ נקה סינון</button></div>`;
 }
+// הפרדה חודשית להפצות — תמונה מלאה: כסף הפצות בחודש הנוכחי מול הפצות ממתינות מחודשים קודמים
+function renderDistMonthSummary(){
+  const box=document.getElementById('dist-month-summary'); if(!box)return;
+  const curM=nd().substring(0,7);
+  const all=D.dists||[];
+  const mo=d=>String(d.dt||'').substring(0,7);
+  const money=d=>(+d.inc||0)||(+d.tgt||0); // הכנסה בפועל, ובהעדרה — יעד/צפי
+  const cur=all.filter(d=>mo(d)===curM);
+  const curInc=cur.reduce((a,d)=>a+(+d.inc||0),0);
+  const curDone=cur.filter(d=>d.st==='הושלם');
+  const curPend=cur.filter(d=>d.st!=='הושלם');
+  const curPendVal=curPend.reduce((a,d)=>a+money(d),0);
+  const carried=all.filter(d=>mo(d)&&mo(d)<curM&&d.st!=='הושלם'); // ממתינות מחודשים קודמים
+  const carriedVal=carried.reduce((a,d)=>a+money(d),0);
+  const tile=(lb,val,sub,clr,bd)=>`<div style="background:rgba(255,255,255,.03);border:1px solid ${bd||'var(--border)'};border-radius:11px;padding:11px 13px;min-width:0">
+      <div style="font-size:10.5px;color:var(--text3);font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lb}</div>
+      <div style="font-size:19px;font-weight:900;color:${clr};line-height:1.1">${val}</div>
+      ${sub?`<div style="font-size:9.5px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub}</div>`:''}</div>`;
+  box.innerHTML=`<div style="background:linear-gradient(135deg,rgba(16,21,37,.96),rgba(10,14,28,.99));border:1px solid rgba(167,139,250,.22);border-radius:14px;padding:15px 17px;margin-bottom:14px;box-shadow:0 4px 20px rgba(0,0,0,.35)">
+    <div style="font-size:13px;font-weight:900;color:#a78bfa;letter-spacing:-.2px;margin-bottom:11px">📊 תמונת הפצות · הפרדה חודשית · ${curMonthStr()}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:9px">
+      ${tile('💰 הכנסת הפצות — החודש',fmt(curInc),cur.length+' הפצות · '+curDone.length+' הושלמו',(curInc>0?'var(--teal)':'var(--text2)'),'rgba(6,214,160,.28)')}
+      ${tile('⏳ ממתינות מחודשים קודמים',carried.length,'שווי צפוי '+fmt(carriedVal),(carried.length?'#f4a261':'var(--teal)'),(carried.length?'rgba(244,162,97,.4)':'rgba(6,214,160,.28)'))}
+      ${tile('🔄 ממתינות החודש',curPend.length,'שווי צפוי '+fmt(curPendVal),'#4cc9f0','rgba(76,201,240,.28)')}
+    </div>
+    ${carried.length?`<div style="margin-top:11px;padding:10px 13px;background:rgba(244,162,97,.09);border:1px solid rgba(244,162,97,.3);border-radius:11px;font-size:11px;color:#f4a261;line-height:1.6">
+      ⏳ <b>${carried.length} ${carried.length===1?'הפצה ממתינה':'הפצות ממתינות'}</b> מחודשים קודמים · שווי צפוי <b>${fmt(carriedVal)}</b> — עדיין לא הושלמו.
+      <div style="color:var(--text2);margin-top:3px;white-space:normal">${carried.slice(0,5).map(d=>esc(d.co||'—')+(d.no?' #'+esc(d.no):'')+(d.dt?' · '+fmtDate(d.dt):'')).join(' · ')}${carried.length>5?' · ועוד '+(carried.length-5):''}</div>
+    </div>`:'<div style="margin-top:10px;font-size:11px;color:var(--teal)">✓ אין הפצות ממתינות מחודשים קודמים — הכל מעודכן</div>'}
+  </div>`;
+}
 function rDists(){
   updatePriChipCounts('sec-dists',D.dists,'dist');
   _distStatusFilterBar();
+  renderDistMonthSummary();
   const gt=document.getElementById('dist-goal-top');
   if(gt){
     // יעד חודשי: רק ההפצות של התקופה הפעילה (ללא ארכיון), עקבי עם יעדי העסקאות.
