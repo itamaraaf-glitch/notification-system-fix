@@ -6974,7 +6974,7 @@ function rDists(){
     const tbId=ty==='long'?'ldtb':'sdtb',ftId=ty==='long'?'ldft':'sdft';
     const items=_applyPri(D.dists.filter(d=>d.ty===ty),'dists','dist').filter(d=>_matchDistStatus(d,window._distStatusFilter));const t=nd();
     const sk=ty==='long'?'dists-long':'dists-short';
-    document.getElementById(tbId).innerHTML=items.map(d=>{
+    const mkRow=d=>{
       const p=pri(d,'dist');
       let days='–';if(d.dt){const diff=db(d.dt,t);const col=d.st!=='הושלם'&&diff>7?'#e63946':diff>3?'#f4a261':'var(--teal)';days=`<b style="color:${col}">${diff}י</b>`;}
       const chk=SEL[sk]&&SEL[sk].has(d.id)?'checked':'';
@@ -6991,7 +6991,15 @@ function rDists(){
           : `<br><span onclick="event.stopPropagation();trackDistById('${d.id}')" title="הסטטוס השתנה מאז העדכון האחרון ללקוח — לחץ לשליחת קישור מעודכן" style="font-size:8.5px;color:#f4a261;font-weight:700;cursor:pointer;text-decoration:underline dotted">⚠ ממתין לעדכון</span>`;
       }
       return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${d.id}')"></td><td>${pB(p)}</td><td style="font-size:10px">${esc(d.hd||'–')}</td><td style="font-size:10px;color:var(--blue);font-weight:600">${_cellSpan('dists',d.id,'no',esc(d.no||'–'))}</td><td style="font-weight:600">${_cellSpan('dists',d.id,'co',esc(d.co||'—'))}</td><td style="font-size:10px">${_cellSpan('dists',d.id,'cl',esc(d.cl||'–'))}</td><td style="font-size:10px">${_cellSpan('dists',d.id,'it',esc(d.it||'–'))}</td><td>${_cellSpan('dists',d.id,'so',esc(d.so||'–'))}</td><td style="font-size:10px">${_cellSpan('dists',d.id,'ad',esc(d.ad||'–'))}</td><td class="nb">${_cellSpan('dists',d.id,'tgt',d.tgt?fmt(d.tgt):'–','num')}</td><td class="ng">${_cellSpan('dists',d.id,'inc',fmt(d.inc),'num')}</td><td>${pctCell}</td><td class="nb">${_cellSpan('dists',d.id,'eq',fmt(d.eq),'num')}</td><td style="font-size:10px;color:${d.mi?'#f4a261':'var(--text3)'}">${d.mi?`<span onclick="event.stopPropagation();clearDistMissing('${d.id}')" title="לחץ לסימון שהחוסרים התקבלו" style="cursor:pointer;text-decoration:underline dotted">${esc(d.mi)} ✓</span>`:'אין'}</td><td><span onclick="event.stopPropagation();advanceDistStatus('${d.id}')" title="לחץ לקידום הסטטוס (ממתין→בהתקנה→הושלם)" style="cursor:pointer">${sB(d.st)}</span>${cliBadge}</td><td style="font-size:10px">${fmtDate(d.dt)}</td><td>${days}</td><td style="font-size:10px;max-width:90px;overflow:hidden;text-overflow:ellipsis">${_cellSpan('dists',d.id,'notes',esc(d.notes||'–'))}</td><td style="white-space:nowrap">${(d.files&&d.files.length)?`<button class="btn btns" onclick="rowFilesMenu('dists','${d.id}',event)" title="${d.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${d.files.length>1?d.files.length:''}</button> `:''}${(d.da||d.ad)?`<button class="btn btns" onclick="navAddr('${d.id}')" title="נווט ב-Waze: ${esc(d.da||d.ad)}" style="border-color:#4cc9f0;color:#4cc9f0">🗺️</button> `:''}${emailBtn}<button class="btn btns" onclick="trackDistById('${d.id}')" title="🔗 קישור מעקב ללקוח" style="border-color:#a78bfa;color:#a78bfa">🔗</button> <button class="btn btns" onclick="repeatProject('${d.id}')" title="פתח פרויקט חדש על בסיס פרויקט זה" style="border-color:#c8a96e;color:#c8a96e">🔁</button> <button class="btn btns" onclick="openM('dist','${d.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('dists','${d.id}')">🗑</button></td></tr>`;
-    }).join('')||emptyRow(19,'🚀',"אין הפצות","openM('dist',null)");
+    };
+    // הפרדה חודשית בטבלה: ממתינות מחודשים קודמים → החודש הנוכחי → קודמות/הושלמו
+    const curMo=t.substring(0,7), moOf=d=>String(d.dt||'').substring(0,7);
+    const g1=items.filter(d=>{const m=moOf(d);return m&&m<curMo&&d.st!=='הושלם';});
+    const g2=items.filter(d=>moOf(d)===curMo);
+    const g3=items.filter(d=>!g1.includes(d)&&!g2.includes(d));
+    const _sv=arr=>arr.reduce((a,d)=>a+((+d.inc||0)||(+d.tgt||0)),0);
+    const grp=(cls,icon,lbl,arr)=>arr.length?`<tr class="mdiv ${cls}"><td colspan="19">${icon} ${lbl} <span style="font-weight:400;opacity:.8">(${arr.length} · ${fmt(_sv(arr))})</span></td></tr>`+arr.map(mkRow).join(''):'';
+    document.getElementById(tbId).innerHTML=(grp('mdiv-carry','⏳','ממתינות מחודשים קודמים',g1)+grp('mdiv-new','📅','החודש · '+curMonthStr(),g2)+grp('','📦','קודמות / הושלמו',g3))||emptyRow(19,'🚀',"אין הפצות","openM('dist',null)");
     const ti=items.reduce((s,d)=>s+(d.inc||0),0),te=items.reduce((s,d)=>s+(d.eq||0),0),tt=items.reduce((s,d)=>s+(d.tgt||0),0);
     const perf=tt?Math.round(ti/tt*100):0;
     const perfStr=tt?`<span class="fi">יעד: <b>${fmt(tt)}</b></span><span class="fi">ביצוע: <b class="ng">${fmt(ti)}</b></span><span class="fi">עמידה: <b style="color:${perf>=100?'var(--teal)':perf>=50?'#f4a261':'#e63946'}">${perf}%</b></span>`:`<span class="fi">הכנסה: <b>${fmt(ti)}</b></span>`;
