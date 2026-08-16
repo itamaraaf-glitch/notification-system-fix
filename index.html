@@ -6937,22 +6937,63 @@ function renderDistMonthSummary(){
   const curPendVal=curPend.reduce((a,d)=>a+money(d),0);
   const carried=all.filter(d=>mo(d)&&mo(d)<curM&&d.st!=='הושלם'); // ממתינות מחודשים קודמים
   const carriedVal=carried.reduce((a,d)=>a+money(d),0);
-  const tile=(lb,val,sub,clr,bd)=>`<div style="background:rgba(255,255,255,.03);border:1px solid ${bd||'var(--border)'};border-radius:11px;padding:11px 13px;min-width:0">
-      <div style="font-size:10.5px;color:var(--text3);font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lb}</div>
+  const tile=(lb,val,sub,clr,bd,which)=>`<div ${which?`class="cl-kpi-tile" onclick="showDistGroupDetail('${which}')" title="לחץ לפירוט מלא — מספרי פרויקט ופרטים"`:''} style="background:rgba(255,255,255,.03);border:1px solid ${bd||'var(--border)'};border-radius:11px;padding:11px 13px;min-width:0${which?';cursor:pointer':''}">
+      <div style="font-size:10.5px;color:var(--text3);font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lb}${which?' <span style="opacity:.5">→</span>':''}</div>
       <div style="font-size:19px;font-weight:900;color:${clr};line-height:1.1">${val}</div>
       ${sub?`<div style="font-size:9.5px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub}</div>`:''}</div>`;
   box.innerHTML=`<div style="background:linear-gradient(135deg,rgba(16,21,37,.96),rgba(10,14,28,.99));border:1px solid rgba(167,139,250,.22);border-radius:14px;padding:15px 17px;margin-bottom:14px;box-shadow:0 4px 20px rgba(0,0,0,.35)">
     <div style="font-size:13px;font-weight:900;color:#a78bfa;letter-spacing:-.2px;margin-bottom:11px">📊 תמונת הפצות · הפרדה חודשית · ${curMonthStr()}</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:9px">
-      ${tile('💰 הכנסת הפצות — החודש',fmt(curInc),cur.length+' הפצות · '+curDone.length+' הושלמו',(curInc>0?'var(--teal)':'var(--text2)'),'rgba(6,214,160,.28)')}
-      ${tile('⏳ ממתינות מחודשים קודמים',carried.length,'שווי צפוי '+fmt(carriedVal),(carried.length?'#f4a261':'var(--teal)'),(carried.length?'rgba(244,162,97,.4)':'rgba(6,214,160,.28)'))}
-      ${tile('🔄 ממתינות החודש',curPend.length,'שווי צפוי '+fmt(curPendVal),'#4cc9f0','rgba(76,201,240,.28)')}
+      ${tile('💰 הכנסת הפצות — החודש',fmt(curInc),cur.length+' הפצות · '+curDone.length+' הושלמו',(curInc>0?'var(--teal)':'var(--text2)'),'rgba(6,214,160,.28)','income')}
+      ${tile('⏳ ממתינות מחודשים קודמים',carried.length,'שווי צפוי '+fmt(carriedVal),(carried.length?'#f4a261':'var(--teal)'),(carried.length?'rgba(244,162,97,.4)':'rgba(6,214,160,.28)'),'carried')}
+      ${tile('🔄 ממתינות החודש',curPend.length,'שווי צפוי '+fmt(curPendVal),'#4cc9f0','rgba(76,201,240,.28)','curpending')}
     </div>
     ${carried.length?`<div style="margin-top:11px;padding:10px 13px;background:rgba(244,162,97,.09);border:1px solid rgba(244,162,97,.3);border-radius:11px;font-size:11px;color:#f4a261;line-height:1.6">
       ⏳ <b>${carried.length} ${carried.length===1?'הפצה ממתינה':'הפצות ממתינות'}</b> מחודשים קודמים · שווי צפוי <b>${fmt(carriedVal)}</b> — עדיין לא הושלמו.
       <div style="color:var(--text2);margin-top:3px;white-space:normal">${carried.slice(0,5).map(d=>esc(d.co||'—')+(d.no?' #'+esc(d.no):'')+(d.dt?' · '+fmtDate(d.dt):'')).join(' · ')}${carried.length>5?' · ועוד '+(carried.length-5):''}</div>
     </div>`:'<div style="margin-top:10px;font-size:11px;color:var(--teal)">✓ אין הפצות ממתינות מחודשים קודמים — הכל מעודכן</div>'}
   </div>`;
+}
+// פירוט קבוצת הפצות (מלחיצה על אריח בבאנר) — רשימה עם מס' פרויקט, לקוח, תאריך, שווי וסטטוס
+function closeDistDetail(){ const o=document.getElementById('dist-detail-ov'); if(o)o.remove(); }
+function showDistGroupDetail(which){
+  const curM=nd().substring(0,7), all=D.dists||[], mo=d=>String(d.dt||'').substring(0,7);
+  const money=d=>(+d.inc||0)||(+d.tgt||0);
+  let list,title,col;
+  if(which==='carried'){ list=all.filter(d=>mo(d)&&mo(d)<curM&&d.st!=='הושלם'); title='⏳ ממתינות מחודשים קודמים'; col='#f4a261'; }
+  else if(which==='curpending'){ list=all.filter(d=>mo(d)===curM&&d.st!=='הושלם'); title='🔄 ממתינות החודש'; col='#4cc9f0'; }
+  else { list=all.filter(d=>mo(d)===curM); title='💰 הכנסת הפצות — החודש'; col='var(--teal)'; }
+  list=list.slice().sort((a,b)=>String(a.dt||'').localeCompare(String(b.dt||'')));
+  const total=list.reduce((a,d)=>a+money(d),0);
+  const rows=list.map(d=>`<tr onclick="closeDistDetail();openM('dist','${d.id}')" style="cursor:pointer;border-bottom:1px solid rgba(255,255,255,.06)" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''">
+      <td style="padding:8px 10px;color:var(--blue);font-weight:700;font-size:11px;white-space:nowrap">${esc(d.no||'–')}</td>
+      <td style="padding:8px 10px;font-weight:600;font-size:12px">${esc(d.co||'—')}</td>
+      <td style="padding:8px 10px;font-size:11px;color:var(--text2)">${esc(d.cl||'–')}</td>
+      <td style="padding:8px 10px;font-size:11px">${esc(d.so||'–')}</td>
+      <td style="padding:8px 10px;font-size:11px;white-space:nowrap">${d.dt?fmtDate(d.dt):'–'}</td>
+      <td style="padding:8px 10px;font-weight:800;font-size:12px;color:${col};white-space:nowrap">${fmt(money(d))}</td>
+      <td style="padding:8px 10px;white-space:nowrap">${sB(d.st)}</td>
+    </tr>`).join('')||`<tr><td colspan="7" style="padding:22px;text-align:center;color:var(--text3)">אין הפצות בקבוצה זו</td></tr>`;
+  closeDistDetail();
+  const ov=document.createElement('div'); ov.id='dist-detail-ov';
+  ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.onclick=e=>{ if(e.target===ov)closeDistDetail(); };
+  ov.innerHTML=`<div style="background:linear-gradient(145deg,#101525,#0a0e1c);border:1px solid rgba(167,139,250,.35);border-radius:16px;max-width:760px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.6);direction:rtl">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.08)">
+      <div style="font-size:15px;font-weight:900;color:${col}">${title} <span style="font-size:12px;color:var(--text3);font-weight:600">· ${list.length} הפצות · שווי ${fmt(total)}</span></div>
+      <button onclick="closeDistDetail()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="overflow:auto;padding:4px 8px 10px">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="color:var(--text3);font-size:10px;text-align:right;text-transform:uppercase;letter-spacing:.4px">
+          <th style="padding:7px 10px">מס׳ פרויקט</th><th style="padding:7px 10px">שם חברה</th><th style="padding:7px 10px">לקוח</th><th style="padding:7px 10px">פתרון</th><th style="padding:7px 10px">תאריך</th><th style="padding:7px 10px">שווי</th><th style="padding:7px 10px">סטטוס</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="padding:9px 18px 14px;font-size:10.5px;color:var(--text3);border-top:1px solid rgba(255,255,255,.06)">💡 לחיצה על שורה פותחת את ההפצה המלאה</div>
+  </div>`;
+  document.body.appendChild(ov);
 }
 function rDists(){
   updatePriChipCounts('sec-dists',D.dists,'dist');
