@@ -6257,16 +6257,16 @@ function rDeals(){
     const closedN=closedM.length, openN=openD.length;
     // שלושת המספרים שחשוב לדעת — כולם באותה מדידה (חלק החודש הנוכחי, mv) כדי שיסתדרו:
     // נסגרו (כל מה שנסגר בפועל) + צפי סגירה = יעד החודש. נשאר לחודש הבא = dn.
-    const tile=(lb,val,sub,clr,bd)=>`<div style="background:rgba(255,255,255,.03);border:1px solid ${bd||'var(--border)'};border-radius:11px;padding:11px 13px;min-width:0">
-        <div style="font-size:10.5px;color:var(--text3);font-weight:700;letter-spacing:.3px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lb}</div>
+    const tile=(lb,val,sub,clr,bd,which)=>`<div ${which?`class="cl-kpi-tile" onclick="showDealGroupDetail('${which}')" title="לחץ לפירוט מלא — עסקאות ופרטים"`:''} style="background:rgba(255,255,255,.03);border:1px solid ${bd||'var(--border)'};border-radius:11px;padding:11px 13px;min-width:0${which?';cursor:pointer':''}">
+        <div style="font-size:10.5px;color:var(--text3);font-weight:700;letter-spacing:.3px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lb}${which?' <span style="opacity:.5">→</span>':''}</div>
         <div style="font-size:19px;font-weight:900;color:${clr};line-height:1.1">${fmt(val)}</div>
         ${sub?`<div style="font-size:9.5px;color:var(--text3);margin-top:2px">${sub}</div>`:''}</div>`;
     box.innerHTML=`<div style="background:linear-gradient(135deg,rgba(16,21,37,.96),rgba(10,14,28,.99));border:1px solid rgba(6,214,160,.22);border-radius:14px;padding:15px 17px;margin-bottom:14px;box-shadow:0 4px 20px rgba(0,0,0,.35)">
       <div style="font-size:13px;font-weight:900;color:var(--teal);letter-spacing:-.2px;margin-bottom:11px">📊 סיכום עסקאות · ${curMonthStr()}</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px">
-        ${tile('✅ נסגרו',mvClosed,closedN+(closedN===1?' עסקה':' עסקאות'),'var(--teal)','rgba(6,214,160,.28)')}
-        ${tile('⏳ צפי סגירה',mvOpen,openN+(openN===1?' עסקה פתוחה':' עסקאות פתוחות'),mvOpen>0?'#f4a261':'var(--teal)','rgba(244,162,97,.28)')}
-        ${tile('⏭ נשאר לחודש הבא',nextM,'יתרה שתיכנס בהבא','#a78bfa','rgba(167,139,250,.28)')}
+        ${tile('✅ נסגרו',mvClosed,closedN+(closedN===1?' עסקה':' עסקאות'),'var(--teal)','rgba(6,214,160,.28)','closed')}
+        ${tile('⏳ צפי סגירה',mvOpen,openN+(openN===1?' עסקה פתוחה':' עסקאות פתוחות'),mvOpen>0?'#f4a261':'var(--teal)','rgba(244,162,97,.28)','open')}
+        ${tile('⏭ נשאר לחודש הבא',nextM,'יתרה שתיכנס בהבא','#a78bfa','rgba(167,139,250,.28)','next')}
       </div>
       <div style="margin-top:12px;padding:12px 15px;background:linear-gradient(135deg,${mvOpen>0?'rgba(230,57,70,.10)':'rgba(6,214,160,.10)'},rgba(16,21,37,.5));border:1px solid ${mvOpen>0?'rgba(230,57,70,.32)':'rgba(6,214,160,.32)'};border-radius:12px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px">
@@ -6953,6 +6953,51 @@ function renderDistMonthSummary(){
       <div style="color:var(--text2);margin-top:3px;white-space:normal">${carried.slice(0,5).map(d=>esc(d.co||'—')+(d.no?' #'+esc(d.no):'')+(d.dt?' · '+fmtDate(d.dt):'')).join(' · ')}${carried.length>5?' · ועוד '+(carried.length-5):''}</div>
     </div>`:'<div style="margin-top:10px;font-size:11px;color:var(--teal)">✓ אין הפצות ממתינות מחודשים קודמים — הכל מעודכן</div>'}
   </div>`;
+}
+// עוזר: חלון הפירוט הפתוח (הפצות/עסקאות) — לתיחום ניווט Tab והבהוב
+function _detailOv(){ return document.getElementById('deal-detail-ov')||document.getElementById('dist-detail-ov'); }
+// ── פירוט קבוצת עסקאות (מלחיצה על אריח סיכום עסקאות) — שורות ניתנות לעריכה ──
+function closeDealDetail(){ const o=document.getElementById('deal-detail-ov'); if(o)o.remove(); }
+function showDealGroupDetail(which){
+  window._dealDetailGroup=which;
+  const all=D.deals||[];
+  let list,title,col;
+  if(which==='closed'){ list=all.filter(d=>d.st==='נסגר'); title='✅ עסקאות שנסגרו'; col='var(--teal)'; }
+  else if(which==='next'){ list=all.filter(d=>(+d.dn||0)>0); title='⏭ נשאר לחודש הבא'; col='#a78bfa'; }
+  else { list=all.filter(d=>d.st!=='נסגר'); title='⏳ צפי סגירה — עסקאות פתוחות'; col='#f4a261'; }
+  list=list.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const val=d=>which==='next'?(+d.dn||0):(+d.mv||0);
+  const total=list.reduce((a,d)=>a+val(d),0);
+  const rows=list.map(d=>`<tr style="border-bottom:1px solid rgba(255,255,255,.06)">
+      <td style="padding:7px 10px;color:var(--text2);font-size:11px;white-space:nowrap">${esc(d.num||'–')}</td>
+      <td style="padding:7px 10px;font-size:11px;white-space:nowrap">${_cellSpan('deals',d.id,'date',d.date?fmtDate(d.date):'–','date')}</td>
+      <td style="padding:7px 10px;font-weight:600;font-size:12px">${_cellSpan('deals',d.id,'co',esc(d.co||'—'))}</td>
+      <td style="padding:7px 10px;font-size:11px">${_cellSpan('deals',d.id,'srv',esc(d.srv||'–'))}</td>
+      <td style="padding:7px 10px;font-weight:700;font-size:11.5px;white-space:nowrap">${_cellSpan('deals',d.id,'v',fmt(d.v),'num')}</td>
+      <td style="padding:7px 10px;font-weight:800;font-size:12px;color:${col};white-space:nowrap">${_cellSpan('deals',d.id,'mv',fmt(d.mv),'num')}</td>
+      <td style="padding:7px 10px;white-space:nowrap"><span onclick="event.stopPropagation();advanceDealStatus('${d.id}')" title="לחץ לקידום סטטוס" style="cursor:pointer">${sB(d.st)}</span></td>
+      <td style="padding:7px 8px;white-space:nowrap"><button class="btn btns" onclick="closeDealDetail();openM('deal','${d.id}')" title="פתח עסקה מלאה לעריכה" style="font-size:10px">✏️</button></td>
+    </tr>`).join('')||`<tr><td colspan="8" style="padding:22px;text-align:center;color:var(--text3)">אין עסקאות בקבוצה זו</td></tr>`;
+  closeDealDetail();
+  const ov=document.createElement('div'); ov.id='deal-detail-ov';
+  ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.onclick=e=>{ if(e.target===ov)closeDealDetail(); };
+  ov.innerHTML=`<div style="background:linear-gradient(145deg,#101525,#0a0e1c);border:1px solid rgba(6,214,160,.35);border-radius:16px;max-width:760px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.6);direction:rtl">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.08)">
+      <div style="font-size:15px;font-weight:900;color:${col}">${title} <span style="font-size:12px;color:var(--text3);font-weight:600">· ${list.length} עסקאות · ${which==='next'?'לחודש הבא':'חודשי'} ${fmt(total)}</span></div>
+      <button onclick="closeDealDetail()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="overflow:auto;padding:4px 8px 10px">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="color:var(--text3);font-size:10px;text-align:right;text-transform:uppercase;letter-spacing:.4px">
+          <th style="padding:7px 10px">#</th><th style="padding:7px 10px">תאריך</th><th style="padding:7px 10px">שם חברה</th><th style="padding:7px 10px">שירות</th><th style="padding:7px 10px">חד-פעמי ₪</th><th style="padding:7px 10px">חודשי ₪</th><th style="padding:7px 10px">סטטוס</th><th style="padding:7px 8px"></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="padding:9px 18px 14px;font-size:10.5px;color:var(--text3);border-top:1px solid rgba(255,255,255,.06)">✏️ לחיצה על תא — עריכה מהירה (Tab לתא הבא) · הכפתור פותח את העסקה המלאה</div>
+  </div>`;
+  document.body.appendChild(ov);
 }
 // פירוט קבוצת הפצות (מלחיצה על אריח בבאנר) — רשימה עם מס' פרויקט, לקוח, תאריך, שווי וסטטוס
 function closeDistDetail(){ const o=document.getElementById('dist-detail-ov'); if(o)o.remove(); }
@@ -12262,11 +12307,12 @@ function _commitCell(table,id,field,nv){
     // אם ההפצה משותפת בקישור מעקב — מפרסמים מחדש בשקט כדי שהלקוח יראה תמיד עדכני
     if(d2&&d2._trackTok){ try{_publishTrackAndMark(d2);}catch(e){} } }
   showToast('✓ עודכן — כל המסכים סונכרנו','ok'); rAll();
-  // אם חלון פירוט ההפצות פתוח — מרעננים אותו כדי שישקף את השינוי
+  // אם חלון פירוט (הפצות/עסקאות) פתוח — מרעננים אותו כדי שישקף את השינוי
   if(table==='dists'&&window._distDetailGroup&&document.getElementById('dist-detail-ov')){ try{showDistGroupDetail(window._distDetailGroup);}catch(e){} }
+  if(table==='deals'&&window._dealDetailGroup&&document.getElementById('deal-detail-ov')){ try{showDealGroupDetail(window._dealDetailGroup);}catch(e){} }
   // משוב ויזואלי: אחרי הרינדור מהבהבים בירוק את התא שנשמר (מאותר לפי ה-data-attributes) — בפופאפ אם פתוח
   try{ const idSel=(window.CSS&&CSS.escape)?CSS.escape(id):id;
-    const scope=document.getElementById('dist-detail-ov')||document;
+    const scope=_detailOv()||document;
     const c=scope.querySelector('.ec[data-ectab="'+table+'"][data-ecid="'+idSel+'"][data-ecfield="'+field+'"]');
     if(c){ c.classList.remove('ec-flash'); void c.offsetWidth; c.classList.add('ec-flash'); setTimeout(()=>c.classList.remove('ec-flash'),1000); }
   }catch(e){}
@@ -12311,10 +12357,10 @@ function editCell(table,id,field,el,kind,opts){
     if(e.key==='Enter'){e.preventDefault();commit(true);}
     else if(e.key==='Escape'){e.preventDefault();commit(false);}
     else if(e.key==='Tab'){ e.preventDefault();
-      const inPopup=!!(ctl.closest&&ctl.closest('#dist-detail-ov')); // עריכה בתוך חלון הפירוט — נשאר בו
+      const inPopup=!!(ctl.closest&&(ctl.closest('#dist-detail-ov')||ctl.closest('#deal-detail-ov'))); // עריכה בתוך חלון הפירוט — נשאר בו
       commit(true); // שומר + מרנדר, ואז פותח את התא הבא בשורה (כמו אקסל)
       try{
-        const scope=inPopup?(document.getElementById('dist-detail-ov')||document):document;
+        const scope=inPopup?(_detailOv()||document):document;
         const sel='.ec[data-ecid="'+((window.CSS&&CSS.escape)?CSS.escape(id):id)+'"]';
         const spans=[...scope.querySelectorAll(sel)];
         const i=spans.findIndex(s=>s.getAttribute('data-ecfield')===field&&s.getAttribute('data-ectab')===table);
