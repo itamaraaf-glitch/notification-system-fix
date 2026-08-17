@@ -300,3 +300,14 @@ test('בדיקה מחדש מרעננת נושאים וניקוד של רשומה
   assert.ok(merged[0].topics.includes('telecom'), 'הנושאים מתעדכנים לפי התצורה הנוכחית');
   assert.ok(merged[0].score > 1);
 });
+
+test('קישורי ניווט שנשמרו בהיסטוריה יורדים כששער המכרז מוקשח', () => {
+  const today = new Date().toISOString().slice(0,10);
+  const prev = new Map([
+    ['nav1', { id:'nav1', source:'iaa', title:'אלקטרוניקה וסלולר', url:'https://www.iaa.gov.il/airports/ben-gurion/businesses/electronics-and-cellular/', score:4, topics:['telecom'], firstSeen:'2020-01-01', lastSeen:today }],
+    ['nav2', { id:'nav2', source:'iaa', title:'להורדת אפליקציה App Store', url:'https://apps.apple.com/il/app/x', score:3, topics:['it'], firstSeen:'2020-01-01', lastSeen:today }],
+    ['real', { id:'real', source:'iaa', title:'מכרז לאספקת שירותי תקשורת', url:'https://www.iaa.gov.il/tenders/123/', score:8, topics:['telecom'], firstSeen:'2020-01-01', lastSeen:today }]
+  ]);
+  const merged = R.mergeWithHistory([], prev, new Set(['iaa']), KW);
+  assert.deepStrictEqual(merged.map(t => t.id), ['real']);
+});

@@ -598,9 +598,13 @@ function mergeWithHistory(current, prevById, activeSources, kw) {
     if (age !== null && age > KEEP_DAYS) continue;
 
     // רשומה שנשמרה בהיסטוריה נבדקת מחדש מול התצורה הנוכחית. בלי זה, חידוד של מילות
-    // המפתח לא היה מנקה רשומות שכבר נכנסו — הן היו נשארות עד 45 יום.
+    // המפתח או של השערים לא היה מנקה רשומות שכבר נכנסו — הן היו נשארות עד 45 יום.
     if (kw) {
-      const recheck = classify(`${prev.title} ${prev.summary || ''}`, kw);
+      const text = `${prev.title} ${prev.summary || ''}`;
+      // גם שער המכרז נבדק מחדש, אחרת קישורי ניווט שנתפסו לפני שהשער הוקשח
+      // (למשל "אלקטרוניקה וסלולר" ו"להורדת אפליקציה") היו נשארים במאגר
+      if (!looksLikeTender(text, kw) && !looksLikeTenderUrl(prev.url || '')) continue;
+      const recheck = classify(text, kw);
       if (!recheck.topics.length) continue;
       prev = { ...prev, topics: recheck.topics, score: recheck.score, matched: recheck.matched };
     }
