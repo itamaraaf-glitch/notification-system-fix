@@ -745,7 +745,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, harvestAnchors, findTenderLinks, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, harvestAnchors, findTenderLinks, adapterDiscover, adapterHtml, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
