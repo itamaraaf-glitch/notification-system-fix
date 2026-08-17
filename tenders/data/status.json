@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T07:46:45.161Z",
+  "generatedAt": "2026-08-17T07:50:50.893Z",
   "sources": [
     {
       "id": "mr-gov",
@@ -7,8 +7,8 @@
       "category": "ממשלה",
       "ok": true,
       "scanned": 116,
-      "count": 0,
-      "ms": 12562,
+      "count": 12,
+      "ms": 8790,
       "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER"
     },
     {
@@ -19,7 +19,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 4560,
+      "ms": 4696,
       "searchUrl": "https://www.gov.il/he/departments/publications?publicationType=tender"
     },
     {
@@ -30,7 +30,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 5732,
+      "ms": 5443,
       "searchUrl": "https://www.moin.gov.il/Tenders"
     },
     {
@@ -40,7 +40,7 @@
       "ok": true,
       "scanned": 291,
       "count": 9,
-      "ms": 3238,
+      "ms": 3358,
       "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
     },
     {
@@ -50,7 +50,7 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 2091,
+      "ms": 1468,
       "searchUrl": "https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders"
     },
     {
@@ -61,7 +61,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 5002,
+      "ms": 4831,
       "searchUrl": "https://www.nta.co.il/tenders/"
     },
     {
@@ -72,7 +72,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 4927,
+      "ms": 4803,
       "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
     },
     {
@@ -83,7 +83,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 4566,
+      "ms": 4592,
       "searchUrl": "https://www.transisrael.co.il/Tenders?currentView=1"
     },
     {
@@ -93,7 +93,7 @@
       "ok": true,
       "scanned": 8,
       "count": 0,
-      "ms": 4029,
+      "ms": 3373,
       "searchUrl": "https://www.atarim.gov.il/tenders/"
     },
     {
@@ -103,7 +103,7 @@
       "ok": true,
       "scanned": 639,
       "count": 0,
-      "ms": 3022,
+      "ms": 2576,
       "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx"
     },
     {
@@ -113,7 +113,7 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 1819,
+      "ms": 2104,
       "searchUrl": "https://www2.haifa.muni.il/Michrazim/Default.aspx"
     },
     {
@@ -124,20 +124,20 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 4699,
+      "ms": 4736,
       "searchUrl": "https://www.jerusalem.muni.il/he/business/tenders/"
     }
   ],
   "counts": {
-    "total": 9,
-    "new": 9,
-    "open": 0,
-    "closingSoon": 0,
+    "total": 12,
+    "new": 12,
+    "open": 3,
+    "closingSoon": 1,
     "byTopic": {
+      "it": 7,
+      "telecom": 3,
       "infosec": 1,
-      "it": 5,
-      "equipment": 2,
-      "telecom": 2
+      "equipment": 2
     }
   }
 }
