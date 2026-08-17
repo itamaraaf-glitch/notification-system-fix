@@ -101,3 +101,22 @@ test('מקור שכל כתובותיו נכשלות נחשב כנכשל', async 
     await assert.rejects(() => R.adapterHtml({ id: 'x', name: 'x', kind: 'html', urls: [base + '/a', base + '/b'] }), /404/);
   } finally { srv.close(); }
 });
+
+test('חריגה מתקציב הזמן עוצרת את הסריקה ומדווחת על המקורות שלא נסרקו', async () => {
+  // מריצים את הסורק עם תקציב אפסי — אף מקור לא אמור להיסרק, וכולם ידווחו
+  const { execFileSync } = require('node:child_process');
+  const out = execFileSync(process.execPath,
+    [path.join(__dirname, '..', '..', '.github', 'scripts', 'tenders-fetch.js'), '--dry-run'],
+    { env: { ...process.env, TENDERS_BUDGET_MS: '0' }, encoding: 'utf8' });
+  const payload = JSON.parse(out);
+  assert.ok(payload.sources.length > 0);
+  assert.ok(payload.sources.every(s => !s.ok && /תקציב הזמן/.test(s.error || '')),
+    'כל המקורות אמורים להיות מדווחים כלא-נסרקו');
+
+  // מקור שלא נסרק אינו מוחק את מה שכבר נמצא בו — ההיסטוריה נשמרת,
+  // אחרת ריצה שנקטעה הייתה מרוקנת את המאגר.
+  const stored = JSON.parse(fs.readFileSync(
+    path.join(__dirname, '..', 'data', 'tenders.json'), 'utf8'));
+  assert.strictEqual(payload.counts.total, (stored.tenders || []).length,
+    'המכרזים שבמאגר נשמרים גם כשאף מקור לא נסרק');
+});

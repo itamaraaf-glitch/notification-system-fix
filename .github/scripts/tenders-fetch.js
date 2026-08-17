@@ -26,6 +26,13 @@ const DRY_RUN = ARGS.includes('--dry-run');
 const DEBUG_SOURCE = (ARGS.find(a => a.startsWith('--debug=')) || '').split('=')[1] || '';
 
 const TIMEOUT_MS = +(process.env.TENDERS_TIMEOUT_MS || 15000);
+const RETRIES = +(process.env.TENDERS_RETRIES || 1);
+// תקציב זמן כולל לסריקה. עם עשרות רשויות מקומיות, כמה אתרים איטיים או לא זמינים
+// יכולים למתוח את הריצה בלי גבול; בחריגה מהתקציב הסריקה נעצרת ושומרת את מה שנאסף,
+// והמקורות שלא הגיע אליהם התור מדווחים במפורש — עדיף על ריצה שנקטלת בלי תוצאות.
+const BUDGET_MS = +(process.env.TENDERS_BUDGET_MS || 20 * 60 * 1000);
+const RUN_STARTED = Date.now();
+const budgetLeft = () => BUDGET_MS - (Date.now() - RUN_STARTED);
 const KEEP_DAYS = +(process.env.TENDERS_KEEP_DAYS || 45);
 const MAX_PER_SOURCE = +(process.env.TENDERS_MAX_PER_SOURCE || 60);
 const POLITE_DELAY_MS = +(process.env.TENDERS_DELAY_MS || 900);
@@ -227,7 +234,7 @@ function extractTenderNumber(text) {
 
 /* ───────────────────────── שכבת רשת ───────────────────────── */
 
-async function fetchText(url, { retries = 2 } = {}) {
+async function fetchText(url, { retries = RETRIES } = {}) {
   let lastErr;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const ctl = new AbortController();
@@ -525,7 +532,9 @@ async function main() {
   const status = [];
   const found = new Map();
 
+  const skipped = [];
   for (const source of sources) {
+    if (budgetLeft() <= 0) { skipped.push(source); continue; }
     const adapter = ADAPTERS[source.kind];
     const started = Date.now();
     if (!adapter) {
@@ -564,9 +573,20 @@ async function main() {
     await sleep(POLITE_DELAY_MS);
   }
 
+  for (const source of skipped) {
+    status.push({
+      id: source.id, name: source.name, category: source.category || '', ok: false,
+      scanned: 0, count: 0, error: 'לא נסרק — חריגה מתקציב הזמן של הריצה',
+      searchUrl: source.searchUrl || source.home || ''
+    });
+  }
+  if (skipped.length) console.error(`\n⏱ ${skipped.length} מקורות לא נסרקו בגלל תקציב הזמן`);
+
   // סריקת מקור בודד לא אמורה למחוק את ההיסטוריה של המקורות האחרים
+  // כולל את המקורות שלא נסרקו הפעם (מקור בודד או חריגת תקציב), אחרת ההיסטוריה שלהם תימחק
   const activeSources = new Map(
-    (ONLY_SOURCE ? (cfg.sources || []).filter(s => s.enabled !== false) : sources).map(s => [s.id, s])
+    (ONLY_SOURCE ? (cfg.sources || []).filter(s => s.enabled !== false) : (cfg.sources || []).filter(s => s.enabled !== false))
+      .map(s => [s.id, s])
   );
   const merged = mergeWithHistory([...found.values()], prevById, activeSources, kw);
   const payload = {
