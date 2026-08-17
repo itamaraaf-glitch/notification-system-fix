@@ -6956,6 +6956,19 @@ function renderDistMonthSummary(){
 }
 // עוזר: חלון הפירוט הפתוח (הפצות/עסקאות) — לתיחום ניווט Tab והבהוב
 function _detailOv(){ return document.getElementById('deal-detail-ov')||document.getElementById('dist-detail-ov'); }
+// קיבוץ שורות חלון-פירוט לפי חודש (לפי שדה תאריך), עם מפריד חודש שמציג כמות ושווי
+function _monthGroupRows(list,dateOf,moneyOf,col,rowOf,colspan){
+  const NM=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  let html='',lastM=null;
+  list.forEach(d=>{ const m=String(dateOf(d)||'').substring(0,7);
+    if(m!==lastM){ lastM=m; const grp=list.filter(x=>String(dateOf(x)||'').substring(0,7)===m);
+      const lbl=m?(NM[+m.substring(5,7)-1]+' '+m.substring(0,4)):'ללא תאריך';
+      html+=`<tr style="background:rgba(255,255,255,.035)"><td colspan="${colspan}" style="padding:6px 11px;font-size:10.5px;font-weight:800;color:${col}">📅 ${lbl} <span style="color:var(--text3);font-weight:600">· ${grp.length} · ${fmt(grp.reduce((a,x)=>a+moneyOf(x),0))}</span></td></tr>`;
+    }
+    html+=rowOf(d);
+  });
+  return html;
+}
 // ── פירוט קבוצת עסקאות (מלחיצה על אריח סיכום עסקאות) — שורות ניתנות לעריכה ──
 function closeDealDetail(){ const o=document.getElementById('deal-detail-ov'); if(o)o.remove(); }
 function showDealGroupDetail(which){
@@ -6965,10 +6978,10 @@ function showDealGroupDetail(which){
   if(which==='closed'){ list=all.filter(d=>d.st==='נסגר'); title='✅ עסקאות שנסגרו'; col='var(--teal)'; }
   else if(which==='next'){ list=all.filter(d=>(+d.dn||0)>0); title='⏭ נשאר לחודש הבא'; col='#a78bfa'; }
   else { list=all.filter(d=>d.st!=='נסגר'); title='⏳ צפי סגירה — עסקאות פתוחות'; col='#f4a261'; }
-  list=list.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
   const val=d=>which==='next'?(+d.dn||0):(+d.mv||0);
+  list=list.slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
   const total=list.reduce((a,d)=>a+val(d),0);
-  const rows=list.map(d=>`<tr style="border-bottom:1px solid rgba(255,255,255,.06)">
+  const rowOf=d=>`<tr style="border-bottom:1px solid rgba(255,255,255,.06)">
       <td style="padding:7px 10px;color:var(--text2);font-size:11px;white-space:nowrap">${esc(d.num||'–')}</td>
       <td style="padding:7px 10px;font-size:11px;white-space:nowrap">${_cellSpan('deals',d.id,'date',d.date?fmtDate(d.date):'–','date')}</td>
       <td style="padding:7px 10px;font-weight:600;font-size:12px">${_cellSpan('deals',d.id,'co',esc(d.co||'—'))}</td>
@@ -6977,7 +6990,8 @@ function showDealGroupDetail(which){
       <td style="padding:7px 10px;font-weight:800;font-size:12px;color:${col};white-space:nowrap">${_cellSpan('deals',d.id,'mv',fmt(d.mv),'num')}</td>
       <td style="padding:7px 10px;white-space:nowrap"><span onclick="event.stopPropagation();advanceDealStatus('${d.id}')" title="לחץ לקידום סטטוס" style="cursor:pointer">${sB(d.st)}</span></td>
       <td style="padding:7px 8px;white-space:nowrap"><button class="btn btns" onclick="closeDealDetail();openM('deal','${d.id}')" title="פתח עסקה מלאה לעריכה" style="font-size:10px">✏️</button></td>
-    </tr>`).join('')||`<tr><td colspan="8" style="padding:22px;text-align:center;color:var(--text3)">אין עסקאות בקבוצה זו</td></tr>`;
+    </tr>`;
+  const rows=list.length?_monthGroupRows(list,d=>d.date,val,col,rowOf,8):`<tr><td colspan="8" style="padding:22px;text-align:center;color:var(--text3)">אין עסקאות בקבוצה זו</td></tr>`;
   closeDealDetail();
   const ov=document.createElement('div'); ov.id='deal-detail-ov';
   ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;padding:20px';
@@ -7011,7 +7025,7 @@ function showDistGroupDetail(which){
   else { list=all.filter(d=>mo(d)===curM); title='💰 הכנסת הפצות — החודש'; col='var(--teal)'; }
   list=list.slice().sort((a,b)=>String(a.dt||'').localeCompare(String(b.dt||'')));
   const total=list.reduce((a,d)=>a+money(d),0);
-  const rows=list.map(d=>`<tr style="border-bottom:1px solid rgba(255,255,255,.06)">
+  const rowOf=d=>`<tr style="border-bottom:1px solid rgba(255,255,255,.06)">
       <td style="padding:7px 10px;color:var(--blue);font-weight:700;font-size:11px;white-space:nowrap">${_cellSpan('dists',d.id,'no',esc(d.no||'–'))}</td>
       <td style="padding:7px 10px;font-weight:600;font-size:12px">${_cellSpan('dists',d.id,'co',esc(d.co||'—'))}</td>
       <td style="padding:7px 10px;font-size:11px;color:var(--text2)">${_cellSpan('dists',d.id,'cl',esc(d.cl||'–'))}</td>
@@ -7021,7 +7035,8 @@ function showDistGroupDetail(which){
       <td style="padding:7px 10px;font-weight:800;font-size:12px;color:${col};white-space:nowrap">${_cellSpan('dists',d.id,'inc',fmt(d.inc),'num')}</td>
       <td style="padding:7px 10px;white-space:nowrap"><span onclick="event.stopPropagation();advanceDistStatus('${d.id}')" title="לחץ לקידום סטטוס" style="cursor:pointer">${sB(d.st)}</span></td>
       <td style="padding:7px 8px;white-space:nowrap"><button class="btn btns" onclick="closeDistDetail();openM('dist','${d.id}')" title="פתח הפצה מלאה לעריכה" style="font-size:10px">✏️</button></td>
-    </tr>`).join('')||`<tr><td colspan="9" style="padding:22px;text-align:center;color:var(--text3)">אין הפצות בקבוצה זו</td></tr>`;
+    </tr>`;
+  const rows=list.length?_monthGroupRows(list,d=>d.dt,money,col,rowOf,9):`<tr><td colspan="9" style="padding:22px;text-align:center;color:var(--text3)">אין הפצות בקבוצה זו</td></tr>`;
   closeDistDetail();
   const ov=document.createElement('div'); ov.id='dist-detail-ov';
   ov.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;padding:20px';
