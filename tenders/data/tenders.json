@@ -1,7 +1,6 @@
 {
-  "generatedAt": null,
-  "generatedDate": "",
-  "seed": true,
+  "generatedAt": "2026-08-17T07:25:34.920Z",
+  "generatedDate": "2026-08-17",
   "topics": {
     "telecom": {
       "label": "תקשורת",
@@ -67,12 +66,1917 @@
     }
   ],
   "counts": {
-    "total": 0,
-    "new": 0,
+    "total": 79,
+    "new": 79,
     "open": 0,
     "closingSoon": 0,
-    "byTopic": {}
+    "byTopic": {
+      "infosec": 7,
+      "it": 28,
+      "equipment": 32,
+      "telecom": 18
+    }
   },
-  "sources": [],
-  "tenders": []
+  "sources": [
+    {
+      "id": "mr-gov",
+      "name": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "ok": true,
+      "scanned": 116,
+      "count": 16,
+      "ms": 8663,
+      "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER"
+    },
+    {
+      "id": "gov-il",
+      "name": "מכרזי משרדי הממשלה (gov.il)",
+      "category": "ממשלה",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 4604,
+      "searchUrl": "https://www.gov.il/he/departments/publications?publicationType=tender"
+    },
+    {
+      "id": "moin",
+      "name": "משרד הפנים",
+      "category": "ממשלה",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 5483,
+      "searchUrl": "https://www.moin.gov.il/Tenders"
+    },
+    {
+      "id": "iaa",
+      "name": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "ok": true,
+      "scanned": 291,
+      "count": 46,
+      "ms": 2922,
+      "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
+    },
+    {
+      "id": "iec",
+      "name": "חברת החשמל",
+      "category": "תשתיות",
+      "ok": true,
+      "scanned": 0,
+      "count": 0,
+      "ms": 1723,
+      "searchUrl": "https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders"
+    },
+    {
+      "id": "nta",
+      "name": "נת\"ע – נתיבי תחבורה עירוניים",
+      "category": "תשתיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 4782,
+      "searchUrl": "https://www.nta.co.il/tenders/"
+    },
+    {
+      "id": "iroads",
+      "name": "נתיבי ישראל",
+      "category": "תשתיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 4880,
+      "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
+    },
+    {
+      "id": "transisrael",
+      "name": "כביש חוצה ישראל (דרך ארץ)",
+      "category": "תשתיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 4588,
+      "searchUrl": "https://www.transisrael.co.il/Tenders?currentView=1"
+    },
+    {
+      "id": "atarim",
+      "name": "החברה הממשלתית לתיירות (אתרים)",
+      "category": "ממשלה",
+      "ok": true,
+      "scanned": 8,
+      "count": 0,
+      "ms": 3636,
+      "searchUrl": "https://www.atarim.gov.il/tenders/"
+    },
+    {
+      "id": "tlv",
+      "name": "עיריית תל אביב-יפו",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 639,
+      "count": 0,
+      "ms": 2537,
+      "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx"
+    },
+    {
+      "id": "haifa",
+      "name": "עיריית חיפה",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 0,
+      "count": 0,
+      "ms": 2195,
+      "searchUrl": "https://www2.haifa.muni.il/Michrazim/Default.aspx"
+    },
+    {
+      "id": "jerusalem",
+      "name": "עיריית ירושלים",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 4638,
+      "searchUrl": "https://www.jerusalem.muni.il/he/business/tenders/"
+    },
+    {
+      "id": "data-gov-il",
+      "name": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "ok": true,
+      "scanned": 290,
+      "count": 60,
+      "ms": 88936,
+      "searchUrl": "https://data.gov.il/dataset?q=%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D"
+    }
+  ],
+  "tenders": [
+    {
+      "id": "afca46f0f7bd345f",
+      "title": "המרכז האקדמי שערי מדע ומשפט",
+      "url": "https://data.gov.il/dataset/ogdan-education",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "אוגדן השכלות  - לצורך בדיקת תנאי סף השכלה במכרזי כ\"א בשירות המדינה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "institution_name: המרכז האקדמי שערי מדע ומשפט | Faculty_Name: חברה | Field_of_Education: ניהול מערכות מידע, אבטחת מידע וסייבר | Degree_level: B.A | One_Two_Combo: חד | Parallel_Foreign_Degree: אין  | Placement_recommendations: ניהול | Regular_updates: אין  | Explanations: המרכז האקדמי פרס גאה להציג",
+      "topics": [
+        "infosec",
+        "it"
+      ],
+      "score": 22,
+      "matched": [
+        "אבטחת מידע",
+        "סייבר",
+        "אבטחת מידע וסייבר",
+        "מערכות מידע"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "7b317303da43db39",
+      "title": "מתן שירותים משפטיים בתחום רישוי תוכנות, מחשוב ענן, הגנת פרטיות, אבטחת מידע, סייבר (לרבות טיפול במשברי סייבר), מאגרי מידע ודיני אינטרנט, עבור רשות שדות התעופה עם משרד דן חי ושות' עורכי דין",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_48_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "infosec",
+        "it"
+      ],
+      "score": 17,
+      "matched": [
+        "אינטרנט",
+        "אבטחת מידע",
+        "סייבר",
+        "מחשוב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "98d489eb3944b776",
+      "title": "לאספקה ותחזוקת ציוד רשתות תקשורת ואבטחת מידע לעיריית באר שבע",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "20/2021",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: לאספקה ותחזוקת ציוד רשתות תקשורת ואבטחת מידע לעיריית באר שבע | מספר מכרז: 20/2021  | תאריך אחרון להגשה: 2021-11-23 12:00:00 | תאריך עדכון: 2021-10-14 00:00:00 | זוכה במכרז:  | קבצים: <p><a href=\"http://www.beer-sheva.muni.il/City/FreeInfo/DocLib2/מכרז%20מס%27%2020-2021%20אספקה%20ותחזוקת%20צ",
+      "topics": [
+        "infosec",
+        "equipment",
+        "telecom"
+      ],
+      "score": 14,
+      "matched": [
+        "תקשורת",
+        "ציוד רשת",
+        "אבטחת מידע"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "fb17016552dd74d0",
+      "title": "שירותי תמיכה במקצועות מחשוב ומערכות מידע, ותחזוקת חומרה עבור עיריית באר- שבע",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "45/2017",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: שירותי תמיכה במקצועות מחשוב ומערכות מידע, ותחזוקת חומרה עבור עיריית באר- שבע | מספר מכרז: 45/2017 | תאריך אחרון להגשה: 2017-08-13 12:00:00 | תאריך עדכון: 2017-06-08 00:00:00 | זוכה במכרז: מטריקס בע\"מ | קבצים: <p><a href=\"http://www.beer-sheva.muni.il/City/FreeInfo/DocLib2/שירותי%20תמיכה%20ב",
+      "topics": [
+        "it"
+      ],
+      "score": 13,
+      "matched": [
+        "מערכות מידע",
+        "מחשוב",
+        "שירותי תמיכה"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "f6ffd78af334a032",
+      "title": "מתן שירותי מחשוב וייעוץ בתחום התקשוב עבור רש\"ת",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_36_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 10,
+      "matched": [
+        "שירותי מחשוב",
+        "מחשוב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "d7c9e7af045fa6a8",
+      "title": "אספקת ציוד חשמל ייחודי למערכות קריטיות ומתן שירותי תמיכה טכנית והדרכה, עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_84_2025/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 9,
+      "matched": [
+        "שירותי תמיכה",
+        "תמיכה טכנית"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "e64fae501a3e9291",
+      "title": "מכרז מס&#39; 23/2015 - אספקה והתקנה של ציוד תקשורת למרכז טכנולוגי בבאר שבע",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: מכרז מס&#39; 23/2015 - אספקה והתקנה של ציוד תקשורת למרכז טכנולוגי בבאר שבע | מספר מכרז: מכרז מס&#39; 23/2015 | תאריך אחרון להגשה: null | תאריך עדכון: null | זוכה במכרז: מעגל סגור- פרק א&#39;- תרגול הפקה בנונית, פרק ב&#39;- ציוד צילום מתקדם, ופרק ז&#39;- ציוד אולפן. | קבצים:  | תשלום מקוון:",
+      "topics": [
+        "equipment",
+        "telecom"
+      ],
+      "score": 9,
+      "matched": [
+        "תקשורת",
+        "ציוד תקשורת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "03b4f9301f415e88",
+      "title": "רכישת מחשבים ניידים",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620724",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 8,
+      "matched": [
+        "מחשבים ניידים",
+        "מחשבים"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "d69950c590aa0d04",
+      "title": "מכרז מס&#39; 2/2015 - אחזקת מערכות תקשורת וטלפוניה",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: מכרז מס&#39; 2/2015 - אחזקת מערכות תקשורת וטלפוניה | מספר מכרז: מכרז מס&#39; 2/2015 | תאריך אחרון להגשה: 2015-10-11 00:00:00 | תאריך עדכון: 2015-07-12 00:00:00 | זוכה במכרז: טלדור תקשורת בע\"מ | קבצים:  | תשלום מקוון:  | URL: http://www.beer-sheva.muni.il/City/FreeInfo/Lists/List3/DispForm.a",
+      "topics": [
+        "telecom"
+      ],
+      "score": 8,
+      "matched": [
+        "תקשורת",
+        "טלפוניה"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "4ba8fe5b604cebd4",
+      "title": "אספקה והתקנת פרטי מחשוב במשרדי עיריית ב\"ש ובמוסדות חינוך בעיר",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "43/2022",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: אספקה והתקנת פרטי מחשוב במשרדי עיריית ב\"ש ובמוסדות חינוך בעיר | מספר מכרז: 43/2022 | תאריך אחרון להגשה: 2023-02-21 12:00:00 | תאריך עדכון: 2022-12-15 00:00:00 | זוכה במכרז: מטריקס אי. טי. אינטגרציה | קבצים: <p><a href=\"http://www.beer-sheva.muni.il/City/FreeInfo/DocLib2/מכרז%2043-2022%20אספ",
+      "topics": [
+        "it"
+      ],
+      "score": 8,
+      "matched": [
+        "מחשוב",
+        "אינטגרציה"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "924668b8d9f50460",
+      "title": "מתן שירותי אחזקה, אספקה והתקנה של מערכות התרעה אלחוטיות בנתב\"ג ומסוף טאבה, עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_102_2025/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment",
+        "telecom"
+      ],
+      "score": 7,
+      "matched": [
+        "אלחוטי",
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "87486a18fb689c16",
+      "title": "מכרז מס&#39; 29/2015 – לרכישת ואספקת שירותי סלולר",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: מכרז מס&#39; 29/2015 – לרכישת ואספקת שירותי סלולר | מספר מכרז: מכרז מס&#39; 29/2015 | תאריך אחרון להגשה: 2015-06-09 00:00:00 | תאריך עדכון: 2015-11-11 00:00:00 | זוכה במכרז: חברת פרטנר תקשורת בע\"מ | קבצים:  | תשלום מקוון:  | URL: http://www.beer-sheva.muni.il/City/FreeInfo/Lists/List3/DispF",
+      "topics": [
+        "telecom"
+      ],
+      "score": 7,
+      "matched": [
+        "תקשורת",
+        "סלולר"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "fb08a656d4bf51e3",
+      "title": "התקשרות לרישוי תוכנה, שירותי התקנה, אחזקה ושדרוגים של מערכת תמחיר SAS",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_05_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 6,
+      "matched": [
+        "רישוי תוכנה"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "a41b29cbff113f6f",
+      "title": "ייעוץ וליווי בתחומי טכנולוגיה מתקדמת עבור המטה הלאומי לבינה מלאכותית",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620931",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 5,
+      "matched": [
+        "בינה מלאכותית"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "94b20ac612086ff4",
+      "title": "מכרז פומבי עם שלב מיון מוקדם להתקשרות בחוזה למתן שירותי ביטוח סייבר עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_20007110/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "infosec"
+      ],
+      "score": 5,
+      "matched": [
+        "סייבר"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "f661eb6fed6f3eac",
+      "title": "אספקת שירותי CRM בענן, עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_67_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 5,
+      "matched": [
+        "CRM"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "9eb34d2c2d68edf3",
+      "title": "אספקת ח\"ח, הדרכה ותמיכה טכנית למערכת שינוע",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_14_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 5,
+      "matched": [
+        "תמיכה טכנית"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "de9269160b38e33f",
+      "title": "המכללה האקדמית המכללה למנהל",
+      "url": "https://data.gov.il/dataset/ogdan-education",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "אוגדן השכלות  - לצורך בדיקת תנאי סף השכלה במכרזי כ\"א בשירות המדינה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "institution_name: המכללה האקדמית המכללה למנהל | Faculty_Name: חברה | Field_of_Education: ניהול מערכות מידע | Degree_level: B.A | One_Two_Combo: חד | Parallel_Foreign_Degree: אין  | Placement_recommendations: ניהול | Regular_updates: אין | Explanations: תכנית התואר הראשון בניהול מערכות מידע יוצרת שיל",
+      "topics": [
+        "it"
+      ],
+      "score": 5,
+      "matched": [
+        "מערכות מידע"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "5933356cfb5f5396",
+      "title": "אוניברסיטת בן גוריון",
+      "url": "https://data.gov.il/dataset/ogdan-education",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "אוגדן השכלות  - לצורך בדיקת תנאי סף השכלה במכרזי כ\"א בשירות המדינה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "institution_name: אוניברסיטת בן גוריון | Faculty_Name: הנדסה  | Field_of_Education: הנדסת מערכות מידע | Degree_level: B.Sc | One_Two_Combo: חד | Parallel_Foreign_Degree: אין  | Placement_recommendations: אין  | Regular_updates: אין  | Explanations: הדיסציפלינה של הנדסת מערכות מידע עוסקת בניתוח, עיצו",
+      "topics": [
+        "it"
+      ],
+      "score": 5,
+      "matched": [
+        "מערכות מידע"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "353999b7a07698d8",
+      "title": "אוניברסיטת בר אילן",
+      "url": "https://data.gov.il/dataset/ogdan-education",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "אוגדן השכלות  - לצורך בדיקת תנאי סף השכלה במכרזי כ\"א בשירות המדינה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "institution_name: אוניברסיטת בר אילן | Faculty_Name: חברה | Field_of_Education: תכנית לימודי צבא וביטחון במגמת סייבר ואסטרטגיה  | Degree_level: M.A | One_Two_Combo: חד | Parallel_Foreign_Degree:  | Placement_recommendations:  | Regular_updates:  | Explanations: תכנית ייחודית ראשונה מסוגה בארץ. נבנתה",
+      "topics": [
+        "infosec"
+      ],
+      "score": 5,
+      "matched": [
+        "סייבר"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "9188fe945b698a1c",
+      "title": "המכללה האקדמית להנדסה אורט ע\"ש בראודה",
+      "url": "https://data.gov.il/dataset/ogdan-education",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "אוגדן השכלות  - לצורך בדיקת תנאי סף השכלה במכרזי כ\"א בשירות המדינה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "institution_name: המכללה האקדמית להנדסה אורט ע\"ש בראודה | Faculty_Name: הנדסה  | Field_of_Education: הנדסת מערכות מידע | Degree_level: B.Sc | One_Two_Combo: חד | Parallel_Foreign_Degree: אין  | Placement_recommendations: אין  | Regular_updates: אין  | Explanations: הדיסציפלינה של הנדסת מערכות מידע ע",
+      "topics": [
+        "it"
+      ],
+      "score": 5,
+      "matched": [
+        "מערכות מידע"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "deed53391e971358",
+      "title": "טכניון",
+      "url": "https://data.gov.il/dataset/ogdan-education",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "אוגדן השכלות  - לצורך בדיקת תנאי סף השכלה במכרזי כ\"א בשירות המדינה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "institution_name: טכניון  | Faculty_Name: הנדסה | Field_of_Education: הנדסת מערכות מידע | Degree_level: B.Sc | One_Two_Combo: חד | Parallel_Foreign_Degree: אין | Placement_recommendations: אין | Regular_updates: אין | Explanations: הדיסציפלינה של הנדסת מערכות מידע עוסקת בניתוח, עיצוב פיתוח והטמעה ונ",
+      "topics": [
+        "it"
+      ],
+      "score": 5,
+      "matched": [
+        "מערכות מידע"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "838c47a5e0d0c91c",
+      "title": "אוניברסיטת תל אביב",
+      "url": "https://data.gov.il/dataset/ogdan-education",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "אוגדן השכלות  - לצורך בדיקת תנאי סף השכלה במכרזי כ\"א בשירות המדינה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "institution_name: אוניברסיטת תל אביב | Faculty_Name: חברה | Field_of_Education: לימודי פוליטיקה, סייבר וממשל | Degree_level: M.A | One_Two_Combo: חד | Parallel_Foreign_Degree: אין  | Placement_recommendations: אין | Regular_updates: אין | Explanations: העולם הטכנולוגי החדש מתפתח ומשתנה ממש לנגד עיני",
+      "topics": [
+        "infosec"
+      ],
+      "score": 5,
+      "matched": [
+        "סייבר"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "a68d3d8d0703357b",
+      "title": "מחקר בנושא \"הערכת השפעת מדיניות איסור שימוש בטלפונים ניידים במערכת החינוך\"",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620971",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "telecom"
+      ],
+      "score": 4,
+      "matched": [
+        "טלפונים ניידים"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "42bf0284dbdb9884",
+      "title": "אלקטרוניקה וסלולר",
+      "url": "https://www.iaa.gov.il/airports/ben-gurion/businesses/electronics-and-cellular/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "telecom"
+      ],
+      "score": 4,
+      "matched": [
+        "סלולר"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "d90dfbbe05ef19c0",
+      "title": "נתב\"ג בתמונות שנת 2020",
+      "url": "https://www.iaa.gov.il/airports/ben-gurion/picturesbgn/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "2486d84674e46b27",
+      "title": "מכרז פומבי להתקשרות בחוזה מסגרת למתן שירותי הדברת מזיקים, הדברת יתושים, טיפול בבעלי חיים והצבת מערכות משדרות לאיתור ולכידת מכרסמים בנתב\"ג עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007058/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "7f1d87db1f5a23b7",
+      "title": "מכרז פומבי להתקשרות בחוזה למתן שירותי אספקת גז טבעי, לצורך הפעלת המנוע החמישי, במרכז האנרגיה בנתב\"ג,עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007438/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "fd47737f23168361",
+      "title": "מכרז פומבי להתקשרות בחוזה מסגרת למתן שירותים עבור יחידת מזהים משקפים ויחידת טב\"מ - טיפול ביטחוני מסחרי ושירותי בידוק למפעלי המזון בנתב\"ג, עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007275/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "3cd0c666ea68560f",
+      "title": "מכרז פומבי לקבלת הרשאה למתן שירותים של הפעלת מגרשי חנייה בנתב\"ג, בשתפ\"א ובמעברי הגבול היבשתיים",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/mis_hoze_200001050/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "0826302582d5882b",
+      "title": "מכרז פומבי להתקשרות בחוזה לביצוע עבודות להרחבת המבנה הקרקעי של טרמינל 3 בנתב\"ג לכיוון מזרח",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007161/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "09c588c88f7a8a3a",
+      "title": "התקנה, הטמעה ואחזקת מערכת ממוחשבת לניהול אירועים, עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_60_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 4,
+      "matched": [
+        "מערכת ממוחשבת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "a47995fb4883018f",
+      "title": "מתן שירותי תמיכה במערכת Micro Scada Pro Sys 600, מתוצרת חברת ABB טכנולוגיות בע\"מ, המותקנות במערכות מתח גבוה, בנמל התעופה בן-גוריון",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_44_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 4,
+      "matched": [
+        "שירותי תמיכה"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "345bde356ca40671",
+      "title": "חוזה הרשאה להצבה, הפעלה ואחזקה של אוטומטיים לצילום עצמי בטרמינל 3 וטרמינל 1 של נתב\"ג ובמסוף הגבול אלנבי",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_13_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "f94ece27f15fe3ce",
+      "title": "חוזה אספקה, התקנה ואחזקת מצברי ליתיום עבור טרקטורים חשמליים ומטענים למצברי ליתיום עבור טרקטורים חשמליים לנתב\"ג",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_35_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "6cb50f50367b6766",
+      "title": "מתן שירותי פיקוח ובקרה על מפעיל מגרשי החניה בנתב\"ג",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_29_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "5439cd10254190e0",
+      "title": "חוזה הרשאה למתן שירותים להתאמה, ניהול ולהפעלת חנות לממכר גלידות/ פנקייקים/ יוגורטים/ שייקים וכיוצ\"ב, באולם היוצאים שבטרמינל 1 בנתב\"ג",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_10_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "910c854f5590b0b8",
+      "title": "חוזה הרשאה לשימוש בנכס בנתב\"ג",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_11_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "7f580be651e88ef0",
+      "title": "מתן שירותי ממונה בטיחות וגיהות בנתב\"ג, עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_23_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "4f2a86f465c7f1fe",
+      "title": "חוזה הרשאה לניהול, הפעלה, תחזוקה ושירותי תדלוק לרכבי חברות השכרות רכב בנתב\"ג.",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_08_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "1a92ba4897dbee1e",
+      "title": "חוזה הרשאה להצבה, הפעלה ואחזקה של כורסאות עיסוי אוטומטיים באולם הנוסעים היוצאים בטרמינל 3 בנתב\"ג",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_04_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "e1a7f5d8bed36b9c",
+      "title": "מתן שירותי סינון וסריקה במתחמי נתב\"ג, עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_10_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "4dc0564abc79efab",
+      "title": "חוזה למתן שירותי בקרת מעברים, אבטחת פרויקטים הנדסיים, ליווי ספקים והפעלת מתקן תת לחץ בנתב\"ג",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_06_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "dba48be6d3a2e9ef",
+      "title": "חוזה למתן שירותי דיגום ואנליזה של שפכי, קולחין, מים, קרקע ומזון בנתב\"ג עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_09_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "7310965ca5b66a23",
+      "title": "חוזה הרשאה להפעלת מסעדת גריל ישראלית באולם הנוסעים היוצאים של טרמינל 3 בנתב\"ג",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_02_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "e379b8adaf123645",
+      "title": "ביצוע עבודות טיפול בשטחי בור, שטחי גידולים, רצועות מסלולים ושטחי גדרות בנתב\"ג, שתפ\"א ובכל אתרי רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_117_2025/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "2985a508fa7f0913",
+      "title": "מתן שירותי הכוונה, סדרנות קהל ושרות לנוסע בנתב\"ג, עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_116_2025/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "3319b7121171ed9f",
+      "title": "חוזה לביצוע תכנון, אספקה, הצבה והתקנה של קו עגורן (מונורייל) בעל יכולת הרמה של 5.5 טון לפחות במתחם HBS טרמינל 3 בנתב\"ג, עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_113_2025/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "a9e9d327f1bdd206",
+      "title": "חוזה לאספקה והתקנה של גשרי מעבר נוסעים בנתב\"ג",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_91_2025/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "e7d34d36dd2c928d",
+      "title": "חוזה הרשאה למתן שירותים של ניהול והפעלת מגרשי חנייה בנתב\"ג, מסוף בגין, ומתקני רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_33_2025/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "5a7952f051503936",
+      "title": "הרשאה למתן שירות של החזרי מע\"מ לתיירים בטרמינל 3 של נתב\"ג, שתפ\"א ובמסופי הגבול",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_29_2025/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "a3183690173e977a",
+      "title": "מתן שירותי הדברת מזיקים, ריסוס כנגד יתושים וטיפול בעלי חיים בנתב\"ג, עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_79_2025/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "bea98a89366ba467",
+      "title": "מתן שירותי אחזקה, התקנה ושדרוגים למערכת מיגון אלקטרונית לגדר אבטחה היקפית מסוג לחצים בנתב\"ג",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_74_2025/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "0571f863415d2335",
+      "title": "מתן שירותי אספקה, התקנה, שדרוג ואחזקת מערכות גילוי אש וכיבוי בגז מתוצרת חברת \"KGS\" המותקנות בנתב\"ג",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_77_2025/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 4,
+      "matched": [
+        "נתב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "3830453f658d45ae",
+      "title": "הגנת הפרטיות",
+      "url": "https://www.iaa.gov.il/airports/ben-gurion/privacy-policy/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "infosec"
+      ],
+      "score": 4,
+      "matched": [
+        "הגנת הפרטיות"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "350c82bfa93958c8",
+      "title": "אספקה והתקנת פרטי מחשוב במשרדי עיריית באר-שבע ובמוסדות חינוך בעיר",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "12/2019",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: אספקה והתקנת פרטי מחשוב במשרדי עיריית באר-שבע ובמוסדות חינוך בעיר | מספר מכרז:  12/2019 | תאריך אחרון להגשה: 2019-05-28 12:00:00 | תאריך עדכון: 2019-04-04 00:00:00 | זוכה במכרז: מטריקס בע\"מ | קבצים: <p><a href=\"http://www.beer-sheva.muni.il/City/FreeInfo/DocLib2/מכרז%20מחשוב%20נוסח%20סופי%2",
+      "topics": [
+        "it"
+      ],
+      "score": 4,
+      "matched": [
+        "מחשוב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "589db84e37b1b9ed",
+      "title": "לאספקת מערכת מחשוב אחודה לניהול לשכה משפטית ומחלקת הביטוח של עיריית באר שבע",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "54/2018",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: לאספקת מערכת מחשוב אחודה לניהול לשכה משפטית ומחלקת הביטוח של עיריית באר שבע | מספר מכרז: 54/2018 | תאריך אחרון להגשה: 2018-05-09 12:00:00 | תאריך עדכון: 2018-11-10 00:00:00 | זוכה במכרז: בנועם טכנולוגיות בע\"מ  | קבצים: <p><a href=\"http://www.beer-sheva.muni.il/City/FreeInfo/DocLib2/מערכת%20",
+      "topics": [
+        "it"
+      ],
+      "score": 4,
+      "matched": [
+        "מחשוב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "e7b3bfb90f860970",
+      "title": "אספקת מערכת מחשוב אחודה לניהול לשכה משפטית ומחלקת הביטוח של עיריית באר-שבע",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "17/2018",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: אספקת מערכת מחשוב אחודה לניהול לשכה משפטית ומחלקת הביטוח של עיריית באר-שבע | מספר מכרז: 17/2018 | תאריך אחרון להגשה: 2018-05-17 12:00:00 | תאריך עדכון: 2018-10-04 00:00:00 | זוכה במכרז:  | קבצים: <p><a href=\"http://www.beer-sheva.muni.il/City/FreeInfo/DocLib2/לאספקת%20מערכת%20מחשוב%20אחודה%",
+      "topics": [
+        "it"
+      ],
+      "score": 4,
+      "matched": [
+        "מחשוב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "41ff825b23221652",
+      "title": "אספקת מערכת ממוחשבת לניהול שרותי הרווחה עבור עיריית באר-שבע",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "9/2020",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: אספקת מערכת ממוחשבת לניהול שרותי הרווחה עבור עיריית באר-שבע | מספר מכרז: 9/2020 | תאריך אחרון להגשה: 2020-08-09 12:00:00 | תאריך עדכון: 2020-12-08 00:00:00 | זוכה במכרז: מטרופולי-נט בע\"מ | קבצים: <p><a href=\"http://www.beer-sheva.muni.il/City/FreeInfo/DocLib2/מכרז%209-2020%20מערכות%20מידע%2",
+      "topics": [
+        "it"
+      ],
+      "score": 4,
+      "matched": [
+        "מערכת ממוחשבת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "eddbdf5617d45265",
+      "title": "אספקת מערכת מחשוב לניהול קולות קוראים בעיריית באר-שבע",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "56/2016",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: אספקת מערכת מחשוב לניהול קולות קוראים בעיריית באר-שבע | מספר מכרז: הצעת מחיר 56/2016 | תאריך אחרון להגשה: 2016-12-19 12:00:00 | תאריך עדכון: 2016-11-23 00:00:00 | זוכה במכרז:  | קבצים: <p><a href=\"http://www.beer-sheva.muni.il/City/FreeInfo/DocLib2/56-2016%20מערכת%20לניהול%20קולות%20קוראים-",
+      "topics": [
+        "it"
+      ],
+      "score": 4,
+      "matched": [
+        "מחשוב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "8f0ddaa5eceb7483",
+      "title": "מכרז מס&#39; 17/2015 – אספקה והתקנת פרטי מחשוב בעיריית ב\"ש ובמוסדותיה",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: מכרז מס&#39; 17/2015 – אספקה והתקנת פרטי מחשוב בעיריית ב\"ש ובמוסדותיה | מספר מכרז: מכרז מס&#39; 17/2015 | תאריך אחרון להגשה: 2015-11-23 00:00:00 | תאריך עדכון: 2016-05-01 00:00:00 | זוכה במכרז: מטריקס בע\"מ | קבצים:  | תשלום מקוון:  | URL: http://www.beer-sheva.muni.il/City/FreeInfo/Lists/Li",
+      "topics": [
+        "it"
+      ],
+      "score": 4,
+      "matched": [
+        "מחשוב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "2bb3ea484afd485f",
+      "title": "לאספקת מערכת מחשוב אחודה לניהול לשכה משפטית ומחלקת הביטוח של עיריית באר שבע",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "41/2021",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: לאספקת מערכת מחשוב אחודה לניהול לשכה משפטית ומחלקת הביטוח של עיריית באר שבע | מספר מכרז: 41/2021 | תאריך אחרון להגשה: 2022-01-25 12:00:00 | תאריך עדכון: 2021-06-12 00:00:00 | זוכה במכרז:  | קבצים: <p><a href=\"http://www.beer-sheva.muni.il/City/FreeInfo/DocLib2/מכרז%2041-2021-נוסח%20סופי.pdf",
+      "topics": [
+        "it"
+      ],
+      "score": 4,
+      "matched": [
+        "מחשוב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "3e7b71750f4bba28",
+      "title": "מכרז 3/2026 לניטור ומחקר מידע תקשורתי",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000619838",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "3/2026",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "telecom"
+      ],
+      "score": 3,
+      "matched": [
+        "תקשורת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "d58432e9ad1439f9",
+      "title": "מערכת ניהול סביבתי",
+      "url": "https://www.iaa.gov.il/environment-and-sustainability/environmental-management-systems/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 3,
+      "matched": [
+        "מערכת ניהול"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "6848cfdcbd7b98a3",
+      "title": "התקשרות לצורך הצבת ציוד קשר ואנטנות באתר החברה במושב בית אורן, עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_32_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 3,
+      "matched": [
+        "אנטנות"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "e8251bd2681a5b50",
+      "title": "הסכם מסגרת לביצוע עבודות תאורת מסלולים ותשתיות חשמל ותקשורת באתרי רש\"ת",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_17_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "telecom"
+      ],
+      "score": 3,
+      "matched": [
+        "תקשורת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "6f148ed952cf08db",
+      "title": "מתן שירותי תכנון, אספקה, התקנה, שדרוג ואחזקה למערכת כריזה תפעולית מתוצרת BIAMP בכל מתקני רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_01_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 3,
+      "matched": [
+        "כריזה"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "9612caec8737779a",
+      "title": "להורדת אפליקציה App Store",
+      "url": "https://apps.apple.com/il/app/ben-gurion-tlv-airport/id796888961?l=iw",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 3,
+      "matched": [
+        "אפליקציה"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "01d880867cdebe89",
+      "title": "להורדת אפליקציה Google Play",
+      "url": "https://play.google.com/store/apps/details?id=com.iaa.mobile&hl=iw&gl=US",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 3,
+      "matched": [
+        "אפליקציה"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "cb9bc3fa002692c1",
+      "title": "המרכז האקדמי לב",
+      "url": "https://data.gov.il/dataset/ogdan-education",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "אוגדן השכלות  - לצורך בדיקת תנאי סף השכלה במכרזי כ\"א בשירות המדינה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "institution_name: המרכז האקדמי לב | Faculty_Name: הנדסה | Field_of_Education: הנדסת מערכות תקשורת | Degree_level: B.Sc | One_Two_Combo: חד | Parallel_Foreign_Degree: אין  | Placement_recommendations: אין  | Regular_updates: אין  | Explanations: הנדסת מערכות תקשורת הינה תחום בהנדסה הכולל עיסוק באופן",
+      "topics": [
+        "telecom"
+      ],
+      "score": 3,
+      "matched": [
+        "תקשורת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "ef468726720cbee1",
+      "title": "אוניברסיטה העברית בירושלים",
+      "url": "https://data.gov.il/dataset/ogdan-education",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "אוגדן השכלות  - לצורך בדיקת תנאי סף השכלה במכרזי כ\"א בשירות המדינה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "institution_name: אוניברסיטה העברית בירושלים | Faculty_Name: הנדסה  | Field_of_Education: הנדסת חשמל ומחשבים | Degree_level: B.Sc | One_Two_Combo: דו | Parallel_Foreign_Degree: אין | Placement_recommendations: אין | Regular_updates: אין | Explanations: תכנית הלימודים מבוססת על הכשרה מקיפה במתמטיקה,",
+      "topics": [
+        "it"
+      ],
+      "score": 3,
+      "matched": [
+        "מחשבים"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "14e80402f167c60e",
+      "title": "המכרז הבינתחומי הרצליה (רייכמן)",
+      "url": "https://data.gov.il/dataset/ogdan-education",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "אוגדן השכלות  - לצורך בדיקת תנאי סף השכלה במכרזי כ\"א בשירות המדינה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "institution_name: המכרז הבינתחומי הרצליה (רייכמן) | Faculty_Name: חברה | Field_of_Education: תקשורת ומדיה חדשים | Degree_level: M.A | One_Two_Combo: חד | Parallel_Foreign_Degree: אין  | Placement_recommendations: אין  | Regular_updates: אין  | Explanations: תוכנית התואר השני בתקשורת ומדיה חדשים נועד",
+      "topics": [
+        "telecom"
+      ],
+      "score": 3,
+      "matched": [
+        "תקשורת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "06bea8429c577e9b",
+      "title": "המכללה האקדמית הדסה ירושלים",
+      "url": "https://data.gov.il/dataset/ogdan-education",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "אוגדן השכלות  - לצורך בדיקת תנאי סף השכלה במכרזי כ\"א בשירות המדינה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "institution_name: המכללה האקדמית הדסה ירושלים | Faculty_Name: חברה | Field_of_Education: תקשורת צילומית | Degree_level: B.A | One_Two_Combo: חד | Parallel_Foreign_Degree: אין  | Placement_recommendations: אין | Regular_updates: אין | Explanations: הלימודים נועדו להכשיר צלמים מקצועיים ביותר בעלי ידע",
+      "topics": [
+        "telecom"
+      ],
+      "score": 3,
+      "matched": [
+        "תקשורת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "33fde5d48393b465",
+      "title": "אוניברסיטת חיפה",
+      "url": "https://data.gov.il/dataset/ogdan-education",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "אוגדן השכלות  - לצורך בדיקת תנאי סף השכלה במכרזי כ\"א בשירות המדינה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "institution_name: אוניברסיטת חיפה | Faculty_Name: חברה | Field_of_Education: תקשורת | Degree_level: B.A | One_Two_Combo: חד | Parallel_Foreign_Degree: אין  | Placement_recommendations: אין  | Regular_updates: אין  | Explanations: בוגר לימודי תקשורת יכול להשתלב בעבודה במספר תחומים: כאיש טלוויזיה, כאי",
+      "topics": [
+        "telecom"
+      ],
+      "score": 3,
+      "matched": [
+        "תקשורת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "45c418eed4b692c4",
+      "title": "אוניברסיטת אריאל בשומרון",
+      "url": "https://data.gov.il/dataset/ogdan-education",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "אוגדן השכלות  - לצורך בדיקת תנאי סף השכלה במכרזי כ\"א בשירות המדינה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "institution_name: אוניברסיטת אריאל בשומרון  | Faculty_Name: חברה | Field_of_Education: תקשורת | Degree_level: B.A | One_Two_Combo: חד | Parallel_Foreign_Degree: אין | Placement_recommendations: אין | Regular_updates: אין | Explanations: בוגר לימודי תקשורת יכול להשתלב בעבודה במספר תחומים: כאיש טלוויז",
+      "topics": [
+        "telecom"
+      ],
+      "score": 3,
+      "matched": [
+        "תקשורת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "6a57265834170c95",
+      "title": "התקשרות לביצוע מיזם משותף לפרויקט מתן טיפולי בריאות מקדמים בגני תקשורת",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "19/2015",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: התקשרות לביצוע מיזם משותף לפרויקט מתן טיפולי בריאות מקדמים בגני תקשורת | מספר מכרז: 19/2015 | תאריך אחרון להגשה: 2016-05-04 12:00:00 | תאריך עדכון: 2016-03-30 00:00:00 | זוכה במכרז:  | קבצים: <p><a href=\"http://www.beer-sheva.muni.il/City/FreeInfo/DocLib2/קול%20קורא%20להפעלת%20טבמ%20בגני%20",
+      "topics": [
+        "telecom"
+      ],
+      "score": 3,
+      "matched": [
+        "תקשורת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "f72893b0a9ed074d",
+      "title": "הזמנה להגשת הצעות למתן טיפולי בריאות מקדמים בגני תקשורת",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "38/2021",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: הזמנה להגשת הצעות למתן טיפולי בריאות מקדמים בגני תקשורת | מספר מכרז: קול קורא 38/2021 | תאריך אחרון להגשה: 2021-06-07 12:00:00 | תאריך עדכון: 2021-06-14 00:00:00 | זוכה במכרז:  | קבצים: <p><a href=\"http://www.beer-sheva.muni.il/City/FreeInfo/DocLib2/קול%20קורא%20להפעלת%20טבמ%20בגני%20תקשורת",
+      "topics": [
+        "telecom"
+      ],
+      "score": 3,
+      "matched": [
+        "תקשורת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "cbf27c0eb7b8be34",
+      "title": "פניה לספקי משרד הבריאות המורשים למתן טיפולי בריאות מקדמים בגני תקשורת",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: פניה לספקי משרד הבריאות המורשים למתן טיפולי בריאות מקדמים בגני תקשורת  | מספר מכרז: הליך מס&#39; 41/2024 | תאריך אחרון להגשה: 2024-09-07 12:00:00 | תאריך עדכון: 2024-06-30 00:00:00 | זוכה במכרז:  | קבצים: <p><br><a href=\"http://www.beer-sheva.muni.il/City/FreeInfo/DocLib2/קול.%20קורא%20הזמנ",
+      "topics": [
+        "telecom"
+      ],
+      "score": 3,
+      "matched": [
+        "תקשורת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "53bfa5d21b9464be",
+      "title": "הודעה על כוונת העיריה להתקשר בפטור לפי סעיף 3 (4) לתקנות העיריות (מכרזים), התשמ\"ח- 1987- לפיהם קבוצת ביפר תקשורת הינה המציעה היחידה למערכת נופר (כורזיות צבע אדום)",
+      "url": "https://data.gov.il/dataset/tender-br7",
+      "source": "data-gov-il",
+      "sourceName": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "publisher": "מכרזים בעיר באר שבע",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "שם מכרז: הודעה על כוונת העיריה להתקשר בפטור לפי סעיף 3 (4) לתקנות העיריות (מכרזים), התשמ\"ח- 1987- לפיהם קבוצת ביפר תקשורת הינה המציעה היחידה למערכת נופר (כורזיות צבע אדום)  | מספר מכרז: הליך ספק יחיד מס&#39;  49/2019 | תאריך אחרון להגשה: 2019-07-23 12:00:00 | תאריך עדכון: 2019-11-07 00:00:00 | זוכה",
+      "topics": [
+        "telecom"
+      ],
+      "score": 3,
+      "matched": [
+        "תקשורת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    }
+  ]
 }

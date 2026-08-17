@@ -1,0 +1,153 @@
+{
+  "generatedAt": "2026-08-17T07:25:34.920Z",
+  "sources": [
+    {
+      "id": "mr-gov",
+      "name": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "ok": true,
+      "scanned": 116,
+      "count": 16,
+      "ms": 8663,
+      "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER"
+    },
+    {
+      "id": "gov-il",
+      "name": "מכרזי משרדי הממשלה (gov.il)",
+      "category": "ממשלה",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 4604,
+      "searchUrl": "https://www.gov.il/he/departments/publications?publicationType=tender"
+    },
+    {
+      "id": "moin",
+      "name": "משרד הפנים",
+      "category": "ממשלה",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 5483,
+      "searchUrl": "https://www.moin.gov.il/Tenders"
+    },
+    {
+      "id": "iaa",
+      "name": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "ok": true,
+      "scanned": 291,
+      "count": 46,
+      "ms": 2922,
+      "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
+    },
+    {
+      "id": "iec",
+      "name": "חברת החשמל",
+      "category": "תשתיות",
+      "ok": true,
+      "scanned": 0,
+      "count": 0,
+      "ms": 1723,
+      "searchUrl": "https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders"
+    },
+    {
+      "id": "nta",
+      "name": "נת\"ע – נתיבי תחבורה עירוניים",
+      "category": "תשתיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 4782,
+      "searchUrl": "https://www.nta.co.il/tenders/"
+    },
+    {
+      "id": "iroads",
+      "name": "נתיבי ישראל",
+      "category": "תשתיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 4880,
+      "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
+    },
+    {
+      "id": "transisrael",
+      "name": "כביש חוצה ישראל (דרך ארץ)",
+      "category": "תשתיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 4588,
+      "searchUrl": "https://www.transisrael.co.il/Tenders?currentView=1"
+    },
+    {
+      "id": "atarim",
+      "name": "החברה הממשלתית לתיירות (אתרים)",
+      "category": "ממשלה",
+      "ok": true,
+      "scanned": 8,
+      "count": 0,
+      "ms": 3636,
+      "searchUrl": "https://www.atarim.gov.il/tenders/"
+    },
+    {
+      "id": "tlv",
+      "name": "עיריית תל אביב-יפו",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 639,
+      "count": 0,
+      "ms": 2537,
+      "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx"
+    },
+    {
+      "id": "haifa",
+      "name": "עיריית חיפה",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 0,
+      "count": 0,
+      "ms": 2195,
+      "searchUrl": "https://www2.haifa.muni.il/Michrazim/Default.aspx"
+    },
+    {
+      "id": "jerusalem",
+      "name": "עיריית ירושלים",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 4638,
+      "searchUrl": "https://www.jerusalem.muni.il/he/business/tenders/"
+    },
+    {
+      "id": "data-gov-il",
+      "name": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "ok": true,
+      "scanned": 290,
+      "count": 60,
+      "ms": 88936,
+      "searchUrl": "https://data.gov.il/dataset?q=%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D"
+    }
+  ],
+  "counts": {
+    "total": 79,
+    "new": 79,
+    "open": 0,
+    "closingSoon": 0,
+    "byTopic": {
+      "infosec": 7,
+      "it": 28,
+      "equipment": 32,
+      "telecom": 18
+    }
+  }
+}
