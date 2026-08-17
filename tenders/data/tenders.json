@@ -568,7 +568,8 @@
         "מחשבים"
       ],
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
+      "lastSeen": "2026-08-17",
+      "kind": "tender"
     },
     {
       "id": "3925967a0a6b83ac",
@@ -590,7 +591,8 @@
         "בינה מלאכותית"
       ],
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
+      "lastSeen": "2026-08-17",
+      "kind": "tender"
     },
     {
       "id": "a68d3d8d0703357b",
@@ -612,7 +614,8 @@
         "טלפונים ניידים"
       ],
       "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
+      "lastSeen": "2026-08-17",
+      "kind": "tender"
     },
     {
       "id": "7b317303da43db39",
@@ -639,7 +642,8 @@
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17",
-      "deadlineChecked": true
+      "deadlineChecked": true,
+      "kind": "exemption"
     },
     {
       "id": "f6ffd78af334a032",
@@ -663,7 +667,8 @@
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17",
-      "deadlineChecked": true
+      "deadlineChecked": true,
+      "kind": "exemption"
     },
     {
       "id": "fb08a656d4bf51e3",
@@ -686,7 +691,8 @@
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17",
-      "deadlineChecked": true
+      "deadlineChecked": true,
+      "kind": "exemption"
     },
     {
       "id": "f661eb6fed6f3eac",
@@ -709,7 +715,8 @@
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17",
-      "deadlineChecked": true
+      "deadlineChecked": true,
+      "kind": "exemption"
     },
     {
       "id": "09c588c88f7a8a3a",
@@ -732,7 +739,8 @@
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17",
-      "deadlineChecked": true
+      "deadlineChecked": true,
+      "kind": "exemption"
     },
     {
       "id": "2e7b1a00bbb55e9c",
@@ -755,7 +763,8 @@
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17",
-      "deadlineChecked": true
+      "deadlineChecked": true,
+      "kind": "exemption"
     },
     {
       "id": "6848cfdcbd7b98a3",
@@ -778,7 +787,8 @@
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17",
-      "deadlineChecked": true
+      "deadlineChecked": true,
+      "kind": "exemption"
     },
     {
       "id": "e8251bd2681a5b50",
@@ -801,7 +811,8 @@
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17",
-      "deadlineChecked": true
+      "deadlineChecked": true,
+      "kind": "exemption"
     },
     {
       "id": "6f148ed952cf08db",
@@ -824,7 +835,8 @@
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17",
-      "deadlineChecked": true
+      "deadlineChecked": true,
+      "kind": "exemption"
     },
     {
       "id": "924668b8d9f50460",
@@ -847,7 +859,16 @@
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17",
-      "deadlineChecked": true
+      "deadlineChecked": true,
+      "kind": "exemption"
     }
-  ]
+  ],
+  "kindLabels": {
+    "tender": "מכרז",
+    "exemption": "פטור ממכרז",
+    "intent": "כוונת התקשרות",
+    "rfi": "בקשת מידע",
+    "call": "קול קורא",
+    "framework": "הסכם מסגרת"
+  }
 }

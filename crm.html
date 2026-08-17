@@ -1414,6 +1414,8 @@ body.logged-in #ai-fab{display:flex}
 .rdr-pill.mute{background:rgba(107,120,153,.14);color:var(--text3);border-color:rgba(107,120,153,.3)}
 .rdr-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;align-items:center}
 .rdr-tag{font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:11px;white-space:nowrap}
+.rdr-kindtag{font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:11px;white-space:nowrap;
+  background:rgba(139,92,246,.16);color:#a78bfa;border:1px solid rgba(139,92,246,.42)}
 .rdr-kw{font-size:9px;color:var(--text3);background:rgba(10,15,30,.6);border:1px solid rgba(45,64,112,.6);padding:2px 7px;border-radius:9px}
 .rdr-cact{display:flex;gap:5px;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid rgba(45,64,112,.45);flex-wrap:wrap}
 .rdr-pick{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text2);cursor:pointer;user-select:none}
@@ -7022,6 +7024,12 @@ async function rTenderRadar(){
   _radarRender();
 }
 function radarReload(){ _radar=null; _radarErr=''; _radarPick.clear(); rTenderRadar(); }
+/** חיפוש ממוקד לדומיין אחד — נוחת על עמוד המכרזים של הרשות ולא על דף הבית */
+function _tendersSearchUrl(siteUrl){
+  let host='';
+  try{ host=new URL(siteUrl).host; }catch(e){ return siteUrl; }
+  return 'https://www.google.com/search?q='+encodeURIComponent('site:'+host+' מכרזים');
+}
 function _radarTopic(id){ return (_radar&&_radar.topics&&_radar.topics[id])||{label:id,icon:'•',color:'#c8a96e'}; }
 /** האם המכרז כבר קיים בטבלת המכרזים — לפי מזהה הראדאר שנשמר ברשומה, ובגיבוי לפי שם.
     לא מזהים לפי הקישור: יש מקורות שבהם כמה מכרזים מפנים לאותו דף רשימה,
@@ -7143,6 +7151,9 @@ function _radarRender(){
     const tags=(t.topics||[]).map(id=>{const m=_radarTopic(id);
       return `<span class="rdr-tag" style="background:${m.color}22;color:${m.color};border:1px solid ${m.color}55">${m.icon} ${esc(m.label)}</span>`}).join('');
     const kws=(t.matched||[]).slice(0,6).map(k=>`<span class="rdr-kw">${esc(k)}</span>`).join('');
+    // סוג הפרסום — פטור ממכרז או קול קורא אינם מכרז פומבי להגשה, וחשוב לדעת לפני שנכנסים
+    const kindLbl=((_radar&&_radar.kindLabels)||{})[t.kind]||'';
+    const kindTag=(t.kind&&t.kind!=='tender'&&kindLbl)?`<span class="rdr-kindtag">${esc(kindLbl)}</span>`:'';
     return `<div class="rdr-card ${hidden?'dim':''}" style="border-right-color:${m0.color}">
       <div class="rdr-ctop">
         <div class="rdr-ctitle">${u?`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t.title)}</a>`:esc(t.title)}</div>
@@ -7155,7 +7166,7 @@ function _radarRender(){
         <span>מקור: <b>${esc(t.sourceName||t.source||'–')}</b></span>
         <span>רלוונטיות: <b>${t.score||0}</b></span>
       </div>
-      <div class="rdr-tags">${pill}${tags}${kws}</div>
+      <div class="rdr-tags">${pill}${kindTag}${tags}${kws}</div>
       <div class="rdr-cact">
         ${inCrm?'<span class="rdr-incrm">✓ במערכת</span>'
                :`<label class="rdr-pick"><input type="checkbox" ${_radarPick.has(t.id)?'checked':''} onchange="_radarTogglePick('${esc(t.id)}',this.checked)"> בחר</label>
@@ -7188,7 +7199,9 @@ function _radarRender(){
       הקישור "חיפוש ידני" פותח את דף המכרזים שלו לבדיקה.</p></details>`:'';
 
   const auths=(_radar.manualAuthorities||[]).map(a=>{const u=safeUrl(a.url);
-    return u?`<a class="rdr-mlink" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(a.name)}</a>`:''}).join('');
+    // הקישור מוביל לעמוד המכרזים של הרשות ולא לדף הבית — האתרים חוסמים סריקה
+    // ולכן אין בידינו את הנתיב, וחיפוש מתוחם לדומיין נוחת עליו בלחיצה אחת
+    return u?`<a class="rdr-mlink" href="${esc(_tendersSearchUrl(u))}" target="_blank" rel="noopener noreferrer" title="חיפוש עמוד המכרזים באתר ${esc(a.name)}">${esc(a.name)}<small>מכרזים ↗</small></a>`:''}).join('');
   const authPanel=auths?`<details class="rdr-panel"><summary>🏛️ רשויות מקומיות – בדיקה ידנית <span style="font-size:10.5px;font-weight:400;color:var(--text3)">— ${(_radar.manualAuthorities||[]).length} רשויות</span></summary>
     <p style="font-size:11px;color:var(--text2);margin:12px 0 10px;line-height:1.7">אתרי הרשויות האלה חוסמים סריקה אוטומטית או מסרבים חיבור מכתובות שרת. הקישורים פותחים את אתר הרשות לבדיקה ידנית מהירה.</p>
     <div class="rdr-mlinks">${auths}</div></details>`:'';

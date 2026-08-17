@@ -142,6 +142,8 @@ option{background:#111a2e;color:var(--text)}
 .pill.mute{background:rgba(107,120,153,.14);color:var(--text3);border-color:rgba(107,120,153,.3)}
 .tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;align-items:center}
 .tag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:11px;white-space:nowrap}
+.rdr-kindtag{font-size:10px;font-weight:800;padding:3px 9px;border-radius:12px;white-space:nowrap;
+  background:rgba(139,92,246,.16);color:#a78bfa;border:1px solid rgba(139,92,246,.42)}
 .kwtag{font-size:9.5px;color:var(--text3);background:rgba(10,15,30,.6);border:1px solid rgba(45,64,112,.6);padding:2px 8px;border-radius:9px}
 .cact{display:flex;gap:6px;align-items:center;margin-top:11px;padding-top:10px;border-top:1px solid rgba(45,64,112,.45);flex-wrap:wrap}
 .cact .btn{font-size:11px;padding:5px 11px}
@@ -561,6 +563,11 @@ function cardHtml(t){
   const kwTags = (t.matched || []).slice(0, 6)
     .map(k => `<span class="kwtag">${esc(k)}</span>`).join('');
 
+  // סוג הפרסום — לא כל מה שמתפרסם באזור המכרזים הוא מכרז פומבי להגשה
+  const kindLabel = (DATA.kindLabels || {})[t.kind] || '';
+  const kindTag = (t.kind && t.kind !== 'tender' && kindLabel)
+    ? `<span class="rdr-kindtag">${esc(kindLabel)}</span>` : '';
+
   return `
   <div class="card ${isHidden ? 'dim' : ''}" style="border-right-color:${color}">
     <div class="ctop">
@@ -576,7 +583,7 @@ function cardHtml(t){
       <span>מקור: <b>${esc(t.sourceName || t.source || '–')}</b></span>
       <span>רלוונטיות: <b>${t.score || 0}</b></span>
     </div>
-    <div class="tags">${deadlinePill(t)}${topicTags}${kwTags}</div>
+    <div class="tags">${deadlinePill(t)}${kindTag}${topicTags}${kwTags}</div>
     <div class="cact">
       <label class="pick"><input type="checkbox" data-pick="${esc(t.id)}" ${picked.has(t.id) ? 'checked' : ''}> בחר</label>
       ${url ? `<a class="btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer">↗ פתח במקור</a>` : ''}
@@ -643,6 +650,13 @@ function renderSources(){
     </p>`;
 }
 
+/** חיפוש ממוקד לדומיין אחד — נוחת על עמוד המכרזים של הרשות ולא על דף הבית */
+function tendersSearchUrl(siteUrl){
+  let host = '';
+  try { host = new URL(siteUrl).host; } catch(_) { return siteUrl; }
+  return 'https://www.google.com/search?q=' + encodeURIComponent('site:' + host + ' מכרזים');
+}
+
 function renderAuthorities(){
   const list = DATA.manualAuthorities || [];
   if(!list.length) return;
@@ -651,7 +665,12 @@ function renderAuthorities(){
   $('authlinks').innerHTML = list.map(a => {
     const u = safeUrl(a.url);
     if(!u) return '';
-    return `<a class="mlink" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(a.name)}</a>`;
+    // הקישור הראשי מוביל לעמוד המכרזים של הרשות ולא לדף הבית: חיפוש ממוקד באתר.
+    // אין לנו את הנתיב המדויק (האתרים חוסמים סריקה), וחיפוש מתוחם לדומיין הוא
+    // הדרך היציבה ביותר לנחות על עמוד המכרזים בלחיצה אחת.
+    return `<a class="mlink" href="${esc(tendersSearchUrl(u))}" target="_blank" rel="noopener noreferrer"
+       title="חיפוש עמוד המכרזים באתר ${esc(a.name)}">${esc(a.name)}
+       <small>מכרזים ↗ · <span onclick="event.preventDefault();event.stopPropagation();window.open('${esc(u)}','_blank','noopener')" style="text-decoration:underline;cursor:pointer">דף הבית</span></small></a>`;
   }).join('');
 }
 

@@ -55,7 +55,10 @@ function tenderLine(data, item) {
   const when = item.deadlineAt
     ? `${fmtDate(item.deadlineAt)}${dl === 0 ? ' — היום!' : dl === 1 ? ' — מחר' : ` — בעוד ${dl} ימים`}`
     : 'לא אותר';
-  const lines = [`- **[${item.title}](${item.url})**`];
+  // סוג הפרסום מצוין במפורש: הודעת פטור ממכרז אינה מכרז פומבי להגשה
+  const kind = (data.kindLabels || {})[item.kind];
+  const kindTxt = (item.kind && item.kind !== 'tender' && kind) ? ` _(${kind})_` : '';
+  const lines = [`- **[${item.title}](${item.url})**${kindTxt}`];
   lines.push(`  - מפרסם: ${item.publisher || item.sourceName}${item.tenderNumber ? ` | מס׳ מכרז: ${item.tenderNumber}` : ''}`);
   lines.push(`  - מועד הגשה: ${when}`);
   return lines.join('\n');

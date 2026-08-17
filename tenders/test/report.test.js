@@ -128,3 +128,14 @@ test('מכרז שנסגר בקרוב וגם חדש מופיע בשני המקט�
   assert.ok(body.includes('⏰ נסגרים בשבוע הקרוב (1)'));
   assert.ok(body.includes('🆕 חדשים בסריקה (1)'));
 });
+
+test('סוג הפרסום מצוין בדיווח — הודעת פטור אינה מוצגת כמכרז', () => {
+  const data = { ...DATA_SOON, kindLabels: { tender: 'מכרז', exemption: 'פטור ממכרז', call: 'קול קורא' } };
+  data.tenders = [
+    { ...DATA_SOON.tenders[0], kind: 'exemption' },
+    { ...DATA_SOON.tenders[1], kind: 'tender' }
+  ];
+  const body = Rep.issueBody(data, []);
+  assert.ok(body.includes('_(פטור ממכרז)_'), 'הודעת פטור מסומנת בדיווח');
+  assert.ok(!body.includes('_(מכרז)_'), 'מכרז רגיל אינו מקבל תווית מיותרת');
+});

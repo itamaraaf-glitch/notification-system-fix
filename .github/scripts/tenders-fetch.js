@@ -594,6 +594,7 @@ async function main() {
     generatedAt: new Date().toISOString(),
     generatedDate: today,
     topics: Object.fromEntries(Object.entries(kw.topics).map(([id, t]) => [id, { label: t.label, icon: t.icon, color: t.color }])),
+    kindLabels: KIND_LABELS,
     manualLinks: cfg.manualLinks || [],
     manualAuthorities: cfg.manualAuthorities || [],
     counts: summarize(merged),
@@ -690,6 +691,32 @@ async function enrichDeadlines(records) {
   console.error(`\n🔎 העשרת מועדים: נבדקו ${targets.length} דפי מכרז, נמצאו ${filled} מועדי הגשה`);
 }
 
+/**
+ * סוג הפרסום: לא כל מה שמתפרסם באזור המכרזים הוא מכרז פומבי להגשה.
+ * בסריקה אמיתית כל עשר הרשומות של רשות שדות התעופה היו תחת
+ * /exemption-notifications/ — הודעות על פטור ממכרז, שבהן הרשות מודיעה על כוונה
+ * להתקשר עם ספק בלי מכרז. הצגתן כ"מכרז" מטעה, ולכן הסוג מזוהה ומוצג בממשק.
+ */
+const KIND_RULES = [
+  ['exemption', /(פטור\s*ממכרז|התקשרות\s*בפטור|exemption)/i],
+  ['intent',    /(כוונה\s*להתקשר|הודעה\s*על\s*התקשרות|intent[-_]to)/i],
+  ['rfi',       /(בקשה\s*לקבלת\s*מידע|\bRFI\b|request[-_]for[-_]information)/i],
+  ['call',      /(קול\s*קורא)/],
+  ['framework', /(הסכם\s*מסגרת|מכרז\s*מסגרת)/]
+];
+const KIND_LABELS = {
+  tender: 'מכרז', exemption: 'פטור ממכרז', intent: 'כוונת התקשרות',
+  rfi: 'בקשת מידע', call: 'קול קורא', framework: 'הסכם מסגרת'
+};
+function detectKind(title, url) {
+  let path = String(url || '');
+  try { path = decodeURIComponent(new URL(url).pathname); } catch (_) { /* כתובת לא תקנית */ }
+  for (const [kind, re] of KIND_RULES) {
+    if (re.test(title || '') || re.test(path)) return kind;
+  }
+  return 'tender';
+}
+
 function buildRecord(item, source, kw) {
   const haystack = `${item.title} ${item.summary || ''} ${item.context || ''}`;
   const titleAndSummary = `${item.title} ${item.summary || ''}`;
@@ -726,6 +753,7 @@ function buildRecord(item, source, kw) {
     publisher: item.publisher || source.name,
     tenderNumber,
     publishedAt: item.publishedAt || '',
+    kind: detectKind(item.title, item.url),
     deadlineAt,
     summary: (item.summary || '').trim(),
     topics: cls.topics,
@@ -810,7 +838,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, harvestAnchors, findTenderLinks, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, harvestAnchors, findTenderLinks, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
