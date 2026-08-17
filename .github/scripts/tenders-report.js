@@ -3,7 +3,7 @@
 /**
  * דיווח על תוצאות ראדאר המכרזים.
  *   --summary : מדפיס סיכום Markdown (לשימוש ב-GITHUB_STEP_SUMMARY)
- *   --issue   : פותח Issue עם המכרזים החדשים (רק אם נמצאו חדשים)
+ *   --issue   : פותח Issue עם המכרזים החדשים ועם אלה שנסגרים בקרוב
  *
  * דורש GH_TOKEN ו-REPO עבור --issue.
  */
@@ -38,6 +38,27 @@ function topicLabels(data, topics) {
     const t = data.topics && data.topics[id];
     return t ? `${t.icon} ${t.label}` : id;
   }).join(' · ');
+}
+
+/** מכרזים פתוחים שמועד ההגשה שלהם בתוך X ימים — כולל כאלה שנמצאו בסריקות קודמות */
+function closingSoon(data, days) {
+  return (data.tenders || [])
+    .filter(t => {
+      const d = daysLeft(t.deadlineAt);
+      return d !== null && d >= 0 && d <= days;
+    })
+    .sort((a, b) => daysLeft(a.deadlineAt) - daysLeft(b.deadlineAt));
+}
+
+function tenderLine(data, item) {
+  const dl = daysLeft(item.deadlineAt);
+  const when = item.deadlineAt
+    ? `${fmtDate(item.deadlineAt)}${dl === 0 ? ' — היום!' : dl === 1 ? ' — מחר' : ` — בעוד ${dl} ימים`}`
+    : 'לא אותר';
+  const lines = [`- **[${item.title}](${item.url})**`];
+  lines.push(`  - מפרסם: ${item.publisher || item.sourceName}${item.tenderNumber ? ` | מס׳ מכרז: ${item.tenderNumber}` : ''}`);
+  lines.push(`  - מועד הגשה: ${when}`);
+  return lines.join('\n');
 }
 
 function summary(data) {
@@ -83,7 +104,22 @@ function summary(data) {
 
 function issueBody(data, fresh) {
   const lines = [];
-  lines.push(`נמצאו **${fresh.length}** מכרזים חדשים הרלוונטיים לתקשורת, ציוד תקשורת, אבטחת מידע ו-IT.`);
+
+  // מקטע ראשון: מה שנסגר בשבוע הקרוב — המידע הדחוף ביותר, גם אם המכרז נמצא בסריקה קודמת.
+  // בלי זה מכרז שנמצא לפני שבוע ונסגר מחר לא היה מקבל שום התראה.
+  const soon = closingSoon(data, 7);
+  if (soon.length) {
+    lines.push(`## ⏰ נסגרים בשבוע הקרוב (${soon.length})`);
+    lines.push('');
+    soon.forEach(t => lines.push(tenderLine(data, t)));
+    lines.push('');
+  }
+
+  if (fresh.length) {
+    lines.push(`## 🆕 חדשים בסריקה (${fresh.length})`);
+  } else {
+    lines.push('_בסריקה זו לא נמצאו מכרזים חדשים._');
+  }
   lines.push('');
 
   const groups = new Map();
@@ -126,14 +162,17 @@ function issueBody(data, fresh) {
   return lines.join('\n');
 }
 
-async function openIssue(data, fresh) {
+async function openIssue(data, fresh, urgent) {
   const token = process.env.GH_TOKEN;
   const repo = process.env.REPO;
   if (!token || !repo) {
     console.error('חסרים GH_TOKEN או REPO — לא נפתח Issue');
     return;
   }
-  const title = `📡 ראדאר מכרזים — ${fresh.length} מכרזים חדשים (${data.generatedDate})`;
+  const parts = [];
+  if (fresh.length) parts.push(`${fresh.length} חדשים`);
+  if ((urgent || []).length) parts.push(`${urgent.length} נסגרים בקרוב`);
+  const title = `📡 ראדאר מכרזים — ${parts.join(', ')} (${data.generatedDate})`;
   const res = await fetch(`https://api.github.com/repos/${repo}/issues`, {
     method: 'POST',
     headers: {
@@ -169,11 +208,14 @@ async function main() {
 
   if (MODE_ISSUE) {
     const fresh = (data.tenders || []).filter(t => t.firstSeen === data.generatedDate);
-    if (!fresh.length) {
-      console.error('אין מכרזים חדשים — לא נפתח Issue');
+    // דיווח נשלח גם כשאין ממצא חדש אבל יש מכרז שנסגר בשלושת הימים הקרובים —
+    // תזכורת על מועד הגשה מתקרב שווה לא פחות מגילוי חדש
+    const urgent = closingSoon(data, 3);
+    if (!fresh.length && !urgent.length) {
+      console.error('אין מכרזים חדשים ואין מכרז שנסגר בקרוב — לא נפתח Issue');
       return;
     }
-    await openIssue(data, fresh);
+    await openIssue(data, fresh, urgent);
   }
 }
 
@@ -184,4 +226,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { summary, issueBody, fmtDate, daysLeft, topicLabels };
+module.exports = { summary, issueBody, closingSoon, tenderLine, fmtDate, daysLeft, topicLabels };

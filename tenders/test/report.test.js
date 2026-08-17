@@ -63,7 +63,7 @@ test('הסיכום כולל מונים, פירוט נושאים ובריאות �
 
 test('גוף ה-Issue מקבץ לפי נושא ומציג מועדים וקישורים', () => {
   const body = Rep.issueBody(DATA, DATA.tenders);
-  assert.ok(body.includes('**2** מכרזים חדשים'));
+  assert.ok(body.includes('🆕 חדשים בסריקה (2)'));
   assert.ok(body.includes('### 📡 תקשורת'));
   assert.ok(body.includes('### 🛡️ אבטחת מידע'));
   assert.ok(body.includes('[מכרז 14/2026 – אספקת שירותי תקשורת נתונים](https://example.gov.il/1)'));
@@ -84,4 +84,47 @@ test('הסיכום לא נשבר כשאין מקורות ואין נושאים',
   const md = Rep.summary({ generatedDate: today, topics: {}, counts: {}, sources: [], tenders: [] });
   assert.ok(md.includes('ראדאר מכרזים'));
   assert.ok(!md.includes('undefined'));
+});
+
+const DATA_SOON = {
+  generatedDate: today,
+  topics: DATA.topics,
+  counts: { total: 3, new: 0, open: 3, closingSoon: 2, byTopic: { telecom: 2 } },
+  sources: [{ id: 's', name: 'מקור', ok: true, scanned: 10, count: 3 }],
+  tenders: [
+    { id: 'a', title: 'מכרז נסגר מחר – שירותי תקשורת', url: 'https://x.gov.il/1', publisher: 'עירייה',
+      tenderNumber: '9/2026', deadlineAt: new Date(Date.now() + 1 * 86400000).toISOString().slice(0, 10),
+      topics: ['telecom'], score: 8, firstSeen: '2020-01-01', lastSeen: today },
+    { id: 'b', title: 'מכרז נסגר בעוד 5 ימים – ציוד תקשורת', url: 'https://x.gov.il/2', publisher: 'עירייה',
+      deadlineAt: new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
+      topics: ['telecom'], score: 7, firstSeen: '2020-01-01', lastSeen: today },
+    { id: 'c', title: 'מכרז רחוק – מחשוב', url: 'https://x.gov.il/3', publisher: 'עירייה',
+      deadlineAt: new Date(Date.now() + 60 * 86400000).toISOString().slice(0, 10),
+      topics: ['it'], score: 6, firstSeen: '2020-01-01', lastSeen: today }
+  ]
+};
+
+test('closingSoon מחזיר רק מכרזים פתוחים בתוך החלון, לפי סדר דחיפות', () => {
+  const soon = Rep.closingSoon(DATA_SOON, 7);
+  assert.deepStrictEqual(soon.map(t => t.id), ['a', 'b']);
+  assert.deepStrictEqual(Rep.closingSoon(DATA_SOON, 3).map(t => t.id), ['a']);
+  assert.deepStrictEqual(Rep.closingSoon(DATA_SOON, 0), []);
+});
+
+test('גוף ה-Issue מציג "נסגרים בשבוע הקרוב" גם כשאין מכרזים חדשים', () => {
+  const body = Rep.issueBody(DATA_SOON, []);
+  assert.ok(body.includes('⏰ נסגרים בשבוע הקרוב (2)'), 'מקטע הדחיפות מופיע');
+  assert.ok(body.indexOf('נסגרים בשבוע הקרוב') < body.indexOf('לא נמצאו מכרזים חדשים'),
+    'הדחוף מופיע לפני הודעת "אין חדשים"');
+  assert.ok(body.includes('— מחר'), 'מכרז שנסגר מחר מסומן כך');
+  assert.ok(body.includes('בעוד 5 ימים'));
+  assert.ok(!body.includes('מכרז רחוק'), 'מכרז מחוץ לחלון אינו במקטע הדחיפות');
+  assert.ok(body.includes('_בסריקה זו לא נמצאו מכרזים חדשים._'));
+});
+
+test('מכרז שנסגר בקרוב וגם חדש מופיע בשני המקטעים', () => {
+  const fresh = [{ ...DATA_SOON.tenders[0], firstSeen: today }];
+  const body = Rep.issueBody({ ...DATA_SOON, tenders: fresh }, fresh);
+  assert.ok(body.includes('⏰ נסגרים בשבוע הקרוב (1)'));
+  assert.ok(body.includes('🆕 חדשים בסריקה (1)'));
 });

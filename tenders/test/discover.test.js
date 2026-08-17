@@ -120,3 +120,35 @@ test('חריגה מתקציב הזמן עוצרת את הסריקה ומדווח
   assert.strictEqual(payload.counts.total, (stored.tenders || []).length,
     'המכרזים שבמאגר נשמרים גם כשאף מקור לא נסרק');
 });
+
+test('מועד הגשה נשלף מדף המכרז כשהוא חסר בדף הרשימה', async () => {
+  const DETAIL = `<h1>מכרז פומבי 14/2026</h1><dl>
+    <dt>תאריך פרסום</dt><dd>01/08/2026</dd>
+    <dt>מועד אחרון להגשת הצעות</dt><dd>15/09/2026 בשעה 12:00</dd></dl>`;
+  const srv = await startServer({ '/t/14': DETAIL });
+  const base = `http://127.0.0.1:${srv.address().port}`;
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    const rec = { id: 'x', title: 'מכרז פומבי 14/2026 – אספקת ציוד תקשורת', url: base + '/t/14',
+                  deadlineAt: '', publishedAt: '', tenderNumber: '', lastSeen: today };
+    await R.enrichDeadlines([rec]);
+    assert.strictEqual(rec.deadlineAt, '2026-09-15', 'המועד נשלף מדף המכרז');
+    assert.strictEqual(rec.deadlineFrom, 'detail', 'מסומן שהמועד הגיע מדף המכרז ולא מדף הרשימה');
+    assert.strictEqual(rec.publishedAt, '2026-08-01');
+    assert.strictEqual(rec.deadlineChecked, true, 'מסומן כנבדק כדי לא לחזור על כך יום־יום');
+  } finally { srv.close(); }
+});
+
+test('העשרה אינה חוזרת על מכרז שכבר נבדק, ולא נוגעת במי שיש לו מועד', async () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const srv = await startServer({});   // כל בקשה תיכשל — אם תישלח בקשה, ניכשל
+  const base = `http://127.0.0.1:${srv.address().port}`;
+  try {
+    const checked = { id: 'a', title: 'א', url: base + '/x', deadlineAt: '', deadlineChecked: true, lastSeen: today };
+    const hasDl  = { id: 'b', title: 'ב', url: base + '/x', deadlineAt: '2026-09-01', lastSeen: today };
+    const oldRec = { id: 'c', title: 'ג', url: base + '/x', deadlineAt: '', lastSeen: '2020-01-01' };
+    await R.enrichDeadlines([checked, hasDl, oldRec]);
+    assert.strictEqual(hasDl.deadlineAt, '2026-09-01', 'מועד קיים לא נדרס');
+    assert.ok(!oldRec.deadlineChecked, 'רשומה שלא נראתה בסריקה הזו לא נבדקת');
+  } finally { srv.close(); }
+});

@@ -589,6 +589,7 @@ async function main() {
       .map(s => [s.id, s])
   );
   const merged = mergeWithHistory([...found.values()], prevById, activeSources, kw);
+  await enrichDeadlines(merged);
   const payload = {
     generatedAt: new Date().toISOString(),
     generatedDate: today,
@@ -648,6 +649,44 @@ async function debugSource(cfg, kw) {
     }
     await sleep(POLITE_DELAY_MS);
   }
+}
+
+/**
+ * העשרת מועד ההגשה מדף המכרז עצמו.
+ *
+ * בדפי רשימה רבים מועד ההגשה פשוט לא מופיע — הוא נמצא רק בעמוד המכרז. בלי זה
+ * רוב הרשומות מגיעות בלי מועד, וממילא אי אפשר לדעת מה נסגר בשבוע הקרוב, שזה
+ * המידע המעשי ביותר. לכן לכל מכרז חדש שאין לו מועד נכנסים פעם אחת לדף שלו.
+ * הבדיקה נעשית פעם אחת בלבד לכל מכרז (deadlineChecked), כדי לא לחזור על כך יום־יום.
+ */
+async function enrichDeadlines(records) {
+  const limit = +(process.env.TENDERS_ENRICH_LIMIT || 25);
+  const targets = records.filter(r =>
+    r.lastSeen === today && !r.deadlineAt && !r.deadlineChecked && r.url).slice(0, limit);
+  if (!targets.length) return;
+
+  let filled = 0;
+  for (const rec of targets) {
+    // משאירים מרווח בתקציב לשמירה ולדיווח
+    if (budgetLeft() < 45000) break;
+    rec.deadlineChecked = true;
+    try {
+      const text = stripTags(await fetchText(rec.url)).slice(0, 30000);
+      const dl = dateAfterHint(text, DEADLINE_HINTS);
+      // תאריך שחלף מזמן הוא כמעט תמיד שגיאת חילוץ מארכיון שמופיע באותו דף
+      if (dl && daysBetween(today, dl) > -400) { rec.deadlineAt = dl; rec.deadlineFrom = 'detail'; filled++; }
+      if (!rec.publishedAt) {
+        const pub = dateAfterHint(text, PUBLISH_HINTS);
+        if (pub) rec.publishedAt = pub;
+      }
+      if (!rec.tenderNumber) {
+        const num = extractTenderNumber(text.slice(0, 3000));
+        if (num) rec.tenderNumber = num;
+      }
+    } catch (_) { /* דף מכרז שלא נטען — נשאר בלי מועד */ }
+    await sleep(POLITE_DELAY_MS);
+  }
+  console.error(`\n🔎 העשרת מועדים: נבדקו ${targets.length} דפי מכרז, נמצאו ${filled} מועדי הגשה`);
 }
 
 function buildRecord(item, source, kw) {
@@ -765,7 +804,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, harvestAnchors, findTenderLinks, adapterDiscover, adapterHtml, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, harvestAnchors, findTenderLinks, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
