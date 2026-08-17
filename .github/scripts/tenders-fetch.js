@@ -159,6 +159,13 @@ function looksLikeTender(text, kw) {
   return (kw.tenderGate || []).some(g => termRegex(g).test(text));
 }
 
+/** האם נתיב הקישור מעיד על עמוד מכרז — מבדיל מכרזים מקישורי ניווט באתר */
+const TENDER_URL_RE = /(tender|michraz|bids?|rfp|rfq|מכרז)/i;
+function looksLikeTenderUrl(url) {
+  try { return TENDER_URL_RE.test(decodeURIComponent(new URL(url).pathname + new URL(url).search)); }
+  catch (_) { return TENDER_URL_RE.test(String(url)); }
+}
+
 /* ───────────────────────── חילוץ תאריכים ומספרי מכרז ───────────────────────── */
 
 const DATE_ISO = /(\d{4})-(\d{1,2})-(\d{1,2})/;
@@ -253,9 +260,11 @@ function harvestAnchors(html, baseUrl) {
     if (seen.has(dedupe)) continue;
     seen.add(dedupe);
 
-    // חלון הקשר: מעט לפני הקישור והרבה אחריו (תאריכים מופיעים בדרך כלל בהמשך השורה/הכרטיס)
-    const start = Math.max(0, m.index - 250);
-    const context = stripTags(html.slice(start, m.index + m[0].length + 450));
+    // חלון הקשר: מעט לפני הקישור והרבה אחריו (תאריכים מופיעים בהמשך השורה/הכרטיס).
+    // החלון נמדד ב-HTML גולמי ואחר כך מנוקה מתגיות — בדפים עם מארקאפ עתיר מחלקות ותכונות
+    // חלון קטן "נאכל" כולו על ידי התגיות, והתאריכים שבתאים הבאים של השורה נופלים מחוצה לו.
+    const start = Math.max(0, m.index - 300);
+    const context = stripTags(html.slice(start, m.index + m[0].length + 3000)).slice(0, 900);
 
     out.push({ title, url: abs, context });
   }
@@ -448,7 +457,11 @@ async function main() {
     await sleep(POLITE_DELAY_MS);
   }
 
-  const merged = mergeWithHistory([...found.values()], prevById);
+  // סריקת מקור בודד לא אמורה למחוק את ההיסטוריה של המקורות האחרים
+  const activeSources = ONLY_SOURCE
+    ? new Set((cfg.sources || []).filter(s => s.enabled !== false).map(s => s.id))
+    : new Set(sources.map(s => s.id));
+  const merged = mergeWithHistory([...found.values()], prevById, activeSources);
   const payload = {
     generatedAt: new Date().toISOString(),
     generatedDate: today,
@@ -514,8 +527,15 @@ function buildRecord(item, source, kw) {
   const haystack = `${item.title} ${item.summary || ''} ${item.context || ''}`;
   const titleAndSummary = `${item.title} ${item.summary || ''}`;
 
-  // שער "האם זה בכלל מכרז" — נדרש רק בדפים שאינם ייעודיים למכרזים
-  if (!source.allTenders && !looksLikeTender(titleAndSummary, kw)) return null;
+  // שער "האם זה בכלל מכרז".
+  // בדף שאינו ייעודי למכרזים נדרש ניסוח מזהה בכותרת.
+  // גם בדף ייעודי (allTenders) לא מספיק שהכותרת תכיל מילת מפתח: דפי מכרזים כוללים גם
+  // תפריטי ניווט, ובאבחון על אתר רשות שדות התעופה קישורי ניווט כמו "אלקטרוניקה וסלולר"
+  // ו"מערכת ניהול סביבתי" נכנסו לתוצאות. לכן נדרש ניסוח מזהה בכותרת או נתיב קישור של מכרז.
+  const gatePassed = source.allTenders
+    ? (looksLikeTender(titleAndSummary, kw) || looksLikeTenderUrl(item.url))
+    : looksLikeTender(titleAndSummary, kw);
+  if (!gatePassed) return null;
 
   // הסיווג נעשה על הכותרת והתקציר בלבד, כדי שהקשר הדף לא ייצור התאמות שווא
   const cls = classify(titleAndSummary, kw);
@@ -549,7 +569,7 @@ function buildRecord(item, source, kw) {
   };
 }
 
-function mergeWithHistory(current, prevById) {
+function mergeWithHistory(current, prevById, activeSources) {
   const out = new Map();
 
   for (const rec of current) {
@@ -562,6 +582,9 @@ function mergeWithHistory(current, prevById) {
   // רשומות שלא נראו בריצה הזו — נשמרות עד שהן מתיישנות או שמועד ההגשה חלף
   for (const [id, prev] of prevById) {
     if (out.has(id)) continue;
+    // מקור שנוטרל או הוסר מהתצורה — הרשומות שלו יורדות מיד ולא ממתינות KEEP_DAYS,
+    // אחרת נטרול מקור לא היה משפיע על התוצאות במשך שבועות
+    if (activeSources && !activeSources.has(prev.source)) continue;
     const age = daysBetween(prev.lastSeen || prev.firstSeen || today, today);
     const deadlinePassed = prev.deadlineAt && daysBetween(today, prev.deadlineAt) < -14;
     if (deadlinePassed) continue;
@@ -602,7 +625,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, harvestAnchors, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, harvestAnchors, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS

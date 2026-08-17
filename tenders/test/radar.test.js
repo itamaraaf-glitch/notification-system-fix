@@ -200,3 +200,48 @@ test('סינון מקצה לקצה על דף רשימה מציאותי — נש�
   assert.strictEqual(equipment.deadlineAt, '2026-09-15');
   assert.ok(equipment.matched.length > 0, 'נשמרות מילות המפתח שהתאימו');
 });
+
+test('רשומות של מקור שנוטרל יורדות מיד ולא ממתינות לתפוגת ההיסטוריה', () => {
+  const prev = new Map([
+    ['keep', { id: 'keep', source: 'active-src', title: 'נשמר', score: 5, topics: ['it'], firstSeen: '2020-01-01', lastSeen: new Date().toISOString().slice(0,10) }],
+    ['drop', { id: 'drop', source: 'disabled-src', title: 'יורד', score: 5, topics: ['it'], firstSeen: '2020-01-01', lastSeen: new Date().toISOString().slice(0,10) }]
+  ]);
+  const merged = R.mergeWithHistory([], prev, new Set(['active-src']));
+  assert.deepStrictEqual(merged.map(t => t.id), ['keep']);
+});
+
+test('בלי רשימת מקורות פעילים ההיסטוריה נשמרת כרגיל', () => {
+  const today = new Date().toISOString().slice(0,10);
+  const prev = new Map([['a', { id: 'a', source: 'x', title: 'א', score: 5, topics: ['it'], firstSeen: '2020-01-01', lastSeen: today }]]);
+  assert.strictEqual(R.mergeWithHistory([], prev).length, 1);
+});
+
+test('נתיב קישור של מכרז מזוהה, וקישורי ניווט באתר נדחים', () => {
+  assert.ok(R.looksLikeTenderUrl('https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007058/'));
+  assert.ok(R.looksLikeTenderUrl('https://www2.haifa.muni.il/Michrazim/Default.aspx'));
+  assert.ok(R.looksLikeTenderUrl('https://x.gov.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/123'));
+  assert.ok(!R.looksLikeTenderUrl('https://www.iaa.gov.il/airports/ben-gurion/businesses/electronics-and-cellular/'));
+  assert.ok(!R.looksLikeTenderUrl('https://www.iaa.gov.il/airports/ben-gurion/picturesbgn/'));
+});
+
+test('בדף מכרזים ייעודי קישור ניווט שמכיל מילת מפתח נדחה', () => {
+  const src = { id: 'iaa', name: 'רש"ת', allTenders: true };
+  // קישורי ניווט אמיתיים שנתפסו באבחון על אתר רשות שדות התעופה
+  assert.strictEqual(R.buildRecord({ title: 'אלקטרוניקה וסלולר', url: 'https://www.iaa.gov.il/airports/ben-gurion/businesses/electronics-and-cellular/', context: '' }, src, KW), null);
+  assert.strictEqual(R.buildRecord({ title: 'מערכת ניהול סביבתי', url: 'https://www.iaa.gov.il/environment-and-sustainability/environmental-management-systems/', context: '' }, src, KW), null);
+  // מכרז אמיתי מאותו אתר עובר
+  const real = R.buildRecord({ title: 'מכרז פומבי למתן שירותי תקשורת ומחשוב עבור רשות שדות התעופה', url: 'https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_200007058/', context: '' }, src, KW);
+  assert.ok(real && real.topics.length, 'מכרז אמיתי אמור לעבור את השער');
+});
+
+test('חלון ההקשר גדול דיו לתפוס תאריכים בתאים הבאים של שורת טבלה עתירת מארקאפ', () => {
+  // שורה בסגנון האתרים האמיתיים: כותרת ארוכה ואחריה מארקאפ עתיר תכונות, ואז תאי התאריכים
+  const html = `<tr><td scope="row"><a href="/tenders-and-contracts/tenders/log_1/">מכרז פומבי להתקשרות בחוזה מסגרת למתן שירותי תקשורת נתונים וסיבים אופטיים עבור רשות שדות התעופה</a>
+    <button type="button" class="btn d-lg-none js-toggle-row collapsed" data-bs-toggle="collapse" data-bs-target="#row-1" aria-expanded="false" aria-controls="row-1"><span class="visually-hidden">הצג פרטים</span></button></td>
+    <td class="text-nowrap d-none d-lg-table-cell"><span class="label">תאריך פרסום</span> 02/08/2026</td>
+    <td class="text-nowrap d-none d-lg-table-cell"><span class="label">תאריך אחרון להגשה</span> 17/09/2026</td></tr>`;
+  const a = R.harvestAnchors(html, 'https://www.iaa.gov.il/list')[0];
+  assert.ok(a.context.includes('17/09/2026'), 'תאריך ההגשה חייב להיכנס לחלון ההקשר');
+  assert.strictEqual(R.dateAfterHint(a.context, R.DEADLINE_HINTS), '2026-09-17');
+  assert.strictEqual(R.dateAfterHint(a.context, R.PUBLISH_HINTS), '2026-08-02');
+});
