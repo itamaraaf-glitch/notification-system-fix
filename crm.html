@@ -1365,6 +1365,81 @@ body.logged-in #ai-fab{display:flex}
   .tflow-steps{flex-wrap:wrap;justify-content:center;row-gap:12px;column-gap:10px;overflow:visible !important}
   .tflow-conn{display:none}
 }
+
+/* ─── ראדאר מכרזים: עיצוב הלשונית בתוך מסך המכרזים (זהה לעמוד הראדאר המלא) ─── */
+.rdr-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:8px 0 14px}
+.rdr-kpi{background:linear-gradient(145deg,var(--s2),rgba(20,28,50,.8));border:1px solid var(--border);
+  border-top:3px solid var(--gold);border-radius:13px;padding:12px 14px;cursor:pointer;
+  transition:transform .18s var(--expo),box-shadow .18s,border-color .18s}
+.rdr-kpi:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(0,0,0,.4)}
+.rdr-kpi.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 8px 22px rgba(200,169,110,.16)}
+.rdr-kpi .lb{font-size:10.5px;color:var(--text2);font-weight:500}
+.rdr-kpi .vl{font-size:24px;font-weight:800;line-height:1.15;margin-top:2px}
+.rdr-kpi .sb{font-size:9.5px;color:var(--text3);margin-top:1px}
+.rdr-kpi.k-new{border-top-color:var(--teal)} .rdr-kpi.k-new .vl{color:var(--teal)}
+.rdr-kpi.k-open{border-top-color:var(--blue)} .rdr-kpi.k-open .vl{color:var(--blue)}
+.rdr-kpi.k-soon{border-top-color:var(--red)} .rdr-kpi.k-soon .vl{color:var(--red)}
+
+.rdr-filters{background:linear-gradient(145deg,var(--s1),rgba(18,25,45,.78));border:1px solid var(--border);
+  border-radius:13px;padding:12px 14px;margin-bottom:14px}
+.rdr-frow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rdr-frow+.rdr-frow{margin-top:10px;padding-top:10px;border-top:1px solid rgba(45,64,112,.5)}
+.rdr-flabel{font-size:10.5px;color:var(--text3);font-weight:600;min-width:48px}
+.rdr-chip{font-size:11px;font-weight:700;cursor:pointer;color:var(--text2);background:rgba(10,15,30,.6);
+  border:1px solid var(--border2);border-radius:20px;padding:5px 12px;white-space:nowrap;
+  transition:transform .16s var(--expo),background .16s,color .16s,border-color .16s;display:inline-flex;align-items:center;gap:5px}
+.rdr-chip:hover{transform:translateY(-1px);color:var(--text)}
+.rdr-chip .cnt{font-size:9.5px;opacity:.8;font-weight:800}
+.rdr-tgl{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);cursor:pointer;user-select:none}
+.rdr-tgl input{accent-color:var(--gold);width:14px;height:14px;cursor:pointer}
+
+.rdr-cards{display:flex;flex-direction:column;gap:10px}
+.rdr-card{background:linear-gradient(145deg,var(--s2),rgba(18,26,48,.85));border:1px solid var(--border);
+  border-right:4px solid var(--gold);border-radius:13px;padding:12px 14px;
+  transition:transform .18s var(--expo),box-shadow .18s;animation:cardIn .3s var(--expo) both}
+.rdr-card:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(0,0,0,.45)}
+.rdr-card.dim{opacity:.5}
+.rdr-ctop{display:flex;align-items:flex-start;gap:9px}
+.rdr-ctitle{font-size:13.5px;font-weight:700;line-height:1.45;flex:1}
+.rdr-ctitle a{color:var(--text);text-decoration:none}
+.rdr-ctitle a:hover{color:var(--gold2)}
+.rdr-badge-new{font-size:8.5px;font-weight:800;padding:2px 7px;border-radius:11px;white-space:nowrap;
+  background:rgba(6,214,160,.16);color:var(--teal);border:1px solid rgba(6,214,160,.4)}
+.rdr-cmeta{display:flex;flex-wrap:wrap;gap:4px 13px;margin-top:7px;font-size:10.5px;color:var(--text2)}
+.rdr-cmeta b{color:var(--text);font-weight:600}
+.rdr-pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:12px;white-space:nowrap;border:1px solid transparent}
+.rdr-pill.crit{background:rgba(230,57,70,.16);color:#ff6b76;border-color:rgba(230,57,70,.4)}
+.rdr-pill.warn{background:rgba(244,162,97,.16);color:#f4a261;border-color:rgba(244,162,97,.4)}
+.rdr-pill.ok{background:rgba(6,214,160,.13);color:var(--teal);border-color:rgba(6,214,160,.35)}
+.rdr-pill.mute{background:rgba(107,120,153,.14);color:var(--text3);border-color:rgba(107,120,153,.3)}
+.rdr-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;align-items:center}
+.rdr-tag{font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:11px;white-space:nowrap}
+.rdr-kw{font-size:9px;color:var(--text3);background:rgba(10,15,30,.6);border:1px solid rgba(45,64,112,.6);padding:2px 7px;border-radius:9px}
+.rdr-cact{display:flex;gap:5px;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid rgba(45,64,112,.45);flex-wrap:wrap}
+.rdr-pick{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text2);cursor:pointer;user-select:none}
+.rdr-pick input{accent-color:var(--gold);width:14px;height:14px;cursor:pointer}
+.rdr-incrm{font-size:9px;font-weight:800;padding:3px 9px;border-radius:11px;
+  background:rgba(6,214,160,.14);color:var(--teal);border:1px solid rgba(6,214,160,.35)}
+
+.rdr-panel{background:linear-gradient(145deg,var(--s1),rgba(18,25,45,.78));border:1px solid var(--border);
+  border-radius:13px;padding:14px;margin-top:16px}
+.rdr-panel>summary{cursor:pointer;font-size:13px;font-weight:700;list-style:none;display:flex;align-items:center;gap:7px}
+.rdr-panel>summary::-webkit-details-marker{display:none}
+.rdr-panel>summary::after{content:'▾';margin-inline-start:auto;color:var(--text3);transition:transform .2s}
+.rdr-panel[open]>summary::after{transform:rotate(180deg)}
+.rdr-panel h4{font-size:13px;font-weight:700;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.rdr-mlinks{display:flex;flex-wrap:wrap;gap:7px}
+.rdr-mlink{font-size:11px;padding:6px 11px;border-radius:9px;background:rgba(10,15,30,.6);text-decoration:none;
+  border:1px solid var(--border2);color:var(--text2);transition:transform .16s var(--expo),border-color .16s,color .16s}
+.rdr-mlink:hover{transform:translateY(-2px);border-color:var(--gold);color:var(--gold2)}
+.rdr-mlink small{display:block;font-size:9px;color:var(--text3);margin-top:2px}
+.rdr-empty{text-align:center;padding:40px 18px;color:var(--text2);font-size:12px;line-height:1.85}
+.rdr-empty .ico{font-size:36px;opacity:.7;margin-bottom:10px}
+.rdr-empty h4{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;justify-content:center}
+.rdr-selbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px;padding:10px 13px;
+  background:linear-gradient(145deg,rgba(30,45,74,.96),rgba(16,24,44,.98));border:1px solid var(--gold);border-radius:12px}
+.rdr-selbar span{font-size:11.5px;font-weight:700}
+@media (max-width:640px){.rdr-kpi .vl{font-size:20px}.rdr-flabel{min-width:auto}}
 </style>
 </head>
 <body>
@@ -6883,16 +6958,20 @@ function rMeetingsArchive(){
 
 /* ═════ ראדאר מכרזים ═════
    קורא את ממצאי הסריקה היומית (tenders/data/tenders.json, נכתב ע"י workflow tenders-radar)
-   ומאפשר להוסיף מכרז שנמצא ישר לטבלת המכרזים — בלי ייבוא/ייצוא. */
+   ומאפשר להוסיף מכרז שנמצא ישר לטבלת המכרזים — בלי ייבוא/ייצוא.
+   העיצוב זהה לעמוד הראדאר המלא (tenders.html): אריחי סיכום, כרטיסים ופאנל בריאות מקורות. */
 let _radar=null,_radarErr='',_radarLoading=false;
-const _radarF={q:'',topics:new Set(),onlyOpen:false};
+const _radarF={q:'',topics:new Set(),source:'',sort:'deadline',onlyOpen:false,onlyNew:false,showHidden:false,kpi:''};
+let _radarPick=new Set();
+let _radarHidden=new Set((()=>{try{return JSON.parse(localStorage.getItem('crm_radar_hidden_v1'))||[]}catch(e){return[]}})());
+function _radarSaveHidden(){try{localStorage.setItem('crm_radar_hidden_v1',JSON.stringify([..._radarHidden]))}catch(e){}}
 
 async function rTenderRadar(){
   const box=document.getElementById('tenradar'); if(!box)return;
   if(_radar||_radarErr){_radarRender();return;}
   if(_radarLoading)return;
   _radarLoading=true;
-  box.innerHTML='<div style="padding:30px;text-align:center;color:var(--text2);font-size:12px">📡 טוען ממצאי ראדאר…</div>';
+  box.innerHTML='<div class="rdr-empty">📡 טוען ממצאי ראדאר…</div>';
   try{
     const r=await fetch('tenders/data/tenders.json?t='+Date.now(),{cache:'no-store'});
     if(!r.ok)throw new Error('HTTP '+r.status);
@@ -6902,7 +6981,7 @@ async function rTenderRadar(){
   _radarLoading=false;
   _radarRender();
 }
-function radarReload(){ _radar=null; _radarErr=''; rTenderRadar(); }
+function radarReload(){ _radar=null; _radarErr=''; _radarPick.clear(); rTenderRadar(); }
 function _radarTopic(id){ return (_radar&&_radar.topics&&_radar.topics[id])||{label:id,icon:'•',color:'#c8a96e'}; }
 /** האם המכרז כבר קיים בטבלת המכרזים — לפי מזהה הראדאר שנשמר ברשומה, ובגיבוי לפי שם.
     לא מזהים לפי הקישור: יש מקורות שבהם כמה מכרזים מפנים לאותו דף רשימה,
@@ -6911,116 +6990,238 @@ function _radarInCrm(t){
   const hit=x=>(x.radarId&&x.radarId===t.id)||(x.name&&x.name===t.title);
   return (D.tenders||[]).some(hit)||(D.archivedTenders||[]).some(hit);
 }
+function _radarDl(x){ return x?db(nd(),x):null; }
+
+/* ── פקדי סינון ── */
 function _radarToggleTopic(id){ _radarF.topics.has(id)?_radarF.topics.delete(id):_radarF.topics.add(id); _radarRender(); }
 function _radarSearch(v){ _radarF.q=v; _srchDebounce('radar',_radarRender,140); }
-function _radarToggleOpen(v){ _radarF.onlyOpen=v; _radarRender(); }
+function _radarSetSort(v){ _radarF.sort=v; _radarRender(); }
+function _radarSetSource(v){ _radarF.source=v; _radarRender(); }
+function _radarSetFlag(k,v){ _radarF[k]=v; _radarRender(); }
+function _radarSetKpi(k){ _radarF.kpi=(k&&_radarF.kpi!==k)?k:''; _radarRender(); }
+function _radarClear(){
+  _radarF.q='';_radarF.topics.clear();_radarF.source='';_radarF.kpi='';
+  _radarF.onlyOpen=false;_radarF.onlyNew=false;
+  _radarRender();
+}
+function _radarToggleHide(id){
+  _radarHidden.has(id)?_radarHidden.delete(id):_radarHidden.add(id);
+  _radarSaveHidden();
+  showToast(_radarHidden.has(id)?'🙈 המכרז הוסתר':'👁 ההסתרה בוטלה','info');
+  _radarRender();
+}
+function _radarTogglePick(id,on){ on?_radarPick.add(id):_radarPick.delete(id); _radarRender(); }
+function _radarClearPick(){ _radarPick.clear(); _radarRender(); }
+function _radarCopy(id){
+  const t=((_radar&&_radar.tenders)||[]).find(x=>x.id===id); if(!t)return;
+  const txt=[t.title,'מפרסם: '+(t.publisher||t.sourceName||'–'),
+    t.tenderNumber?'מס׳ מכרז: '+t.tenderNumber:'',
+    t.deadlineAt?'מועד הגשה: '+fmtDate(t.deadlineAt):'מועד הגשה: לא אותר',
+    (t.topics||[]).map(x=>_radarTopic(x).label).join(' · '),safeUrl(t.url)].filter(Boolean).join('\n');
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>showToast('📋 סיכום המכרז הועתק','ok'),()=>{});
+  else showToast('⚠️ ההעתקה אינה נתמכת בדפדפן זה','warn');
+}
 
 function _radarRender(){
   const box=document.getElementById('tenradar'); if(!box)return;
 
   if(_radarErr){
-    box.innerHTML=`<div style="padding:26px;text-align:center;color:var(--text2);font-size:12px;line-height:1.9">
-      <div style="font-size:34px;opacity:.7;margin-bottom:8px">📡</div>
-      <div style="font-weight:700;color:var(--text);font-size:14px;margin-bottom:6px">לא ניתן לטעון את ממצאי הראדאר</div>
+    box.innerHTML=`<div class="rdr-empty"><div class="ico">📡</div><h4>לא ניתן לטעון את ממצאי הראדאר</h4>
       <div>${esc(_radarErr)}</div>
-      <div style="margin-top:8px">הסריקה רצה אוטומטית פעם ביום. אם המערכת פתוחה מקובץ מקומי ולא מהאתר — הדפדפן חוסם קריאת קבצים.</div>
+      <div>הסריקה רצה אוטומטית פעם ביום. אם המערכת פתוחה מקובץ מקומי ולא מהאתר — הדפדפן חוסם קריאת קבצים.</div>
       <button class="btn" style="margin-top:12px" onclick="radarReload()">↻ נסה שוב</button></div>`;
     return;
   }
 
   const all=(_radar&&_radar.tenders)||[];
-  const t0=nd();
-  const dl=x=>x?db(t0,x):null;
-
   if(!all.length){
-    box.innerHTML=`<div style="padding:26px;text-align:center;color:var(--text2);font-size:12px;line-height:1.9">
-      <div style="font-size:34px;opacity:.7;margin-bottom:8px">🛰️</div>
-      <div style="font-weight:700;color:var(--text);font-size:14px;margin-bottom:6px">הסריקה טרם מצאה מכרזים רלוונטיים</div>
+    box.innerHTML=`<div class="rdr-empty"><div class="ico">🛰️</div><h4>הסריקה טרם מצאה מכרזים רלוונטיים</h4>
       <div>הראדאר סורק אחת ליום מקורות מכרזים ציבוריים ומסנן לתקשורת, ציוד תקשורת, אבטחת מידע ו-IT.</div>
       <button class="btn" style="margin-top:12px" onclick="radarReload()">↻ רענון</button></div>`;
     return;
   }
 
+  const gen=_radar.generatedDate||'';
+  const isNew=t=>t.firstSeen===gen;
+
+  /* ── אריחי סיכום ── */
+  const openCnt=all.filter(t=>{const d=_radarDl(t.deadlineAt);return d!==null&&d>=0}).length;
+  const soonCnt=all.filter(t=>{const d=_radarDl(t.deadlineAt);return d!==null&&d>=0&&d<=7}).length;
+  const newCnt=all.filter(isNew).length;
+  const kpis=[
+    {k:'',cls:'',lb:'סה"כ במאגר',vl:all.length,sb:'כל המכרזים הרלוונטיים'},
+    {k:'new',cls:'k-new',lb:'חדשים בסריקה',vl:newCnt,sb:'התגלו בריצה האחרונה'},
+    {k:'open',cls:'k-open',lb:'פתוחים להגשה',vl:openCnt,sb:'מועד ההגשה עוד לא חלף'},
+    {k:'soon',cls:'k-soon',lb:'נסגרים בשבוע',vl:soonCnt,sb:'עד 7 ימים להגשה'}
+  ].map(t=>`<div class="rdr-kpi ${t.cls} ${_radarF.kpi===t.k&&t.k?'on':''}" onclick="_radarSetKpi('${t.k}')" title="לחיצה לסינון">
+      <div class="lb">${t.lb}</div><div class="vl">${t.vl}</div><div class="sb">${t.sb}</div></div>`).join('');
+
+  /* ── סינון ── */
   const q=_radarF.q.trim().toLowerCase();
   const rows=all.filter(t=>{
+    if(!_radarF.showHidden&&_radarHidden.has(t.id))return false;
     if(_radarF.topics.size&&!(t.topics||[]).some(x=>_radarF.topics.has(x)))return false;
-    if(_radarF.onlyOpen){const d=dl(t.deadlineAt); if(d===null||d<0)return false;}
+    if(_radarF.source&&t.source!==_radarF.source)return false;
+    const d=_radarDl(t.deadlineAt), open=d!==null&&d>=0;
+    if(_radarF.onlyOpen&&!open)return false;
+    if(_radarF.onlyNew&&!isNew(t))return false;
+    if(_radarF.kpi==='new'&&!isNew(t))return false;
+    if(_radarF.kpi==='open'&&!open)return false;
+    if(_radarF.kpi==='soon'&&!(open&&d<=7))return false;
     if(q&&![t.title,t.publisher,t.sourceName,t.tenderNumber,(t.matched||[]).join(' ')].join(' ').toLowerCase().includes(q))return false;
     return true;
-  }).sort((a,b)=>{
-    const da=dl(a.deadlineAt),dbb=dl(b.deadlineAt);
+  });
+  const byDl=(a,b)=>{
+    const da=_radarDl(a.deadlineAt),dbb=_radarDl(b.deadlineAt);
     const oa=da!==null&&da>=0,ob=dbb!==null&&dbb>=0;
     if(oa&&ob)return da-dbb;
     if(oa!==ob)return oa?-1:1;
     return (b.score||0)-(a.score||0);
-  });
+  };
+  const desc=k=>(a,b)=>String(b[k]||'').localeCompare(String(a[k]||''));
+  rows.sort({deadline:byDl,score:(a,b)=>(b.score||0)-(a.score||0)||byDl(a,b),published:desc('publishedAt'),firstSeen:desc('firstSeen')}[_radarF.sort]||byDl);
 
-  const cnt={};
-  all.forEach(t=>(t.topics||[]).forEach(id=>cnt[id]=(cnt[id]||0)+1));
+  /* ── שבבי נושאים ומקורות ── */
+  const cnt={}; all.forEach(t=>(t.topics||[]).forEach(id=>cnt[id]=(cnt[id]||0)+1));
   const chips=Object.keys((_radar&&_radar.topics)||{}).map(id=>{
     const m=_radarTopic(id),on=_radarF.topics.has(id);
-    return `<span onclick="_radarToggleTopic('${id}')" style="cursor:pointer;font-size:10.5px;font-weight:700;padding:4px 11px;border-radius:14px;white-space:nowrap;
-      background:${on?m.color:'rgba(10,15,30,.55)'};color:${on?'#08101f':'var(--text2)'};border:1px solid ${on?m.color:'rgba(55,77,132,.8)'}">${m.icon} ${esc(m.label)} ${cnt[id]||0}</span>`;
-  }).join(' ');
+    return `<span class="rdr-chip ${on?'on':''}" onclick="_radarToggleTopic('${id}')"
+      style="${on?`background:${m.color};border-color:${m.color};color:#08101f`:''}">${m.icon} ${esc(m.label)} <span class="cnt">${cnt[id]||0}</span></span>`;
+  }).join('');
+  const srcNames=new Map(); all.forEach(t=>{if(t.source)srcNames.set(t.source,t.sourceName||t.source)});
+  const srcOpts='<option value="">כל המקורות</option>'+[...srcNames].sort((a,b)=>a[1].localeCompare(b[1],'he'))
+    .map(([id,n])=>`<option value="${esc(id)}" ${_radarF.source===id?'selected':''}>${esc(n)}</option>`).join('');
 
-  const upd=_radar.generatedDate?(db(_radar.generatedDate,t0)===0?'עודכן היום':`עודכן ${fmtDate(_radar.generatedDate)}`):'טרם הורץ';
-  const failed=((_radar.sources)||[]).filter(s=>!s.ok);
+  /* ── כרטיסים ── */
+  const cards=rows.map(t=>{
+    const m0=_radarTopic((t.topics||[])[0]), u=safeUrl(t.url), d=_radarDl(t.deadlineAt);
+    const hidden=_radarHidden.has(t.id), inCrm=_radarInCrm(t);
+    const pill=!t.deadlineAt?'<span class="rdr-pill mute">מועד הגשה לא אותר</span>'
+      :d===null?`<span class="rdr-pill mute">${esc(t.deadlineAt)}</span>`
+      :d<0?`<span class="rdr-pill mute">${fmtDate(t.deadlineAt)} · חלף</span>`
+      :`<span class="rdr-pill ${d<=3?'crit':d<=7?'warn':'ok'}">${fmtDate(t.deadlineAt)} · ${d===0?'היום!':d===1?'מחר':'בעוד '+d+' ימים'}</span>`;
+    const tags=(t.topics||[]).map(id=>{const m=_radarTopic(id);
+      return `<span class="rdr-tag" style="background:${m.color}22;color:${m.color};border:1px solid ${m.color}55">${m.icon} ${esc(m.label)}</span>`}).join('');
+    const kws=(t.matched||[]).slice(0,6).map(k=>`<span class="rdr-kw">${esc(k)}</span>`).join('');
+    return `<div class="rdr-card ${hidden?'dim':''}" style="border-right-color:${m0.color}">
+      <div class="rdr-ctop">
+        <div class="rdr-ctitle">${u?`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t.title)}</a>`:esc(t.title)}</div>
+        ${isNew(t)?'<span class="rdr-badge-new">חדש</span>':''}
+      </div>
+      <div class="rdr-cmeta">
+        <span>מפרסם: <b>${esc(t.publisher||t.sourceName||'–')}</b></span>
+        ${t.tenderNumber?`<span>מס׳ מכרז: <b>${esc(t.tenderNumber)}</b></span>`:''}
+        ${t.publishedAt?`<span>פורסם: <b>${fmtDate(t.publishedAt)}</b></span>`:''}
+        <span>מקור: <b>${esc(t.sourceName||t.source||'–')}</b></span>
+        <span>רלוונטיות: <b>${t.score||0}</b></span>
+      </div>
+      <div class="rdr-tags">${pill}${tags}${kws}</div>
+      <div class="rdr-cact">
+        ${inCrm?'<span class="rdr-incrm">✓ במערכת</span>'
+               :`<label class="rdr-pick"><input type="checkbox" ${_radarPick.has(t.id)?'checked':''} onchange="_radarTogglePick('${esc(t.id)}',this.checked)"> בחר</label>
+                 <button class="btn btns" onclick="addTenderFromRadar('${esc(t.id)}')" title="הוספה לטבלת המכרזים" style="border-color:#06d6a0;color:#06d6a0">➕ הוסף למכרזים</button>`}
+        ${u?`<a class="btn btns" href="${esc(u)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none">↗ פתח במקור</a>`:''}
+        <button class="btn btns" onclick="_radarCopy('${esc(t.id)}')">📋 העתק</button>
+        <button class="btn btns" onclick="_radarToggleHide('${esc(t.id)}')">${hidden?'👁 בטל הסתרה':'🙈 הסתר'}</button>
+      </div></div>`;
+  }).join('')||`<div class="rdr-empty"><div class="ico">🔍</div><h4>אין מכרזים שמתאימים לסינון</h4>
+      <div>נסה לנקות את הסינון, להרחיב את הנושאים או לחפש מונח אחר.</div></div>`;
 
-  const body=rows.map(t=>{
-    const u=safeUrl(t.url), d=dl(t.deadlineAt), inCrm=_radarInCrm(t);
-    const dCell=!t.deadlineAt?'<span style="color:var(--text3)">לא אותר</span>'
-      :d<0?`<span style="color:var(--text3)">${fmtDate(t.deadlineAt)} · פג</span>`
-      :`<span style="color:${d<=3?'#e63946':d<=7?'#f4a261':'var(--text2)'};font-weight:600">${fmtDate(t.deadlineAt)} · ${d===0?'היום!':d+'י'}</span>`;
-    const tg=(t.topics||[]).map(id=>{const m=_radarTopic(id);
-      return `<span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:9px;background:${m.color}22;color:${m.color};border:1px solid ${m.color}55;white-space:nowrap">${m.icon}</span>`;}).join(' ');
-    return `<tr>
-      <td style="white-space:nowrap">${tg}</td>
-      <td style="font-weight:600;min-width:190px;max-width:420px">${u?`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer" style="color:var(--text)">${esc(t.title)}</a>`:esc(t.title)}
-        ${t.firstSeen===_radar.generatedDate?'<span style="font-size:8.5px;font-weight:800;padding:1px 6px;border-radius:9px;background:rgba(6,214,160,.16);color:#06d6a0;border:1px solid rgba(6,214,160,.4);margin-inline-start:5px">חדש</span>':''}
-        ${(t.matched||[]).length?`<div style="font-size:9px;color:var(--text3);margin-top:3px">${esc(t.matched.slice(0,5).join(' · '))}</div>`:''}</td>
-      <td style="font-size:10px">${esc(t.publisher||t.sourceName||'–')}</td>
-      <td style="font-size:10px">${fmtDate(t.publishedAt)}</td>
-      <td style="font-size:10px;white-space:nowrap">${dCell}</td>
-      <td style="font-size:10px;text-align:center">${t.score||0}</td>
-      <td style="white-space:nowrap">
-        ${inCrm?'<span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:11px;background:rgba(6,214,160,.14);color:#06d6a0;border:1px solid rgba(6,214,160,.35)">✓ במערכת</span>'
-               :`<button class="btn btns" onclick="addTenderFromRadar('${esc(t.id)}')" title="הוספה לטבלת המכרזים" style="border-color:#06d6a0;color:#06d6a0">➕ הוסף</button>`}
-        ${u?` <a class="btn btns" href="${esc(u)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none">↗</a>`:''}</td>
-    </tr>`;
-  }).join('')||`<tr><td colspan="7" style="text-align:center;padding:22px;color:var(--text3);font-size:11px">אין מכרזים שמתאימים לסינון</td></tr>`;
+  /* ── בריאות מקורות ── */
+  const srcs=_radar.sources||[];
+  const okN=srcs.filter(s=>s.ok).length, badN=srcs.length-okN;
+  const srcRows=srcs.map(s=>{
+    const link=safeUrl(s.searchUrl||'');
+    return `<tr><td><b>${esc(s.name)}</b></td><td style="color:var(--text3)">${esc(s.category||'–')}</td>
+      <td style="color:${s.ok?'#06d6a0':'#e63946'};font-weight:700">${s.ok?'✅ פעיל':'❌ נכשל'}</td>
+      <td>${s.scanned||0}</td><td><b>${s.count||0}</b></td>
+      <td style="color:var(--text3);font-size:10px">${esc(s.error||(s.ok&&!s.count?'נסרק אך לא נמצאו התאמות':''))}</td>
+      <td>${link?`<a href="${esc(link)}" target="_blank" rel="noopener noreferrer" style="color:#4cc9f0;font-size:10px">חיפוש ידני ↗</a>`:''}</td></tr>`;
+  }).join('');
+  const srcPanel=srcs.length?`<details class="rdr-panel" ${badN?'open':''}>
+    <summary>🛰️ בריאות המקורות <span style="font-size:10.5px;font-weight:400;color:var(--text3)">— ${okN} פעילים${badN?`, ${badN} נכשלו`:''}</span></summary>
+    <div class="tw" style="margin-top:12px"><div class="tscroll"><table><thead><tr>
+      <th>מקור</th><th>קטגוריה</th><th>מצב</th><th>נסרקו</th><th>רלוונטיים</th><th>הערה</th><th></th>
+    </tr></thead><tbody>${srcRows}</tbody></table></div></div>
+    <p style="font-size:10px;color:var(--text3);margin-top:9px;line-height:1.7">
+      מקור שנכשל או שמחזיר 0 תוצאות הוא לרוב אתר שנבנה כיישום JavaScript ולכן אינו נסרק אוטומטית.
+      הקישור "חיפוש ידני" פותח את דף המכרזים שלו לבדיקה.</p></details>`:'';
+
+  const mls=(_radar.manualLinks||[]).map(l=>{const u=safeUrl(l.url);
+    return u?`<a class="rdr-mlink" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(l.name)}${l.note?`<small>${esc(l.note)}</small>`:''}</a>`:''}).join('');
+  const mlPanel=mls?`<div class="rdr-panel"><h4>🔎 חיפוש ידני במאגרים נוספים</h4>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.7">אגרגטורים שאינם נסרקים אוטומטית — שווה מעבר ידני שבועי.</p>
+    <div class="rdr-mlinks">${mls}</div></div>`:'';
+
+  const failed=srcs.filter(s=>!s.ok).length;
+  const upd=gen?(db(gen,nd())===0?'עודכן היום':db(gen,nd())===1?'עודכן אתמול':'עודכן '+fmtDate(gen)):'טרם הורץ';
+  const pickN=[..._radarPick].filter(id=>all.some(t=>t.id===id&&!_radarInCrm(t))).length;
 
   box.innerHTML=`
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 10px">
-      <input type="text" class="srch" placeholder="🔍 חיפוש בממצאי הראדאר..." style="max-width:250px" value="${esc(_radarF.q)}" oninput="_radarSearch(this.value)">
-      <label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);cursor:pointer">
-        <input type="checkbox" ${_radarF.onlyOpen?'checked':''} onchange="_radarToggleOpen(this.checked)" style="accent-color:#c8a96e"> רק פתוחים להגשה</label>
-      <span style="flex:1"></span>
-      <span style="font-size:10px;color:var(--text3)">${esc(upd)} · ${all.length} ממצאים${failed.length?` · ${failed.length} מקורות לא נסרקו`:''}</span>
-      <button class="btn btns" onclick="radarReload()" title="טעינה מחדש">↻</button>
-      <a class="btn btns" href="tenders.html" target="_blank" rel="noopener noreferrer" style="border-color:#4cc9f0;color:#4cc9f0;text-decoration:none">📡 ראדאר מלא</a>
+    <div class="rdr-kpis">${kpis}</div>
+    <div class="rdr-filters">
+      <div class="rdr-frow">
+        <span class="rdr-flabel">חיפוש</span>
+        <input type="text" class="srch" style="flex:1;min-width:200px" placeholder="חיפוש בשם המכרז, מפרסם, מספר מכרז או מילת מפתח..." value="${esc(_radarF.q)}" oninput="_radarSearch(this.value)">
+        <select onchange="_radarSetSort(this.value)" title="סדר הצגה">
+          <option value="deadline" ${_radarF.sort==='deadline'?'selected':''}>מועד הגשה (הקרוב קודם)</option>
+          <option value="score" ${_radarF.sort==='score'?'selected':''}>רלוונטיות</option>
+          <option value="published" ${_radarF.sort==='published'?'selected':''}>תאריך פרסום (חדש קודם)</option>
+          <option value="firstSeen" ${_radarF.sort==='firstSeen'?'selected':''}>מועד גילוי (חדש קודם)</option>
+        </select>
+      </div>
+      <div class="rdr-frow"><span class="rdr-flabel">נושאים</span>${chips}</div>
+      <div class="rdr-frow">
+        <span class="rdr-flabel">מקור</span>
+        <select onchange="_radarSetSource(this.value)">${srcOpts}</select>
+        <label class="rdr-tgl"><input type="checkbox" ${_radarF.onlyOpen?'checked':''} onchange="_radarSetFlag('onlyOpen',this.checked)"> רק מכרזים פתוחים</label>
+        <label class="rdr-tgl"><input type="checkbox" ${_radarF.onlyNew?'checked':''} onchange="_radarSetFlag('onlyNew',this.checked)"> רק חדשים</label>
+        <label class="rdr-tgl"><input type="checkbox" ${_radarF.showHidden?'checked':''} onchange="_radarSetFlag('showHidden',this.checked)"> הצג מוסתרים</label>
+        <span style="flex:1"></span>
+        <span style="font-size:10px;color:var(--text3)">${esc(upd)} · ${all.length} ממצאים${failed?` · ${failed} מקורות לא נסרקו`:''}</span>
+        <button class="btn btns" onclick="_radarClear()">✕ נקה סינון</button>
+        <button class="btn btns" onclick="radarReload()" title="טעינה מחדש">↻</button>
+        <a class="btn btns" href="tenders.html" target="_blank" rel="noopener noreferrer" style="border-color:#4cc9f0;color:#4cc9f0;text-decoration:none">📡 ראדאר מלא</a>
+      </div>
     </div>
-    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${chips}</div>
-    <div class="tw"><div class="thdr" style="border-right:3px solid #4cc9f0">📡 ממצאי הראדאר <span style="font-weight:400;font-size:11px;color:var(--text2)">${rows.length} מוצגים מתוך ${all.length}</span></div>
-    <div class="tscroll"><table><thead><tr>
-      <th>נושא</th><th>שם המכרז</th><th>מפרסם</th><th>פרסום</th><th>הגשה</th><th>ניקוד</th><th>פעולות</th>
-    </tr></thead><tbody>${body}</tbody></table></div></div>`;
+    <div style="font-size:10.5px;color:var(--text3);margin-bottom:9px">${rows.length} מוצגים מתוך ${all.length}</div>
+    <div class="rdr-cards">${cards}</div>
+    ${pickN?`<div class="rdr-selbar"><span>${pickN} מכרזים נבחרו</span>
+      <button class="btn btns" onclick="addSelectedFromRadar()" style="border-color:#06d6a0;color:#06d6a0">➕ הוסף את הנבחרים למכרזים</button>
+      <button class="btn btns" onclick="_radarClearPick()">✕ ניקוי בחירה</button></div>`:''}
+    ${srcPanel}${mlPanel}`;
 }
 
+/** בונה רשומת מכרז לטבלה מתוך ממצא ראדאר */
+function _radarToRow(t){
+  return {
+    name:t.title,proj:t.tenderNumber||'',pub:t.publishedAt||'',quote:'',questions:'',
+    deadline:t.deadlineAt||'',rounds:1,handler:'',amount:0,qty:1,submitted:'לא',
+    link:safeUrl(t.url),linked:'לא',docs:'',
+    notes:[t.publisher||t.sourceName||'',(t.matched||[]).length?'התאמות: '+t.matched.slice(0,5).join(', '):''].filter(Boolean).join(' | '),
+    reqName:'',reqEmail:'',files:[],
+    radarId:t.id // מאפשר לזהות בראדאר שהמכרז כבר נוסף, בלי להסתמך על הקישור
+  };
+}
 /** מוסיף מכרז שנמצא בראדאר לטבלת המכרזים של המערכת */
 function addTenderFromRadar(id){
   const t=((_radar&&_radar.tenders)||[]).find(x=>x.id===id);
   if(!t){showToast('המכרז לא נמצא בממצאי הראדאר','warn');return;}
   if(_radarInCrm(t)){showToast('המכרז כבר קיים בטבלת המכרזים','warn');_radarRender();return;}
-  const u=safeUrl(t.url);
-  dbInsert('tenders',{
-    name:t.title,proj:t.tenderNumber||'',pub:t.publishedAt||'',quote:'',questions:'',
-    deadline:t.deadlineAt||'',rounds:1,handler:'',amount:0,qty:1,submitted:'לא',
-    link:u,linked:'לא',docs:'',
-    notes:[t.publisher||t.sourceName||'',(t.matched||[]).length?'התאמות: '+t.matched.slice(0,5).join(', '):''].filter(Boolean).join(' | '),
-    reqName:'',reqEmail:'',files:[],
-    radarId:t.id // מאפשר לזהות בראדאר שהמכרז כבר נוסף, בלי להסתמך על הקישור
-  });
+  dbInsert('tenders',_radarToRow(t));
+  _radarPick.delete(id);
   showToast('✅ נוסף לטבלת המכרזים — כדאי להשלים מטפל, סכום ומועדים','ok');
+  _radarRender();
+}
+/** הוספה מרובה של כל המכרזים שסומנו */
+function addSelectedFromRadar(){
+  const all=(_radar&&_radar.tenders)||[];
+  const pend=all.filter(t=>_radarPick.has(t.id)&&!_radarInCrm(t));
+  if(!pend.length){showToast('לא נבחרו מכרזים להוספה','warn');return;}
+  pend.forEach(t=>dbInsert('tenders',_radarToRow(t),true)); // שמירה אחת בסוף במקום לכל שורה
+  saveAll();
+  _radarPick.clear();
+  showToast(`✅ ${pend.length} מכרזים נוספו לטבלת המכרזים`,'ok');
   _radarRender();
 }
 
