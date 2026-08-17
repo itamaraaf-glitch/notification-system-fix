@@ -16,6 +16,8 @@
         "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%9E%D7%97%D7%A9%D7%95%D7%91",
         "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%A1%D7%99%D7%99%D7%91%D7%A8"
       ],
+      "_linkPatternReason": "כתובות המכרזים באתר מנהל הרכש אינן מכילות מילה מזהה אלא מזהה מספרי (/ilgstorefront/he/p/4000620724), ולכן השער הכללי דחה מכרזים אמיתיים.",
+      "linkPattern": "/ilgstorefront/[a-z]{2}/p/\\d+",
       "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER",
       "home": "https://mr.gov.il/ilgstorefront/he/"
     },

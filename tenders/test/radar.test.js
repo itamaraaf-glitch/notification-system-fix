@@ -311,3 +311,20 @@ test('קישורי ניווט שנשמרו בהיסטוריה יורדים כש�
   const merged = R.mergeWithHistory([], prev, new Set(['iaa']), KW);
   assert.deepStrictEqual(merged.map(t => t.id), ['real']);
 });
+
+test('תבנית קישור ייעודית למקור מאפשרת לזהות מכרזים בכתובות ללא מילה מזהה', () => {
+  const pat = '/ilgstorefront/[a-z]{2}/p/\\d+';
+  // כתובת מכרז אמיתית ממנהל הרכש הממשלתי
+  assert.ok(R.looksLikeTenderUrl('https://mr.gov.il/ilgstorefront/he/p/4000620724', pat));
+  assert.ok(!R.looksLikeTenderUrl('https://mr.gov.il/ilgstorefront/he/login', pat));
+  // בלי תבנית ייעודית — אותה כתובת נדחית ע"י השער הכללי
+  assert.ok(!R.looksLikeTenderUrl('https://mr.gov.il/ilgstorefront/he/p/4000620724'));
+  // תבנית שגויה לא מפילה את הבדיקה, נופלת חזרה לברירת המחדל
+  assert.ok(R.looksLikeTenderUrl('https://x.gov.il/tenders/5', '([unclosed'));
+});
+
+test('buildRecord מקבל מכרז ממקור עם תבנית קישור ייעודית', () => {
+  const src = { id:'mr-gov', name:'מנהל הרכש', allTenders:true, linkPattern:'/ilgstorefront/[a-z]{2}/p/\\d+' };
+  const rec = R.buildRecord({ title:'רכישת מחשבים ניידים', url:'https://mr.gov.il/ilgstorefront/he/p/4000620724', context:'' }, src, KW);
+  assert.ok(rec && rec.topics.includes('it'), 'מכרז אמיתי בכתובת מספרית אמור לעבור את השער');
+});

@@ -166,11 +166,23 @@ function looksLikeTender(text, kw) {
   return (kw.tenderGate || []).some(g => termRegex(g).test(text));
 }
 
-/** האם נתיב הקישור מעיד על עמוד מכרז — מבדיל מכרזים מקישורי ניווט באתר */
+/**
+ * האם הקישור מעיד על עמוד מכרז — מבדיל מכרזים מקישורי ניווט באתר.
+ * מקור שבו כתובות המכרזים אינן מכילות מילה מזהה יכול להגדיר linkPattern משלו:
+ * למשל במנהל הרכש הממשלתי כתובת מכרז היא /ilgstorefront/he/p/4000620724.
+ */
 const TENDER_URL_RE = /(tender|michraz|bids?|rfp|rfq|מכרז)/i;
-function looksLikeTenderUrl(url) {
-  try { return TENDER_URL_RE.test(decodeURIComponent(new URL(url).pathname + new URL(url).search)); }
-  catch (_) { return TENDER_URL_RE.test(String(url)); }
+function looksLikeTenderUrl(url, linkPattern) {
+  let target = String(url);
+  try {
+    const u = new URL(url);
+    target = decodeURIComponent(u.pathname + u.search);
+  } catch (_) { /* כתובת לא תקנית — נבדקת כמחרוזת */ }
+  if (linkPattern) {
+    try { return new RegExp(linkPattern).test(target) || new RegExp(linkPattern).test(String(url)); }
+    catch (_) { /* תבנית לא תקינה — נפילה לברירת המחדל */ }
+  }
+  return TENDER_URL_RE.test(target);
 }
 
 /* ───────────────────────── חילוץ תאריכים ומספרי מכרז ───────────────────────── */
@@ -465,9 +477,9 @@ async function main() {
   }
 
   // סריקת מקור בודד לא אמורה למחוק את ההיסטוריה של המקורות האחרים
-  const activeSources = ONLY_SOURCE
-    ? new Set((cfg.sources || []).filter(s => s.enabled !== false).map(s => s.id))
-    : new Set(sources.map(s => s.id));
+  const activeSources = new Map(
+    (ONLY_SOURCE ? (cfg.sources || []).filter(s => s.enabled !== false) : sources).map(s => [s.id, s])
+  );
   const merged = mergeWithHistory([...found.values()], prevById, activeSources, kw);
   const payload = {
     generatedAt: new Date().toISOString(),
@@ -540,7 +552,7 @@ function buildRecord(item, source, kw) {
   // תפריטי ניווט, ובאבחון על אתר רשות שדות התעופה קישורי ניווט כמו "אלקטרוניקה וסלולר"
   // ו"מערכת ניהול סביבתי" נכנסו לתוצאות. לכן נדרש ניסוח מזהה בכותרת או נתיב קישור של מכרז.
   const gatePassed = source.allTenders
-    ? (looksLikeTender(titleAndSummary, kw) || looksLikeTenderUrl(item.url))
+    ? (looksLikeTender(titleAndSummary, kw) || looksLikeTenderUrl(item.url, source.linkPattern))
     : looksLikeTender(titleAndSummary, kw);
   if (!gatePassed) return null;
 
@@ -603,7 +615,8 @@ function mergeWithHistory(current, prevById, activeSources, kw) {
       const text = `${prev.title} ${prev.summary || ''}`;
       // גם שער המכרז נבדק מחדש, אחרת קישורי ניווט שנתפסו לפני שהשער הוקשח
       // (למשל "אלקטרוניקה וסלולר" ו"להורדת אפליקציה") היו נשארים במאגר
-      if (!looksLikeTender(text, kw) && !looksLikeTenderUrl(prev.url || '')) continue;
+      const pattern = (activeSources instanceof Map ? (activeSources.get(prev.source) || {}).linkPattern : null);
+      if (!looksLikeTender(text, kw) && !looksLikeTenderUrl(prev.url || '', pattern)) continue;
       const recheck = classify(text, kw);
       if (!recheck.topics.length) continue;
       prev = { ...prev, topics: recheck.topics, score: recheck.score, matched: recheck.matched };
