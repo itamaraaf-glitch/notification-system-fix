@@ -3223,6 +3223,7 @@ function _completeLogin(f){
       tick();
     })();
     loadAll();
+    radarPrefetch(); // ממצאי הראדאר ייכנסו למסך ההתראות גם בלי לפתוח את הלשונית
     setTimeout(showTodayMeetings, 1400);
     requestAnimationFrame(()=>{ appEl.style.opacity='1'; });
     setTimeout(()=>{ appEl.style.transition=''; },300);
@@ -5678,6 +5679,8 @@ function alertGo(i){
   // משימות — מעבר למסך המשימות, ופתיחת המשימה הספציפית אם יש מזהה
   if(al.kind==='task'){ nav('tasks'); if(al.id)setTimeout(()=>openM('task',al.id),340); return; }
   if(al.kind==='clients-expiry'){ nav('clients'); return; } // מוצרים ללא תפוגה — מעבר למסך הלקוחות
+  // התראת ראדאר — מכרז שנמצא בסריקה ועוד לא נוסף לטבלה. פותח את לשונית הראדאר.
+  if(al.kind==='radar'){ nav('tenders'); setTimeout(openRadarTab,340); return; }
   if(al.kind==='monthclose'){ if(typeof openMonthClose==='function')openMonthClose(); return; } // סגירת חודש — תצוגה מקדימה
   const secMap={deal:'deals',dist:'dists',salary:'salary',tender:'tenders',meetings:'meetings'};
   const mtypeMap={deal:'deal',dist:'dist',salary:'salary',tender:'tender',meetings:'meeting'};
@@ -5856,7 +5859,44 @@ function getAlerts(){
   document.getElementById('acnt').textContent=a.length;
   const dot=document.getElementById('mob-alert-dot');
   if(dot){if(a.length>0){dot.textContent=a.length>99?'99+':a.length;dot.style.display='block';}else{dot.style.display='none';}}
+  // ── ראדאר מכרזים: מכרז שנמצא בסריקה, נסגר בקרוב, ועוד לא נוסף לטבלת המכרזים ──
+  // בלי זה מכרז דחוף היה נראה רק למי שנכנס ללשונית הראדאר; כאן הוא מגיע למסך
+  // שנפתח בכל בוקר. מכרז שכבר נוסף לטבלה מטופל בהתראות המכרזים הרגילות.
+  try{ ((_radar&&_radar.tenders)||[]).forEach(rt=>{
+    if(!rt.deadlineAt)return;
+    const dl=db(t,rt.deadlineAt);
+    if(dl<0||dl>7)return;
+    if(_radarInCrm(rt))return;
+    if(_radarHidden.has(rt.id))return;
+    const topics=(rt.topics||[]).map(id=>_radarTopic(id).label).join(' · ');
+    a.push({
+      type: dl<=3?'crit':'warn',
+      h:`📡 מכרז מהראדאר נסגר ${dl===0?'היום':dl===1?'מחר':'בעוד '+dl+' ימים'} – ${rt.title}`,
+      s:`מפרסם: ${rt.publisher||rt.sourceName||'–'}${rt.tenderNumber?` | מס׳ מכרז: ${rt.tenderNumber}`:''} | מועד הגשה: ${fmtDate(rt.deadlineAt)}${topics?` | ${topics}`:''} | טרם נוסף לטבלת המכרזים`,
+      kind:'radar', id:rt.id
+    });
+  }); }catch(e){ /* ממצאי הראדאר טרם נטענו — ההתראות האחרות אינן נפגעות */ }
+
   return a;
+}
+/** פתיחת לשונית הראדאר במסך המכרזים (מהתראה או מקישור) */
+function openRadarTab(){
+  const tabs=document.getElementById('tenders-tabs'); if(!tabs)return;
+  const tab=Array.from(tabs.querySelectorAll('.tab')).find(el=>el.textContent.includes('ראדאר'));
+  if(tab)tab.click();
+}
+/** טעינה מקדימה של ממצאי הראדאר, כדי שההתראות יכללו אותם עוד לפני פתיחת הלשונית */
+function radarPrefetch(){
+  if(_radar||_radarLoading)return;
+  _radarLoading=true;
+  fetch('tenders/data/tenders.json?t='+Date.now(),{cache:'no-store'})
+    .then(r=>r.ok?r.json():Promise.reject(new Error('HTTP '+r.status)))
+    .then(j=>{ _radar=j; _radarErr=''; _radarLoading=false;
+      // רענון ההתראות רק אם יש ממצא דחוף שמשנה את התמונה
+      try{ if(typeof rAlerts==='function'&&document.getElementById('alcont'))rAlerts(); }catch(e){}
+      try{ if(typeof updateAlertBadge==='function')updateAlertBadge(); }catch(e){}
+    })
+    .catch(e=>{ _radarErr=(e&&e.message)||String(e); _radarLoading=false; });
 }
 function rAlerts(){
   const a=getAlerts();
