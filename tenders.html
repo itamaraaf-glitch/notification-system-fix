@@ -238,6 +238,9 @@ footer{text-align:center;font-size:10.5px;color:var(--text3);margin-top:26px;lin
     <div class="frow" id="topicrow">
       <span class="flabel">נושאים</span>
     </div>
+    <div class="frow" id="kindrow">
+      <span class="flabel">סוג</span>
+    </div>
     <div class="frow">
       <span class="flabel">מקור</span>
       <select id="source"><option value="">כל המקורות</option></select>
@@ -298,7 +301,7 @@ const LS_HIDDEN  = 'tenders_radar_hidden_v1';
 
 let DATA = null;
 const state = {
-  q: '', topics: new Set(), source: '', sort: 'deadline',
+  q: '', topics: new Set(), kinds: new Set(), source: '', sort: 'deadline',
   onlyOpen: false, onlyNew: false, showHidden: false, kpi: ''
 };
 let picked = new Set();
@@ -368,6 +371,7 @@ async function load(){
   }
   restoreFilters();
   buildTopicChips();
+  buildKindChips();
   buildSourceSelect();
   renderFreshness(DATA);
   renderManual();
@@ -423,6 +427,37 @@ function syncChips(){
     chip.style.borderColor = on ? meta.color : '';
   });
 }
+/** שבבי סוג פרסום — מכרז פומבי אינו אותו דבר כמו הודעת פטור ממכרז,
+    ורוב הממצאים בפועל הם הודעות פטור. הסינון מאפשר להישאר רק על מה שאפשר להגיש אליו. */
+function buildKindChips(){
+  const row = $('kindrow');
+  row.querySelectorAll('.chip').forEach(c => c.remove());
+  const counts = {};
+  for(const t of (DATA.tenders || [])) counts[t.kind || 'tender'] = (counts[t.kind || 'tender'] || 0) + 1;
+  const labels = DATA.kindLabels || {};
+  const order = Object.keys(counts).sort((a, b) => (a === 'tender' ? -1 : b === 'tender' ? 1 : counts[b] - counts[a]));
+  for(const id of order){
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.dataset.kind = id;
+    chip.innerHTML = `${esc(labels[id] || id)} <span class="cnt">${counts[id]}</span>`;
+    chip.onclick = () => {
+      state.kinds.has(id) ? state.kinds.delete(id) : state.kinds.add(id);
+      syncKindChips(); saveFilters(); render();
+    };
+    row.appendChild(chip);
+  }
+  syncKindChips();
+}
+function syncKindChips(){
+  document.querySelectorAll('.chip[data-kind]').forEach(chip => {
+    const on = state.kinds.has(chip.dataset.kind);
+    chip.classList.toggle('on', on);
+    chip.style.background = on ? '#8b5cf6' : '';
+    chip.style.borderColor = on ? '#8b5cf6' : '';
+  });
+}
+
 function buildSourceSelect(){
   const sel = $('source');
   const names = new Map();
@@ -439,6 +474,7 @@ function visible(){
   let list = (DATA.tenders || []).filter(t => {
     if(!state.showHidden && hidden.has(t.id)) return false;
     if(state.topics.size && !(t.topics||[]).some(x => state.topics.has(x))) return false;
+    if(state.kinds.size && !state.kinds.has(t.kind || 'tender')) return false;
     if(state.source && t.source !== state.source) return false;
 
     const dl = daysLeft(t.deadlineAt);
@@ -517,10 +553,21 @@ function render(){
   updateSelbar();
 }
 
+/** הרכב המאגר לפי סוג פרסום — "סה\"כ" לבדו מטעה כשרוב הרשומות הן הודעות פטור */
+function kindBreakdown(){
+  const counts = {};
+  for(const t of (DATA.tenders || [])) counts[t.kind || 'tender'] = (counts[t.kind || 'tender'] || 0) + 1;
+  const labels = DATA.kindLabels || {};
+  const parts = Object.entries(counts)
+    .sort((a, b) => (a[0] === 'tender' ? -1 : b[0] === 'tender' ? 1 : b[1] - a[1]))
+    .map(([k, n]) => `${n} ${labels[k] || k}`);
+  return parts.join(' · ') || 'כל המכרזים הרלוונטיים';
+}
+
 function renderKpis(){
   const c = DATA.counts || {};
   const tiles = [
-    { key:'',     cls:'',       lb:'סה"כ במאגר',      vl:c.total||0,       sb:'כל המכרזים הרלוונטיים' },
+    { key:'',     cls:'',       lb:'סה"כ במאגר',      vl:c.total||0,       sb:kindBreakdown() },
     { key:'new',  cls:'k-new',  lb:'חדשים בסריקה',    vl:c.new||0,         sb:'התגלו בריצה האחרונה' },
     { key:'open', cls:'k-open', lb:'פתוחים להגשה',    vl:c.open||0,        sb:'מועד ההגשה עוד לא חלף' },
     { key:'soon', cls:'k-soon', lb:'נסגרים בשבוע',    vl:c.closingSoon||0, sb:'עד 7 ימים להגשה' }
@@ -758,7 +805,7 @@ function exportCsv(){
 /* ── שמירת מצב הסינון ── */
 function saveFilters(){
   writeJson(LS_FILTERS, {
-    q: state.q, topics: [...state.topics], source: state.source, sort: state.sort,
+    q: state.q, topics: [...state.topics], kinds: [...state.kinds], source: state.source, sort: state.sort,
     onlyOpen: state.onlyOpen, onlyNew: state.onlyNew, showHidden: state.showHidden, kpi: state.kpi
   });
 }
@@ -767,6 +814,7 @@ function restoreFilters(){
   if(!f) return;
   state.q = f.q || '';
   state.topics = new Set(Array.isArray(f.topics) ? f.topics : []);
+  state.kinds = new Set(Array.isArray(f.kinds) ? f.kinds : []);
   state.source = f.source || '';
   state.sort = f.sort || 'deadline';
   state.onlyOpen = !!f.onlyOpen;
@@ -793,10 +841,10 @@ $('onlyopen').onchange = e => { state.onlyOpen = e.target.checked; saveFilters()
 $('onlynew').onchange  = e => { state.onlyNew = e.target.checked; saveFilters(); render(); };
 $('showhidden').onchange = e => { state.showHidden = e.target.checked; saveFilters(); render(); };
 $('btn-clear').onclick = () => {
-  state.q = ''; state.topics.clear(); state.source = ''; state.kpi = '';
+  state.q = ''; state.topics.clear(); state.kinds.clear(); state.source = ''; state.kpi = '';
   state.onlyOpen = state.onlyNew = false;
   $('q').value = ''; $('source').value = ''; $('onlyopen').checked = false; $('onlynew').checked = false;
-  syncChips(); saveFilters(); render();
+  syncChips(); syncKindChips(); saveFilters(); render();
 };
 $('btn-reload').onclick = () => { toast('מרענן…'); load(); };
 $('btn-export').onclick = exportCsv;
