@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T07:44:06.843Z",
+  "generatedAt": "2026-08-17T07:46:45.161Z",
   "generatedDate": "2026-08-17",
   "topics": {
     "telecom": {
@@ -66,15 +66,15 @@
     }
   ],
   "counts": {
-    "total": 17,
-    "new": 17,
+    "total": 9,
+    "new": 9,
     "open": 0,
     "closingSoon": 0,
     "byTopic": {
-      "infosec": 2,
-      "it": 10,
-      "telecom": 4,
-      "equipment": 2
+      "infosec": 1,
+      "it": 5,
+      "equipment": 2,
+      "telecom": 2
     }
   },
   "sources": [
@@ -85,7 +85,7 @@
       "ok": true,
       "scanned": 116,
       "count": 0,
-      "ms": 8871,
+      "ms": 12562,
       "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER"
     },
     {
@@ -96,7 +96,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 4606,
+      "ms": 4560,
       "searchUrl": "https://www.gov.il/he/departments/publications?publicationType=tender"
     },
     {
@@ -107,7 +107,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 5384,
+      "ms": 5732,
       "searchUrl": "https://www.moin.gov.il/Tenders"
     },
     {
@@ -117,7 +117,7 @@
       "ok": true,
       "scanned": 291,
       "count": 9,
-      "ms": 3353,
+      "ms": 3238,
       "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
     },
     {
@@ -127,7 +127,7 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 1748,
+      "ms": 2091,
       "searchUrl": "https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders"
     },
     {
@@ -138,7 +138,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 4788,
+      "ms": 5002,
       "searchUrl": "https://www.nta.co.il/tenders/"
     },
     {
@@ -149,7 +149,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 4763,
+      "ms": 4927,
       "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
     },
     {
@@ -160,7 +160,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 4597,
+      "ms": 4566,
       "searchUrl": "https://www.transisrael.co.il/Tenders?currentView=1"
     },
     {
@@ -170,7 +170,7 @@
       "ok": true,
       "scanned": 8,
       "count": 0,
-      "ms": 3499,
+      "ms": 4029,
       "searchUrl": "https://www.atarim.gov.il/tenders/"
     },
     {
@@ -180,7 +180,7 @@
       "ok": true,
       "scanned": 639,
       "count": 0,
-      "ms": 2694,
+      "ms": 3022,
       "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx"
     },
     {
@@ -190,7 +190,7 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 1930,
+      "ms": 1819,
       "searchUrl": "https://www2.haifa.muni.il/Michrazim/Default.aspx"
     },
     {
@@ -201,7 +201,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 4648,
+      "ms": 4699,
       "searchUrl": "https://www.jerusalem.muni.il/he/business/tenders/"
     }
   ],
@@ -256,29 +256,6 @@
       "lastSeen": "2026-08-17"
     },
     {
-      "id": "03b4f9301f415e88",
-      "title": "רכישת מחשבים ניידים",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620724",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 8,
-      "matched": [
-        "מחשבים ניידים",
-        "מחשבים"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
       "id": "fb08a656d4bf51e3",
       "title": "התקשרות לרישוי תוכנה, שירותי התקנה, אחזקה ושדרוגים של מערכת תמחיר SAS",
       "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_05_2026/",
@@ -323,28 +300,6 @@
       "lastSeen": "2026-08-17"
     },
     {
-      "id": "a41b29cbff113f6f",
-      "title": "ייעוץ וליווי בתחומי טכנולוגיה מתקדמת עבור המטה הלאומי לבינה מלאכותית",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620931",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 5,
-      "matched": [
-        "בינה מלאכותית"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
       "id": "09c588c88f7a8a3a",
       "title": "התקנה, הטמעה ואחזקת מערכת ממוחשבת לניהול אירועים, עבור רשות שדות התעופה",
       "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_60_2026/",
@@ -362,72 +317,6 @@
       "score": 4,
       "matched": [
         "מערכת ממוחשבת"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "a68d3d8d0703357b",
-      "title": "מחקר בנושא \"הערכת השפעת מדיניות איסור שימוש בטלפונים ניידים במערכת החינוך\"",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620971",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 4,
-      "matched": [
-        "טלפונים ניידים"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "42bf0284dbdb9884",
-      "title": "אלקטרוניקה וסלולר",
-      "url": "https://www.iaa.gov.il/airports/ben-gurion/businesses/electronics-and-cellular/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 4,
-      "matched": [
-        "סלולר"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "3830453f658d45ae",
-      "title": "הגנת הפרטיות",
-      "url": "https://www.iaa.gov.il/airports/ben-gurion/privacy-policy/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "infosec"
-      ],
-      "score": 4,
-      "matched": [
-        "הגנת הפרטיות"
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17"
@@ -516,72 +405,6 @@
       "score": 3,
       "matched": [
         "אלחוטי"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "d58432e9ad1439f9",
-      "title": "מערכת ניהול סביבתי",
-      "url": "https://www.iaa.gov.il/environment-and-sustainability/environmental-management-systems/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 3,
-      "matched": [
-        "מערכת ניהול"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "9612caec8737779a",
-      "title": "להורדת אפליקציה App Store",
-      "url": "https://apps.apple.com/il/app/ben-gurion-tlv-airport/id796888961?l=iw",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 3,
-      "matched": [
-        "אפליקציה"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "01d880867cdebe89",
-      "title": "להורדת אפליקציה Google Play",
-      "url": "https://play.google.com/store/apps/details?id=com.iaa.mobile&hl=iw&gl=US",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 3,
-      "matched": [
-        "אפליקציה"
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17"
