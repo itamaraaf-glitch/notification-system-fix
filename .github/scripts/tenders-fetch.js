@@ -25,10 +25,10 @@ const DRY_RUN = ARGS.includes('--dry-run');
 // כדי לאבחן חילוץ תאריכים בלי לנחש את מבנה הדף
 const DEBUG_SOURCE = (ARGS.find(a => a.startsWith('--debug=')) || '').split('=')[1] || '';
 
-const TIMEOUT_MS = +(process.env.TENDERS_TIMEOUT_MS || 25000);
+const TIMEOUT_MS = +(process.env.TENDERS_TIMEOUT_MS || 15000);
 const KEEP_DAYS = +(process.env.TENDERS_KEEP_DAYS || 45);
 const MAX_PER_SOURCE = +(process.env.TENDERS_MAX_PER_SOURCE || 60);
-const POLITE_DELAY_MS = +(process.env.TENDERS_DELAY_MS || 1200);
+const POLITE_DELAY_MS = +(process.env.TENDERS_DELAY_MS || 900);
 const UA = 'Mozilla/5.0 (compatible; TendersRadar/1.0; +https://github.com/itamaraaf-glitch/notification-system-fix)';
 
 const today = ymd(new Date());
@@ -242,10 +242,17 @@ async function fetchText(url, { retries = 2 } = {}) {
           'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8'
         }
       });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
+      if (!res.ok) {
+        const err = new Error('HTTP ' + res.status);
+        // שגיאת 4xx היא קבועה (חסימה/דף שאינו קיים) — ניסיון חוזר רק מבזבז זמן.
+        // בסריקה של עשרות רשויות, ניסיונות חוזרים על כתובות מתות הופכים את הריצה לארוכה מאוד.
+        if (res.status >= 400 && res.status < 500 && res.status !== 429) err.permanent = true;
+        throw err;
+      }
       return await res.text();
     } catch (e) {
       lastErr = e;
+      if (e.permanent) break;
       if (attempt < retries) await sleep(1500 * (attempt + 1));
     } finally {
       clearTimeout(timer);
@@ -259,7 +266,8 @@ async function fetchText(url, { retries = 2 } = {}) {
 const ANCHOR_RE = /<a\b[^>]*?href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))[^>]*>([\s\S]*?)<\/a>/gi;
 
 /** קוצר קישורים מדף רשימה. מחזיר גם חלון הקשר סביב כל קישור לצורך חילוץ תאריכים. */
-function harvestAnchors(html, baseUrl) {
+function harvestAnchors(html, baseUrl, opts) {
+  const minLen = (opts && opts.minLen != null) ? opts.minLen : 10;
   const out = [];
   const seen = new Set();
   let m;
@@ -269,7 +277,7 @@ function harvestAnchors(html, baseUrl) {
     const title = stripTags(m[4] || '');
     if (!href || !title) continue;
     if (/^(javascript:|mailto:|tel:|#)/i.test(href)) continue;
-    if (title.length < 10 || title.length > 300) continue;
+    if (title.length < minLen || title.length > 300) continue;
 
     let abs;
     try { abs = new URL(href, baseUrl).toString(); } catch (_) { continue; }
@@ -290,22 +298,94 @@ function harvestAnchors(html, baseUrl) {
   return out;
 }
 
+function itemFromAnchor(a) {
+  return {
+    title: a.title,
+    url: a.url,
+    context: a.context,
+    publishedAt: dateAfterHint(a.context, PUBLISH_HINTS),
+    deadlineAt: dateAfterHint(a.context, DEADLINE_HINTS)
+  };
+}
+const shortUrl = u => { try { const p = new URL(u); return p.host + p.pathname.slice(0, 40); } catch (_) { return String(u).slice(0, 50); } };
+
+/**
+ * קציר קישורים מדף רשימה אחד או יותר.
+ * כתובת שנכשלת אינה מפילה את המקור — היא נרשמת כאזהרה והסריקה ממשיכה לכתובת הבאה.
+ * המקור נחשב כנכשל רק אם כל הכתובות שלו נכשלו.
+ */
 async function adapterHtml(source) {
   const items = [];
+  const warnings = [];
+  let ok = 0;
   for (const url of (source.urls || [])) {
-    const html = await fetchText(url);
-    for (const a of harvestAnchors(html, url)) {
-      items.push({
-        title: a.title,
-        url: a.url,
-        context: a.context,
-        publishedAt: dateAfterHint(a.context, PUBLISH_HINTS),
-        deadlineAt: dateAfterHint(a.context, DEADLINE_HINTS)
-      });
+    try {
+      const html = await fetchText(url);
+      ok++;
+      for (const a of harvestAnchors(html, url)) items.push(itemFromAnchor(a));
+    } catch (e) {
+      warnings.push(`${shortUrl(url)} — ${(e && e.message) || e}`);
     }
     await sleep(POLITE_DELAY_MS);
   }
+  if (!ok) throw new Error(warnings.join(' | ') || 'לא הוגדרו כתובות למקור');
+  items.warnings = warnings;
   return items;
+}
+
+/**
+ * גילוי אוטומטי של עמוד המכרזים: נכנס לדף הבית של הרשות, מאתר את הקישור
+ * ל"מכרזים" וקוצר משם. כך אפשר לכסות עשרות רשויות מקומיות בלי לתחזק כתובת
+ * מדויקת לכל אחת — לכל רשות אתר ומבנה כתובות שונים.
+ */
+async function adapterDiscover(source) {
+  const start = source.home || (source.urls || [])[0];
+  if (!start) throw new Error('למקור אין כתובת דף בית');
+  const homeHtml = await fetchText(start);
+  const links = findTenderLinks(homeHtml, start).slice(0, source.maxPages || 2);
+  if (!links.length) throw new Error('לא נמצא קישור לעמוד מכרזים בדף הבית');
+
+  const items = [];
+  const warnings = [];
+  let ok = 0;
+  for (const link of links) {
+    await sleep(POLITE_DELAY_MS);
+    try {
+      const html = await fetchText(link.url);
+      ok++;
+      for (const a of harvestAnchors(html, link.url)) items.push(itemFromAnchor(a));
+    } catch (e) {
+      warnings.push(`${shortUrl(link.url)} — ${(e && e.message) || e}`);
+    }
+  }
+  if (!ok) throw new Error('עמוד המכרזים שאותר לא נטען: ' + warnings.join(' | '));
+  items.warnings = warnings;
+  items.discovered = links.map(l => l.url);
+  return items;
+}
+
+/** מאתר בדף הבית קישורים שנראים כמובילים לעמוד המכרזים, מהמדויק לפחות מדויק */
+function findTenderLinks(html, baseUrl) {
+  const TEXT_RE = /(מכרז|מיכרז|michraz|tenders?)/i;
+  const scored = [];
+  const seen = new Set();
+  for (const a of harvestAnchors(html, baseUrl, { minLen: 3 })) {
+    const byText = TEXT_RE.test(a.title);
+    const byUrl = looksLikeTenderUrl(a.url);
+    if (!byText && !byUrl) continue;
+    // לא יורדים לעמוד של מכרז בודד — מחפשים את עמוד הרשימה
+    if (/\.(pdf|docx?|xlsx?|zip)$/i.test(a.url)) continue;
+    let host;
+    try { host = new URL(a.url).host; } catch (_) { continue; }
+    try { if (host !== new URL(baseUrl).host) continue; } catch (_) { /* נשאר באותו אתר */ }
+    if (seen.has(a.url)) continue;
+    seen.add(a.url);
+    // "מכרזים" כטקסט הקישור הוא האינדיקציה החזקה ביותר לעמוד רשימה
+    const score = (/^\s*מכרזים\s*$/.test(a.title) ? 100 : 0) + (byText ? 10 : 0) + (byUrl ? 5 : 0)
+      - Math.min(20, a.title.length / 5);
+    scored.push({ url: a.url, title: a.title, score });
+  }
+  return scored.sort((x, y) => y.score - x.score);
 }
 
 const RSS_ITEM_RE = /<(item|entry)\b[\s\S]*?<\/\1>/gi;
@@ -321,8 +401,12 @@ function pickLink(xml) {
 
 async function adapterRss(source) {
   const items = [];
+  const warnings = [];
+  let ok = 0;
   for (const url of (source.urls || [])) {
-    const xml = await fetchText(url);
+    let xml;
+    try { xml = await fetchText(url); ok++; }
+    catch (e) { warnings.push(`${shortUrl(url)} — ${(e && e.message) || e}`); await sleep(POLITE_DELAY_MS); continue; }
     const blocks = xml.match(RSS_ITEM_RE) || [];
     for (const b of blocks) {
       const title = pickTag(b, 'title');
@@ -344,6 +428,8 @@ async function adapterRss(source) {
     }
     await sleep(POLITE_DELAY_MS);
   }
+  if (!ok) throw new Error(warnings.join(' | ') || 'לא הוגדרו כתובות למקור');
+  items.warnings = warnings;
   return items;
 }
 
@@ -411,7 +497,7 @@ function mapCkanRecord(rec) {
   return { title, url: /^https?:/i.test(url) ? url : '', publisher, publishedAt, deadlineAt, context };
 }
 
-const ADAPTERS = { html: adapterHtml, rss: adapterRss, ckan: adapterCkan };
+const ADAPTERS = { html: adapterHtml, discover: adapterDiscover, rss: adapterRss, ckan: adapterCkan };
 
 /* ───────────────────────── תהליך ראשי ───────────────────────── */
 
@@ -462,6 +548,8 @@ async function main() {
       status.push({
         id: source.id, name: source.name, category: source.category || '', ok: true,
         scanned: raw.length, count: kept, ms: Date.now() - started,
+        warn: (raw.warnings || []).join(' | ').slice(0, 200),
+        discovered: raw.discovered || undefined,
         searchUrl: source.searchUrl || source.home || ''
       });
       console.error(`נסרקו ${raw.length}, רלוונטיים ${kept}`);
@@ -657,7 +745,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, harvestAnchors, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, harvestAnchors, findTenderLinks, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS

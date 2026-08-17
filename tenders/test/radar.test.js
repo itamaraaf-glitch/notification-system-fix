@@ -328,3 +328,33 @@ test('buildRecord מקבל מכרז ממקור עם תבנית קישור ייע
   const rec = R.buildRecord({ title:'רכישת מחשבים ניידים', url:'https://mr.gov.il/ilgstorefront/he/p/4000620724', context:'' }, src, KW);
   assert.ok(rec && rec.topics.includes('it'), 'מכרז אמיתי בכתובת מספרית אמור לעבור את השער');
 });
+
+test('גילוי עמוד המכרזים מדף הבית של רשות מקומית', () => {
+  const home = `
+    <nav>
+      <a href="/he/residents">תושבים</a>
+      <a href="/he/education">חינוך</a>
+      <a href="/he/business/michrazim">מכרזים</a>
+      <a href="/he/about">אודות העירייה</a>
+      <a href="https://facebook.com/city/tenders">עקבו אחרינו</a>
+      <a href="/files/tender-14-2026.pdf">מכרז 14/2026 מסמכים</a>
+    </nav>`;
+  const links = R.findTenderLinks(home, 'https://www.city.muni.il/');
+  assert.ok(links.length, 'צריך לאתר לפחות קישור אחד');
+  assert.strictEqual(links[0].url, 'https://www.city.muni.il/he/business/michrazim',
+    'הקישור שהטקסט שלו הוא בדיוק "מכרזים" הוא עמוד הרשימה');
+  assert.ok(!links.some(l => l.url.includes('facebook.com')), 'לא יוצאים לדומיין חיצוני');
+  assert.ok(!links.some(l => l.url.endsWith('.pdf')), 'לא יורדים לקובץ של מכרז בודד');
+});
+
+test('גילוי מזהה גם כתובת מכרזים שהטקסט שלה שונה', () => {
+  const home = `<a href="/Tenders/Pages/default.aspx">הזדמנויות עסקיות וספקים</a>`;
+  const links = R.findTenderLinks(home, 'https://www.city.muni.il/');
+  assert.strictEqual(links.length, 1);
+  assert.ok(links[0].url.includes('/Tenders/'));
+});
+
+test('דף בית בלי קישור למכרזים אינו מחזיר מועמדים', () => {
+  const home = `<a href="/he/education">חינוך</a><a href="/he/sport">ספורט</a>`;
+  assert.deepStrictEqual(R.findTenderLinks(home, 'https://www.city.muni.il/'), []);
+});
