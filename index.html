@@ -7147,6 +7147,12 @@ function _radarRender(){
       מקור שנכשל או שמחזיר 0 תוצאות הוא לרוב אתר שנבנה כיישום JavaScript ולכן אינו נסרק אוטומטית.
       הקישור "חיפוש ידני" פותח את דף המכרזים שלו לבדיקה.</p></details>`:'';
 
+  const auths=(_radar.manualAuthorities||[]).map(a=>{const u=safeUrl(a.url);
+    return u?`<a class="rdr-mlink" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(a.name)}</a>`:''}).join('');
+  const authPanel=auths?`<details class="rdr-panel"><summary>🏛️ רשויות מקומיות – בדיקה ידנית <span style="font-size:10.5px;font-weight:400;color:var(--text3)">— ${(_radar.manualAuthorities||[]).length} רשויות</span></summary>
+    <p style="font-size:11px;color:var(--text2);margin:12px 0 10px;line-height:1.7">אתרי הרשויות האלה חוסמים סריקה אוטומטית או מסרבים חיבור מכתובות שרת. הקישורים פותחים את אתר הרשות לבדיקה ידנית מהירה.</p>
+    <div class="rdr-mlinks">${auths}</div></details>`:'';
+
   const mls=(_radar.manualLinks||[]).map(l=>{const u=safeUrl(l.url);
     return u?`<a class="rdr-mlink" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(l.name)}${l.note?`<small>${esc(l.note)}</small>`:''}</a>`:''}).join('');
   const mlPanel=mls?`<div class="rdr-panel"><h4>🔎 חיפוש ידני במאגרים נוספים</h4>
@@ -7189,7 +7195,7 @@ function _radarRender(){
     ${pickN?`<div class="rdr-selbar"><span>${pickN} מכרזים נבחרו</span>
       <button class="btn btns" onclick="addSelectedFromRadar()" style="border-color:#06d6a0;color:#06d6a0">➕ הוסף את הנבחרים למכרזים</button>
       <button class="btn btns" onclick="_radarClearPick()">✕ ניקוי בחירה</button></div>`:''}
-    ${srcPanel}${mlPanel}`;
+    ${srcPanel}${authPanel}${mlPanel}`;
 }
 
 /** בונה רשומת מכרז לטבלה מתוך ממצא ראדאר */

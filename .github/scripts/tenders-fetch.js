@@ -595,6 +595,7 @@ async function main() {
     generatedDate: today,
     topics: Object.fromEntries(Object.entries(kw.topics).map(([id, t]) => [id, { label: t.label, icon: t.icon, color: t.color }])),
     manualLinks: cfg.manualLinks || [],
+    manualAuthorities: cfg.manualAuthorities || [],
     counts: summarize(merged),
     sources: status,
     tenders: merged

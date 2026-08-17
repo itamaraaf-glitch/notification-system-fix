@@ -254,6 +254,15 @@ footer{text-align:center;font-size:10.5px;color:var(--text3);margin-top:26px;lin
     <div id="srctable"></div>
   </details>
 
+  <details class="panel" id="authpanel" style="display:none">
+    <summary>🏛️ רשויות מקומיות – בדיקה ידנית <span id="authcount" style="font-size:11px;font-weight:400;color:var(--text3)"></span></summary>
+    <p style="font-size:11.5px;color:var(--text2);margin-bottom:11px;line-height:1.7">
+      אתרי הרשויות האלה חוסמים סריקה אוטומטית (403) או מסרבים חיבור מכתובות שרת. הן לא נסרקות —
+      אבל הקישורים כאן פותחים את אתר הרשות ישירות, לסריקה ידנית מהירה.
+    </p>
+    <div class="mlinks" id="authlinks"></div>
+  </details>
+
   <div class="panel" id="manualpanel" style="display:none">
     <h2>🔎 חיפוש ידני במאגרים נוספים</h2>
     <p style="font-size:11.5px;color:var(--text2);margin-bottom:11px;line-height:1.7">
@@ -360,6 +369,7 @@ async function load(){
   buildSourceSelect();
   renderFreshness(DATA);
   renderManual();
+  renderAuthorities();
   renderSources();
   render();
 }
@@ -631,6 +641,18 @@ function renderSources(){
       הקישור "חיפוש ידני" פותח את דף המכרזים שלו לבדיקה, ואפשר להחליף או להוסיף מקורות בקובץ
       <code style="background:rgba(10,15,30,.8);padding:1px 5px;border-radius:4px">tenders/config/sources.json</code>.
     </p>`;
+}
+
+function renderAuthorities(){
+  const list = DATA.manualAuthorities || [];
+  if(!list.length) return;
+  $('authpanel').style.display = '';
+  $('authcount').textContent = `— ${list.length} רשויות`;
+  $('authlinks').innerHTML = list.map(a => {
+    const u = safeUrl(a.url);
+    if(!u) return '';
+    return `<a class="mlink" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(a.name)}</a>`;
+  }).join('');
 }
 
 function renderManual(){

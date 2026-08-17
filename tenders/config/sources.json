@@ -158,324 +158,14 @@
       "home": "https://data.gov.il/"
     },
     {
-      "id": "muni-jerusalem",
-      "name": "עיריית ירושלים",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.jerusalem.muni.il/",
-      "searchUrl": "https://www.jerusalem.muni.il/"
-    },
-    {
       "id": "muni-haifa",
       "name": "עיריית חיפה",
       "category": "רשויות מקומיות",
       "kind": "discover",
       "enabled": true,
-      "allTenders": true,
+      "allTenders": false,
       "home": "https://www.haifa.muni.il/",
       "searchUrl": "https://www.haifa.muni.il/"
-    },
-    {
-      "id": "muni-rishon",
-      "name": "עיריית ראשון לציון",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.rishonlezion.muni.il/",
-      "searchUrl": "https://www.rishonlezion.muni.il/"
-    },
-    {
-      "id": "muni-petah-tikva",
-      "name": "עיריית פתח תקווה",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.petah-tikva.muni.il/",
-      "searchUrl": "https://www.petah-tikva.muni.il/"
-    },
-    {
-      "id": "muni-ashdod",
-      "name": "עיריית אשדוד",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.ashdod.muni.il/",
-      "searchUrl": "https://www.ashdod.muni.il/"
-    },
-    {
-      "id": "muni-netanya",
-      "name": "עיריית נתניה",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.netanya.muni.il/",
-      "searchUrl": "https://www.netanya.muni.il/"
-    },
-    {
-      "id": "muni-beer-sheva",
-      "name": "עיריית באר שבע",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.beer-sheva.muni.il/",
-      "searchUrl": "https://www.beer-sheva.muni.il/"
-    },
-    {
-      "id": "muni-bnei-brak",
-      "name": "עיריית בני ברק",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.bneibrak.muni.il/",
-      "searchUrl": "https://www.bneibrak.muni.il/"
-    },
-    {
-      "id": "muni-holon",
-      "name": "עיריית חולון",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.holon.muni.il/",
-      "searchUrl": "https://www.holon.muni.il/"
-    },
-    {
-      "id": "muni-ramat-gan",
-      "name": "עיריית רמת גן",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.ramat-gan.muni.il/",
-      "searchUrl": "https://www.ramat-gan.muni.il/"
-    },
-    {
-      "id": "muni-rehovot",
-      "name": "עיריית רחובות",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.rehovot.muni.il/",
-      "searchUrl": "https://www.rehovot.muni.il/"
-    },
-    {
-      "id": "muni-ashkelon",
-      "name": "עיריית אשקלון",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.ashkelon.muni.il/",
-      "searchUrl": "https://www.ashkelon.muni.il/"
-    },
-    {
-      "id": "muni-bat-yam",
-      "name": "עיריית בת ים",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.bat-yam.muni.il/",
-      "searchUrl": "https://www.bat-yam.muni.il/"
-    },
-    {
-      "id": "muni-beit-shemesh",
-      "name": "עיריית בית שמש",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.bshemesh.co.il/",
-      "searchUrl": "https://www.bshemesh.co.il/"
-    },
-    {
-      "id": "muni-kfar-saba",
-      "name": "עיריית כפר סבא",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.kfar-saba.muni.il/",
-      "searchUrl": "https://www.kfar-saba.muni.il/"
-    },
-    {
-      "id": "muni-herzliya",
-      "name": "עיריית הרצליה",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.herzliya.muni.il/",
-      "searchUrl": "https://www.herzliya.muni.il/"
-    },
-    {
-      "id": "muni-hadera",
-      "name": "עיריית חדרה",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.hadera.muni.il/",
-      "searchUrl": "https://www.hadera.muni.il/"
-    },
-    {
-      "id": "muni-modiin",
-      "name": "עיריית מודיעין-מכבים-רעות",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.modiin.muni.il/",
-      "searchUrl": "https://www.modiin.muni.il/"
-    },
-    {
-      "id": "muni-lod",
-      "name": "עיריית לוד",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.lod.muni.il/",
-      "searchUrl": "https://www.lod.muni.il/"
-    },
-    {
-      "id": "muni-raanana",
-      "name": "עיריית רעננה",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.raanana.muni.il/",
-      "searchUrl": "https://www.raanana.muni.il/"
-    },
-    {
-      "id": "muni-ramla",
-      "name": "עיריית רמלה",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.ramla.muni.il/",
-      "searchUrl": "https://www.ramla.muni.il/"
-    },
-    {
-      "id": "muni-givatayim",
-      "name": "עיריית גבעתיים",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.givatayim.muni.il/",
-      "searchUrl": "https://www.givatayim.muni.il/"
-    },
-    {
-      "id": "muni-hod-hasharon",
-      "name": "עיריית הוד השרון",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.hod-hasharon.muni.il/",
-      "searchUrl": "https://www.hod-hasharon.muni.il/"
-    },
-    {
-      "id": "muni-kiryat-gat",
-      "name": "עיריית קריית גת",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.qiryat-gat.muni.il/",
-      "searchUrl": "https://www.qiryat-gat.muni.il/"
-    },
-    {
-      "id": "muni-nahariya",
-      "name": "עיריית נהריה",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.nahariya.muni.il/",
-      "searchUrl": "https://www.nahariya.muni.il/"
-    },
-    {
-      "id": "muni-eilat",
-      "name": "עיריית אילת",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.eilat.muni.il/",
-      "searchUrl": "https://www.eilat.muni.il/"
-    },
-    {
-      "id": "muni-afula",
-      "name": "עיריית עפולה",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.afula.muni.il/",
-      "searchUrl": "https://www.afula.muni.il/"
-    },
-    {
-      "id": "muni-kiryat-ata",
-      "name": "עיריית קריית אתא",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.qiryat-ata.muni.il/",
-      "searchUrl": "https://www.qiryat-ata.muni.il/"
-    },
-    {
-      "id": "muni-tiberias",
-      "name": "עיריית טבריה",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.tiberias.muni.il/",
-      "searchUrl": "https://www.tiberias.muni.il/"
-    },
-    {
-      "id": "muni-carmiel",
-      "name": "עיריית כרמיאל",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.carmiel.muni.il/",
-      "searchUrl": "https://www.carmiel.muni.il/"
-    },
-    {
-      "id": "muni-rosh-haayin",
-      "name": "עיריית ראש העין",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.rosh-haayin.muni.il/",
-      "searchUrl": "https://www.rosh-haayin.muni.il/"
-    },
-    {
-      "id": "muni-dimona",
-      "name": "עיריית דימונה",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.dimona.muni.il/",
-      "searchUrl": "https://www.dimona.muni.il/"
     },
     {
       "id": "muni-nes-ziona",
@@ -483,289 +173,9 @@
       "category": "רשויות מקומיות",
       "kind": "discover",
       "enabled": true,
-      "allTenders": true,
+      "allTenders": false,
       "home": "https://www.nzc.org.il/",
       "searchUrl": "https://www.nzc.org.il/"
-    },
-    {
-      "id": "muni-yavne",
-      "name": "עיריית יבנה",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.yavne.muni.il/",
-      "searchUrl": "https://www.yavne.muni.il/"
-    },
-    {
-      "id": "muni-akko",
-      "name": "עיריית עכו",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.akko.muni.il/",
-      "searchUrl": "https://www.akko.muni.il/"
-    },
-    {
-      "id": "muni-or-yehuda",
-      "name": "עיריית אור יהודה",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.oryehuda.muni.il/",
-      "searchUrl": "https://www.oryehuda.muni.il/"
-    },
-    {
-      "id": "muni-kiryat-ono",
-      "name": "עיריית קריית אונו",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.kiryatono.muni.il/",
-      "searchUrl": "https://www.kiryatono.muni.il/"
-    },
-    {
-      "id": "muni-givat-shmuel",
-      "name": "עיריית גבעת שמואל",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.givat-shmuel.muni.il/",
-      "searchUrl": "https://www.givat-shmuel.muni.il/"
-    },
-    {
-      "id": "muni-yehud",
-      "name": "עיריית יהוד-מונוסון",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.yehud-monosson.muni.il/",
-      "searchUrl": "https://www.yehud-monosson.muni.il/"
-    },
-    {
-      "id": "muni-shoham",
-      "name": "מועצת שוהם",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.shoham.muni.il/",
-      "searchUrl": "https://www.shoham.muni.il/"
-    },
-    {
-      "id": "muni-elad",
-      "name": "עיריית אלעד",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.elad.muni.il/",
-      "searchUrl": "https://www.elad.muni.il/"
-    },
-    {
-      "id": "muni-netivot",
-      "name": "עיריית נתיבות",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.netivot.muni.il/",
-      "searchUrl": "https://www.netivot.muni.il/"
-    },
-    {
-      "id": "muni-ofakim",
-      "name": "עיריית אופקים",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.ofakim.muni.il/",
-      "searchUrl": "https://www.ofakim.muni.il/"
-    },
-    {
-      "id": "muni-sderot",
-      "name": "עיריית שדרות",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.sderot.muni.il/",
-      "searchUrl": "https://www.sderot.muni.il/"
-    },
-    {
-      "id": "muni-arad",
-      "name": "עיריית ערד",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.arad.muni.il/",
-      "searchUrl": "https://www.arad.muni.il/"
-    },
-    {
-      "id": "muni-migdal-haemek",
-      "name": "עיריית מגדל העמק",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.migdalhaemek.muni.il/",
-      "searchUrl": "https://www.migdalhaemek.muni.il/"
-    },
-    {
-      "id": "muni-kiryat-bialik",
-      "name": "עיריית קריית ביאליק",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.qbialik.org.il/",
-      "searchUrl": "https://www.qbialik.org.il/"
-    },
-    {
-      "id": "muni-kiryat-motzkin",
-      "name": "עיריית קריית מוצקין",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.kmotzkin.org.il/",
-      "searchUrl": "https://www.kmotzkin.org.il/"
-    },
-    {
-      "id": "muni-tirat-carmel",
-      "name": "עיריית טירת כרמל",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.tirat-carmel.muni.il/",
-      "searchUrl": "https://www.tirat-carmel.muni.il/"
-    },
-    {
-      "id": "muni-zefat",
-      "name": "עיריית צפת",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.zefat.muni.il/",
-      "searchUrl": "https://www.zefat.muni.il/"
-    },
-    {
-      "id": "muni-ariel",
-      "name": "עיריית אריאל",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.ariel.muni.il/",
-      "searchUrl": "https://www.ariel.muni.il/"
-    },
-    {
-      "id": "muni-maale-adumim",
-      "name": "עיריית מעלה אדומים",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.maale-adumim.muni.il/",
-      "searchUrl": "https://www.maale-adumim.muni.il/"
-    },
-    {
-      "id": "muni-nof-hagalil",
-      "name": "עיריית נוף הגליל",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.nofhagalil.muni.il/",
-      "searchUrl": "https://www.nofhagalil.muni.il/"
-    },
-    {
-      "id": "muni-nazareth",
-      "name": "עיריית נצרת",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.nazareth.muni.il/",
-      "searchUrl": "https://www.nazareth.muni.il/"
-    },
-    {
-      "id": "muni-umm-el-fahem",
-      "name": "עיריית אום אל-פחם",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.umelfahem.muni.il/",
-      "searchUrl": "https://www.umelfahem.muni.il/"
-    },
-    {
-      "id": "muni-rahat",
-      "name": "עיריית רהט",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.rahat.muni.il/",
-      "searchUrl": "https://www.rahat.muni.il/"
-    },
-    {
-      "id": "muni-tamra",
-      "name": "עיריית טמרה",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.tamra.muni.il/",
-      "searchUrl": "https://www.tamra.muni.il/"
-    },
-    {
-      "id": "muni-sakhnin",
-      "name": "עיריית סחנין",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.sakhnin.muni.il/",
-      "searchUrl": "https://www.sakhnin.muni.il/"
-    },
-    {
-      "id": "muni-shefaram",
-      "name": "עיריית שפרעם",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.shefa-amr.muni.il/",
-      "searchUrl": "https://www.shefa-amr.muni.il/"
-    },
-    {
-      "id": "muni-mate-yehuda",
-      "name": "מועצה אזורית מטה יהודה",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.m-yehuda.org.il/",
-      "searchUrl": "https://www.m-yehuda.org.il/"
-    },
-    {
-      "id": "muni-emek-hefer",
-      "name": "מועצה אזורית עמק חפר",
-      "category": "רשויות מקומיות",
-      "kind": "discover",
-      "enabled": true,
-      "allTenders": true,
-      "home": "https://www.hefer.org.il/",
-      "searchUrl": "https://www.hefer.org.il/"
     },
     {
       "id": "muni-drom-hasharon",
@@ -773,7 +183,7 @@
       "category": "רשויות מקומיות",
       "kind": "discover",
       "enabled": true,
-      "allTenders": true,
+      "allTenders": false,
       "home": "https://www.dsharon.org.il/",
       "searchUrl": "https://www.dsharon.org.il/"
     },
@@ -783,7 +193,7 @@
       "category": "רשויות מקומיות",
       "kind": "discover",
       "enabled": true,
-      "allTenders": true,
+      "allTenders": false,
       "home": "https://www.eyz.org.il/",
       "searchUrl": "https://www.eyz.org.il/"
     }
@@ -831,5 +241,303 @@
       "note": "רכש ביטחוני"
     }
   ],
-  "_municipalComment": "הרשויות המקומיות נסרקות במתאם 'discover': הסורק נכנס לדף הבית, מאתר בעצמו את הקישור לעמוד המכרזים ומשם קוצר. כך אין צורך לתחזק כתובת מדויקת לכל רשות — לכל אתר מבנה כתובות שונה. רשות שאתרה חוסם סריקה או בנוי כיישום JavaScript תדווח בפאנל בריאות המקורות עם קישור לחיפוש ידני."
+  "_municipalComment": "הרשויות המקומיות נסרקות במתאם 'discover': הסורק נכנס לדף הבית, מאתר בעצמו את הקישור לעמוד המכרזים ומשם קוצר. כך אין צורך לתחזק כתובת מדויקת לכל רשות — לכל אתר מבנה כתובות שונה. רשות שאתרה חוסם סריקה או בנוי כיישום JavaScript תדווח בפאנל בריאות המקורות עם קישור לחיפוש ידני.",
+  "_manualAuthoritiesComment": "רשויות שאתריהן חוסמים סריקה אוטומטית (403) או מסרבים חיבור מכתובות שרת. אין לנסות לעקוף הגנות בוט — הן מוצגות בממשק כרשימת בדיקה ידנית בלחיצה אחת. אם אתר משתנה ונפתח לסריקה, אפשר להעביר רשות חזרה ל-sources עם kind='discover'.",
+  "manualAuthorities": [
+    {
+      "name": "מועצה אזורית מטה יהודה",
+      "url": "https://www.m-yehuda.org.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "מועצה אזורית עמק חפר",
+      "url": "https://www.hefer.org.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "מועצת שוהם",
+      "url": "https://www.shoham.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית אום אל-פחם",
+      "url": "https://www.umelfahem.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית אופקים",
+      "url": "https://www.ofakim.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית אור יהודה",
+      "url": "https://www.oryehuda.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית אילת",
+      "url": "https://www.eilat.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית אלעד",
+      "url": "https://www.elad.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית אריאל",
+      "url": "https://www.ariel.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית אשדוד",
+      "url": "https://www.ashdod.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית אשקלון",
+      "url": "https://www.ashkelon.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית באר שבע",
+      "url": "https://www.beer-sheva.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית בית שמש",
+      "url": "https://www.bshemesh.co.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית בני ברק",
+      "url": "https://www.bneibrak.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית בת ים",
+      "url": "https://www.bat-yam.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית גבעת שמואל",
+      "url": "https://www.givat-shmuel.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית גבעתיים",
+      "url": "https://www.givatayim.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית דימונה",
+      "url": "https://www.dimona.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית הוד השרון",
+      "url": "https://www.hod-hasharon.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית הרצליה",
+      "url": "https://www.herzliya.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית חדרה",
+      "url": "https://www.hadera.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית חולון",
+      "url": "https://www.holon.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית טבריה",
+      "url": "https://www.tiberias.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית טירת כרמל",
+      "url": "https://www.tirat-carmel.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית טמרה",
+      "url": "https://www.tamra.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית יבנה",
+      "url": "https://www.yavne.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית יהוד-מונוסון",
+      "url": "https://www.yehud-monosson.muni.il/",
+      "note": "לא נמצא קישור לעמוד מכרזים בדף הבית"
+    },
+    {
+      "name": "עיריית ירושלים",
+      "url": "https://www.jerusalem.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית כפר סבא",
+      "url": "https://www.kfar-saba.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית כרמיאל",
+      "url": "https://www.carmiel.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית לוד",
+      "url": "https://www.lod.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית מגדל העמק",
+      "url": "https://www.migdalhaemek.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית מודיעין-מכבים-רעות",
+      "url": "https://www.modiin.muni.il/",
+      "note": "לא נמצא קישור לעמוד מכרזים בדף הבית"
+    },
+    {
+      "name": "עיריית מעלה אדומים",
+      "url": "https://www.maale-adumim.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית נהריה",
+      "url": "https://www.nahariya.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית נוף הגליל",
+      "url": "https://www.nofhagalil.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית נצרת",
+      "url": "https://www.nazareth.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית נתיבות",
+      "url": "https://www.netivot.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית נתניה",
+      "url": "https://www.netanya.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית סחנין",
+      "url": "https://www.sakhnin.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית עכו",
+      "url": "https://www.akko.muni.il/",
+      "note": "לא נמצא קישור לעמוד מכרזים בדף הבית"
+    },
+    {
+      "name": "עיריית עפולה",
+      "url": "https://www.afula.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית ערד",
+      "url": "https://www.arad.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית פתח תקווה",
+      "url": "https://www.petah-tikva.muni.il/",
+      "note": "לא נמצא קישור לעמוד מכרזים בדף הבית"
+    },
+    {
+      "name": "עיריית צפת",
+      "url": "https://www.zefat.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית קריית אונו",
+      "url": "https://www.kiryatono.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית קריית אתא",
+      "url": "https://www.qiryat-ata.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית קריית ביאליק",
+      "url": "https://www.qbialik.org.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית קריית גת",
+      "url": "https://www.qiryat-gat.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית קריית מוצקין",
+      "url": "https://www.kmotzkin.org.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית ראש העין",
+      "url": "https://www.rosh-haayin.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית ראשון לציון",
+      "url": "https://www.rishonlezion.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית רהט",
+      "url": "https://www.rahat.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית רחובות",
+      "url": "https://www.rehovot.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית רמלה",
+      "url": "https://www.ramla.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית רמת גן",
+      "url": "https://www.ramat-gan.muni.il/",
+      "note": "לא נמצא קישור לעמוד מכרזים בדף הבית"
+    },
+    {
+      "name": "עיריית רעננה",
+      "url": "https://www.raanana.muni.il/",
+      "note": "HTTP 403"
+    },
+    {
+      "name": "עיריית שדרות",
+      "url": "https://www.sderot.muni.il/",
+      "note": "fetch failed"
+    },
+    {
+      "name": "עיריית שפרעם",
+      "url": "https://www.shefa-amr.muni.il/",
+      "note": "fetch failed"
+    }
+  ]
 }
