@@ -13,6 +13,10 @@ on:
         description: 'סריקת מקור בודד בלבד (מזהה מתוך tenders/config/sources.json). ריק = כל המקורות'
         required: false
         default: ''
+      debug:
+        description: 'מצב אבחון: מזהה מקור להדפסת הקישורים, ההקשר והתאריכים שנמצאו בדף. לא שומר ולא מדווח.'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -31,7 +35,13 @@ jobs:
       - name: בדיקות ליבת הראדאר
         run: node --test tenders/test/radar.test.js tenders/test/report.test.js
 
+      # מצב אבחון: מריץ רק את ההדפסה ומדלג על שמירה ודיווח
+      - name: אבחון מקור
+        if: inputs.debug != ''
+        run: node .github/scripts/tenders-fetch.js --debug="${{ inputs.debug }}" | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: סריקת מקורות המכרזים
+        if: inputs.debug == ''
         env:
           TENDERS_ONLY_SOURCE: ${{ inputs.source }}
         run: |
@@ -42,9 +52,11 @@ jobs:
           fi
 
       - name: סיכום הריצה
+        if: inputs.debug == ''
         run: node .github/scripts/tenders-report.js --summary >> "$GITHUB_STEP_SUMMARY"
 
       - name: שמירת התוצאות במאגר
+        if: inputs.debug == ''
         run: |
           if git diff --quiet -- tenders/data; then
             echo "אין שינוי בנתוני המכרזים — אין מה לשמור"
@@ -64,6 +76,7 @@ jobs:
           exit 1
 
       - name: פתיחת Issue עם המכרזים החדשים
+        if: inputs.debug == ''
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
