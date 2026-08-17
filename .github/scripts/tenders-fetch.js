@@ -21,6 +21,9 @@ const DATA_DIR = path.join(ROOT, 'tenders', 'data');
 const ARGS = process.argv.slice(2);
 const ONLY_SOURCE = (ARGS.find(a => a.startsWith('--source=')) || '').split('=')[1] || '';
 const DRY_RUN = ARGS.includes('--dry-run');
+// --debug=<id> מדפיס את הקישורים שנקצרו מהמקור יחד עם חלון ההקשר שלהם,
+// כדי לאבחן חילוץ תאריכים בלי לנחש את מבנה הדף
+const DEBUG_SOURCE = (ARGS.find(a => a.startsWith('--debug=')) || '').split('=')[1] || '';
 
 const TIMEOUT_MS = +(process.env.TENDERS_TIMEOUT_MS || 25000);
 const KEEP_DAYS = +(process.env.TENDERS_KEEP_DAYS || 45);
@@ -370,12 +373,13 @@ function mapCkanRecord(rec) {
     }
     return '';
   };
-  const title = find('שם', 'נושא', 'תיאור', 'title', 'name', 'subject');
+  // שדות ב-CKAN מגיעים לעיתים עם ישויות HTML מקודדות (למשל &#39; במקום גרש) — מפענחים אותן
+  const title = decodeEntities(find('שם', 'נושא', 'תיאור', 'title', 'name', 'subject'));
   const url = find('קישור', 'url', 'link');
-  const publisher = find('משרד', 'יחידה', 'רשות', 'מפרסם', 'publisher', 'office');
+  const publisher = decodeEntities(find('משרד', 'יחידה', 'רשות', 'מפרסם', 'publisher', 'office'));
   const publishedAt = parseDateNear(find('פרסום', 'publish'));
   const deadlineAt = parseDateNear(find('אחרון', 'הגשה', 'סיום', 'deadline', 'closing'));
-  const context = entries.map(([k, v]) => `${k}: ${v}`).join(' | ').slice(0, 900);
+  const context = decodeEntities(entries.map(([k, v]) => `${k}: ${v}`).join(' | ')).slice(0, 900);
   return { title, url: /^https?:/i.test(url) ? url : '', publisher, publishedAt, deadlineAt, context };
 }
 
@@ -395,6 +399,8 @@ async function main() {
     console.error('✖ חסרים קבצי תצורה תחת tenders/config');
     process.exit(1);
   }
+
+  if (DEBUG_SOURCE) { await debugSource(cfg, kw); return; }
 
   const previous = readJson(path.join(DATA_DIR, 'tenders.json'), { tenders: [] });
   const prevById = new Map((previous.tenders || []).map(t => [t.id, t]));
@@ -466,6 +472,42 @@ async function main() {
   }, null, 2) + '\n', 'utf8');
 
   console.error(`\n✔ נשמרו ${merged.length} מכרזים (${payload.counts.new} חדשים) → tenders/data/tenders.json`);
+}
+
+/** מצב אבחון: מדפיס מה נקצר ממקור בודד, כדי לראות איפה התאריכים יושבים בדף */
+async function debugSource(cfg, kw) {
+  const source = (cfg.sources || []).find(s => s.id === DEBUG_SOURCE);
+  if (!source) {
+    console.log(`מקור לא נמצא: ${DEBUG_SOURCE}. מקורות קיימים: ${(cfg.sources||[]).map(s => s.id).join(', ')}`);
+    return;
+  }
+  console.log(`=== אבחון מקור: ${source.name} (${source.id}) ===`);
+  for (const url of (source.urls || [])) {
+    console.log(`\n--- ${url} ---`);
+    let html;
+    try { html = await fetchText(url); }
+    catch (e) { console.log('שגיאת הבאה:', e && e.message || e); continue; }
+    console.log(`אורך HTML: ${html.length}`);
+
+    const anchors = harvestAnchors(html, url);
+    console.log(`קישורים שנקצרו: ${anchors.length}`);
+
+    // כמה תאריכים בכלל יש בדף, ובאיזה פורמט
+    const allDates = html.match(/\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2}/g) || [];
+    console.log(`תאריכים בדף (סה"כ ${allDates.length}), 10 ראשונים: ${allDates.slice(0, 10).join(' , ')}`);
+    const hintWords = (html.match(/(מועד\s*אחרון|תאריך\s*אחרון|להגשה|מועד\s*הגשה|תאריך\s*פרסום|סגירה|נעילה)/g) || []);
+    console.log(`ביטויי רמז למועד בדף: ${[...new Set(hintWords)].join(' , ') || 'לא נמצאו'}`);
+
+    const relevant = anchors.filter(a => classify(a.title, kw).topics.length);
+    console.log(`מתוכם רלוונטיים לנושאים שלנו: ${relevant.length}`);
+    for (const a of relevant.slice(0, 4)) {
+      console.log(`\n  כותרת : ${a.title.slice(0, 110)}`);
+      console.log(`  קישור : ${a.url}`);
+      console.log(`  הקשר  : ${a.context.slice(0, 400).replace(/\s+/g, ' ')}`);
+      console.log(`  חולץ  : פרסום=${dateAfterHint(a.context, PUBLISH_HINTS) || '—'} הגשה=${dateAfterHint(a.context, DEADLINE_HINTS) || '—'} תאריך-כלשהו=${parseDateNear(a.context) || '—'}`);
+    }
+    await sleep(POLITE_DELAY_MS);
+  }
 }
 
 function buildRecord(item, source, kw) {
