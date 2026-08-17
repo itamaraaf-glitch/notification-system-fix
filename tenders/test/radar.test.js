@@ -1,0 +1,202 @@
+'use strict';
+/**
+ * בדיקות לליבת ראדאר המכרזים — סיווג נושאים, מילות שלילה, חילוץ תאריכים ומיזוג היסטוריה.
+ * הרצה:  node --test tenders/test/
+ */
+
+const test = require('node:test');
+const assert = require('node:assert');
+const fs = require('fs');
+const path = require('path');
+
+const R = require('../../.github/scripts/tenders-fetch.js');
+const KW = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config', 'keywords.json'), 'utf8'));
+
+const topicsOf = text => R.classify(text, KW).topics;
+
+test('מזהה מכרז תקשורת לפי מונח מרכזי', () => {
+  const c = R.classify('מכרז פומבי 12/2026 – אספקת שירותי תקשורת נתונים וסיבים אופטיים', KW);
+  assert.ok(c.topics.includes('telecom'), 'צפוי נושא תקשורת, קיבלנו: ' + c.topics.join(','));
+  assert.ok(c.score >= 5);
+});
+
+test('מזהה אבטחת מידע גם לפי ראשי תיבות באנגלית', () => {
+  assert.ok(topicsOf('הזמנה להציע הצעות להקמת SOC ורכישת מערכת SIEM').includes('infosec'));
+  assert.ok(topicsOf('מכרז לאספקת שירותי EDR ובקרת DLP לארגון').includes('infosec'));
+});
+
+test('מזהה ציוד תקשורת', () => {
+  assert.ok(topicsOf('מכרז לרכישת ציוד תקשורת – מתגים ונתבים מתוצרת Cisco').includes('equipment'));
+});
+
+test('מזהה IT ומערכות מידע', () => {
+  assert.ok(topicsOf('מכרז מסגרת לשירותי מחשוב, רישוי תוכנה ווירטואליזציה').includes('it'));
+});
+
+test('קלינאות תקשורת נחסמת ואינה מדווחת כמכרז תקשורת', () => {
+  const c = R.classify('מכרז למתן שירותי קלינאי תקשורת בגני ילדים', KW);
+  assert.ok(!c.topics.includes('telecom'), 'קלינאות תקשורת לא אמורה להיכנס לנושא תקשורת');
+});
+
+test('תקשורת שיווקית ויחסי ציבור נחסמים', () => {
+  const c = R.classify('מכרז לניהול תקשורת שיווקית ויחסי ציבור לעירייה', KW);
+  assert.ok(!c.topics.includes('telecom'));
+});
+
+test('שירותי שמירה ואבטחה פיזית אינם אבטחת מידע', () => {
+  const c = R.classify('מכרז לאספקת שירותי שמירה ואבטחה ומאבטחים למוסדות חינוך', KW);
+  assert.ok(!c.topics.includes('infosec'));
+});
+
+test('מכרז ניקיון או גינון אינו נכנס לראדאר בכלל', () => {
+  assert.deepStrictEqual(topicsOf('מכרז לביצוע עבודות גינון וניקיון במרחב הציבורי'), []);
+});
+
+test('תחיליות עברית מזוהות (ה/ל/ב/ו)', () => {
+  assert.ok(topicsOf('הזמנה להציע הצעות בתחום התקשורת והמיחשוב').includes('telecom'));
+  assert.ok(topicsOf('מכרז לאבטחת מידע ולהגנת סייבר').includes('infosec'));
+});
+
+test('סיומות נטייה מזוהות', () => {
+  assert.ok(topicsOf('מכרז לאספקת פתרונות תקשורתיים ותשתיות תקשורת').includes('telecom'));
+});
+
+test('ראשי תיבות באותיות גדולות אינם מותאמים לטקסט אנגלי רגיל', () => {
+  // "it" בתוך מילה/משפט באנגלית לא ייחשב כ-IT
+  const c = R.classify('A tender for cleaning services, it includes daily work', KW);
+  assert.ok(!c.topics.includes('it'), 'התאמת שווא ל-IT');
+});
+
+test('שער המכרז מזהה ניסוחים נפוצים', () => {
+  assert.ok(R.looksLikeTender('הזמנה להציע הצעות לאספקת שרתים', KW));
+  assert.ok(R.looksLikeTender('קול קורא לספקי תקשורת', KW));
+  assert.ok(R.looksLikeTender('בקשה לקבלת מידע RFI', KW));
+  assert.ok(!R.looksLikeTender('דף הבית של העירייה', KW));
+});
+
+test('חילוץ תאריכים בפורמטים שונים', () => {
+  assert.strictEqual(R.parseDateNear('מועד אחרון 05/09/2026'), '2026-09-05');
+  assert.strictEqual(R.parseDateNear('פורסם 2026-03-01'), '2026-03-01');
+  assert.strictEqual(R.parseDateNear('7.4.26'), '2026-04-07');
+  assert.strictEqual(R.parseDateNear('אין כאן תאריך'), '');
+  assert.strictEqual(R.parseDateNear('32/13/2026'), '', 'תאריך לא חוקי נדחה');
+});
+
+test('תאריך הגשה נלקח מהביטוי הנכון ולא מהתאריך הראשון בטקסט', () => {
+  const ctx = 'תאריך פרסום 01/03/2026 | מועד אחרון להגשת הצעות 20/04/2026 | סבב שאלות';
+  assert.strictEqual(R.dateAfterHint(ctx, R.DEADLINE_HINTS), '2026-04-20');
+  assert.strictEqual(R.dateAfterHint(ctx, R.PUBLISH_HINTS), '2026-03-01');
+});
+
+test('חילוץ מספר מכרז', () => {
+  assert.strictEqual(R.extractTenderNumber('מכרז פומבי מס׳ 19/2026 לאספקת תקשורת'), '19/2026');
+  assert.strictEqual(R.extractTenderNumber('הליך 7/26 – ציוד'), '7/26');
+  assert.strictEqual(R.extractTenderNumber('מכרז לאספקת ציוד'), '');
+});
+
+test('קציר קישורים מדף HTML מפיק כותרת, קישור מוחלט והקשר', () => {
+  const html = `
+    <ul>
+      <li><a href="/tenders/12">מכרז פומבי 12/2026 לאספקת שירותי תקשורת</a>
+          <span>מועד אחרון להגשה 20/04/2026</span></li>
+      <li><a href="javascript:void(0)">לא רלוונטי</a></li>
+      <li><a href="/x">קצר</a></li>
+    </ul>`;
+  const items = R.harvestAnchors(html, 'https://example.gov.il/list');
+  assert.strictEqual(items.length, 1);
+  assert.strictEqual(items[0].url, 'https://example.gov.il/tenders/12');
+  assert.ok(items[0].title.includes('שירותי תקשורת'));
+  assert.ok(items[0].context.includes('20/04/2026'));
+});
+
+test('קציר קישורים מפענח ישויות HTML ומסיר תגיות פנימיות', () => {
+  const html = `<a href="/t/1"><strong>מכרז</strong> לאספקת ציוד תקשורת &amp; מתגים</a>`;
+  const items = R.harvestAnchors(html, 'https://example.gov.il/');
+  assert.strictEqual(items[0].title, 'מכרז לאספקת ציוד תקשורת & מתגים');
+});
+
+test('buildRecord מסנן פרסום שאינו מכרז כשהמקור אינו ייעודי', () => {
+  const source = { id: 's1', name: 'מקור', allTenders: false };
+  const notTender = R.buildRecord(
+    { title: 'עמוד מידע על תשתיות תקשורת בעיר', url: 'https://a.gov.il/1', context: '' }, source, KW);
+  assert.strictEqual(notTender, null);
+
+  const isTender = R.buildRecord(
+    { title: 'מכרז לאספקת תשתיות תקשורת בעיר', url: 'https://a.gov.il/2', context: '' }, source, KW);
+  assert.ok(isTender && isTender.topics.includes('telecom'));
+});
+
+test('buildRecord מייצר מזהה יציב לאותו מכרז', () => {
+  const source = { id: 's1', name: 'מקור', allTenders: true };
+  const item = { title: 'מכרז 19/2026 – אבטחת מידע', url: 'https://a.gov.il/19', context: '' };
+  const a = R.buildRecord(item, source, KW);
+  const b = R.buildRecord({ ...item, url: 'https://a.gov.il/19?ref=x' }, source, KW);
+  assert.strictEqual(a.id, b.id, 'אותו מספר מכרז ואותו אתר → אותו מזהה');
+});
+
+test('מיזוג היסטוריה שומר firstSeen ומסמן מה נראה כרגע', () => {
+  const current = [{ id: 'a', title: 'א', score: 5, topics: ['it'], firstSeen: '2099-01-01', lastSeen: '2099-01-01' }];
+  const prev = new Map([['a', { id: 'a', title: 'א', score: 5, topics: ['it'], firstSeen: '2020-05-05', lastSeen: '2020-05-05' }]]);
+  const merged = R.mergeWithHistory(current, prev);
+  assert.strictEqual(merged[0].firstSeen, '2020-05-05', 'firstSeen המקורי נשמר');
+});
+
+test('מיזוג היסטוריה מסלק רשומות ישנות שמועד ההגשה שלהן חלף', () => {
+  const prev = new Map([['old', {
+    id: 'old', title: 'מכרז שפג', score: 5, topics: ['it'],
+    firstSeen: '2020-01-01', lastSeen: '2020-01-02', deadlineAt: '2020-02-01'
+  }]]);
+  const merged = R.mergeWithHistory([], prev);
+  assert.strictEqual(merged.length, 0);
+});
+
+test('summarize מונה פתוחים וקרובים לסגירה', () => {
+  const soon = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  const far = new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10);
+  const s = R.summarize([
+    { topics: ['it'], deadlineAt: soon, firstSeen: '2020-01-01' },
+    { topics: ['it', 'telecom'], deadlineAt: far, firstSeen: '2020-01-01' },
+    { topics: ['telecom'], deadlineAt: '', firstSeen: '2020-01-01' }
+  ]);
+  assert.strictEqual(s.total, 3);
+  assert.strictEqual(s.open, 2);
+  assert.strictEqual(s.closingSoon, 1);
+  assert.strictEqual(s.byTopic.telecom, 2);
+});
+
+test('סינון מקצה לקצה על דף רשימה מציאותי — נשמרים רק המכרזים הרלוונטיים', () => {
+  const html = `
+  <table>
+    <tr><td><a href="/t/101">מכרז פומבי 14/2026 – אספקה והתקנה של ציוד תקשורת ומתגים</a></td>
+        <td>תאריך פרסום 01/08/2026</td><td>מועד אחרון להגשה 15/09/2026</td></tr>
+    <tr><td><a href="/t/102">מכרז 15/2026 – שירותי קלינאי תקשורת במסגרות החינוך</a></td>
+        <td>מועד אחרון להגשה 20/09/2026</td></tr>
+    <tr><td><a href="/t/103">מכרז 16/2026 – הקמת מערך הגנת סייבר ומוקד SOC</a></td>
+        <td>מועד אחרון להגשה 01/10/2026</td></tr>
+    <tr><td><a href="/t/104">מכרז 17/2026 – עבודות גינון וניקיון בשצ״פים</a></td>
+        <td>מועד אחרון להגשה 05/10/2026</td></tr>
+    <tr><td><a href="/t/105">מכרז 18/2026 – מיקור חוץ לשירותי מחשוב ותמיכה טכנית</a></td>
+        <td>מועד אחרון להגשה 10/10/2026</td></tr>
+    <tr><td><a href="/t/106">מכרז 19/2026 – שירותי הסעות תלמידים</a></td>
+        <td>מועד אחרון להגשה 12/10/2026</td></tr>
+  </table>`;
+
+  const source = { id: 'muni', name: 'עירייה לדוגמה', category: 'רשויות מקומיות', allTenders: true };
+  const kept = R.harvestAnchors(html, 'https://muni.example.il/tenders')
+    .map(a => R.buildRecord({
+      title: a.title, url: a.url, context: a.context,
+      publishedAt: R.dateAfterHint(a.context, R.PUBLISH_HINTS),
+      deadlineAt: R.dateAfterHint(a.context, R.DEADLINE_HINTS)
+    }, source, KW))
+    .filter(Boolean);
+
+  const nums = kept.map(t => t.tenderNumber).sort();
+  assert.deepStrictEqual(nums, ['14/2026', '16/2026', '18/2026'],
+    'צפויים רק מכרזי ציוד תקשורת, סייבר ומחשוב. קיבלנו: ' + JSON.stringify(kept.map(t => t.title)));
+
+  const equipment = kept.find(t => t.tenderNumber === '14/2026');
+  assert.ok(equipment.topics.includes('equipment'));
+  assert.strictEqual(equipment.publishedAt, '2026-08-01');
+  assert.strictEqual(equipment.deadlineAt, '2026-09-15');
+  assert.ok(equipment.matched.length > 0, 'נשמרות מילות המפתח שהתאימו');
+});

@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<title>📡 ראדאר מכרזים – תקשורת, ציוד תקשורת, אבטחת מידע ו-IT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --s1:rgba(26,37,64,.72);--s2:rgba(30,45,74,.72);--s3:rgba(34,50,86,.72);
+  --border:rgba(45,64,112,.8);--border2:rgba(55,77,132,.8);
+  --red:#e63946;--teal:#06d6a0;--gold:#c8a96e;--gold2:#e2c98a;
+  --blue:#4cc9f0;--purple:#8b5cf6;--orange:#f4a261;
+  --text:#eef1ff;--text2:#a8b4d0;--text3:#6b7899;
+  --expo:cubic-bezier(.16,1,.3,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Heebo',system-ui,sans-serif;color:var(--text);font-size:13px;min-height:100vh;
+  background:#080c18;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 15% 0%,rgba(76,201,240,.09),transparent 60%),
+    radial-gradient(ellipse 60% 45% at 85% 8%,rgba(200,169,110,.08),transparent 60%),
+    radial-gradient(ellipse 80% 60% at 50% 100%,rgba(139,92,246,.07),transparent 65%);
+  background-attachment:fixed;
+  padding:0 0 60px;
+}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--gold),rgba(200,169,110,.35));border-radius:6px}
+a{color:var(--blue);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+
+/* ── כותרת ── */
+header{
+  position:sticky;top:0;z-index:20;backdrop-filter:blur(14px);
+  background:linear-gradient(180deg,rgba(8,12,24,.96),rgba(8,12,24,.82));
+  border-bottom:1px solid var(--border);padding:14px 0 12px;margin-bottom:20px;
+}
+.hrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+h1{font-size:20px;font-weight:800;letter-spacing:-.3px;display:flex;align-items:center;gap:9px}
+h1 .sub{font-size:11px;font-weight:400;color:var(--text3)}
+.spacer{flex:1}
+.meta{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal)}
+.dot.stale{background:var(--orange);box-shadow:0 0 8px var(--orange)}
+.dot.none{background:var(--text3);box-shadow:none}
+
+.btn{
+  font-family:inherit;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;
+  background:var(--s2);border:1px solid var(--border2);border-radius:9px;padding:7px 13px;
+  transition:transform .16s var(--expo),background .16s,border-color .16s;
+}
+.btn:hover{transform:translateY(-1px);background:var(--s3);border-color:var(--gold)}
+.btn:active{transform:translateY(0)}
+.btn.gold{background:rgba(200,169,110,.14);border-color:rgba(200,169,110,.4);color:var(--gold2)}
+.btn.teal{background:rgba(6,214,160,.13);border-color:rgba(6,214,160,.38);color:var(--teal)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* ── אריחי סיכום ── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin-bottom:18px}
+.kpi{
+  background:linear-gradient(145deg,var(--s2),rgba(20,28,50,.8));border:1px solid var(--border);
+  border-top:3px solid var(--gold);border-radius:13px;padding:13px 15px;cursor:pointer;
+  transition:transform .18s var(--expo),border-color .18s,box-shadow .18s;
+}
+.kpi:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,.4)}
+.kpi.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 10px 26px rgba(200,169,110,.16)}
+.kpi .lb{font-size:10.5px;color:var(--text2);font-weight:500;letter-spacing:.2px}
+.kpi .vl{font-size:26px;font-weight:800;line-height:1.15;margin-top:3px}
+.kpi .sb{font-size:10px;color:var(--text3);margin-top:1px}
+.kpi.k-new{border-top-color:var(--teal)} .kpi.k-new .vl{color:var(--teal)}
+.kpi.k-soon{border-top-color:var(--red)} .kpi.k-soon .vl{color:var(--red)}
+.kpi.k-open{border-top-color:var(--blue)} .kpi.k-open .vl{color:var(--blue)}
+
+/* ── סרגל סינון ── */
+.filters{
+  background:linear-gradient(145deg,var(--s1),rgba(18,25,45,.78));border:1px solid var(--border);
+  border-radius:13px;padding:13px 15px;margin-bottom:16px;
+}
+.frow{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.frow+.frow{margin-top:11px;padding-top:11px;border-top:1px solid rgba(45,64,112,.5)}
+.flabel{font-size:10.5px;color:var(--text3);font-weight:600;min-width:52px}
+input[type=search],select{
+  font-family:inherit;font-size:12.5px;color:var(--text);background:rgba(10,15,30,.75);
+  border:1px solid var(--border2);border-radius:9px;padding:8px 12px;outline:none;
+  transition:border-color .16s,box-shadow .16s;
+}
+input[type=search]{flex:1;min-width:200px}
+input[type=search]:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,169,110,.13)}
+input[type=search]::placeholder{color:var(--text3)}
+select{cursor:pointer}
+option{background:#111a2e;color:var(--text)}
+
+.chip{
+  font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer;color:var(--text2);
+  background:rgba(10,15,30,.6);border:1px solid var(--border2);border-radius:20px;padding:6px 13px;
+  transition:transform .16s var(--expo),background .16s,color .16s,border-color .16s;
+  display:inline-flex;align-items:center;gap:5px;
+}
+.chip:hover{transform:translateY(-1px);color:var(--text)}
+.chip.on{color:#08101f;font-weight:700}
+.chip .cnt{font-size:10px;opacity:.75;font-weight:700}
+
+.toggle{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text2);cursor:pointer;user-select:none}
+.toggle input{accent-color:var(--gold);width:15px;height:15px;cursor:pointer}
+
+/* ── רשימת מכרזים ── */
+.results{display:flex;flex-direction:column;gap:11px}
+.card{
+  background:linear-gradient(145deg,var(--s2),rgba(18,26,48,.85));border:1px solid var(--border);
+  border-right:4px solid var(--gold);border-radius:13px;padding:13px 15px;
+  transition:transform .18s var(--expo),box-shadow .18s,border-color .18s;
+  animation:cardIn .3s var(--expo) both;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(0,0,0,.45)}
+.card.dim{opacity:.5}
+.ctop{display:flex;align-items:flex-start;gap:10px}
+.ctitle{font-size:14px;font-weight:700;line-height:1.45;flex:1}
+.ctitle a{color:var(--text)}
+.ctitle a:hover{color:var(--gold2)}
+.cnew{
+  font-size:9px;font-weight:800;padding:2px 7px;border-radius:11px;white-space:nowrap;
+  background:rgba(6,214,160,.16);color:var(--teal);border:1px solid rgba(6,214,160,.4);
+}
+.cmeta{display:flex;flex-wrap:wrap;gap:5px 14px;margin-top:8px;font-size:11px;color:var(--text2)}
+.cmeta b{color:var(--text);font-weight:600}
+.pill{
+  font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:12px;white-space:nowrap;
+  border:1px solid transparent;
+}
+.pill.crit{background:rgba(230,57,70,.16);color:#ff6b76;border-color:rgba(230,57,70,.4)}
+.pill.warn{background:rgba(244,162,97,.16);color:var(--orange);border-color:rgba(244,162,97,.4)}
+.pill.ok{background:rgba(6,214,160,.13);color:var(--teal);border-color:rgba(6,214,160,.35)}
+.pill.mute{background:rgba(107,120,153,.14);color:var(--text3);border-color:rgba(107,120,153,.3)}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;align-items:center}
+.tag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:11px;white-space:nowrap}
+.kwtag{font-size:9.5px;color:var(--text3);background:rgba(10,15,30,.6);border:1px solid rgba(45,64,112,.6);padding:2px 8px;border-radius:9px}
+.cact{display:flex;gap:6px;align-items:center;margin-top:11px;padding-top:10px;border-top:1px solid rgba(45,64,112,.45);flex-wrap:wrap}
+.cact .btn{font-size:11px;padding:5px 11px}
+.pick{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);cursor:pointer;user-select:none}
+.pick input{accent-color:var(--gold);width:15px;height:15px;cursor:pointer}
+
+/* ── מצבים ופאנלים ── */
+.panel{
+  background:linear-gradient(145deg,var(--s1),rgba(18,25,45,.78));border:1px solid var(--border);
+  border-radius:13px;padding:15px;margin-top:20px;
+}
+.panel h2{font-size:14px;font-weight:700;margin-bottom:11px;display:flex;align-items:center;gap:8px}
+details.panel summary{cursor:pointer;font-size:14px;font-weight:700;list-style:none;display:flex;align-items:center;gap:8px}
+details.panel summary::-webkit-details-marker{display:none}
+details.panel summary::after{content:'▾';margin-inline-start:auto;color:var(--text3);transition:transform .2s}
+details.panel[open] summary::after{transform:rotate(180deg)}
+details.panel summary+*{margin-top:13px}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+th,td{text-align:right;padding:7px 9px;border-bottom:1px solid rgba(45,64,112,.5)}
+th{font-size:10.5px;color:var(--text3);font-weight:600;text-transform:none}
+tbody tr:last-child td{border-bottom:none}
+.srcok{color:var(--teal);font-weight:700}
+.srcbad{color:var(--red);font-weight:700}
+.empty{text-align:center;padding:50px 20px;color:var(--text2)}
+.empty .ico{font-size:44px;margin-bottom:12px;opacity:.75}
+.empty h3{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px}
+.empty p{font-size:12.5px;line-height:1.75;max-width:540px;margin:0 auto}
+.empty code{background:rgba(10,15,30,.8);border:1px solid var(--border2);border-radius:5px;padding:2px 6px;font-size:11.5px;color:var(--gold2)}
+.mlinks{display:flex;flex-wrap:wrap;gap:8px}
+.mlink{
+  font-size:11.5px;padding:7px 12px;border-radius:9px;background:rgba(10,15,30,.6);
+  border:1px solid var(--border2);color:var(--text2);transition:transform .16s var(--expo),border-color .16s,color .16s;
+}
+.mlink:hover{transform:translateY(-2px);border-color:var(--gold);color:var(--gold2);text-decoration:none}
+.mlink small{display:block;font-size:9.5px;color:var(--text3);margin-top:2px}
+
+/* ── סרגל בחירה צף ── */
+.selbar{
+  position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(120%);
+  background:linear-gradient(145deg,rgba(30,45,74,.98),rgba(16,24,44,.99));
+  border:1px solid var(--gold);border-radius:13px;padding:11px 16px;z-index:40;
+  display:flex;align-items:center;gap:11px;flex-wrap:wrap;justify-content:center;
+  box-shadow:0 20px 50px rgba(0,0,0,.7);transition:transform .28s var(--expo);
+}
+.selbar.on{transform:translateX(-50%) translateY(0)}
+.selbar span{font-size:12px;font-weight:600}
+
+.toast{
+  position:fixed;bottom:20px;right:20px;z-index:60;
+  background:linear-gradient(145deg,rgba(30,45,74,.98),rgba(16,24,44,.99));
+  border:1px solid var(--teal);border-radius:11px;padding:11px 16px;font-size:12.5px;font-weight:600;
+  box-shadow:0 16px 40px rgba(0,0,0,.6);opacity:0;transform:translateY(14px);
+  transition:opacity .22s,transform .22s var(--expo);pointer-events:none;max-width:min(90vw,380px);
+}
+.toast.on{opacity:1;transform:none}
+footer{text-align:center;font-size:10.5px;color:var(--text3);margin-top:26px;line-height:1.9}
+
+@media (max-width:640px){
+  h1{font-size:17px}
+  .kpi .vl{font-size:22px}
+  .flabel{min-width:auto}
+  .card{border-right-width:3px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap hrow">
+    <h1>📡 ראדאר מכרזים <span class="sub">תקשורת · ציוד תקשורת · אבטחת מידע · IT</span></h1>
+    <div class="spacer"></div>
+    <div class="meta" id="freshness"><span class="dot none"></span><span id="freshtext">טוען…</span></div>
+    <button class="btn" id="btn-reload" title="טעינה מחדש של נתוני הראדאר">↻ רענון</button>
+    <a class="btn gold" href="index.html" title="חזרה למערכת ה-CRM">← ל-CRM</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="kpis" id="kpis"></div>
+
+  <div class="filters">
+    <div class="frow">
+      <span class="flabel">חיפוש</span>
+      <input type="search" id="q" placeholder="חיפוש בשם המכרז, מפרסם, מספר מכרז או מילת מפתח…" autocomplete="off">
+      <select id="sort" title="סדר הצגה">
+        <option value="deadline">מועד הגשה (הקרוב קודם)</option>
+        <option value="score">רלוונטיות</option>
+        <option value="published">תאריך פרסום (חדש קודם)</option>
+        <option value="firstSeen">מועד גילוי (חדש קודם)</option>
+      </select>
+    </div>
+    <div class="frow" id="topicrow">
+      <span class="flabel">נושאים</span>
+    </div>
+    <div class="frow">
+      <span class="flabel">מקור</span>
+      <select id="source"><option value="">כל המקורות</option></select>
+      <label class="toggle"><input type="checkbox" id="onlyopen"> רק מכרזים פתוחים</label>
+      <label class="toggle"><input type="checkbox" id="onlynew"> רק חדשים</label>
+      <label class="toggle"><input type="checkbox" id="showhidden"> הצג מוסתרים</label>
+      <div class="spacer"></div>
+      <button class="btn" id="btn-clear">✕ נקה סינון</button>
+    </div>
+  </div>
+
+  <div id="results" class="results"></div>
+
+  <details class="panel" id="srcpanel">
+    <summary>🛰️ בריאות המקורות <span id="srcsum" style="font-size:11px;font-weight:400;color:var(--text3)"></span></summary>
+    <div id="srctable"></div>
+  </details>
+
+  <div class="panel" id="manualpanel" style="display:none">
+    <h2>🔎 חיפוש ידני במאגרים נוספים</h2>
+    <p style="font-size:11.5px;color:var(--text2);margin-bottom:11px;line-height:1.7">
+      אגרגטורים ומאגרים שאינם נסרקים אוטומטית. שווה מעבר ידני שבועי — במיוחד למכרזי רשויות מקומיות וגופים מוסדיים.
+    </p>
+    <div class="mlinks" id="mlinks"></div>
+  </div>
+
+  <footer>
+    ראדאר המכרזים סורק מקורות ציבוריים אחת ליום ומסנן לפי טקסונומיית מילות מפתח.<br>
+    הנתונים מוצגים כפי שפורסמו במקור — לפני הגשה יש לאמת את התנאים והמועדים באתר המפרסם.
+  </footer>
+</div>
+
+<div class="selbar" id="selbar">
+  <span id="selcount"></span>
+  <button class="btn teal" id="btn-export">📥 ייצוא ל-CRM (Excel/CSV)</button>
+  <button class="btn" id="btn-copy">📋 העתקת סיכום</button>
+  <button class="btn" id="btn-hide">🙈 הסתרה</button>
+  <button class="btn" id="btn-unpick">✕ ניקוי בחירה</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+const DATA_URL = 'tenders/data/tenders.json';
+const LS_FILTERS = 'tenders_radar_filters_v1';
+const LS_HIDDEN  = 'tenders_radar_hidden_v1';
+
+let DATA = null;
+const state = {
+  q: '', topics: new Set(), source: '', sort: 'deadline',
+  onlyOpen: false, onlyNew: false, showHidden: false, kpi: ''
+};
+let picked = new Set();
+let hidden = new Set(readJson(LS_HIDDEN, []));
+
+/* ── עזרים ── */
+const $ = id => document.getElementById(id);
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+/** מאפשר רק קישורי http/https — הכותרות והקישורים מגיעים מאתרים חיצוניים */
+function safeUrl(u){
+  try { const p = new URL(String(u)); return /^https?:$/.test(p.protocol) ? p.href : ''; }
+  catch(_) { return ''; }
+}
+function readJson(key, fallback){
+  try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; }
+  catch(_) { return fallback; }
+}
+function writeJson(key, val){
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(_) {}
+}
+const todayYmd = () => new Date().toISOString().slice(0,10);
+function fmtDate(ymd){
+  if(!ymd) return '–';
+  const p = String(ymd).split('-');
+  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : ymd;
+}
+function daysLeft(ymd){
+  if(!ymd) return null;
+  const t = Date.parse(ymd + 'T00:00:00Z');
+  if(isNaN(t)) return null;
+  return Math.round((t - Date.parse(todayYmd() + 'T00:00:00Z')) / 86400000);
+}
+let toastTimer;
+function toast(msg){
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('on'), 2600);
+}
+function topicMeta(id){
+  return (DATA && DATA.topics && DATA.topics[id]) || { label: id, icon: '•', color: '#c8a96e' };
+}
+
+/* ── טעינת נתונים ── */
+async function load(){
+  try{
+    const res = await fetch(DATA_URL, { cache: 'no-store' });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    DATA = await res.json();
+  }catch(e){
+    DATA = null;
+    renderFreshness(null);
+    $('results').innerHTML = `
+      <div class="empty">
+        <div class="ico">📡</div>
+        <h3>לא הצלחתי לטעון את נתוני הראדאר</h3>
+        <p>הקובץ <code>tenders/data/tenders.json</code> לא נקרא (${esc(e.message)}).<br>
+        אם פתחת את העמוד ישירות מהדיסק, דפדפנים חוסמים קריאת קבצים מקומיים — יש להגיש את התיקייה
+        דרך שרת (למשל <code>npx serve</code>) או להשתמש בגרסה שמתפרסמת ב-GitHub Pages.</p>
+      </div>`;
+    return;
+  }
+  restoreFilters();
+  buildTopicChips();
+  buildSourceSelect();
+  renderFreshness(DATA);
+  renderManual();
+  renderSources();
+  render();
+}
+
+function renderFreshness(data){
+  const dot = $('freshness').querySelector('.dot');
+  const txt = $('freshtext');
+  if(!data || !data.generatedAt){
+    dot.className = 'dot none';
+    txt.textContent = 'הראדאר עוד לא הורץ';
+    return;
+  }
+  const age = daysLeft(data.generatedDate);
+  const days = age === null ? null : -age;
+  dot.className = 'dot' + (days !== null && days > 2 ? ' stale' : '');
+  txt.textContent = days === 0 ? 'עודכן היום'
+    : days === 1 ? 'עודכן אתמול'
+    : days !== null ? `עודכן לפני ${days} ימים`
+    : 'עודכן ' + fmtDate(data.generatedDate);
+}
+
+/* ── בניית פקדים ── */
+function buildTopicChips(){
+  const row = $('topicrow');
+  row.querySelectorAll('.chip').forEach(c => c.remove());
+  const counts = {};
+  for(const t of (DATA.tenders || [])) for(const id of (t.topics || [])) counts[id] = (counts[id]||0)+1;
+
+  for(const [id, meta] of Object.entries(DATA.topics || {})){
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.dataset.topic = id;
+    chip.innerHTML = `${meta.icon} ${esc(meta.label)} <span class="cnt">${counts[id]||0}</span>`;
+    chip.onclick = () => {
+      state.topics.has(id) ? state.topics.delete(id) : state.topics.add(id);
+      syncChips(); saveFilters(); render();
+    };
+    row.appendChild(chip);
+  }
+  syncChips();
+}
+function syncChips(){
+  document.querySelectorAll('.chip[data-topic]').forEach(chip => {
+    const id = chip.dataset.topic;
+    const on = state.topics.has(id);
+    chip.classList.toggle('on', on);
+    const meta = topicMeta(id);
+    chip.style.background = on ? meta.color : '';
+    chip.style.borderColor = on ? meta.color : '';
+  });
+}
+function buildSourceSelect(){
+  const sel = $('source');
+  const names = new Map();
+  for(const t of (DATA.tenders || [])) if(t.source) names.set(t.source, t.sourceName || t.source);
+  sel.innerHTML = '<option value="">כל המקורות</option>' +
+    [...names].sort((a,b) => a[1].localeCompare(b[1],'he'))
+      .map(([id,name]) => `<option value="${esc(id)}">${esc(name)}</option>`).join('');
+  sel.value = state.source;
+}
+
+/* ── סינון ומיון ── */
+function visible(){
+  const q = state.q.trim().toLowerCase();
+  let list = (DATA.tenders || []).filter(t => {
+    if(!state.showHidden && hidden.has(t.id)) return false;
+    if(state.topics.size && !(t.topics||[]).some(x => state.topics.has(x))) return false;
+    if(state.source && t.source !== state.source) return false;
+
+    const dl = daysLeft(t.deadlineAt);
+    const isOpen = dl === null ? false : dl >= 0;
+    if(state.onlyOpen && !isOpen) return false;
+    if(state.onlyNew && t.firstSeen !== DATA.generatedDate) return false;
+    if(state.kpi === 'new' && t.firstSeen !== DATA.generatedDate) return false;
+    if(state.kpi === 'open' && !isOpen) return false;
+    if(state.kpi === 'soon' && !(isOpen && dl <= 7)) return false;
+
+    if(q){
+      const hay = [t.title, t.publisher, t.sourceName, t.tenderNumber, (t.matched||[]).join(' '), t.summary]
+        .join(' ').toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const byDeadline = (a,b) => {
+    const da = daysLeft(a.deadlineAt), db = daysLeft(b.deadlineAt);
+    const oa = da !== null && da >= 0, ob = db !== null && db >= 0;
+    if(oa && ob) return da - db;
+    if(oa !== ob) return oa ? -1 : 1;
+    return (b.score||0) - (a.score||0);
+  };
+  const desc = key => (a,b) => String(b[key]||'').localeCompare(String(a[key]||''));
+
+  const sorters = {
+    deadline: byDeadline,
+    score: (a,b) => (b.score||0) - (a.score||0) || byDeadline(a,b),
+    published: desc('publishedAt'),
+    firstSeen: desc('firstSeen')
+  };
+  return list.sort(sorters[state.sort] || byDeadline);
+}
+
+/* ── רינדור ── */
+function render(){
+  renderKpis();
+  const list = visible();
+  const box = $('results');
+
+  if(!(DATA.tenders || []).length){
+    box.innerHTML = DATA.seed || !DATA.generatedAt ? emptySeed() : emptyNoResults(true);
+    updateSelbar();
+    return;
+  }
+  if(!list.length){
+    box.innerHTML = emptyNoResults(false);
+    updateSelbar();
+    return;
+  }
+
+  box.innerHTML = list.map(cardHtml).join('');
+  box.querySelectorAll('[data-pick]').forEach(cb => {
+    cb.onchange = () => {
+      cb.checked ? picked.add(cb.dataset.pick) : picked.delete(cb.dataset.pick);
+      updateSelbar();
+    };
+  });
+  box.querySelectorAll('[data-hide]').forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.hide;
+      hidden.has(id) ? hidden.delete(id) : hidden.add(id);
+      writeJson(LS_HIDDEN, [...hidden]);
+      toast(hidden.has(id) ? 'המכרז הוסתר' : 'ההסתרה בוטלה');
+      render();
+    };
+  });
+  box.querySelectorAll('[data-copy]').forEach(btn => {
+    btn.onclick = () => {
+      const t = (DATA.tenders||[]).find(x => x.id === btn.dataset.copy);
+      if(t) copyText(summaryLine(t), 'סיכום המכרז הועתק');
+    };
+  });
+  updateSelbar();
+}
+
+function renderKpis(){
+  const c = DATA.counts || {};
+  const tiles = [
+    { key:'',     cls:'',       lb:'סה"כ במאגר',      vl:c.total||0,       sb:'כל המכרזים הרלוונטיים' },
+    { key:'new',  cls:'k-new',  lb:'חדשים בסריקה',    vl:c.new||0,         sb:'התגלו בריצה האחרונה' },
+    { key:'open', cls:'k-open', lb:'פתוחים להגשה',    vl:c.open||0,        sb:'מועד ההגשה עוד לא חלף' },
+    { key:'soon', cls:'k-soon', lb:'נסגרים בשבוע',    vl:c.closingSoon||0, sb:'עד 7 ימים להגשה' }
+  ];
+  $('kpis').innerHTML = tiles.map(t => `
+    <div class="kpi ${t.cls} ${state.kpi === t.key && t.key ? 'on' : ''}" data-kpi="${t.key}" title="לחיצה לסינון">
+      <div class="lb">${t.lb}</div><div class="vl">${t.vl}</div><div class="sb">${t.sb}</div>
+    </div>`).join('');
+  $('kpis').querySelectorAll('[data-kpi]').forEach(el => {
+    el.onclick = () => {
+      const k = el.dataset.kpi;
+      state.kpi = (k && state.kpi !== k) ? k : '';
+      saveFilters(); render();
+    };
+  });
+}
+
+function deadlinePill(t){
+  const dl = daysLeft(t.deadlineAt);
+  if(!t.deadlineAt) return '<span class="pill mute">מועד הגשה לא אותר</span>';
+  if(dl === null)   return `<span class="pill mute">${esc(t.deadlineAt)}</span>`;
+  if(dl < 0)        return `<span class="pill mute">${fmtDate(t.deadlineAt)} · חלף</span>`;
+  const cls = dl <= 3 ? 'crit' : dl <= 7 ? 'warn' : 'ok';
+  const tail = dl === 0 ? 'היום!' : dl === 1 ? 'מחר' : `בעוד ${dl} ימים`;
+  return `<span class="pill ${cls}">${fmtDate(t.deadlineAt)} · ${tail}</span>`;
+}
+
+function cardHtml(t){
+  const primary = (t.topics || [])[0];
+  const color = topicMeta(primary).color;
+  const url = safeUrl(t.url);
+  const isNew = t.firstSeen === DATA.generatedDate;
+  const isHidden = hidden.has(t.id);
+
+  const topicTags = (t.topics || []).map(id => {
+    const m = topicMeta(id);
+    return `<span class="tag" style="background:${m.color}22;color:${m.color};border:1px solid ${m.color}55">${m.icon} ${esc(m.label)}</span>`;
+  }).join('');
+
+  const kwTags = (t.matched || []).slice(0, 6)
+    .map(k => `<span class="kwtag">${esc(k)}</span>`).join('');
+
+  return `
+  <div class="card ${isHidden ? 'dim' : ''}" style="border-right-color:${color}">
+    <div class="ctop">
+      <div class="ctitle">${url
+        ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(t.title)}</a>`
+        : esc(t.title)}</div>
+      ${isNew ? '<span class="cnew">חדש</span>' : ''}
+    </div>
+    <div class="cmeta">
+      <span>מפרסם: <b>${esc(t.publisher || t.sourceName || '–')}</b></span>
+      ${t.tenderNumber ? `<span>מס׳ מכרז: <b>${esc(t.tenderNumber)}</b></span>` : ''}
+      ${t.publishedAt ? `<span>פורסם: <b>${fmtDate(t.publishedAt)}</b></span>` : ''}
+      <span>מקור: <b>${esc(t.sourceName || t.source || '–')}</b></span>
+      <span>רלוונטיות: <b>${t.score || 0}</b></span>
+    </div>
+    <div class="tags">${deadlinePill(t)}${topicTags}${kwTags}</div>
+    <div class="cact">
+      <label class="pick"><input type="checkbox" data-pick="${esc(t.id)}" ${picked.has(t.id) ? 'checked' : ''}> בחר</label>
+      ${url ? `<a class="btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer">↗ פתח במקור</a>` : ''}
+      <button class="btn" data-copy="${esc(t.id)}">📋 העתק</button>
+      <button class="btn" data-hide="${esc(t.id)}">${isHidden ? '👁 בטל הסתרה' : '🙈 הסתר'}</button>
+    </div>
+  </div>`;
+}
+
+function emptySeed(){
+  return `
+  <div class="empty">
+    <div class="ico">🛰️</div>
+    <h3>הראדאר מוכן — אבל עוד לא הורץ</h3>
+    <p>הסריקה רצה אוטומטית פעם ביום דרך GitHub Actions (workflow בשם <code>tenders-radar</code>),
+    ואפשר להריץ אותה מיד ידנית מלשונית <b>Actions</b> במאגר בלחיצה על <b>Run workflow</b>.<br><br>
+    להרצה מקומית: <code>node .github/scripts/tenders-fetch.js</code><br>
+    מילות המפתח והמקורות ניתנים לעריכה בתיקייה <code>tenders/config/</code>.</p>
+  </div>`;
+}
+function emptyNoResults(dataEmpty){
+  return `
+  <div class="empty">
+    <div class="ico">🔍</div>
+    <h3>${dataEmpty ? 'הסריקה האחרונה לא מצאה מכרזים רלוונטיים' : 'אין מכרזים שמתאימים לסינון'}</h3>
+    <p>${dataEmpty
+      ? 'ייתכן שהמקורות לא החזירו תוצאות — כדאי לבדוק את פאנל בריאות המקורות למטה ולעבור ידנית על המאגרים הנוספים.'
+      : 'נסה לנקות את הסינון, להרחיב את הנושאים או לחפש מונח אחר.'}</p>
+  </div>`;
+}
+
+function renderSources(){
+  const srcs = DATA.sources || [];
+  if(!srcs.length){
+    $('srcsum').textContent = '(אין נתוני סריקה)';
+    $('srctable').innerHTML = '<p style="font-size:11.5px;color:var(--text2)">טרם בוצעה סריקה.</p>';
+    return;
+  }
+  const ok = srcs.filter(s => s.ok).length;
+  const bad = srcs.length - ok;
+  $('srcsum').textContent = `— ${ok} פעילים${bad ? `, ${bad} נכשלו` : ''}`;
+  if(bad) $('srcpanel').open = true;
+
+  $('srctable').innerHTML = `
+    <table>
+      <thead><tr><th>מקור</th><th>קטגוריה</th><th>מצב</th><th>נסרקו</th><th>רלוונטיים</th><th>הערה</th><th></th></tr></thead>
+      <tbody>${srcs.map(s => {
+        const link = safeUrl(s.searchUrl);
+        return `<tr>
+          <td><b>${esc(s.name)}</b></td>
+          <td style="color:var(--text3)">${esc(s.category || '–')}</td>
+          <td class="${s.ok ? 'srcok' : 'srcbad'}">${s.ok ? '✅ פעיל' : '❌ נכשל'}</td>
+          <td>${s.scanned || 0}</td>
+          <td><b>${s.count || 0}</b></td>
+          <td style="color:var(--text3);font-size:10.5px">${esc(s.error || (s.ok && !s.count ? 'נסרק אך לא נמצאו התאמות' : ''))}</td>
+          <td>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">חיפוש ידני ↗</a>` : ''}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+    <p style="font-size:10.5px;color:var(--text3);margin-top:10px;line-height:1.7">
+      מקור שנכשל או שמחזיר 0 תוצאות הוא לרוב אתר שנבנה כיישום JavaScript ולכן אינו נסרק אוטומטית.
+      הקישור "חיפוש ידני" פותח את דף המכרזים שלו לבדיקה, ואפשר להחליף או להוסיף מקורות בקובץ
+      <code style="background:rgba(10,15,30,.8);padding:1px 5px;border-radius:4px">tenders/config/sources.json</code>.
+    </p>`;
+}
+
+function renderManual(){
+  const links = DATA.manualLinks || [];
+  if(!links.length) return;
+  $('manualpanel').style.display = '';
+  $('mlinks').innerHTML = links.map(l => {
+    const u = safeUrl(l.url);
+    if(!u) return '';
+    return `<a class="mlink" href="${esc(u)}" target="_blank" rel="noopener noreferrer">
+      ${esc(l.name)}${l.note ? `<small>${esc(l.note)}</small>` : ''}</a>`;
+  }).join('');
+}
+
+/* ── בחירה, ייצוא והעתקה ── */
+function updateSelbar(){
+  // בחירות של מכרזים שהוסתרו או נעלמו מהמאגר אינן נשמרות
+  const ids = new Set((DATA.tenders || []).map(t => t.id));
+  picked = new Set([...picked].filter(id => ids.has(id)));
+  $('selcount').textContent = `${picked.size} מכרזים נבחרו`;
+  $('selbar').classList.toggle('on', picked.size > 0);
+}
+function pickedTenders(){
+  return (DATA.tenders || []).filter(t => picked.has(t.id));
+}
+function summaryLine(t){
+  const parts = [
+    t.title,
+    `מפרסם: ${t.publisher || t.sourceName || '–'}`,
+    t.tenderNumber ? `מס׳ מכרז: ${t.tenderNumber}` : '',
+    t.deadlineAt ? `מועד הגשה: ${fmtDate(t.deadlineAt)}` : 'מועד הגשה: לא אותר',
+    (t.topics || []).map(id => topicMeta(id).label).join(' · '),
+    safeUrl(t.url)
+  ];
+  return parts.filter(Boolean).join('\n');
+}
+function copyText(text, okMsg){
+  const done = () => toast(okMsg);
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, () => fallback());
+  } else fallback();
+  function fallback(){
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); }
+    catch(_) { toast('ההעתקה נכשלה — יש להעתיק ידנית'); }
+    document.body.removeChild(ta);
+  }
+}
+/** CSV בכותרות שמתאימות לייבוא בטבלת המכרזים של ה-CRM */
+function exportCsv(){
+  const rows = pickedTenders();
+  if(!rows.length) return;
+  const headers = ['שם מכרז','מס פרויקט','פרסום','שאלות','הגשה','מטפל','סכום','כמות','הוגשה','קישור','הערות'];
+  const cell = v => {
+    const s = String(v == null ? '' : v);
+    // מקדימים גרש למחרוזת שנראית כנוסחה, כדי שלא תפורש כנוסחה ב-Excel
+    const safe = /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
+    return /[",\n\r]/.test(safe) ? '"' + safe.replace(/"/g,'""') + '"' : safe;
+  };
+  const lines = [headers.join(',')];
+  for(const t of rows){
+    lines.push([
+      t.title, t.tenderNumber || '', t.publishedAt || '', '', t.deadlineAt || '',
+      '', 0, 1, 'לא', safeUrl(t.url),
+      `${t.publisher || t.sourceName || ''}${(t.matched||[]).length ? ' | התאמות: ' + t.matched.slice(0,5).join(', ') : ''}`
+    ].map(cell).join(','));
+  }
+  // BOM כדי ש-Excel יזהה UTF-8 בעברית
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  // שם קובץ באנגלית — שמות בעברית נחתכים בחלק מהדפדפנים ומאבדים את הסיומת
+  a.download = `tenders-import-${todayYmd()}.csv`;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 4000);
+  toast(`${rows.length} מכרזים יוצאו — ייבוא דרך "📤 ייבוא" בטבלת המכרזים ב-CRM`);
+}
+
+/* ── שמירת מצב הסינון ── */
+function saveFilters(){
+  writeJson(LS_FILTERS, {
+    q: state.q, topics: [...state.topics], source: state.source, sort: state.sort,
+    onlyOpen: state.onlyOpen, onlyNew: state.onlyNew, showHidden: state.showHidden, kpi: state.kpi
+  });
+}
+function restoreFilters(){
+  const f = readJson(LS_FILTERS, null);
+  if(!f) return;
+  state.q = f.q || '';
+  state.topics = new Set(Array.isArray(f.topics) ? f.topics : []);
+  state.source = f.source || '';
+  state.sort = f.sort || 'deadline';
+  state.onlyOpen = !!f.onlyOpen;
+  state.onlyNew = !!f.onlyNew;
+  state.showHidden = !!f.showHidden;
+  state.kpi = f.kpi || '';
+  $('q').value = state.q;
+  $('sort').value = state.sort;
+  $('onlyopen').checked = state.onlyOpen;
+  $('onlynew').checked = state.onlyNew;
+  $('showhidden').checked = state.showHidden;
+}
+
+/* ── חיווט ── */
+let qTimer;
+$('q').oninput = e => {
+  state.q = e.target.value;
+  clearTimeout(qTimer);
+  qTimer = setTimeout(() => { saveFilters(); render(); }, 180);
+};
+$('sort').onchange     = e => { state.sort = e.target.value; saveFilters(); render(); };
+$('source').onchange   = e => { state.source = e.target.value; saveFilters(); render(); };
+$('onlyopen').onchange = e => { state.onlyOpen = e.target.checked; saveFilters(); render(); };
+$('onlynew').onchange  = e => { state.onlyNew = e.target.checked; saveFilters(); render(); };
+$('showhidden').onchange = e => { state.showHidden = e.target.checked; saveFilters(); render(); };
+$('btn-clear').onclick = () => {
+  state.q = ''; state.topics.clear(); state.source = ''; state.kpi = '';
+  state.onlyOpen = state.onlyNew = false;
+  $('q').value = ''; $('source').value = ''; $('onlyopen').checked = false; $('onlynew').checked = false;
+  syncChips(); saveFilters(); render();
+};
+$('btn-reload').onclick = () => { toast('מרענן…'); load(); };
+$('btn-export').onclick = exportCsv;
+$('btn-copy').onclick = () => {
+  const rows = pickedTenders();
+  if(rows.length) copyText(rows.map(summaryLine).join('\n\n———\n\n'), `סיכום ${rows.length} מכרזים הועתק`);
+};
+$('btn-hide').onclick = () => {
+  const n = picked.size;
+  for(const id of picked) hidden.add(id);
+  writeJson(LS_HIDDEN, [...hidden]);
+  picked.clear();
+  toast(`${n} מכרזים הוסתרו`);
+  render();
+};
+$('btn-unpick').onclick = () => { picked.clear(); render(); };
+
+load();
+</script>
+</body>
+</html>

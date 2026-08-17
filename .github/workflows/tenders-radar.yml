@@ -1,0 +1,70 @@
+# ראדאר מכרזים: סורק אחת ליום מקורות מכרזים ציבוריים בישראל, מסנן את הרלוונטיים
+# לתקשורת / ציוד תקשורת / אבטחת מידע / IT, שומר את התוצאות במאגר ופותח Issue
+# עם המכרזים החדשים — GitHub שולח אותו אוטומטית למייל של בעל המאגר.
+name: tenders-radar
+
+on:
+  schedule:
+    # 06:10 שעון ישראל (קיץ), ראשון–חמישי — לפני תחילת יום העבודה
+    - cron: '10 3 * * 0-4'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'סריקת מקור בודד בלבד (מזהה מתוך tenders/config/sources.json). ריק = כל המקורות'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: tenders-radar
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: בדיקות ליבת הראדאר
+        run: node --test tenders/test/radar.test.js tenders/test/report.test.js
+
+      - name: סריקת מקורות המכרזים
+        env:
+          TENDERS_ONLY_SOURCE: ${{ inputs.source }}
+        run: |
+          if [ -n "$TENDERS_ONLY_SOURCE" ]; then
+            node .github/scripts/tenders-fetch.js --source="$TENDERS_ONLY_SOURCE"
+          else
+            node .github/scripts/tenders-fetch.js
+          fi
+
+      - name: סיכום הריצה
+        run: node .github/scripts/tenders-report.js --summary >> "$GITHUB_STEP_SUMMARY"
+
+      - name: שמירת התוצאות במאגר
+        run: |
+          if git diff --quiet -- tenders/data; then
+            echo "אין שינוי בנתוני המכרזים — אין מה לשמור"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tenders/data
+          git commit -m "ראדאר מכרזים: עדכון נתונים אוטומטי ($(date -u +%Y-%m-%d))"
+          for attempt in 1 2 3 4; do
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then exit 0; fi
+            echo "הדחיפה נכשלה — ניסיון $attempt"
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            sleep $((2 ** attempt))
+          done
+          echo "::error::דחיפת נתוני המכרזים נכשלה"
+          exit 1
+
+      - name: פתיחת Issue עם המכרזים החדשים
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: node .github/scripts/tenders-report.js --issue

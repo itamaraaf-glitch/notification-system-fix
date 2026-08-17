@@ -1,0 +1,173 @@
+{
+  "_comment": "מקורות לסריקת מכרזים בישראל. kind: html = קציר קישורים מדף רשימת מכרזים, rss = פיד RSS/Atom, ckan = ה-API הפתוח של data.gov.il. allTenders=true פירושו שהדף כולו ייעודי למכרזים ולכן אין צורך בסינון 'האם זה מכרז'. enabled=false מנטרל מקור בלי למחוק אותו. הסריקה מוגבלת בקצב ומריצה בקשות בודדות ליום לכל מקור.",
+  "_note": "אתרים רבים מוגשים כיישום JavaScript ולכן קציר הקישורים עשוי להחזיר 0 תוצאות. הסקריפט מדווח על כך ב-tenders/data/status.json, וממשק הראדאר מציג לכל מקור כזה קישור לחיפוש ידני. אין לסרוק אגרגטורים מסחריים — הם מופיעים כאן כקישורים ידניים בלבד.",
+
+  "sources": [
+    {
+      "id": "mr-gov",
+      "name": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "kind": "html",
+      "enabled": true,
+      "allTenders": true,
+      "urls": [
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%AA%D7%A7%D7%A9%D7%95%D7%A8%D7%AA",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%90%D7%91%D7%98%D7%97%D7%AA%20%D7%9E%D7%99%D7%93%D7%A2",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%9E%D7%97%D7%A9%D7%95%D7%91",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%A1%D7%99%D7%99%D7%91%D7%A8"
+      ],
+      "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER",
+      "home": "https://mr.gov.il/ilgstorefront/he/"
+    },
+    {
+      "id": "gov-il",
+      "name": "מכרזי משרדי הממשלה (gov.il)",
+      "category": "ממשלה",
+      "kind": "html",
+      "enabled": true,
+      "allTenders": false,
+      "urls": [
+        "https://www.gov.il/he/departments/topics/tenders-sub/govil-landing-page"
+      ],
+      "searchUrl": "https://www.gov.il/he/departments/publications?publicationType=tender",
+      "home": "https://www.gov.il/"
+    },
+    {
+      "id": "moin",
+      "name": "משרד הפנים",
+      "category": "ממשלה",
+      "kind": "html",
+      "enabled": true,
+      "allTenders": true,
+      "urls": ["https://www.moin.gov.il/Tenders"],
+      "searchUrl": "https://www.moin.gov.il/Tenders",
+      "home": "https://www.moin.gov.il/"
+    },
+    {
+      "id": "iaa",
+      "name": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "kind": "html",
+      "enabled": true,
+      "allTenders": true,
+      "urls": ["https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"],
+      "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx",
+      "home": "https://www.iaa.gov.il/"
+    },
+    {
+      "id": "iec",
+      "name": "חברת החשמל",
+      "category": "תשתיות",
+      "kind": "html",
+      "enabled": true,
+      "allTenders": true,
+      "urls": ["https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders"],
+      "searchUrl": "https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders",
+      "home": "https://www.iec.co.il/"
+    },
+    {
+      "id": "nta",
+      "name": "נת\"ע – נתיבי תחבורה עירוניים",
+      "category": "תשתיות",
+      "kind": "html",
+      "enabled": true,
+      "allTenders": true,
+      "urls": ["https://www.nta.co.il/tenders/"],
+      "searchUrl": "https://www.nta.co.il/tenders/",
+      "home": "https://www.nta.co.il/"
+    },
+    {
+      "id": "iroads",
+      "name": "נתיבי ישראל",
+      "category": "תשתיות",
+      "kind": "html",
+      "enabled": true,
+      "allTenders": true,
+      "urls": ["https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"],
+      "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/",
+      "home": "https://www.iroads.co.il/"
+    },
+    {
+      "id": "transisrael",
+      "name": "כביש חוצה ישראל (דרך ארץ)",
+      "category": "תשתיות",
+      "kind": "html",
+      "enabled": true,
+      "allTenders": true,
+      "urls": ["https://www.transisrael.co.il/Tenders?currentView=1"],
+      "searchUrl": "https://www.transisrael.co.il/Tenders?currentView=1",
+      "home": "https://www.transisrael.co.il/"
+    },
+    {
+      "id": "atarim",
+      "name": "החברה הממשלתית לתיירות (אתרים)",
+      "category": "ממשלה",
+      "kind": "html",
+      "enabled": true,
+      "allTenders": true,
+      "urls": ["https://www.atarim.gov.il/tenders/"],
+      "searchUrl": "https://www.atarim.gov.il/tenders/",
+      "home": "https://www.atarim.gov.il/"
+    },
+    {
+      "id": "tlv",
+      "name": "עיריית תל אביב-יפו",
+      "category": "רשויות מקומיות",
+      "kind": "html",
+      "enabled": true,
+      "allTenders": false,
+      "urls": ["https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx"],
+      "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx",
+      "home": "https://www.tel-aviv.gov.il/"
+    },
+    {
+      "id": "haifa",
+      "name": "עיריית חיפה",
+      "category": "רשויות מקומיות",
+      "kind": "html",
+      "enabled": true,
+      "allTenders": true,
+      "urls": ["https://www2.haifa.muni.il/Michrazim/Default.aspx"],
+      "searchUrl": "https://www2.haifa.muni.il/Michrazim/Default.aspx",
+      "home": "https://www.haifa.muni.il/"
+    },
+    {
+      "id": "jerusalem",
+      "name": "עיריית ירושלים",
+      "category": "רשויות מקומיות",
+      "kind": "html",
+      "enabled": true,
+      "allTenders": true,
+      "urls": ["https://www.jerusalem.muni.il/he/business/tenders/"],
+      "searchUrl": "https://www.jerusalem.muni.il/he/business/tenders/",
+      "home": "https://www.jerusalem.muni.il/",
+      "verify": true
+    },
+    {
+      "id": "data-gov-il",
+      "name": "data.gov.il – נתוני רכש והתקשרויות",
+      "category": "מאגרי מידע פתוחים",
+      "kind": "ckan",
+      "enabled": true,
+      "allTenders": true,
+      "api": "https://data.gov.il/api/3/action",
+      "queries": ["תקשורת", "אבטחת מידע", "מחשוב", "סייבר"],
+      "datasetQuery": "מכרזים",
+      "maxDatasets": 6,
+      "searchUrl": "https://data.gov.il/dataset?q=%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D",
+      "home": "https://data.gov.il/"
+    }
+  ],
+
+  "_manualComment": "אגרגטורים ומאגרים מסחריים/מוסדיים — מוצגים בממשק כקישורי חיפוש ידני ואינם נסרקים אוטומטית (מטעמי תנאי שימוש).",
+  "manualLinks": [
+    { "name": "מכרזי ישראל", "url": "https://www.michrazim.org.il/", "note": "אגרגטור מכרזים ארצי" },
+    { "name": "WIZBIZ מכרזים", "url": "https://wizbiz.co.il/", "note": "אגרגטור מכרזים והזדמנויות עסקיות" },
+    { "name": "גובי מכרזים", "url": "https://govi.co.il/", "note": "אגרגטור מכרזי רשויות" },
+    { "name": "מאגרים", "url": "https://tenders.maagarim.city/", "note": "איתור מכרזים והזדמנויות עסקיות" },
+    { "name": "לשכת המסחר ת\"א – איתור מכרזים", "url": "https://www.chamber.org.il/serviceslobby/1084/49730/", "note": "מאגר מכרזים לחברי הלשכה" },
+    { "name": "רכבת ישראל", "url": "https://www.rail.co.il/", "note": "מכרזי הרכבת – חיפוש ידני באזור הספקים" },
+    { "name": "מקורות", "url": "https://www.mekorot.co.il/", "note": "מכרזי מקורות – אזור ספקים" },
+    { "name": "משרד הביטחון – מנה\"ר", "url": "https://www.online.mod.gov.il/", "note": "רכש ביטחוני" }
+  ]
+}
