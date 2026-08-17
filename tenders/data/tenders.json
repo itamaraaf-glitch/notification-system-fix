@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T07:38:24.578Z",
+  "generatedAt": "2026-08-17T07:44:06.843Z",
   "generatedDate": "2026-08-17",
   "topics": {
     "telecom": {
@@ -66,15 +66,15 @@
     }
   ],
   "counts": {
-    "total": 54,
-    "new": 54,
-    "open": 5,
+    "total": 17,
+    "new": 17,
+    "open": 0,
     "closingSoon": 0,
     "byTopic": {
-      "telecom": 5,
-      "infosec": 4,
-      "equipment": 34,
-      "it": 13
+      "infosec": 2,
+      "it": 10,
+      "telecom": 4,
+      "equipment": 2
     }
   },
   "sources": [
@@ -84,8 +84,8 @@
       "category": "ממשלה",
       "ok": true,
       "scanned": 116,
-      "count": 4,
-      "ms": 9645,
+      "count": 0,
+      "ms": 8871,
       "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER"
     },
     {
@@ -96,7 +96,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 5063,
+      "ms": 4606,
       "searchUrl": "https://www.gov.il/he/departments/publications?publicationType=tender"
     },
     {
@@ -107,7 +107,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 5732,
+      "ms": 5384,
       "searchUrl": "https://www.moin.gov.il/Tenders"
     },
     {
@@ -116,8 +116,8 @@
       "category": "תשתיות",
       "ok": true,
       "scanned": 291,
-      "count": 40,
-      "ms": 3836,
+      "count": 9,
+      "ms": 3353,
       "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
     },
     {
@@ -127,7 +127,7 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 2230,
+      "ms": 1748,
       "searchUrl": "https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders"
     },
     {
@@ -138,7 +138,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 4838,
+      "ms": 4788,
       "searchUrl": "https://www.nta.co.il/tenders/"
     },
     {
@@ -149,7 +149,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 5058,
+      "ms": 4763,
       "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
     },
     {
@@ -160,7 +160,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 4608,
+      "ms": 4597,
       "searchUrl": "https://www.transisrael.co.il/Tenders?currentView=1"
     },
     {
@@ -170,7 +170,7 @@
       "ok": true,
       "scanned": 8,
       "count": 0,
-      "ms": 3954,
+      "ms": 3499,
       "searchUrl": "https://www.atarim.gov.il/tenders/"
     },
     {
@@ -180,7 +180,7 @@
       "ok": true,
       "scanned": 639,
       "count": 0,
-      "ms": 3098,
+      "ms": 2694,
       "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx"
     },
     {
@@ -190,7 +190,7 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 1897,
+      "ms": 1930,
       "searchUrl": "https://www2.haifa.muni.il/Michrazim/Default.aspx"
     },
     {
@@ -201,121 +201,11 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 4661,
+      "ms": 4648,
       "searchUrl": "https://www.jerusalem.muni.il/he/business/tenders/"
     }
   ],
   "tenders": [
-    {
-      "id": "3e7b71750f4bba28",
-      "title": "מכרז 3/2026 לניטור ומחקר מידע תקשורתי",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000619838",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "3/2026",
-      "publishedAt": "2026-07-20",
-      "deadlineAt": "2026-08-27",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 3,
-      "matched": [
-        "תקשורת"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "0f3670a8682495d2",
-      "title": "מכרז פומבי עם שלב מיון מוקדם להתקשרות בחוזה למתן שירותי ביטוח סייבר עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_20007110/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "16/07",
-      "publishedAt": "2026-07-16",
-      "deadlineAt": "2026-08-27",
-      "summary": "",
-      "topics": [
-        "infosec"
-      ],
-      "score": 5,
-      "matched": [
-        "סייבר"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "450b140ce9c6079c",
-      "title": "מכרז פומבי להתקשרות בחוזה למתן שירותי אספקת גז טבעי, לצורך הפעלת המנוע החמישי, במרכז האנרגיה בנתב\"ג,עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007438/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "23/07",
-      "publishedAt": "2026-07-23",
-      "deadlineAt": "2026-09-03",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "f69f6897b42731c1",
-      "title": "מכרז פומבי להתקשרות בחוזה מסגרת למתן שירותי הדברת מזיקים, הדברת יתושים, טיפול בבעלי חיים והצבת מערכות משדרות לאיתור ולכידת מכרסמים בנתב\"ג עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007058/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "12/08",
-      "publishedAt": "2026-08-12",
-      "deadlineAt": "2026-09-17",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "a1e2e1f0150bb8f4",
-      "title": "מכרז פומבי להתקשרות בחוזה לביצוע עבודות להרחבת המבנה הקרקעי של טרמינל 3 בנתב\"ג לכיוון מזרח",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007161/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "01/07",
-      "publishedAt": "2026-07-01",
-      "deadlineAt": "2026-09-24",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
     {
       "id": "7b317303da43db39",
       "title": "מתן שירותים משפטיים בתחום רישוי תוכנות, מחשוב ענן, הגנת פרטיות, אבטחת מידע, סייבר (לרבות טיפול במשברי סייבר), מאגרי מידע ודיני אינטרנט, עבור רשות שדות התעופה עם משרד דן חי ושות' עורכי דין",
@@ -366,29 +256,6 @@
       "lastSeen": "2026-08-17"
     },
     {
-      "id": "d7c9e7af045fa6a8",
-      "title": "אספקת ציוד חשמל ייחודי למערכות קריטיות ומתן שירותי תמיכה טכנית והדרכה, עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_84_2025/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2025-09-21",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 9,
-      "matched": [
-        "שירותי תמיכה",
-        "תמיכה טכנית"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
       "id": "03b4f9301f415e88",
       "title": "רכישת מחשבים ניידים",
       "url": "https://mr.gov.il/ilgstorefront/he/p/4000620724",
@@ -407,30 +274,6 @@
       "matched": [
         "מחשבים ניידים",
         "מחשבים"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "924668b8d9f50460",
-      "title": "מתן שירותי אחזקה, אספקה והתקנה של מערכות התרעה אלחוטיות בנתב\"ג ומסוף טאבה, עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_102_2025/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2025-11-10",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment",
-        "telecom"
-      ],
-      "score": 7,
-      "matched": [
-        "אלחוטי",
-        "נתב"
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17"
@@ -480,28 +323,6 @@
       "lastSeen": "2026-08-17"
     },
     {
-      "id": "9eb34d2c2d68edf3",
-      "title": "אספקת ח\"ח, הדרכה ותמיכה טכנית למערכת שינוע",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_14_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-01-28",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 5,
-      "matched": [
-        "תמיכה טכנית"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
       "id": "a41b29cbff113f6f",
       "title": "ייעוץ וליווי בתחומי טכנולוגיה מתקדמת עבור המטה הלאומי לבינה מלאכותית",
       "url": "https://mr.gov.il/ilgstorefront/he/p/4000620931",
@@ -524,50 +345,6 @@
       "lastSeen": "2026-08-17"
     },
     {
-      "id": "94b20ac612086ff4",
-      "title": "מכרז פומבי עם שלב מיון מוקדם להתקשרות בחוזה למתן שירותי ביטוח סייבר עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_20007110/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "infosec"
-      ],
-      "score": 5,
-      "matched": [
-        "סייבר"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "59b4e13dbb0e1b95",
-      "title": "מכרז פומבי להתקשרות בחוזה מסגרת למתן שירותים עבור יחידת מזהים משקפים ויחידת טב\"מ - טיפול ביטחוני מסחרי ושירותי בידוק למפעלי המזון בנתב\"ג, עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007275/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "19/07",
-      "publishedAt": "2026-07-19",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
       "id": "09c588c88f7a8a3a",
       "title": "התקנה, הטמעה ואחזקת מערכת ממוחשבת לניהול אירועים, עבור רשות שדות התעופה",
       "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_60_2026/",
@@ -585,490 +362,6 @@
       "score": 4,
       "matched": [
         "מערכת ממוחשבת"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "a47995fb4883018f",
-      "title": "מתן שירותי תמיכה במערכת Micro Scada Pro Sys 600, מתוצרת חברת ABB טכנולוגיות בע\"מ, המותקנות במערכות מתח גבוה, בנמל התעופה בן-גוריון",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_44_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-04-23",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 4,
-      "matched": [
-        "שירותי תמיכה"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "345bde356ca40671",
-      "title": "חוזה הרשאה להצבה, הפעלה ואחזקה של אוטומטיים לצילום עצמי בטרמינל 3 וטרמינל 1 של נתב\"ג ובמסוף הגבול אלנבי",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_13_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-03-23",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "f94ece27f15fe3ce",
-      "title": "חוזה אספקה, התקנה ואחזקת מצברי ליתיום עבור טרקטורים חשמליים ומטענים למצברי ליתיום עבור טרקטורים חשמליים לנתב\"ג",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_35_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-03-16",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "6cb50f50367b6766",
-      "title": "מתן שירותי פיקוח ובקרה על מפעיל מגרשי החניה בנתב\"ג",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_29_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-03-02",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "5439cd10254190e0",
-      "title": "חוזה הרשאה למתן שירותים להתאמה, ניהול ולהפעלת חנות לממכר גלידות/ פנקייקים/ יוגורטים/ שייקים וכיוצ\"ב, באולם היוצאים שבטרמינל 1 בנתב\"ג",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_10_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-02-23",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "910c854f5590b0b8",
-      "title": "חוזה הרשאה לשימוש בנכס בנתב\"ג",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_11_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-02-23",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "7f580be651e88ef0",
-      "title": "מתן שירותי ממונה בטיחות וגיהות בנתב\"ג, עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_23_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-02-18",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "4f2a86f465c7f1fe",
-      "title": "חוזה הרשאה לניהול, הפעלה, תחזוקה ושירותי תדלוק לרכבי חברות השכרות רכב בנתב\"ג.",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_08_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-02-05",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "1a92ba4897dbee1e",
-      "title": "חוזה הרשאה להצבה, הפעלה ואחזקה של כורסאות עיסוי אוטומטיים באולם הנוסעים היוצאים בטרמינל 3 בנתב\"ג",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_04_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-01-20",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "e1a7f5d8bed36b9c",
-      "title": "מתן שירותי סינון וסריקה במתחמי נתב\"ג, עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_10_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-01-19",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "4dc0564abc79efab",
-      "title": "חוזה למתן שירותי בקרת מעברים, אבטחת פרויקטים הנדסיים, ליווי ספקים והפעלת מתקן תת לחץ בנתב\"ג",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_06_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-01-18",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "dba48be6d3a2e9ef",
-      "title": "חוזה למתן שירותי דיגום ואנליזה של שפכי, קולחין, מים, קרקע ומזון בנתב\"ג עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_09_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-01-18",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "7310965ca5b66a23",
-      "title": "חוזה הרשאה להפעלת מסעדת גריל ישראלית באולם הנוסעים היוצאים של טרמינל 3 בנתב\"ג",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_02_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-01-06",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "e379b8adaf123645",
-      "title": "ביצוע עבודות טיפול בשטחי בור, שטחי גידולים, רצועות מסלולים ושטחי גדרות בנתב\"ג, שתפ\"א ובכל אתרי רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_117_2025/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2025-12-24",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "2985a508fa7f0913",
-      "title": "מתן שירותי הכוונה, סדרנות קהל ושרות לנוסע בנתב\"ג, עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_116_2025/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2025-12-17",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "3319b7121171ed9f",
-      "title": "חוזה לביצוע תכנון, אספקה, הצבה והתקנה של קו עגורן (מונורייל) בעל יכולת הרמה של 5.5 טון לפחות במתחם HBS טרמינל 3 בנתב\"ג, עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_113_2025/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2025-12-10",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "a9e9d327f1bdd206",
-      "title": "חוזה לאספקה והתקנה של גשרי מעבר נוסעים בנתב\"ג",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_91_2025/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2025-10-26",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "e7d34d36dd2c928d",
-      "title": "חוזה הרשאה למתן שירותים של ניהול והפעלת מגרשי חנייה בנתב\"ג, מסוף בגין, ומתקני רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_33_2025/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2025-10-21",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "5a7952f051503936",
-      "title": "הרשאה למתן שירות של החזרי מע\"מ לתיירים בטרמינל 3 של נתב\"ג, שתפ\"א ובמסופי הגבול",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/mis_ptor_29_2025/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2025-09-21",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "a3183690173e977a",
-      "title": "מתן שירותי הדברת מזיקים, ריסוס כנגד יתושים וטיפול בעלי חיים בנתב\"ג, עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_79_2025/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2025-09-04",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "bea98a89366ba467",
-      "title": "מתן שירותי אחזקה, התקנה ושדרוגים למערכת מיגון אלקטרונית לגדר אבטחה היקפית מסוג לחצים בנתב\"ג",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_74_2025/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2025-09-02",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "0571f863415d2335",
-      "title": "מתן שירותי אספקה, התקנה, שדרוג ואחזקת מערכות גילוי אש וכיבוי בגז מתוצרת חברת \"KGS\" המותקנות בנתב\"ג",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_77_2025/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2025-09-02",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17"
@@ -1113,138 +406,6 @@
       "score": 4,
       "matched": [
         "סלולר"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "d90dfbbe05ef19c0",
-      "title": "נתב\"ג בתמונות שנת 2020",
-      "url": "https://www.iaa.gov.il/airports/ben-gurion/picturesbgn/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "2486d84674e46b27",
-      "title": "מכרז פומבי להתקשרות בחוזה מסגרת למתן שירותי הדברת מזיקים, הדברת יתושים, טיפול בבעלי חיים והצבת מערכות משדרות לאיתור ולכידת מכרסמים בנתב\"ג עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007058/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "7f1d87db1f5a23b7",
-      "title": "מכרז פומבי להתקשרות בחוזה למתן שירותי אספקת גז טבעי, לצורך הפעלת המנוע החמישי, במרכז האנרגיה בנתב\"ג,עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007438/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "fd47737f23168361",
-      "title": "מכרז פומבי להתקשרות בחוזה מסגרת למתן שירותים עבור יחידת מזהים משקפים ויחידת טב\"מ - טיפול ביטחוני מסחרי ושירותי בידוק למפעלי המזון בנתב\"ג, עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007275/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "3cd0c666ea68560f",
-      "title": "מכרז פומבי לקבלת הרשאה למתן שירותים של הפעלת מגרשי חנייה בנתב\"ג, בשתפ\"א ובמעברי הגבול היבשתיים",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/mis_hoze_200001050/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17"
-    },
-    {
-      "id": "0826302582d5882b",
-      "title": "מכרז פומבי להתקשרות בחוזה לביצוע עבודות להרחבת המבנה הקרקעי של טרמינל 3 בנתב\"ג לכיוון מזרח",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007161/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 4,
-      "matched": [
-        "נתב"
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17"
@@ -1333,6 +494,28 @@
       "score": 3,
       "matched": [
         "כריזה"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "924668b8d9f50460",
+      "title": "מתן שירותי אחזקה, אספקה והתקנה של מערכות התרעה אלחוטיות בנתב\"ג ומסוף טאבה, עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_102_2025/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "2025-11-10",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "telecom"
+      ],
+      "score": 3,
+      "matched": [
+        "אלחוטי"
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17"
