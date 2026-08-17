@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T07:50:50.893Z",
+  "generatedAt": "2026-08-17T12:06:14.567Z",
   "generatedDate": "2026-08-17",
   "topics": {
     "telecom": {
@@ -66,15 +66,15 @@
     }
   ],
   "counts": {
-    "total": 12,
-    "new": 12,
+    "total": 18,
+    "new": 18,
     "open": 3,
     "closingSoon": 1,
     "byTopic": {
-      "it": 7,
-      "telecom": 3,
-      "infosec": 1,
-      "equipment": 2
+      "it": 9,
+      "telecom": 5,
+      "infosec": 2,
+      "equipment": 3
     }
   },
   "sources": [
@@ -84,8 +84,9 @@
       "category": "ממשלה",
       "ok": true,
       "scanned": 116,
-      "count": 12,
-      "ms": 8790,
+      "count": 8,
+      "ms": 8586,
+      "warn": "",
       "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER"
     },
     {
@@ -95,8 +96,8 @@
       "ok": false,
       "scanned": 0,
       "count": 0,
-      "error": "HTTP 403",
-      "ms": 4696,
+      "error": "www.gov.il/he/departments/topics/tenders-sub/govil — HTTP 403",
+      "ms": 1136,
       "searchUrl": "https://www.gov.il/he/departments/publications?publicationType=tender"
     },
     {
@@ -106,8 +107,8 @@
       "ok": false,
       "scanned": 0,
       "count": 0,
-      "error": "HTTP 403",
-      "ms": 5443,
+      "error": "www.moin.gov.il/Tenders — HTTP 403",
+      "ms": 1772,
       "searchUrl": "https://www.moin.gov.il/Tenders"
     },
     {
@@ -115,9 +116,10 @@
       "name": "רשות שדות התעופה",
       "category": "תשתיות",
       "ok": true,
-      "scanned": 291,
-      "count": 9,
-      "ms": 3358,
+      "scanned": 292,
+      "count": 10,
+      "ms": 3737,
+      "warn": "",
       "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
     },
     {
@@ -127,7 +129,8 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 1468,
+      "ms": 1200,
+      "warn": "",
       "searchUrl": "https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders"
     },
     {
@@ -137,8 +140,8 @@
       "ok": false,
       "scanned": 0,
       "count": 0,
-      "error": "HTTP 403",
-      "ms": 4831,
+      "error": "www.nta.co.il/tenders/ — HTTP 403",
+      "ms": 1386,
       "searchUrl": "https://www.nta.co.il/tenders/"
     },
     {
@@ -148,8 +151,8 @@
       "ok": false,
       "scanned": 0,
       "count": 0,
-      "error": "HTTP 403",
-      "ms": 4803,
+      "error": "www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D — HTTP 403",
+      "ms": 1113,
       "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
     },
     {
@@ -159,8 +162,8 @@
       "ok": false,
       "scanned": 0,
       "count": 0,
-      "error": "HTTP 403",
-      "ms": 4592,
+      "error": "www.transisrael.co.il/Tenders — HTTP 403",
+      "ms": 1148,
       "searchUrl": "https://www.transisrael.co.il/Tenders?currentView=1"
     },
     {
@@ -170,7 +173,8 @@
       "ok": true,
       "scanned": 8,
       "count": 0,
-      "ms": 3373,
+      "ms": 4364,
+      "warn": "",
       "searchUrl": "https://www.atarim.gov.il/tenders/"
     },
     {
@@ -180,29 +184,718 @@
       "ok": true,
       "scanned": 639,
       "count": 0,
-      "ms": 2576,
+      "ms": 2926,
+      "warn": "",
       "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx"
     },
     {
-      "id": "haifa",
-      "name": "עיריית חיפה",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 0,
-      "count": 0,
-      "ms": 2104,
-      "searchUrl": "https://www2.haifa.muni.il/Michrazim/Default.aspx"
-    },
-    {
-      "id": "jerusalem",
+      "id": "muni-jerusalem",
       "name": "עיריית ירושלים",
       "category": "רשויות מקומיות",
       "ok": false,
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 4736,
-      "searchUrl": "https://www.jerusalem.muni.il/he/business/tenders/"
+      "ms": 87,
+      "searchUrl": "https://www.jerusalem.muni.il/"
+    },
+    {
+      "id": "muni-haifa",
+      "name": "עיריית חיפה",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 418,
+      "count": 0,
+      "ms": 6384,
+      "warn": "",
+      "discovered": [
+        "https://www.haifa.muni.il/city-and-muni/legaladvice/contracts-and-tenders/",
+        "https://www.haifa.muni.il/resident-service/jobs/supplier-auctions/"
+      ],
+      "searchUrl": "https://www.haifa.muni.il/"
+    },
+    {
+      "id": "muni-rishon",
+      "name": "עיריית ראשון לציון",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22491,
+      "searchUrl": "https://www.rishonlezion.muni.il/"
+    },
+    {
+      "id": "muni-petah-tikva",
+      "name": "עיריית פתח תקווה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "לא נמצא קישור לעמוד מכרזים בדף הבית",
+      "ms": 4182,
+      "searchUrl": "https://www.petah-tikva.muni.il/"
+    },
+    {
+      "id": "muni-ashdod",
+      "name": "עיריית אשדוד",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22490,
+      "searchUrl": "https://www.ashdod.muni.il/"
+    },
+    {
+      "id": "muni-netanya",
+      "name": "עיריית נתניה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 299,
+      "searchUrl": "https://www.netanya.muni.il/"
+    },
+    {
+      "id": "muni-beer-sheva",
+      "name": "עיריית באר שבע",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22490,
+      "searchUrl": "https://www.beer-sheva.muni.il/"
+    },
+    {
+      "id": "muni-bnei-brak",
+      "name": "עיריית בני ברק",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 1729,
+      "searchUrl": "https://www.bneibrak.muni.il/"
+    },
+    {
+      "id": "muni-holon",
+      "name": "עיריית חולון",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22488,
+      "searchUrl": "https://www.holon.muni.il/"
+    },
+    {
+      "id": "muni-ramat-gan",
+      "name": "עיריית רמת גן",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "לא נמצא קישור לעמוד מכרזים בדף הבית",
+      "ms": 92,
+      "searchUrl": "https://www.ramat-gan.muni.il/"
+    },
+    {
+      "id": "muni-rehovot",
+      "name": "עיריית רחובות",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 374,
+      "searchUrl": "https://www.rehovot.muni.il/"
+    },
+    {
+      "id": "muni-ashkelon",
+      "name": "עיריית אשקלון",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22489,
+      "searchUrl": "https://www.ashkelon.muni.il/"
+    },
+    {
+      "id": "muni-bat-yam",
+      "name": "עיריית בת ים",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 90,
+      "searchUrl": "https://www.bat-yam.muni.il/"
+    },
+    {
+      "id": "muni-beit-shemesh",
+      "name": "עיריית בית שמש",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 2148,
+      "searchUrl": "https://www.bshemesh.co.il/"
+    },
+    {
+      "id": "muni-kfar-saba",
+      "name": "עיריית כפר סבא",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 91,
+      "searchUrl": "https://www.kfar-saba.muni.il/"
+    },
+    {
+      "id": "muni-herzliya",
+      "name": "עיריית הרצליה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 46,
+      "searchUrl": "https://www.herzliya.muni.il/"
+    },
+    {
+      "id": "muni-hadera",
+      "name": "עיריית חדרה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22490,
+      "searchUrl": "https://www.hadera.muni.il/"
+    },
+    {
+      "id": "muni-modiin",
+      "name": "עיריית מודיעין-מכבים-רעות",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "לא נמצא קישור לעמוד מכרזים בדף הבית",
+      "ms": 1100,
+      "searchUrl": "https://www.modiin.muni.il/"
+    },
+    {
+      "id": "muni-lod",
+      "name": "עיריית לוד",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22487,
+      "searchUrl": "https://www.lod.muni.il/"
+    },
+    {
+      "id": "muni-raanana",
+      "name": "עיריית רעננה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 588,
+      "searchUrl": "https://www.raanana.muni.il/"
+    },
+    {
+      "id": "muni-ramla",
+      "name": "עיריית רמלה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 1900,
+      "searchUrl": "https://www.ramla.muni.il/"
+    },
+    {
+      "id": "muni-givatayim",
+      "name": "עיריית גבעתיים",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 85,
+      "searchUrl": "https://www.givatayim.muni.il/"
+    },
+    {
+      "id": "muni-hod-hasharon",
+      "name": "עיריית הוד השרון",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 93,
+      "searchUrl": "https://www.hod-hasharon.muni.il/"
+    },
+    {
+      "id": "muni-kiryat-gat",
+      "name": "עיריית קריית גת",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 88,
+      "searchUrl": "https://www.qiryat-gat.muni.il/"
+    },
+    {
+      "id": "muni-nahariya",
+      "name": "עיריית נהריה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22490,
+      "searchUrl": "https://www.nahariya.muni.il/"
+    },
+    {
+      "id": "muni-eilat",
+      "name": "עיריית אילת",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 86,
+      "searchUrl": "https://www.eilat.muni.il/"
+    },
+    {
+      "id": "muni-afula",
+      "name": "עיריית עפולה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 93,
+      "searchUrl": "https://www.afula.muni.il/"
+    },
+    {
+      "id": "muni-kiryat-ata",
+      "name": "עיריית קריית אתא",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 1778,
+      "searchUrl": "https://www.qiryat-ata.muni.il/"
+    },
+    {
+      "id": "muni-tiberias",
+      "name": "עיריית טבריה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 480,
+      "searchUrl": "https://www.tiberias.muni.il/"
+    },
+    {
+      "id": "muni-carmiel",
+      "name": "עיריית כרמיאל",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 1635,
+      "searchUrl": "https://www.carmiel.muni.il/"
+    },
+    {
+      "id": "muni-rosh-haayin",
+      "name": "עיריית ראש העין",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22490,
+      "searchUrl": "https://www.rosh-haayin.muni.il/"
+    },
+    {
+      "id": "muni-dimona",
+      "name": "עיריית דימונה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 86,
+      "searchUrl": "https://www.dimona.muni.il/"
+    },
+    {
+      "id": "muni-nes-ziona",
+      "name": "עיריית נס ציונה",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 1937,
+      "count": 2,
+      "ms": 5162,
+      "warn": "",
+      "discovered": [
+        "https://www.nzc.org.il/bids/",
+        "https://www.nzc.org.il/protocols/?year=0&category=8&order=date-desc/"
+      ],
+      "searchUrl": "https://www.nzc.org.il/"
+    },
+    {
+      "id": "muni-yavne",
+      "name": "עיריית יבנה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 228,
+      "searchUrl": "https://www.yavne.muni.il/"
+    },
+    {
+      "id": "muni-akko",
+      "name": "עיריית עכו",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "לא נמצא קישור לעמוד מכרזים בדף הבית",
+      "ms": 921,
+      "searchUrl": "https://www.akko.muni.il/"
+    },
+    {
+      "id": "muni-or-yehuda",
+      "name": "עיריית אור יהודה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22489,
+      "searchUrl": "https://www.oryehuda.muni.il/"
+    },
+    {
+      "id": "muni-kiryat-ono",
+      "name": "עיריית קריית אונו",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 120,
+      "searchUrl": "https://www.kiryatono.muni.il/"
+    },
+    {
+      "id": "muni-givat-shmuel",
+      "name": "עיריית גבעת שמואל",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 33,
+      "searchUrl": "https://www.givat-shmuel.muni.il/"
+    },
+    {
+      "id": "muni-yehud",
+      "name": "עיריית יהוד-מונוסון",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "לא נמצא קישור לעמוד מכרזים בדף הבית",
+      "ms": 2891,
+      "searchUrl": "https://www.yehud-monosson.muni.il/"
+    },
+    {
+      "id": "muni-shoham",
+      "name": "מועצת שוהם",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 93,
+      "searchUrl": "https://www.shoham.muni.il/"
+    },
+    {
+      "id": "muni-elad",
+      "name": "עיריית אלעד",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22485,
+      "searchUrl": "https://www.elad.muni.il/"
+    },
+    {
+      "id": "muni-netivot",
+      "name": "עיריית נתיבות",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 34,
+      "searchUrl": "https://www.netivot.muni.il/"
+    },
+    {
+      "id": "muni-ofakim",
+      "name": "עיריית אופקים",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 1778,
+      "searchUrl": "https://www.ofakim.muni.il/"
+    },
+    {
+      "id": "muni-sderot",
+      "name": "עיריית שדרות",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 1785,
+      "searchUrl": "https://www.sderot.muni.il/"
+    },
+    {
+      "id": "muni-arad",
+      "name": "עיריית ערד",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 40,
+      "searchUrl": "https://www.arad.muni.il/"
+    },
+    {
+      "id": "muni-migdal-haemek",
+      "name": "עיריית מגדל העמק",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 1532,
+      "searchUrl": "https://www.migdalhaemek.muni.il/"
+    },
+    {
+      "id": "muni-kiryat-bialik",
+      "name": "עיריית קריית ביאליק",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22490,
+      "searchUrl": "https://www.qbialik.org.il/"
+    },
+    {
+      "id": "muni-kiryat-motzkin",
+      "name": "עיריית קריית מוצקין",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 1646,
+      "searchUrl": "https://www.kmotzkin.org.il/"
+    },
+    {
+      "id": "muni-tirat-carmel",
+      "name": "עיריית טירת כרמל",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22489,
+      "searchUrl": "https://www.tirat-carmel.muni.il/"
+    },
+    {
+      "id": "muni-zefat",
+      "name": "עיריית צפת",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 426,
+      "searchUrl": "https://www.zefat.muni.il/"
+    },
+    {
+      "id": "muni-ariel",
+      "name": "עיריית אריאל",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22488,
+      "searchUrl": "https://www.ariel.muni.il/"
+    },
+    {
+      "id": "muni-maale-adumim",
+      "name": "עיריית מעלה אדומים",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 1730,
+      "searchUrl": "https://www.maale-adumim.muni.il/"
+    },
+    {
+      "id": "muni-nof-hagalil",
+      "name": "עיריית נוף הגליל",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 1774,
+      "searchUrl": "https://www.nofhagalil.muni.il/"
+    },
+    {
+      "id": "muni-nazareth",
+      "name": "עיריית נצרת",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22486,
+      "searchUrl": "https://www.nazareth.muni.il/"
+    },
+    {
+      "id": "muni-umm-el-fahem",
+      "name": "עיריית אום אל-פחם",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 1584,
+      "searchUrl": "https://www.umelfahem.muni.il/"
+    },
+    {
+      "id": "muni-rahat",
+      "name": "עיריית רהט",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 1783,
+      "searchUrl": "https://www.rahat.muni.il/"
+    },
+    {
+      "id": "muni-tamra",
+      "name": "עיריית טמרה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 84,
+      "searchUrl": "https://www.tamra.muni.il/"
+    },
+    {
+      "id": "muni-sakhnin",
+      "name": "עיריית סחנין",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 45,
+      "searchUrl": "https://www.sakhnin.muni.il/"
+    },
+    {
+      "id": "muni-shefaram",
+      "name": "עיריית שפרעם",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 1584,
+      "searchUrl": "https://www.shefa-amr.muni.il/"
+    },
+    {
+      "id": "muni-mate-yehuda",
+      "name": "מועצה אזורית מטה יהודה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 83,
+      "searchUrl": "https://www.m-yehuda.org.il/"
+    },
+    {
+      "id": "muni-emek-hefer",
+      "name": "מועצה אזורית עמק חפר",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 34,
+      "searchUrl": "https://www.hefer.org.il/"
+    },
+    {
+      "id": "muni-drom-hasharon",
+      "name": "מועצה אזורית דרום השרון",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 1192,
+      "count": 4,
+      "ms": 4198,
+      "warn": "",
+      "discovered": [
+        "https://www.dsharon.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/",
+        "https://www.dsharon.org.il/%D7%94%D7%A6%D7%A2%D7%95%D7%AA-%D7%95%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
+      ],
+      "searchUrl": "https://www.dsharon.org.il/"
+    },
+    {
+      "id": "muni-emek-yizrael",
+      "name": "מועצה אזורית עמק יזרעאל",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 454,
+      "count": 2,
+      "ms": 4377,
+      "warn": "",
+      "discovered": [
+        "https://www.eyz.org.il/bids/",
+        "https://www.eyz.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
+      ],
+      "searchUrl": "https://www.eyz.org.il/"
     }
   ],
   "tenders": [
@@ -323,6 +1016,29 @@
       "lastSeen": "2026-08-17"
     },
     {
+      "id": "c778615d2bcf02c1",
+      "title": "אגף מחשוב ומערכות מידע",
+      "url": "https://www.dsharon.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%97%D7%A9%D7%95%D7%91-%D7%95%D7%9E%D7%A2%D7%A8%D7%9B%D7%95%D7%AA-%D7%9E%D7%99%D7%93%D7%A2/",
+      "source": "muni-drom-hasharon",
+      "sourceName": "מועצה אזורית דרום השרון",
+      "category": "רשויות מקומיות",
+      "publisher": "מועצה אזורית דרום השרון",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 9,
+      "matched": [
+        "מערכות מידע",
+        "מחשוב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
       "id": "fb08a656d4bf51e3",
       "title": "התקשרות לרישוי תוכנה, שירותי התקנה, אחזקה ושדרוגים של מערכת תמחיר SAS",
       "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_05_2026/",
@@ -340,6 +1056,28 @@
       "score": 6,
       "matched": [
         "רישוי תוכנה"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "95e5da328504bc1f",
+      "title": "מדריך לאבטחת מידע באשר להתקשרות עם גורם חיצוני",
+      "url": "https://www.gov.il/he/departments/publications/reports/guide_section_15",
+      "source": "muni-emek-yizrael",
+      "sourceName": "מועצה אזורית עמק יזרעאל",
+      "category": "רשויות מקומיות",
+      "publisher": "מועצה אזורית עמק יזרעאל",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "infosec"
+      ],
+      "score": 6,
+      "matched": [
+        "אבטחת מידע"
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17"
@@ -367,6 +1105,28 @@
       "lastSeen": "2026-08-17"
     },
     {
+      "id": "cf8a3bf54af9e844",
+      "title": "מרכזיות רשת חינוכיות",
+      "url": "https://www.dsharon.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%A8%D7%9B%D7%96%D7%99%D7%95%D7%AA-%D7%A8%D7%A9%D7%AA-%D7%97%D7%99%D7%A0%D7%95%D7%9B%D7%99%D7%95%D7%AA/",
+      "source": "muni-drom-hasharon",
+      "sourceName": "מועצה אזורית דרום השרון",
+      "category": "רשויות מקומיות",
+      "publisher": "מועצה אזורית דרום השרון",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "telecom"
+      ],
+      "score": 5,
+      "matched": [
+        "מרכזיות"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
       "id": "09c588c88f7a8a3a",
       "title": "התקנה, הטמעה ואחזקת מערכת ממוחשבת לניהול אירועים, עבור רשות שדות התעופה",
       "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_60_2026/",
@@ -384,6 +1144,28 @@
       "score": 4,
       "matched": [
         "מערכת ממוחשבת"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "2e7b1a00bbb55e9c",
+      "title": "מתן שירותי הודעות בזימונית ואחזקת ערכות כריזה של צופרים עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_75_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "",
+      "publishedAt": "2026-08-17",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 3,
+      "matched": [
+        "כריזה"
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17"
@@ -472,6 +1254,50 @@
       "score": 3,
       "matched": [
         "אלחוטי"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "a629d9d01636d132",
+      "title": "טופס הסכמה לשימוש באפליקציה למלווים",
+      "url": "https://www.nzc.org.il/bids/%D7%94%D7%A1%D7%9B%D7%9E%D7%94-%D7%9C%D7%A9%D7%99%D7%9E%D7%95%D7%A9-%D7%91%D7%90%D7%A4%D7%9C%D7%99%D7%A7%D7%A6%D7%99%D7%94-%D7%9C%D7%9E%D7%9C%D7%95%D7%95%D7%99%D7%9D/",
+      "source": "muni-nes-ziona",
+      "sourceName": "עיריית נס ציונה",
+      "category": "רשויות מקומיות",
+      "publisher": "עיריית נס ציונה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 3,
+      "matched": [
+        "אפליקציה"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-17"
+    },
+    {
+      "id": "0e6db38bdeace53f",
+      "title": "עיר ללא אלימות בתקשורת",
+      "url": "https://www.nzc.org.il/bids/%D7%A2%D7%99%D7%A8-%D7%9C%D7%9C%D7%90-%D7%90%D7%9C%D7%99%D7%9E%D7%95%D7%AA-%D7%91%D7%AA%D7%A7%D7%A9%D7%95%D7%A8%D7%AA/",
+      "source": "muni-nes-ziona",
+      "sourceName": "עיריית נס ציונה",
+      "category": "רשויות מקומיות",
+      "publisher": "עיריית נס ציונה",
+      "tenderNumber": "",
+      "publishedAt": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "telecom"
+      ],
+      "score": 3,
+      "matched": [
+        "תקשורת"
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17"
