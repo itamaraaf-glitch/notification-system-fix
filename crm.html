@@ -7238,37 +7238,60 @@ function _radarRender(){
     ${srcPanel}${authPanel}${mlPanel}`;
 }
 
+/** שם המשתמש המחובר — כדי שרשומה שנוספת מהראדאר לא תגיע בלי מטפל */
+function _currentUserName(){
+  const el=document.getElementById('uname');
+  return el?(el.textContent||'').trim():'';
+}
 /** בונה רשומת מכרז לטבלה מתוך ממצא ראדאר */
 function _radarToRow(t){
   return {
     name:t.title,proj:t.tenderNumber||'',pub:t.publishedAt||'',quote:'',questions:'',
-    deadline:t.deadlineAt||'',rounds:1,handler:'',amount:0,qty:1,submitted:'לא',
+    deadline:t.deadlineAt||'',rounds:1,handler:_currentUserName(),amount:0,qty:1,submitted:'לא',
     link:safeUrl(t.url),linked:'לא',docs:'',
     notes:[t.publisher||t.sourceName||'',(t.matched||[]).length?'התאמות: '+t.matched.slice(0,5).join(', '):''].filter(Boolean).join(' | '),
     reqName:'',reqEmail:'',files:[],
     radarId:t.id // מאפשר לזהות בראדאר שהמכרז כבר נוסף, בלי להסתמך על הקישור
   };
 }
+/** מעבר ללשונית "מכרזים פעילים" והצגת השורה שנוספה (הבהוב) */
+function goToTendersTable(rowId,label){
+  const tabs=document.getElementById('tenders-tabs');
+  const first=tabs&&tabs.querySelector('.tab');
+  if(first)first.click();               // חוזר ללשונית המכרזים הפעילים ומרנדר אותה
+  if(rowId&&typeof _secLocateFlash==='function'){
+    setTimeout(()=>_secLocateFlash('tenders','tender',rowId,label||'',false),320);
+  }
+}
+
 /** מוסיף מכרז שנמצא בראדאר לטבלת המכרזים של המערכת */
 function addTenderFromRadar(id){
   const t=((_radar&&_radar.tenders)||[]).find(x=>x.id===id);
   if(!t){showToast('המכרז לא נמצא בממצאי הראדאר','warn');return;}
   if(_radarInCrm(t)){showToast('המכרז כבר קיים בטבלת המכרזים','warn');_radarRender();return;}
-  dbInsert('tenders',_radarToRow(t));
+  const row=dbInsert('tenders',_radarToRow(t));
   _radarPick.delete(id);
-  showToast('✅ נוסף לטבלת המכרזים — כדאי להשלים מטפל, סכום ומועדים','ok');
   _radarRender();
+  // הרשומה נוספת חסרה סכום ומועד שאלות — הכפתור פותח אותה מיד להשלמה,
+  // במקום להשאיר את המשתמש לחפש אותה בטבלה
+  showToastWithAction('✅ נוסף למכרזים: '+t.title.slice(0,40),'✏️ השלם פרטים',()=>{
+    goToTendersTable();
+    setTimeout(()=>openM('tender',row.id),260);
+  });
 }
 /** הוספה מרובה של כל המכרזים שסומנו */
 function addSelectedFromRadar(){
   const all=(_radar&&_radar.tenders)||[];
   const pend=all.filter(t=>_radarPick.has(t.id)&&!_radarInCrm(t));
   if(!pend.length){showToast('לא נבחרו מכרזים להוספה','warn');return;}
-  pend.forEach(t=>dbInsert('tenders',_radarToRow(t),true)); // שמירה אחת בסוף במקום לכל שורה
+  const rows=pend.map(t=>dbInsert('tenders',_radarToRow(t),true)); // שמירה אחת בסוף במקום לכל שורה
   saveAll();
   _radarPick.clear();
-  showToast(`✅ ${pend.length} מכרזים נוספו לטבלת המכרזים`,'ok');
   _radarRender();
+  const first=rows[0];
+  showToastWithAction(`✅ ${pend.length} מכרזים נוספו למכרזים`,'📋 עבור לטבלה',()=>{
+    goToTendersTable(first&&first.id,first&&first.name);
+  });
 }
 
 function rTenders(){
