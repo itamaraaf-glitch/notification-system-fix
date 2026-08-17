@@ -89,12 +89,19 @@ function hashId(s) {
 
 const RX_CACHE = new Map();
 
-/** מונח עברי/כללי: מתיר תחיליות (ו/ה/ב/ל/מ/ש/כ/ד) וסיומות נטייה קצרות */
+/**
+ * מונח עברי/כללי: מתיר תחיליות (ו/ה/ב/ל/מ/ש/כ/ד) וסיומות נטייה קצרות.
+ *
+ * ראשי תיבות בעברית נכתבים עם גרשיים לפני האות האחרונה (נתב"ג, רש"ת, ח"ח), והגרשיים
+ * אינם אות ולכן נחשבו סוף מילה — כך המונח "נתב" נתפס בתוך "נתב\"ג" (נמל התעופה בן גוריון)
+ * וסימן 32 מכרזי זכיינות בשדה התעופה כ"ציוד תקשורת". לכן נדחית התאמה שאחריה גרשיים ואות.
+ */
+const ACRONYM_TAIL = '(?![׳״\'"]\\p{L})';
 function termRegex(term) {
   const key = 't:' + term;
   if (RX_CACHE.has(key)) return RX_CACHE.get(key);
   const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[\s\u2010-\u2015-]+/g, '[\\s\\-]+');
-  const rx = new RegExp('(?:^|[^\\p{L}\\p{N}])[והבלמשכד]{0,2}' + esc + '\\p{L}{0,3}(?:$|[^\\p{L}\\p{N}])', 'iu');
+  const rx = new RegExp('(?:^|[^\\p{L}\\p{N}])[והבלמשכד]{0,2}' + esc + ACRONYM_TAIL + '\\p{L}{0,3}(?:$|[^\\p{L}\\p{N}])', 'iu');
   RX_CACHE.set(key, rx);
   return rx;
 }
@@ -461,7 +468,7 @@ async function main() {
   const activeSources = ONLY_SOURCE
     ? new Set((cfg.sources || []).filter(s => s.enabled !== false).map(s => s.id))
     : new Set(sources.map(s => s.id));
-  const merged = mergeWithHistory([...found.values()], prevById, activeSources);
+  const merged = mergeWithHistory([...found.values()], prevById, activeSources, kw);
   const payload = {
     generatedAt: new Date().toISOString(),
     generatedDate: today,
@@ -569,7 +576,7 @@ function buildRecord(item, source, kw) {
   };
 }
 
-function mergeWithHistory(current, prevById, activeSources) {
+function mergeWithHistory(current, prevById, activeSources, kw) {
   const out = new Map();
 
   for (const rec of current) {
@@ -580,7 +587,7 @@ function mergeWithHistory(current, prevById, activeSources) {
   }
 
   // רשומות שלא נראו בריצה הזו — נשמרות עד שהן מתיישנות או שמועד ההגשה חלף
-  for (const [id, prev] of prevById) {
+  for (let [id, prev] of prevById) {
     if (out.has(id)) continue;
     // מקור שנוטרל או הוסר מהתצורה — הרשומות שלו יורדות מיד ולא ממתינות KEEP_DAYS,
     // אחרת נטרול מקור לא היה משפיע על התוצאות במשך שבועות
@@ -589,6 +596,14 @@ function mergeWithHistory(current, prevById, activeSources) {
     const deadlinePassed = prev.deadlineAt && daysBetween(today, prev.deadlineAt) < -14;
     if (deadlinePassed) continue;
     if (age !== null && age > KEEP_DAYS) continue;
+
+    // רשומה שנשמרה בהיסטוריה נבדקת מחדש מול התצורה הנוכחית. בלי זה, חידוד של מילות
+    // המפתח לא היה מנקה רשומות שכבר נכנסו — הן היו נשארות עד 45 יום.
+    if (kw) {
+      const recheck = classify(`${prev.title} ${prev.summary || ''}`, kw);
+      if (!recheck.topics.length) continue;
+      prev = { ...prev, topics: recheck.topics, score: recheck.score, matched: recheck.matched };
+    }
     out.set(id, prev);
   }
 

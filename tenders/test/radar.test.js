@@ -245,3 +245,58 @@ test('חלון ההקשר גדול דיו לתפוס תאריכים בתאים �
   assert.strictEqual(R.dateAfterHint(a.context, R.DEADLINE_HINTS), '2026-09-17');
   assert.strictEqual(R.dateAfterHint(a.context, R.PUBLISH_HINTS), '2026-08-02');
 });
+
+test('ראשי תיבות עבריות אינן יוצרות התאמת שווא (נתב"ג ≠ נתב)', () => {
+  // הבאג שהתגלה בסריקה אמיתית: 32 מכרזי זכיינות בנמל התעופה סומנו כ"ציוד תקשורת"
+  for (const t of ['נתב״ג', 'נתב"ג']) {
+    const c = R.classify(`מכרז להפעלת חנות גלידה באולם הנוסעים ב${t}`, KW);
+    assert.deepStrictEqual(c.topics, [], `"${t}" לא אמור להתאים למונח "נתב"`);
+  }
+  assert.deepStrictEqual(R.classify('מכרז להדברת מזיקים וטיפול בבעלי חיים בנתב"ג', KW).topics, []);
+  assert.deepStrictEqual(R.classify('מכרז לאספקת גז טבעי להפעלת המנוע החמישי בנתב״ג', KW).topics, []);
+});
+
+test('נתב אמיתי כן מזוהה', () => {
+  assert.ok(R.classify('מכרז לאספקת נתב לסניף', KW).topics.includes('equipment'));
+  assert.ok(R.classify('מכרז לאספקת נתבים ומתגים', KW).topics.includes('equipment'));
+});
+
+test('מונח בתוך מירכאות עדיין מזוהה', () => {
+  assert.ok(R.classify('מכרז למתן "שירותי תקשורת" לרשות', KW).topics.includes('telecom'));
+});
+
+test('ניטור מדיה, ביטוח סייבר ותמיכה טכנית גנרית אינם נכנסים לראדאר', () => {
+  // כל השלושה נמצאו כהתאמות שווא בסריקה אמיתית
+  assert.deepStrictEqual(R.classify('מכרז 3/2026 לניטור ומחקר מידע תקשורתי', KW).topics, []);
+  assert.deepStrictEqual(R.classify('מכרז למתן שירותי ביטוח סייבר עבור הרשות', KW).topics, []);
+  assert.deepStrictEqual(R.classify('אספקת ח"ח, הדרכה ותמיכה טכנית למערכת שינוע', KW).topics, []);
+});
+
+test('תמיכה טכנית בהקשר מחשובי כן נכנסת', () => {
+  assert.ok(R.classify('מכרז לשירותי מחשוב ותמיכה טכנית לתחנות קצה', KW).topics.includes('it'));
+  assert.ok(R.classify('הקמת מוקד תמיכה למערכות מידע', KW).topics.includes('it'));
+});
+
+test('מכרזי סייבר אמיתיים לא נפגעו מהשלילה של ביטוח סייבר', () => {
+  assert.ok(R.classify('מכרז להקמת מערך הגנת סייבר ומוקד SOC', KW).topics.includes('infosec'));
+  assert.ok(R.classify('מכרז לשירותי אבטחת מידע וסייבר', KW).topics.includes('infosec'));
+});
+
+test('רשומות בהיסטוריה נבדקות מחדש מול התצורה הנוכחית', () => {
+  const today = new Date().toISOString().slice(0,10);
+  const prev = new Map([
+    ['stale', { id:'stale', source:'s', title:'מכרז להפעלת חנות גלידה בנתב"ג', score:4, topics:['equipment'], firstSeen:'2020-01-01', lastSeen:today }],
+    ['good',  { id:'good',  source:'s', title:'מכרז לאספקת נתבים ומתגים',      score:9, topics:['equipment'], firstSeen:'2020-01-01', lastSeen:today }]
+  ]);
+  const merged = R.mergeWithHistory([], prev, new Set(['s']), KW);
+  assert.deepStrictEqual(merged.map(t => t.id), ['good'],
+    'רשומה שכבר אינה עומדת בסינון המעודכן אמורה לרדת מההיסטוריה');
+});
+
+test('בדיקה מחדש מרעננת נושאים וניקוד של רשומה שנשמרה', () => {
+  const today = new Date().toISOString().slice(0,10);
+  const prev = new Map([['a', { id:'a', source:'s', title:'מכרז לאספקת שירותי תקשורת וסיבים אופטיים', score:1, topics:['it'], matched:[], firstSeen:'2020-01-01', lastSeen:today }]]);
+  const merged = R.mergeWithHistory([], prev, new Set(['s']), KW);
+  assert.ok(merged[0].topics.includes('telecom'), 'הנושאים מתעדכנים לפי התצורה הנוכחית');
+  assert.ok(merged[0].score > 1);
+});
