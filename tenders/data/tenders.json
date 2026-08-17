@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T12:14:02.374Z",
+  "generatedAt": "2026-08-17T12:18:31.460Z",
   "generatedDate": "2026-08-17",
   "topics": {
     "telecom": {
@@ -363,14 +363,14 @@
     }
   ],
   "counts": {
-    "total": 18,
-    "new": 18,
+    "total": 13,
+    "new": 13,
     "open": 3,
     "closingSoon": 1,
     "byTopic": {
-      "it": 9,
-      "telecom": 5,
-      "infosec": 2,
+      "it": 7,
+      "telecom": 3,
+      "infosec": 1,
       "equipment": 3
     }
   },
@@ -382,7 +382,7 @@
       "ok": true,
       "scanned": 116,
       "count": 8,
-      "ms": 8038,
+      "ms": 9511,
       "warn": "",
       "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER"
     },
@@ -394,7 +394,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.gov.il/he/departments/topics/tenders-sub/govil — HTTP 403",
-      "ms": 1107,
+      "ms": 1018,
       "searchUrl": "https://www.gov.il/he/departments/publications?publicationType=tender"
     },
     {
@@ -405,7 +405,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.moin.gov.il/Tenders — HTTP 403",
-      "ms": 1723,
+      "ms": 1840,
       "searchUrl": "https://www.moin.gov.il/Tenders"
     },
     {
@@ -415,7 +415,7 @@
       "ok": true,
       "scanned": 292,
       "count": 10,
-      "ms": 3650,
+      "ms": 3007,
       "warn": "",
       "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
     },
@@ -426,7 +426,7 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 1748,
+      "ms": 1893,
       "warn": "",
       "searchUrl": "https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders"
     },
@@ -438,7 +438,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.nta.co.il/tenders/ — HTTP 403",
-      "ms": 1324,
+      "ms": 1336,
       "searchUrl": "https://www.nta.co.il/tenders/"
     },
     {
@@ -449,7 +449,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D — HTTP 403",
-      "ms": 1166,
+      "ms": 1170,
       "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
     },
     {
@@ -460,7 +460,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.transisrael.co.il/Tenders — HTTP 403",
-      "ms": 1153,
+      "ms": 979,
       "searchUrl": "https://www.transisrael.co.il/Tenders?currentView=1"
     },
     {
@@ -470,7 +470,7 @@
       "ok": true,
       "scanned": 8,
       "count": 0,
-      "ms": 4446,
+      "ms": 4312,
       "warn": "",
       "searchUrl": "https://www.atarim.gov.il/tenders/"
     },
@@ -481,7 +481,7 @@
       "ok": true,
       "scanned": 639,
       "count": 0,
-      "ms": 2615,
+      "ms": 2558,
       "warn": "",
       "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx"
     },
@@ -492,7 +492,7 @@
       "ok": true,
       "scanned": 418,
       "count": 0,
-      "ms": 5813,
+      "ms": 6296,
       "warn": "",
       "discovered": [
         "https://www.haifa.muni.il/city-and-muni/legaladvice/contracts-and-tenders/",
@@ -507,7 +507,7 @@
       "ok": true,
       "scanned": 1937,
       "count": 0,
-      "ms": 3991,
+      "ms": 4518,
       "warn": "",
       "discovered": [
         "https://www.nzc.org.il/bids/",
@@ -522,7 +522,7 @@
       "ok": true,
       "scanned": 1192,
       "count": 0,
-      "ms": 3978,
+      "ms": 4317,
       "warn": "",
       "discovered": [
         "https://www.dsharon.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/",
@@ -536,8 +536,8 @@
       "category": "רשויות מקומיות",
       "ok": true,
       "scanned": 454,
-      "count": 2,
-      "ms": 5351,
+      "count": 0,
+      "ms": 3931,
       "warn": "",
       "discovered": [
         "https://www.eyz.org.il/bids/",
@@ -650,7 +650,7 @@
       "category": "תשתיות",
       "publisher": "רשות שדות התעופה",
       "tenderNumber": "",
-      "publishedAt": "2026-03-23",
+      "publishedAt": "",
       "deadlineAt": "",
       "summary": "",
       "topics": [
@@ -659,30 +659,6 @@
       "score": 10,
       "matched": [
         "שירותי מחשוב",
-        "מחשוב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "deadlineChecked": true
-    },
-    {
-      "id": "c778615d2bcf02c1",
-      "title": "אגף מחשוב ומערכות מידע",
-      "url": "https://www.dsharon.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%97%D7%A9%D7%95%D7%91-%D7%95%D7%9E%D7%A2%D7%A8%D7%9B%D7%95%D7%AA-%D7%9E%D7%99%D7%93%D7%A2/",
-      "source": "muni-drom-hasharon",
-      "sourceName": "מועצה אזורית דרום השרון",
-      "category": "רשויות מקומיות",
-      "publisher": "מועצה אזורית דרום השרון",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 9,
-      "matched": [
-        "מערכות מידע",
         "מחשוב"
       ],
       "firstSeen": "2026-08-17",
@@ -713,29 +689,6 @@
       "deadlineChecked": true
     },
     {
-      "id": "95e5da328504bc1f",
-      "title": "מדריך לאבטחת מידע באשר להתקשרות עם גורם חיצוני",
-      "url": "https://www.gov.il/he/departments/publications/reports/guide_section_15",
-      "source": "muni-emek-yizrael",
-      "sourceName": "מועצה אזורית עמק יזרעאל",
-      "category": "רשויות מקומיות",
-      "publisher": "מועצה אזורית עמק יזרעאל",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "infosec"
-      ],
-      "score": 6,
-      "matched": [
-        "אבטחת מידע"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "deadlineChecked": true
-    },
-    {
       "id": "f661eb6fed6f3eac",
       "title": "אספקת שירותי CRM בענן, עבור רשות שדות התעופה",
       "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_67_2026/",
@@ -753,29 +706,6 @@
       "score": 5,
       "matched": [
         "CRM"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "deadlineChecked": true
-    },
-    {
-      "id": "cf8a3bf54af9e844",
-      "title": "מרכזיות רשת חינוכיות",
-      "url": "https://www.dsharon.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%A8%D7%9B%D7%96%D7%99%D7%95%D7%AA-%D7%A8%D7%A9%D7%AA-%D7%97%D7%99%D7%A0%D7%95%D7%9B%D7%99%D7%95%D7%AA/",
-      "source": "muni-drom-hasharon",
-      "sourceName": "מועצה אזורית דרום השרון",
-      "category": "רשויות מקומיות",
-      "publisher": "מועצה אזורית דרום השרון",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 5,
-      "matched": [
-        "מרכזיות"
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17",
@@ -914,52 +844,6 @@
       "score": 3,
       "matched": [
         "אלחוטי"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "deadlineChecked": true
-    },
-    {
-      "id": "a629d9d01636d132",
-      "title": "טופס הסכמה לשימוש באפליקציה למלווים",
-      "url": "https://www.nzc.org.il/bids/%D7%94%D7%A1%D7%9B%D7%9E%D7%94-%D7%9C%D7%A9%D7%99%D7%9E%D7%95%D7%A9-%D7%91%D7%90%D7%A4%D7%9C%D7%99%D7%A7%D7%A6%D7%99%D7%94-%D7%9C%D7%9E%D7%9C%D7%95%D7%95%D7%99%D7%9D/",
-      "source": "muni-nes-ziona",
-      "sourceName": "עיריית נס ציונה",
-      "category": "רשויות מקומיות",
-      "publisher": "עיריית נס ציונה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 3,
-      "matched": [
-        "אפליקציה"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "deadlineChecked": true
-    },
-    {
-      "id": "0e6db38bdeace53f",
-      "title": "עיר ללא אלימות בתקשורת",
-      "url": "https://www.nzc.org.il/bids/%D7%A2%D7%99%D7%A8-%D7%9C%D7%9C%D7%90-%D7%90%D7%9C%D7%99%D7%9E%D7%95%D7%AA-%D7%91%D7%AA%D7%A7%D7%A9%D7%95%D7%A8%D7%AA/",
-      "source": "muni-nes-ziona",
-      "sourceName": "עיריית נס ציונה",
-      "category": "רשויות מקומיות",
-      "publisher": "עיריית נס ציונה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 3,
-      "matched": [
-        "תקשורת"
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-17",
