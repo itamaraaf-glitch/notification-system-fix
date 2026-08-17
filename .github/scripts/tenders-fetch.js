@@ -762,9 +762,14 @@ function mergeWithHistory(current, prevById, activeSources, kw) {
     if (kw) {
       const text = `${prev.title} ${prev.summary || ''}`;
       // גם שער המכרז נבדק מחדש, אחרת קישורי ניווט שנתפסו לפני שהשער הוקשח
-      // (למשל "אלקטרוניקה וסלולר" ו"להורדת אפליקציה") היו נשארים במאגר
-      const pattern = (activeSources instanceof Map ? (activeSources.get(prev.source) || {}).linkPattern : null);
-      if (!looksLikeTender(text, kw) && !looksLikeTenderUrl(prev.url || '', pattern)) continue;
+      // (למשל "אלקטרוניקה וסלולר" ו"להורדת אפליקציה") היו נשארים במאגר.
+      // הבדיקה חייבת להיות זהה לזו שב-buildRecord ולכבד את allTenders של המקור:
+      // כשהיא הייתה מקלה יותר, רשומות שהסינון המעודכן דוחה שרדו דרך שער הקישור.
+      const srcCfg = (activeSources instanceof Map ? activeSources.get(prev.source) : null) || {};
+      const gatePassed = srcCfg.allTenders
+        ? (looksLikeTender(text, kw) || looksLikeTenderUrl(prev.url || '', srcCfg.linkPattern))
+        : looksLikeTender(text, kw);
+      if (!gatePassed) continue;
       const recheck = classify(text, kw);
       if (!recheck.topics.length) continue;
       prev = { ...prev, topics: recheck.topics, score: recheck.score, matched: recheck.matched };

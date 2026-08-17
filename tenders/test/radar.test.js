@@ -358,3 +358,27 @@ test('דף בית בלי קישור למכרזים אינו מחזיר מועמ�
   const home = `<a href="/he/education">חינוך</a><a href="/he/sport">ספורט</a>`;
   assert.deepStrictEqual(R.findTenderLinks(home, 'https://www.city.muni.il/'), []);
 });
+
+test('בדיקה מחדש של ההיסטוריה מכבדת את allTenders של המקור', () => {
+  const today = new Date().toISOString().slice(0,10);
+  // רשומות אמיתיות שנתפסו מדפי ועדות/מסמכים של רשויות: הכותרת אינה מכרז,
+  // אבל הקישור יושב על נתיב /bids/ ולכן שער הקישור לבדו אישר אותן.
+  const prev = new Map([
+    ['junk1', { id:'junk1', source:'muni', title:'אגף מחשוב ומערכות מידע', url:'https://x.org.il/bids/1', score:5, topics:['it'], firstSeen:'2020-01-01', lastSeen:today }],
+    ['junk2', { id:'junk2', source:'muni', title:'טופס הסכמה לשימוש באפליקציה למלווים', url:'https://x.org.il/bids/2', score:3, topics:['it'], firstSeen:'2020-01-01', lastSeen:today }],
+    ['real',  { id:'real',  source:'muni', title:'מכרז 8/2026 לאספקת ציוד תקשורת', url:'https://x.org.il/bids/3', score:9, topics:['equipment'], firstSeen:'2020-01-01', lastSeen:today }]
+  ]);
+  // מקור discover — allTenders=false, ולכן נדרש ניסוח מכרז בכותרת
+  const strict = new Map([['muni', { id:'muni', allTenders: false }]]);
+  assert.deepStrictEqual(R.mergeWithHistory([], prev, strict, KW).map(t => t.id), ['real']);
+
+  // מקור שכל הדף שלו מכרזים — שער הקישור עדיין תקף
+  const loose = new Map([['muni', { id:'muni', allTenders: true }]]);
+  assert.strictEqual(R.mergeWithHistory([], prev, loose, KW).length, 3);
+});
+
+test('"התקשרות" לבדה אינה מסמנת פרסום כמכרז', () => {
+  assert.ok(!R.looksLikeTender('מדריך לאבטחת מידע באשר להתקשרות עם גורם חיצוני', KW));
+  assert.ok(R.looksLikeTender('הודעה על התקשרות עם ספק יחיד לאספקת רישוי תוכנה', KW));
+  assert.ok(R.looksLikeTender('התקשרות בפטור ממכרז — שירותי תקשורת', KW));
+});

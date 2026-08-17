@@ -115,10 +115,14 @@ test('חריגה מתקציב הזמן עוצרת את הסריקה ומדווח
 
   // מקור שלא נסרק אינו מוחק את מה שכבר נמצא בו — ההיסטוריה נשמרת,
   // אחרת ריצה שנקטעה הייתה מרוקנת את המאגר.
+  // (הספירה לא בהכרח זהה למאגר: רשומות ההיסטוריה נבדקות מחדש מול הסינון הנוכחי,
+  //  ולכן רשומה שהסינון המעודכן דוחה יורדת גם בריצה שלא סרקה כלום.)
   const stored = JSON.parse(fs.readFileSync(
     path.join(__dirname, '..', 'data', 'tenders.json'), 'utf8'));
-  assert.strictEqual(payload.counts.total, (stored.tenders || []).length,
-    'המכרזים שבמאגר נשמרים גם כשאף מקור לא נסרק');
+  if ((stored.tenders || []).length) {
+    assert.ok(payload.counts.total > 0, 'המכרזים שבמאגר לא נמחקים כשאף מקור לא נסרק');
+    assert.ok(payload.counts.total <= stored.tenders.length);
+  }
 });
 
 test('מועד הגשה נשלף מדף המכרז כשהוא חסר בדף הרשימה', async () => {
