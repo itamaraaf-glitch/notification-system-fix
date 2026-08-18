@@ -1833,7 +1833,7 @@ body.logged-in #ai-fab{display:flex}
     <div style="display:flex;gap:6px;align-items:center">
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ttb')">
       <button class="btn btnp" onclick="openM('tender',null)">+ מכרז חדש</button>
-      <a class="btn" href="tenders.html" target="_blank" rel="noopener noreferrer" title="ראדאר מכרזים: סריקה יומית של מכרזים חדשים בישראל בתחומי תקשורת, ציוד תקשורת, אבטחת מידע ו-IT" style="border-color:#4cc9f0;color:#4cc9f0;text-decoration:none">📡 ראדאר מכרזים</a>
+      <a class="btn" href="tenders.html" target="_blank" rel="noopener noreferrer" title="ראדאר מכרזים: סריקה יומית של מכרזים חדשים בישראל בתחומי תקשורת, ציוד תקשורת, אבטחת מידע, IT ובינה מלאכותית" style="border-color:#4cc9f0;color:#4cc9f0;text-decoration:none">📡 ראדאר מכרזים</a>
       <button class="btn btn-excel" onclick="exportExcel('tenders')">📥 Excel</button>
       <button class="btn btn-import" onclick="importFromExcel('tenders')" title="ייבוא מ-Excel">📤 ייבוא</button>
       <button class="btn btnwp" onclick="sendWhatsAppTenders()">📱 WA</button>
@@ -1843,7 +1843,7 @@ body.logged-in #ai-fab{display:flex}
   <div class="tabs" id="tenders-tabs">
     <div class="tab active" onclick="swTab(this,'tenders-tabs','tent','archivtent','tenradar');rTenders()">מכרזים פעילים</div>
     <div class="tab" onclick="swTab(this,'tenders-tabs','tent','archivtent','tenradar');rTendersArchive()">📦 ארכיון</div>
-    <div class="tab" onclick="swTab(this,'tenders-tabs','tent','archivtent','tenradar');rTenderRadar()" title="מכרזים חדשים שנמצאו בסריקה היומית — תקשורת, ציוד תקשורת, אבטחת מידע ו-IT">📡 ראדאר מכרזים</div>
+    <div class="tab" onclick="swTab(this,'tenders-tabs','tent','archivtent','tenradar');rTenderRadar()" title="מכרזים חדשים שנמצאו בסריקה היומית — תקשורת, ציוד תקשורת, אבטחת מידע, IT ובינה מלאכותית">📡 ראדאר מכרזים</div>
   </div>
   <div class="pf-slot" data-target="sec-tenders"></div>
   <div id="tent">
@@ -7141,7 +7141,7 @@ function _radarRender(){
   const all=(_radar&&_radar.tenders)||[];
   if(!all.length){
     box.innerHTML=`<div class="rdr-empty"><div class="ico">🛰️</div><h4>הסריקה טרם מצאה מכרזים רלוונטיים</h4>
-      <div>הראדאר סורק אחת ליום מקורות מכרזים ציבוריים ומסנן לתקשורת, ציוד תקשורת, אבטחת מידע ו-IT.</div>
+      <div>הראדאר סורק אחת ליום מקורות מכרזים ציבוריים ומסנן לתקשורת, ציוד תקשורת, אבטחת מידע, IT ובינה מלאכותית.</div>
       <button class="btn" style="margin-top:12px" onclick="radarReload()">↻ רענון</button></div>`;
     return;
   }

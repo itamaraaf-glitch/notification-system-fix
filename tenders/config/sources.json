@@ -30,7 +30,10 @@
         "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&page=0",
         "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&page=1",
         "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&page=2",
-        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&page=3"
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&page=3",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%91%D7%99%D7%A0%D7%94%20%D7%9E%D7%9C%D7%90%D7%9B%D7%95%D7%AA%D7%99%D7%AA",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%9C%D7%9E%D7%99%D7%93%D7%AA%20%D7%9E%D7%9B%D7%95%D7%A0%D7%94",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%A0%D7%99%D7%AA%D7%95%D7%97%20%D7%A0%D7%AA%D7%95%D7%A0%D7%99%D7%9D"
       ],
       "_linkPatternReason": "כתובות המכרזים באתר מנהל הרכש אינן מכילות מילה מזהה אלא מזהה מספרי (/ilgstorefront/he/p/4000620724), ולכן השער הכללי דחה מכרזים אמיתיים.",
       "linkPattern": "/ilgstorefront/[a-z]{2}/p/\\d+",
