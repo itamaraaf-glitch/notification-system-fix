@@ -210,3 +210,23 @@ test('כתובת מכרזים ידועה נבדקת לפני דף הבית, עם
       'רמז שלא נענה לא מפיל את המקור — הגילוי מדף הבית ממשיך');
   } finally { srv.close(); }
 });
+
+// אתר איטי אחד עם הרבה כתובות יכול לבלוע את כל תקציב הריצה, וכל המקורות
+// שאחריו לא נסרקים. תקרת זמן קשיחה לכל מקור הופכת את זה לכשל של מקור אחד.
+test('לכל מקור יש תקרת זמן קשיחה, שגדלה עם מספר הכתובות וחסומה מלמעלה', () => {
+  assert.strictEqual(R.sourceBudget({ id: 'a' }), 80000, 'מקור בלי רשימת כתובות מקבל מינימום');
+  assert.ok(R.sourceBudget({ urls: ['a', 'b', 'c'] }) > R.sourceBudget({ urls: ['a'] }),
+    'יותר כתובות = יותר זמן');
+  assert.strictEqual(R.sourceBudget({ urls: new Array(50).fill('u') }), 300000, 'חסום ב-5 דקות');
+  assert.ok(R.sourceBudget({ home: 'h', tendersUrls: ['x', 'y'] }) > R.sourceBudget({ home: 'h' }),
+    'גם רמזי כתובת נספרים בתקרה');
+});
+
+test('מקור שנתקע נכשל בתקרת הזמן ולא עוצר את הריצה', async () => {
+  const never = new Promise(() => {});          // לעולם אינה מסתיימת
+  await assert.rejects(
+    () => R.withDeadline(never, 60, 'חריגה מזמן הסריקה של המקור'),
+    /חריגה מזמן הסריקה/);
+  // הבטחה שמסתיימת בזמן עוברת כרגיל, והשעון מנוקה
+  assert.strictEqual(await R.withDeadline(Promise.resolve('ok'), 5000, 'לא אמור לקרות'), 'ok');
+});

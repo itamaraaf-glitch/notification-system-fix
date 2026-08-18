@@ -41,9 +41,29 @@ const budgetLeft = () => BUDGET_MS - (Date.now() - RUN_STARTED);
 const KEEP_DAYS = +(process.env.TENDERS_KEEP_DAYS || 45);
 const MAX_PER_SOURCE = +(process.env.TENDERS_MAX_PER_SOURCE || 60);
 const POLITE_DELAY_MS = +(process.env.TENDERS_DELAY_MS || 900);
+// כמה מקורות נסרקים במקביל. כל מקור הוא אתר אחר, ובתוך מקור הבקשות נשארות
+// טוריות עם השהיה — כך הנימוס מול כל שרת נשמר, אבל 44 מקורות לא נסרקים בטור
+// אחד ארוך שחורג מזמן הריצה.
+const SOURCE_PARALLEL = +(process.env.TENDERS_PARALLEL || 4);
+// תקרת זמן קשיחה לכל מקור. בלעדיה אתר איטי אחד עם הרבה כתובות בולע את כל
+// תקציב הריצה, והמקורות שאחריו לא נסרקים בכלל.
+const SOURCE_MAX_MS = +(process.env.TENDERS_SOURCE_MAX_MS || 0);
 const UA = 'Mozilla/5.0 (compatible; TendersRadar/1.0; +https://github.com/itamaraaf-glitch/notification-system-fix)';
 
 const today = ymd(new Date());
+
+/** תקרת הזמן של מקור בודד — גדלה עם מספר הכתובות שלו, אבל חסומה מלמעלה */
+function sourceBudget(source) {
+  if (SOURCE_MAX_MS) return SOURCE_MAX_MS;
+  const urls = Math.max(1, (source.urls || []).length + (source.tendersUrls || []).length);
+  return Math.min(300000, 60000 + 20000 * urls);
+}
+/** מריץ הבטחה עם תקרת זמן. חריגה נזרקת כשגיאה רגילה ומדווחת ככשל של המקור. */
+function withDeadline(promise, ms, message) {
+  let timer;
+  const guard = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), ms); });
+  return Promise.race([promise, guard]).finally(() => clearTimeout(timer));
+}
 
 /* ───────────────────────── עזרי תאריך ומחרוזת ───────────────────────── */
 
@@ -563,17 +583,16 @@ async function main() {
   const found = new Map();
 
   const skipped = [];
-  for (const source of sources) {
-    if (budgetLeft() <= 0) { skipped.push(source); continue; }
+  const scanOne = async (source) => {
     const adapter = ADAPTERS[source.kind];
     const started = Date.now();
     if (!adapter) {
       status.push({ id: source.id, name: source.name, ok: false, count: 0, error: `סוג מקור לא נתמך: ${source.kind}` });
-      continue;
+      return;
     }
-    process.stderr.write(`→ ${source.name} (${source.id}) … `);
     try {
-      const raw = await adapter(source);
+      const raw = await withDeadline(adapter(source), sourceBudget(source),
+        `חריגה מזמן הסריקה של המקור (${Math.round(sourceBudget(source) / 1000)} שניות)`);
       let kept = 0;
       for (const item of raw) {
         const rec = buildRecord(item, source, kw);
@@ -591,17 +610,25 @@ async function main() {
         discovered: raw.discovered || undefined,
         searchUrl: source.searchUrl || source.home || ''
       });
-      console.error(`נסרקו ${raw.length}, רלוונטיים ${kept}`);
+      console.error(`✔ ${source.name} — נסרקו ${raw.length}, רלוונטיים ${kept}`);
     } catch (e) {
       status.push({
         id: source.id, name: source.name, category: source.category || '', ok: false,
         scanned: 0, count: 0, error: String(e && e.message || e), ms: Date.now() - started,
         searchUrl: source.searchUrl || source.home || ''
       });
-      console.error(`נכשל: ${e && e.message || e}`);
+      console.error(`✖ ${source.name} — ${e && e.message || e}`);
     }
-    await sleep(POLITE_DELAY_MS);
-  }
+  };
+
+  const queue = sources.slice();
+  await Promise.all(Array.from({ length: Math.min(SOURCE_PARALLEL, queue.length || 1) }, async () => {
+    while (queue.length) {
+      if (budgetLeft() <= 0) { skipped.push(...queue.splice(0)); return; }
+      await scanOne(queue.shift());
+      await sleep(POLITE_DELAY_MS);
+    }
+  }));
 
   for (const source of skipped) {
     status.push({
@@ -1034,14 +1061,19 @@ function summarize(tenders) {
 }
 
 if (require.main === module) {
-  main().catch(e => {
+  main().then(() => {
+    // בקשה שנקטעה בתקרת הזמן של מקור משאירה חיבור פתוח שיכול לעכב את סיום
+    // התהליך. הנתונים כבר נכתבו לדיסק, ולכן סוגרים במפורש אחרי השהיה קצרה
+    // שמספיקה לשטיפת הפלט.
+    setTimeout(() => process.exit(0), 1500);
+  }).catch(e => {
     console.error('✖ הריצה נכשלה:', e && e.stack || e);
     process.exit(1);
   });
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, probeSources, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
