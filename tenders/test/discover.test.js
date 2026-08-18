@@ -286,3 +286,25 @@ test('הגילוי מעדיף מכרזים פעילים ולא יורד לתוצ
     'https://www.x.muni.il/');
   assert.strictEqual(onlyArchive.length, 1, 'בהיעדר חלופה עדיין מוחזר משהו');
 });
+
+// שני מקרים שנצפו בסריקה אמיתית: באתר אוניברסיטת תל אביב הגילוי נחת על דף
+// הבית עצמו, ובאתר הדסה האקדמית על "דרושים במכללה" — עמוד משרות, לא מכרזים.
+test('הגילוי מדלג על קישור לעמוד עצמו ועל דפי דרושים', () => {
+  const html = `
+    <a href="/">מכרזים</a>
+    <a href="#">מכרזים ומידע</a>
+    <a href="/bidding">מכרזי רכש</a>
+    <a href="/careers/jobs">דרושים במכללה</a>
+    <a href="/michrazim-vedrushim/">מכרזים ודרושים</a>`;
+  const urls = R.findTenderLinks(html, 'https://www.tau.ac.il/').map(l => l.url);
+  assert.ok(!urls.some(u => R.sameUrl(u, 'https://www.tau.ac.il/')),
+    'קישור שחוזר לעמוד הנוכחי אינו נבחר: ' + urls.join(' , '));
+  assert.ok(urls[0].endsWith('/bidding'), 'עמוד המכרזים נבחר ראשון');
+  assert.ok(!urls.some(u => u.includes('/careers/')), 'עמוד דרושים בלבד אינו נבחר');
+  assert.ok(urls.some(u => u.includes('michrazim-vedrushim')),
+    'עמוד משולב "מכרזים ודרושים" כן נשאר — ברשויות רבות זה אותו עמוד');
+
+  assert.ok(R.sameUrl('https://x.co.il/a/', 'https://x.co.il/a'));
+  assert.ok(R.sameUrl('https://x.co.il/#top', 'https://x.co.il/'));
+  assert.ok(!R.sameUrl('https://x.co.il/a', 'https://x.co.il/b'));
+});

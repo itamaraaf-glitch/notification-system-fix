@@ -443,6 +443,16 @@ function registrableDomain(host) {
 function sameSite(a, b) {
   return registrableDomain(new URL(a).host) === registrableDomain(new URL(b).host);
 }
+/** אותה כתובת, בהתעלם מעוגן ומקו נטוי מסיים */
+function sameUrl(a, b) {
+  const norm = u => {
+    try {
+      const p = new URL(u);
+      return p.origin + p.pathname.replace(/\/+$/, '') + p.search;
+    } catch (_) { return String(u); }
+  };
+  return norm(a) === norm(b);
+}
 
 /**
  * עמוד "תוצאות מכרזים" / "ארכיון מכרזים" הוא עמוד מכרזים לכל דבר מבחינת הגילוי,
@@ -451,6 +461,10 @@ function sameSite(a, b) {
  */
 const ARCHIVE_LINK_RE = /(תוצאות|ארכיון|שהסתיימו|שנסגרו|קודמים|היסטורי|זוכ(ה|ים)|פרוטוקול|archive|results)/;
 const ACTIVE_LINK_RE = /(פעילים|פתוחים|נוכחיים|חדשים|מכרזים\s*מתפרסמים)/;
+// "מכרזי כוח אדם" ודפי דרושים אינם מכרזי רכש. באתר הדסה האקדמית הגילוי נחת על
+// "דרושים במכללה" — עמוד משרות. קישור שמדבר על משרות ולא על מכרז מקבל ניקוד שלילי,
+// אבל עמוד משולב ("מכרזים ודרושים") נשאר, כי ברשויות רבות זה אותו עמוד.
+const JOBS_LINK_RE = /(דרושים|משרות|קריירה|כוח\s*אדם|jobs?|careers?|vacanc)/i;
 
 /** מאתר בדף הבית קישורים שנראים כמובילים לעמוד המכרזים, מהמדויק לפחות מדויק */
 function findTenderLinks(html, baseUrl) {
@@ -468,11 +482,15 @@ function findTenderLinks(html, baseUrl) {
     try { if (!sameSite(a.url, baseUrl)) continue; } catch (_) { continue; }
     if (seen.has(a.url)) continue;
     seen.add(a.url);
+    // קישור שחוזר לעמוד הנוכחי אינו עמוד המכרזים. בלי זה אתר שבו קישור התפריט
+    // "מכרזים" מצביע על "#" או על "/" הביא לקציר של דף הבית עצמו.
+    if (sameUrl(a.url, baseUrl)) continue;
     // "מכרזים" כטקסט הקישור הוא האינדיקציה החזקה ביותר לעמוד רשימה
     const haystack = a.title + ' ' + decodeURIComponent(a.url);
     const score = (/^\s*מכרזים\s*$/.test(a.title) ? 100 : 0) + (byText ? 10 : 0) + (byUrl ? 5 : 0)
       + (ACTIVE_LINK_RE.test(haystack) ? 40 : 0)
       - (ARCHIVE_LINK_RE.test(haystack) ? 150 : 0)
+      - (JOBS_LINK_RE.test(a.title) && !TEXT_RE.test(a.title) ? 150 : 0)
       - Math.min(20, a.title.length / 5);
     scored.push({ url: a.url, title: a.title, score });
   }
@@ -1164,7 +1182,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, sameSite, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, sameSite, sameUrl, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
