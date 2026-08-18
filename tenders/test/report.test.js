@@ -139,3 +139,22 @@ test('סוג הפרסום מצוין בדיווח — הודעת פטור אינ
   assert.ok(body.includes('_(פטור ממכרז)_'), 'הודעת פטור מסומנת בדיווח');
   assert.ok(!body.includes('_(מכרז)_'), 'מכרז רגיל אינו מקבל תווית מיותרת');
 });
+
+// שורת הפילוח המגזרי היא מה שנקרא במבט חטוף במייל: האם הגיע היום משהו
+// מהרשויות המקומיות או מהמכללות, או שהכול ממשלתי.
+test('דיווח: פילוח מגזרי מופיע בהודעה ומסודר מהגדול לקטן', () => {
+  const fresh = [
+    { title: 'א', url: 'u', category: 'רשויות מקומיות', topics: ['it'] },
+    { title: 'ב', url: 'u', category: 'רשויות מקומיות', topics: ['it'] },
+    { title: 'ג', url: 'u', category: 'מוסדות אקדמיים', topics: ['it'] },
+    { title: 'ד', url: 'u', category: 'ממשלה', topics: ['it'] }
+  ];
+  assert.strictEqual(Rep.sectorBreakdown(fresh),
+    '🏛️ 2 רשויות מקומיות · 🎓 1 מוסדות אקדמיים · 🏢 1 ממשלה');
+
+  const body = Rep.issueBody({ tenders: [], topics: {}, sources: [] }, fresh);
+  assert.ok(body.includes('מתוכם: 🏛️ 2 רשויות מקומיות'), 'הפילוח נכנס לגוף ההודעה');
+
+  // מגזר יחיד — אין מה לפלח, ולא מוסיפים שורה מיותרת
+  assert.strictEqual(Rep.sectorBreakdown([{ category: 'ממשלה' }, { category: 'ממשלה' }]), '');
+});

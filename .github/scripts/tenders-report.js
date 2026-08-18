@@ -105,6 +105,23 @@ function summary(data) {
   return lines.join('\n');
 }
 
+const SECTOR_ICON = {
+  'רשויות מקומיות': '🏛️', 'מוסדות אקדמיים': '🎓', 'ממשלה': '🏢',
+  'תשתיות': '🚧', 'חברות ממשלתיות וגופים גדולים': '🏭'
+};
+/** פילוח לפי מגזר, מהגדול לקטן. מחזיר מחרוזת ריקה כשאין מה לפלח. */
+function sectorBreakdown(records) {
+  const counts = {};
+  for (const t of records) {
+    const c = t.category || 'אחר';
+    counts[c] = (counts[c] || 0) + 1;
+  }
+  const keys = Object.keys(counts);
+  if (keys.length < 2) return '';
+  return keys.sort((a, b) => counts[b] - counts[a])
+    .map(c => `${SECTOR_ICON[c] || '•'} ${counts[c]} ${c}`).join(' · ');
+}
+
 function issueBody(data, fresh) {
   const lines = [];
 
@@ -120,6 +137,10 @@ function issueBody(data, fresh) {
 
   if (fresh.length) {
     lines.push(`## 🆕 חדשים בסריקה (${fresh.length})`);
+    // פילוח מגזרי: מכרז של עירייה או מכללה הוא לקוח אחר לגמרי ממכרז ממשלתי,
+    // ובמבט מהיר במייל זו השורה שאומרת אם הגיע משהו מהמגזר שמעניין היום.
+    const bySector = sectorBreakdown(fresh);
+    if (bySector) { lines.push(''); lines.push(`מתוכם: ${bySector}`); }
   } else {
     lines.push('_בסריקה זו לא נמצאו מכרזים חדשים._');
   }
@@ -229,4 +250,5 @@ if (require.main === module) {
   });
 }
 
-module.exports = { summary, issueBody, closingSoon, tenderLine, fmtDate, daysLeft, topicLabels };
+module.exports = {
+  sectorBreakdown, summary, issueBody, closingSoon, tenderLine, fmtDate, daysLeft, topicLabels };
