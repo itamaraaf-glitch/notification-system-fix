@@ -7003,7 +7003,7 @@ function rMeetingsArchive(){
    ומאפשר להוסיף מכרז שנמצא ישר לטבלת המכרזים — בלי ייבוא/ייצוא.
    העיצוב זהה לעמוד הראדאר המלא (tenders.html): אריחי סיכום, כרטיסים ופאנל בריאות מקורות. */
 let _radar=null,_radarErr='',_radarLoading=false;
-const _radarF={q:'',topics:new Set(),kinds:new Set(),source:'',sort:'deadline',onlyOpen:false,onlyNew:false,showHidden:false,kpi:''};
+const _radarF={q:'',topics:new Set(),kinds:new Set(),cats:new Set(),source:'',sort:'deadline',onlyOpen:false,onlyNew:false,showHidden:false,kpi:''};
 let _radarPick=new Set();
 let _radarHidden=new Set((()=>{try{return JSON.parse(localStorage.getItem('crm_radar_hidden_v1'))||[]}catch(e){return[]}})());
 function _radarSaveHidden(){try{localStorage.setItem('crm_radar_hidden_v1',JSON.stringify([..._radarHidden]))}catch(e){}}
@@ -7042,6 +7042,7 @@ function _radarDl(x){ return x?db(nd(),x):null; }
 
 /* ── פקדי סינון ── */
 function _radarToggleTopic(id){ _radarF.topics.has(id)?_radarF.topics.delete(id):_radarF.topics.add(id); _radarRender(); }
+function _radarToggleCat(id){ _radarF.cats.has(id)?_radarF.cats.delete(id):_radarF.cats.add(id); _radarRender(); }
 function _radarToggleKind(id){ _radarF.kinds.has(id)?_radarF.kinds.delete(id):_radarF.kinds.add(id); _radarRender(); }
 function _radarSearch(v){ _radarF.q=v; _srchDebounce('radar',_radarRender,140); }
 function _radarSetSort(v){ _radarF.sort=v; _radarRender(); }
@@ -7050,7 +7051,7 @@ function _radarSetFlag(k,v){ _radarF[k]=v; _radarRender(); }
 function _radarSetKpi(k){ _radarF.kpi=(k&&_radarF.kpi!==k)?k:''; _radarRender(); }
 function _radarClear(){
   _radarF.q='';_radarF.topics.clear();_radarF.source='';_radarF.kpi='';
-  _radarF.kinds.clear();_radarF.onlyOpen=false;_radarF.onlyNew=false;
+  _radarF.kinds.clear();_radarF.cats.clear();_radarF.onlyOpen=false;_radarF.onlyNew=false;
   _radarRender();
 }
 function _radarToggleHide(id){
@@ -7106,6 +7107,18 @@ function _radarRender(){
   }).join('');
   const kindBreak=kindOrder.map(k=>`${kindCnt[k]} ${kindLabels[k]||k}`).join(' · ');
 
+  /* ── מגזרים ──
+     "מיקוד על המוניציפלי ומכללות" הוא בקשה חוזרת: מכרז של עירייה או מכללה הוא
+     לקוח אחר לגמרי ממכרז של משרד ממשלתי. השבבים מאפשרים להישאר על מגזר אחד. */
+  const catCnt={}; all.forEach(t=>{const c=t.category||'אחר';catCnt[c]=(catCnt[c]||0)+1;});
+  const CAT_ICON={'רשויות מקומיות':'🏛️','מוסדות אקדמיים':'🎓','ממשלה':'🏢','תשתיות':'🚧','חברות ממשלתיות וגופים גדולים':'🏭'};
+  const catOrder=Object.keys(catCnt).sort((a,b)=>catCnt[b]-catCnt[a]);
+  const catChips=catOrder.map(c=>{
+    const on=_radarF.cats.has(c);
+    return `<span class="rdr-chip ${on?'on':''}" onclick="_radarToggleCat('${esc(c).replace(/'/g,"\\'")}')"
+      style="${on?'background:#c8a96e;border-color:#c8a96e;color:#08101f':''}">${CAT_ICON[c]||'•'} ${esc(c)} <span class="cnt">${catCnt[c]}</span></span>`;
+  }).join('');
+
   /* ── אריחי סיכום ── */
   const openCnt=all.filter(t=>{const d=_radarDl(t.deadlineAt);return d!==null&&d>=0}).length;
   const soonCnt=all.filter(t=>{const d=_radarDl(t.deadlineAt);return d!==null&&d>=0&&d<=7}).length;
@@ -7124,6 +7137,7 @@ function _radarRender(){
     if(!_radarF.showHidden&&_radarHidden.has(t.id))return false;
     if(_radarF.topics.size&&!(t.topics||[]).some(x=>_radarF.topics.has(x)))return false;
     if(_radarF.kinds.size&&!_radarF.kinds.has(t.kind||'tender'))return false;
+    if(_radarF.cats.size&&!_radarF.cats.has(t.category||'אחר'))return false;
     if(_radarF.source&&t.source!==_radarF.source)return false;
     const d=_radarDl(t.deadlineAt), open=d!==null&&d>=0;
     if(_radarF.onlyOpen&&!open)return false;
@@ -7246,6 +7260,7 @@ function _radarRender(){
       </div>
       <div class="rdr-frow"><span class="rdr-flabel">נושאים</span>${chips}</div>
       <div class="rdr-frow"><span class="rdr-flabel">סוג</span>${kindChips}</div>
+      <div class="rdr-frow"><span class="rdr-flabel">מגזר</span>${catChips}</div>
       <div class="rdr-frow">
         <span class="rdr-flabel">מקור</span>
         <select onchange="_radarSetSource(this.value)">${srcOpts}</select>

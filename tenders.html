@@ -241,6 +241,9 @@ footer{text-align:center;font-size:10.5px;color:var(--text3);margin-top:26px;lin
     <div class="frow" id="kindrow">
       <span class="flabel">סוג</span>
     </div>
+    <div class="frow" id="catrow">
+      <span class="flabel">מגזר</span>
+    </div>
     <div class="frow">
       <span class="flabel">מקור</span>
       <select id="source"><option value="">כל המקורות</option></select>
@@ -301,7 +304,7 @@ const LS_HIDDEN  = 'tenders_radar_hidden_v1';
 
 let DATA = null;
 const state = {
-  q: '', topics: new Set(), kinds: new Set(), source: '', sort: 'deadline',
+  q: '', topics: new Set(), kinds: new Set(), cats: new Set(), source: '', sort: 'deadline',
   onlyOpen: false, onlyNew: false, showHidden: false, kpi: ''
 };
 let picked = new Set();
@@ -372,6 +375,7 @@ async function load(){
   restoreFilters();
   buildTopicChips();
   buildKindChips();
+  buildCatChips();
   buildSourceSelect();
   renderFreshness(DATA);
   renderManual();
@@ -449,6 +453,37 @@ function buildKindChips(){
   }
   syncKindChips();
 }
+/** שבבי מגזר — מכרז של עירייה או מכללה הוא לקוח אחר לגמרי ממכרז ממשלתי,
+    והמיקוד על המוניציפלי והאקדמי הוא בקשה חוזרת. */
+const CAT_ICON = {'רשויות מקומיות':'🏛️','מוסדות אקדמיים':'🎓','ממשלה':'🏢','תשתיות':'🚧','חברות ממשלתיות וגופים גדולים':'🏭'};
+function buildCatChips(){
+  const row = $('catrow');
+  row.querySelectorAll('.chip').forEach(c => c.remove());
+  const counts = {};
+  for(const t of (DATA.tenders || [])) counts[t.category || 'אחר'] = (counts[t.category || 'אחר'] || 0) + 1;
+  const order = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  row.style.display = order.length > 1 ? '' : 'none';
+  for(const id of order){
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.dataset.cat = id;
+    chip.innerHTML = `${CAT_ICON[id] || '•'} ${esc(id)} <span class="cnt">${counts[id]}</span>`;
+    chip.onclick = () => {
+      state.cats.has(id) ? state.cats.delete(id) : state.cats.add(id);
+      syncCatChips(); saveFilters(); render();
+    };
+    row.appendChild(chip);
+  }
+  syncCatChips();
+}
+function syncCatChips(){
+  document.querySelectorAll('.chip[data-cat]').forEach(chip => {
+    const on = state.cats.has(chip.dataset.cat);
+    chip.classList.toggle('on', on);
+    chip.style.background = on ? '#c8a96e' : '';
+    chip.style.borderColor = on ? '#c8a96e' : '';
+  });
+}
 function syncKindChips(){
   document.querySelectorAll('.chip[data-kind]').forEach(chip => {
     const on = state.kinds.has(chip.dataset.kind);
@@ -475,6 +510,7 @@ function visible(){
     if(!state.showHidden && hidden.has(t.id)) return false;
     if(state.topics.size && !(t.topics||[]).some(x => state.topics.has(x))) return false;
     if(state.kinds.size && !state.kinds.has(t.kind || 'tender')) return false;
+    if(state.cats.size && !state.cats.has(t.category || 'אחר')) return false;
     if(state.source && t.source !== state.source) return false;
 
     const dl = daysLeft(t.deadlineAt);
@@ -805,7 +841,7 @@ function exportCsv(){
 /* ── שמירת מצב הסינון ── */
 function saveFilters(){
   writeJson(LS_FILTERS, {
-    q: state.q, topics: [...state.topics], kinds: [...state.kinds], source: state.source, sort: state.sort,
+    q: state.q, topics: [...state.topics], kinds: [...state.kinds], cats: [...state.cats], source: state.source, sort: state.sort,
     onlyOpen: state.onlyOpen, onlyNew: state.onlyNew, showHidden: state.showHidden, kpi: state.kpi
   });
 }
@@ -815,6 +851,7 @@ function restoreFilters(){
   state.q = f.q || '';
   state.topics = new Set(Array.isArray(f.topics) ? f.topics : []);
   state.kinds = new Set(Array.isArray(f.kinds) ? f.kinds : []);
+  state.cats = new Set(Array.isArray(f.cats) ? f.cats : []);
   state.source = f.source || '';
   state.sort = f.sort || 'deadline';
   state.onlyOpen = !!f.onlyOpen;
@@ -841,10 +878,10 @@ $('onlyopen').onchange = e => { state.onlyOpen = e.target.checked; saveFilters()
 $('onlynew').onchange  = e => { state.onlyNew = e.target.checked; saveFilters(); render(); };
 $('showhidden').onchange = e => { state.showHidden = e.target.checked; saveFilters(); render(); };
 $('btn-clear').onclick = () => {
-  state.q = ''; state.topics.clear(); state.kinds.clear(); state.source = ''; state.kpi = '';
+  state.q = ''; state.topics.clear(); state.kinds.clear(); state.cats.clear(); state.source = ''; state.kpi = '';
   state.onlyOpen = state.onlyNew = false;
   $('q').value = ''; $('source').value = ''; $('onlyopen').checked = false; $('onlynew').checked = false;
-  syncChips(); syncKindChips(); saveFilters(); render();
+  syncChips(); syncKindChips(); syncCatChips(); saveFilters(); render();
 };
 $('btn-reload').onclick = () => { toast('מרענן…'); load(); };
 $('btn-export').onclick = exportCsv;
