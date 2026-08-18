@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T08:21:55.934Z",
+  "generatedAt": "2026-08-18T08:26:53.056Z",
   "generatedDate": "2026-08-18",
   "topics": {
     "telecom": {
@@ -373,13 +373,13 @@
   "counts": {
     "total": 59,
     "new": 55,
-    "open": 7,
-    "closingSoon": 4,
+    "open": 11,
+    "closingSoon": 3,
     "byTopic": {
-      "it": 15,
-      "telecom": 46,
-      "infosec": 4,
-      "equipment": 14
+      "telecom": 37,
+      "infosec": 5,
+      "equipment": 15,
+      "it": 21
     }
   },
   "sources": [
@@ -389,8 +389,8 @@
       "category": "ממשלה",
       "ok": true,
       "scanned": 549,
-      "count": 60,
-      "ms": 36479,
+      "count": 40,
+      "ms": 33271,
       "warn": "",
       "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER"
     },
@@ -402,7 +402,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.gov.il/he/departments/topics/tenders-sub/govil — HTTP 403",
-      "ms": 1148,
+      "ms": 985,
       "searchUrl": "https://www.gov.il/he/departments/publications?publicationType=tender"
     },
     {
@@ -413,7 +413,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.moin.gov.il/Tenders — HTTP 403",
-      "ms": 1718,
+      "ms": 1464,
       "searchUrl": "https://www.moin.gov.il/Tenders"
     },
     {
@@ -423,7 +423,7 @@
       "ok": true,
       "scanned": 294,
       "count": 0,
-      "ms": 3730,
+      "ms": 2513,
       "warn": "",
       "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
     },
@@ -434,7 +434,7 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 1819,
+      "ms": 1601,
       "warn": "",
       "searchUrl": "https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders"
     },
@@ -446,7 +446,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.nta.co.il/tenders/ — HTTP 403",
-      "ms": 1212,
+      "ms": 1140,
       "searchUrl": "https://www.nta.co.il/tenders/"
     },
     {
@@ -457,7 +457,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D — HTTP 403",
-      "ms": 1162,
+      "ms": 1107,
       "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
     },
     {
@@ -468,7 +468,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.transisrael.co.il/Tenders — HTTP 403",
-      "ms": 944,
+      "ms": 969,
       "searchUrl": "https://www.transisrael.co.il/Tenders?currentView=1"
     },
     {
@@ -478,7 +478,7 @@
       "ok": true,
       "scanned": 8,
       "count": 0,
-      "ms": 3550,
+      "ms": 3135,
       "warn": "",
       "searchUrl": "https://www.atarim.gov.il/tenders/"
     },
@@ -489,7 +489,7 @@
       "ok": true,
       "scanned": 639,
       "count": 0,
-      "ms": 2797,
+      "ms": 2278,
       "warn": "",
       "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx"
     },
@@ -500,7 +500,7 @@
       "ok": true,
       "scanned": 418,
       "count": 0,
-      "ms": 6258,
+      "ms": 5742,
       "warn": "",
       "discovered": [
         "https://www.haifa.muni.il/city-and-muni/legaladvice/contracts-and-tenders/",
@@ -515,7 +515,7 @@
       "ok": true,
       "scanned": 1956,
       "count": 0,
-      "ms": 4272,
+      "ms": 3812,
       "warn": "",
       "discovered": [
         "https://www.nzc.org.il/bids/",
@@ -530,7 +530,7 @@
       "ok": true,
       "scanned": 1192,
       "count": 0,
-      "ms": 3996,
+      "ms": 3375,
       "warn": "",
       "discovered": [
         "https://www.dsharon.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/",
@@ -545,7 +545,7 @@
       "ok": true,
       "scanned": 452,
       "count": 0,
-      "ms": 3897,
+      "ms": 3265,
       "warn": "",
       "discovered": [
         "https://www.eyz.org.il/bids/",
@@ -561,7 +561,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 222,
+      "ms": 185,
       "searchUrl": "https://www.rail.co.il/"
     },
     {
@@ -572,7 +572,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 903,
+      "ms": 635,
       "searchUrl": "https://www.mekorot.co.il/"
     },
     {
@@ -583,7 +583,7 @@
       "scanned": 0,
       "count": 0,
       "error": "fetch failed",
-      "ms": 22486,
+      "ms": 22490,
       "searchUrl": "https://www.israports.co.il/"
     },
     {
@@ -594,7 +594,7 @@
       "scanned": 0,
       "count": 0,
       "error": "fetch failed",
-      "ms": 3045,
+      "ms": 2560,
       "searchUrl": "https://www.ashdodport.co.il/"
     },
     {
@@ -605,7 +605,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 692,
+      "ms": 436,
       "searchUrl": "https://www.haifaport.co.il/"
     },
     {
@@ -616,7 +616,7 @@
       "scanned": 0,
       "count": 0,
       "error": "לא נמצא קישור לעמוד מכרזים בדף הבית",
-      "ms": 1380,
+      "ms": 890,
       "searchUrl": "https://www.israelpost.co.il/"
     },
     {
@@ -626,7 +626,7 @@
       "ok": true,
       "scanned": 421,
       "count": 0,
-      "ms": 5810,
+      "ms": 5022,
       "warn": "",
       "discovered": [
         "https://www.btl.gov.il/About/tenders/Pages/default.aspx",
@@ -642,35 +642,11 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 259,
+      "ms": 304,
       "searchUrl": "https://www.clalit.co.il/"
     }
   ],
   "tenders": [
-    {
-      "id": "5152865f7c9fd2f5",
-      "title": "רכישת מחשבים ניידים",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620724",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "01-2026",
-      "publishedAt": "2026-08-10",
-      "deadlineAt": "2026-08-19",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 8,
-      "matched": [
-        "מחשבים ניידים",
-        "מחשבים"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-17",
-      "kind": "tender"
-    },
     {
       "id": "af3b3c41408e1935",
       "title": "אספקת שירותי גישה לאינטרנט (ISP) עבור משרד התקשורת",
@@ -695,7 +671,8 @@
         "ISP"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "status": "עודכן"
     },
     {
       "id": "4f92c44f3c9c59cb",
@@ -719,7 +696,8 @@
         "אינטרנט"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "status": "עודכן"
     },
     {
       "id": "e0b7a65a92c04449",
@@ -744,6 +722,55 @@
         "אבטחת מידע וסייבר"
       ],
       "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "status": "עודכן"
+    },
+    {
+      "id": "ac8ec195c9af9113",
+      "title": "רישוי, יישום ותחזוקה לשירותי EMAIL SECURITY מבית CISCO",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620044",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "25-2026",
+      "publishedAt": "2026-07-26",
+      "kind": "tender",
+      "status": "פורסם",
+      "deadlineAt": "2026-08-31",
+      "summary": "",
+      "topics": [
+        "equipment"
+      ],
+      "score": 5,
+      "matched": [
+        "Cisco"
+      ],
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18"
+    },
+    {
+      "id": "02d9d1c0f6cb4f77",
+      "title": "מכרז פומבי מספר 4-2026 בנושא ייעוץ בטכנולוגיות ומתודולוגיות מיחשוב",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000619439",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "4-2026",
+      "publishedAt": "2026-07-12",
+      "kind": "tender",
+      "status": "עודכן",
+      "deadlineAt": "2026-09-02",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 4,
+      "matched": [
+        "מיחשוב"
+      ],
+      "firstSeen": "2026-08-18",
       "lastSeen": "2026-08-18"
     },
     {
@@ -767,7 +794,57 @@
         "תקשורת"
       ],
       "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "status": "עודכן"
+    },
+    {
+      "id": "88a649f6dda93301",
+      "title": "לאפיון, הקמה ותפעול של מרכז ניטור ותגובה סייבר במגזר התחבורה (TSOC)",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000618434",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "11-26",
+      "publishedAt": "2026-06-17",
+      "kind": "tender",
+      "status": "עודכן",
+      "deadlineAt": "2026-09-15",
+      "summary": "",
+      "topics": [
+        "infosec"
+      ],
+      "score": 5,
+      "matched": [
+        "סייבר"
+      ],
+      "firstSeen": "2026-08-18",
       "lastSeen": "2026-08-18"
+    },
+    {
+      "id": "5152865f7c9fd2f5",
+      "title": "\"פרויקט נקסוס\" - מכרז להקמה, הפעלה ואספקת שירותי מחשוב קוונטי מפלטפורמה לאומית",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620404",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "01-2026",
+      "publishedAt": "2026-08-04",
+      "deadlineAt": "2026-10-05",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 10,
+      "matched": [
+        "שירותי מחשוב",
+        "מחשוב"
+      ],
+      "firstSeen": "2026-08-17",
+      "lastSeen": "2026-08-18",
+      "kind": "tender",
+      "status": "עודכן"
     },
     {
       "id": "3925967a0a6b83ac",
@@ -790,7 +867,8 @@
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-18",
-      "kind": "tender"
+      "kind": "tender",
+      "status": "עודכן"
     },
     {
       "id": "a68d3d8d0703357b",
@@ -813,7 +891,32 @@
       ],
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-18",
-      "kind": "tender"
+      "kind": "tender",
+      "status": "פורסם"
+    },
+    {
+      "id": "a1f7c06b15c3e9f1",
+      "title": "מיון מוקדם מכרז פומבי 49-2026 - שירותי תפעול, תחזוקה, פיתוח, מודרניזציה ומיגרציה לענן, בשיטת מיקור חוץ (OUTSOU",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620833",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "49-2026",
+      "publishedAt": "2026-08-12",
+      "kind": "tender",
+      "status": "פורסם",
+      "deadlineAt": "2026-10-29",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 4,
+      "matched": [
+        "מיקור חוץ"
+      ],
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18"
     },
     {
       "id": "56ac46bd4c21bb4f",
@@ -842,7 +945,8 @@
       ],
       "firstSeen": "2026-08-18",
       "lastSeen": "2026-08-18",
-      "deadlineChecked": true
+      "deadlineChecked": true,
+      "status": "עודכן"
     },
     {
       "id": "d0ac1d33f3a10504",
@@ -925,7 +1029,8 @@
       ],
       "firstSeen": "2026-08-18",
       "lastSeen": "2026-08-18",
-      "deadlineChecked": true
+      "deadlineChecked": true,
+      "status": "התקשרות בתוקף"
     },
     {
       "id": "f676e6fa3ca7315d",
@@ -1006,7 +1111,8 @@
         "תקשורת"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "status": "עודכן"
     },
     {
       "id": "f2139ad9615ab526",
@@ -1034,32 +1140,8 @@
       ],
       "firstSeen": "2026-08-18",
       "lastSeen": "2026-08-18",
-      "deadlineChecked": true
-    },
-    {
-      "id": "5a60a80555f35062",
-      "title": "מתן שירותי ייעוץ בתחום הסלולרי לצורך תיאום בין החברות, צה\"ל, וקמ\"ט תקשורת לקידום שיפור הכיסוי הסלולרי באיו\"ש",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000611110",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "28/25",
-      "publishedAt": "2025-12-10",
-      "kind": "tender",
-      "deadlineAt": "2025-12-10",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 11,
-      "matched": [
-        "תקשורת",
-        "סלולר",
-        "סלולרי"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "deadlineChecked": true,
+      "status": "התקשרות בתוקף"
     },
     {
       "id": "2de4a98e922e4ca9",
@@ -1085,32 +1167,139 @@
       ],
       "firstSeen": "2026-08-18",
       "lastSeen": "2026-08-18",
-      "deadlineChecked": true
+      "deadlineChecked": true,
+      "status": "עודכן"
     },
     {
-      "id": "293720932503ea18",
-      "title": "אספקת שירותי אינטרנט -ספק ISP וכתובות IP קבועות עם מדרגות הרחבה",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000608509",
+      "id": "920ebeefb9f1e0ad",
+      "title": "מכרז מרכזי לרכש ואספקת מוצרים ושירותים בתחום אבטחת המידע וההגנה בסייבר",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000550897",
       "source": "mr-gov",
       "sourceName": "מנהל הרכש הממשלתי",
       "category": "ממשלה",
       "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "",
-      "publishedAt": "2025-10-30",
+      "tenderNumber": "05-2022",
+      "publishedAt": "2022-04-07",
       "kind": "tender",
-      "deadlineAt": "2025-10-30",
+      "status": "עודכן",
+      "deadlineAt": "",
       "summary": "",
       "topics": [
-        "telecom"
+        "infosec"
+      ],
+      "score": 11,
+      "matched": [
+        "הגנה בסייבר",
+        "סייבר"
+      ],
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
+    },
+    {
+      "id": "3bbbaf14176e4bc4",
+      "title": "אספקת שירותי מחשוב",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000601242",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "01-2023",
+      "publishedAt": "2025-04-06",
+      "kind": "tender",
+      "status": "עודכן",
+      "deadlineAt": "2025-07-22",
+      "summary": "",
+      "topics": [
+        "it"
       ],
       "score": 10,
       "matched": [
-        "שירותי אינטרנט",
-        "אינטרנט",
-        "ISP"
+        "שירותי מחשוב",
+        "מחשוב"
       ],
       "firstSeen": "2026-08-18",
       "lastSeen": "2026-08-18"
+    },
+    {
+      "id": "95f5b2616c7761f4",
+      "title": "רכישה, אספקה והתקנת ציוד תקשורת פסיבי למשרדי הממשלה",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/652601",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "3-2020",
+      "publishedAt": "2020-08-06",
+      "kind": "tender",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment",
+        "telecom"
+      ],
+      "score": 9,
+      "matched": [
+        "תקשורת",
+        "ציוד תקשורת"
+      ],
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true,
+      "status": "עודכן"
+    },
+    {
+      "id": "4e5d353578707ac4",
+      "title": "רכישה, אספקה והתקנת ציוד תקשורת פסיבי במשרדי הממשלה",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/516787",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "4-2010",
+      "publishedAt": "2010-11-11",
+      "kind": "tender",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "equipment",
+        "telecom"
+      ],
+      "score": 9,
+      "matched": [
+        "תקשורת",
+        "ציוד תקשורת"
+      ],
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true,
+      "status": "התקשרות בתוקף"
+    },
+    {
+      "id": "bcf467abed0d1136",
+      "title": "אספקת שרתים ומערכות אחסון נתונים למשרדי הממשלה",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/553418",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "2-2014",
+      "publishedAt": "2014-04-10",
+      "kind": "tender",
+      "status": "התקשרות בתוקף",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 9,
+      "matched": [
+        "שרתים",
+        "אחסון נתונים"
+      ],
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     },
     {
       "id": "0a2a5c4e84161a57",
@@ -1243,58 +1432,6 @@
       "deadlineChecked": true
     },
     {
-      "id": "95f5b2616c7761f4",
-      "title": "רכישה, אספקה והתקנת ציוד תקשורת פסיבי למשרדי הממשלה",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/652601",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "3-2020",
-      "publishedAt": "2020-08-06",
-      "kind": "tender",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment",
-        "telecom"
-      ],
-      "score": 9,
-      "matched": [
-        "תקשורת",
-        "ציוד תקשורת"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18",
-      "deadlineChecked": true
-    },
-    {
-      "id": "4e5d353578707ac4",
-      "title": "רכישה, אספקה והתקנת ציוד תקשורת פסיבי במשרדי הממשלה",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/516787",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "4-2010",
-      "publishedAt": "2010-11-11",
-      "kind": "tender",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment",
-        "telecom"
-      ],
-      "score": 9,
-      "matched": [
-        "תקשורת",
-        "ציוד תקשורת"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18",
-      "deadlineChecked": true
-    },
-    {
       "id": "eeb9b6d2a44ab60b",
       "title": "מכרז פומבי מס' 51/19 לאספקת התקנת ותחזוקת מערכות ציוד ואביזרים למערך התקשורת האלחוטית עבור משמר בתי המשפט",
       "url": "https://mr.gov.il/ilgstorefront/he/p/642968",
@@ -1347,31 +1484,6 @@
       "deadlineChecked": true
     },
     {
-      "id": "eacae4db914d3e61",
-      "title": "מתן שירותי ייעוץ הנדסיים בתחומי תקשורת, ספקטרום וסייבר למשרד התקשורת",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000610543",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "2025/006",
-      "publishedAt": "2025-12-03",
-      "kind": "tender",
-      "deadlineAt": "2025-12-03",
-      "summary": "",
-      "topics": [
-        "infosec",
-        "telecom"
-      ],
-      "score": 8,
-      "matched": [
-        "תקשורת",
-        "סייבר"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
-    },
-    {
       "id": "b4b112229b2da830",
       "title": "אספקת ציוד ושירותי תקשורת באמצעות תווך לוויני ושירותי תחזוקה עבור משרדי הממשלה",
       "url": "https://mr.gov.il/ilgstorefront/he/p/531892",
@@ -1394,7 +1506,8 @@
       ],
       "firstSeen": "2026-08-18",
       "lastSeen": "2026-08-18",
-      "deadlineChecked": true
+      "deadlineChecked": true,
+      "status": "התקשרות בתוקף"
     },
     {
       "id": "38ac001b4f76a52d",
@@ -1574,30 +1687,6 @@
       "deadlineChecked": true
     },
     {
-      "id": "2dffd8482317755e",
-      "title": "מכרז 06-2026 - לקבלת שירותי הפעלת מערכת תומכת בגיוס מתמחים באופן אינטרנטי לרבות הדרכה, מוקד תמיכה וסיוע למשתמש",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000613634",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "06-2026",
-      "publishedAt": "2026-01-29",
-      "kind": "tender",
-      "deadlineAt": "2026-01-29",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 7,
-      "matched": [
-        "אינטרנט",
-        "מוקד תמיכה"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
-    },
-    {
       "id": "20d2b2899dd48e95",
       "title": "רכש שירותי גישה לאינטרנט",
       "url": "https://mr.gov.il/ilgstorefront/he/p/4000600824",
@@ -1619,99 +1708,8 @@
         "אינטרנט"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
-    },
-    {
-      "id": "f6436b6feb4c44e5",
-      "title": "לאספקת שירותים, קבלת יעוץ, ליווי, ויישום בתחום הגנת הסייבר ואבטחת המידע עבור אגף תקשוב",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000557049",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "21/2022",
-      "publishedAt": "2022-08-30",
-      "kind": "tender",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "infosec"
-      ],
-      "score": 5,
-      "matched": [
-        "סייבר"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
-    },
-    {
-      "id": "7270420eb652ef9b",
-      "title": "לאספקת מוצר SOAR , שירותי תחזוקה ושירותים מקצועיים עבור מערך הדיגיטל הלאומי - רשות התקשוב הממשלתי",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000545481",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "9/2021",
-      "publishedAt": "2021-12-20",
-      "kind": "tender",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "infosec"
-      ],
-      "score": 5,
-      "matched": [
-        "SOAR"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
-    },
-    {
-      "id": "5cc3fc39aa2eb3f1",
-      "title": "הקמת, תפעול ותחזוקת מערכת \"אביב\" – מע' טלפוניה בגבייה למוחזקים במשמורת חוקית בשב\"ס",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000587979",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "18/2024",
-      "publishedAt": "2024-07-18",
-      "kind": "tender",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 5,
-      "matched": [
-        "טלפוניה"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
-    },
-    {
-      "id": "32fa41d0c21b5422",
-      "title": "יועץ למכרז טלפוניה למוחזקים במשמורת חוקית",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000549787",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "08/2022",
-      "publishedAt": "2022-03-10",
-      "kind": "tender",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 5,
-      "matched": [
-        "טלפוניה"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     },
     {
       "id": "3f084fe3075b28f7",
@@ -1734,7 +1732,130 @@
         "טלפוניה"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "status": "התקשרות בתוקף",
+      "deadlineChecked": true
+    },
+    {
+      "id": "3d851f9e035e1104",
+      "title": "מכרז מרכזי מס' 10-2023 לרכש ואספקת שירותי CRM בענן",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000574868",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "10-2023",
+      "publishedAt": "2023-09-07",
+      "kind": "tender",
+      "status": "עודכן",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "it"
+      ],
+      "score": 5,
+      "matched": [
+        "CRM"
+      ],
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
+    },
+    {
+      "id": "f6436b6feb4c44e5",
+      "title": "לאספקת שירותים, קבלת יעוץ, ליווי, ויישום בתחום הגנת הסייבר ואבטחת המידע עבור אגף תקשוב",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000557049",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "21/2022",
+      "publishedAt": "2022-08-30",
+      "kind": "tender",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "infosec"
+      ],
+      "score": 5,
+      "matched": [
+        "סייבר"
+      ],
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
+    },
+    {
+      "id": "7270420eb652ef9b",
+      "title": "לאספקת מוצר SOAR , שירותי תחזוקה ושירותים מקצועיים עבור מערך הדיגיטל הלאומי - רשות התקשוב הממשלתי",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000545481",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "9/2021",
+      "publishedAt": "2021-12-20",
+      "kind": "tender",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "infosec"
+      ],
+      "score": 5,
+      "matched": [
+        "SOAR"
+      ],
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
+    },
+    {
+      "id": "5cc3fc39aa2eb3f1",
+      "title": "הקמת, תפעול ותחזוקת מערכת \"אביב\" – מע' טלפוניה בגבייה למוחזקים במשמורת חוקית בשב\"ס",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000587979",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "18/2024",
+      "publishedAt": "2024-07-18",
+      "kind": "tender",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "telecom"
+      ],
+      "score": 5,
+      "matched": [
+        "טלפוניה"
+      ],
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
+    },
+    {
+      "id": "32fa41d0c21b5422",
+      "title": "יועץ למכרז טלפוניה למוחזקים במשמורת חוקית",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000549787",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
+      "publisher": "מנהל הרכש הממשלתי",
+      "tenderNumber": "08/2022",
+      "publishedAt": "2022-03-10",
+      "kind": "tender",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [
+        "telecom"
+      ],
+      "score": 5,
+      "matched": [
+        "טלפוניה"
+      ],
+      "firstSeen": "2026-08-18",
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     },
     {
       "id": "22587ccb84fa92bb",
@@ -1744,7 +1865,7 @@
       "sourceName": "מנהל הרכש הממשלתי",
       "category": "ממשלה",
       "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "",
+      "tenderNumber": "28/03",
       "publishedAt": "2018-03-08",
       "kind": "tender",
       "deadlineAt": "",
@@ -1757,7 +1878,8 @@
         "טלפוניה"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     },
     {
       "id": "1e57a148d95a86de",
@@ -1780,7 +1902,8 @@
         "טלפוניה"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     },
     {
       "id": "43da5fcdb24cd019",
@@ -1803,7 +1926,8 @@
         "טלפוניה"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     },
     {
       "id": "c03c96a45d141f5f",
@@ -1826,7 +1950,8 @@
         "טלפוניה"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     },
     {
       "id": "fff8bb5a0af53791",
@@ -1850,7 +1975,8 @@
         "אתר אינטרנט"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     },
     {
       "id": "2fbd2b7d62a35cdd",
@@ -1874,7 +2000,8 @@
         "אתר אינטרנט"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     },
     {
       "id": "7fa47c2530aaa724",
@@ -1884,7 +2011,7 @@
       "sourceName": "מנהל הרכש הממשלתי",
       "category": "ממשלה",
       "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "",
+      "tenderNumber": "03/09",
       "publishedAt": "2023-08-31",
       "kind": "call",
       "deadlineAt": "",
@@ -1898,7 +2025,8 @@
         "אתר אינטרנט"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     },
     {
       "id": "f5c452eaf76f2bef",
@@ -1922,7 +2050,8 @@
         "אתר אינטרנט"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     },
     {
       "id": "e3c1873fd07ba249",
@@ -1945,7 +2074,8 @@
         "שרתים"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     },
     {
       "id": "74540562a70a0171",
@@ -1968,145 +2098,58 @@
         "מחשוב"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     },
     {
-      "id": "0da5991490fdf43c",
-      "title": "מכרז 37-2026 למתן שירותי ייעוץ, תכנון ופיקוח על מערכות בטחון ותקשורת למשרד המשפטים",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000618789",
+      "id": "41fbc917fdfac6c5",
+      "title": "מכרז מרכזי 11-2023 לאספקת מחשבים עבור משרדי הממשלה - הגשה נוספת",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000582602",
       "source": "mr-gov",
       "sourceName": "מנהל הרכש הממשלתי",
       "category": "ממשלה",
       "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "37-2026",
-      "publishedAt": "2026-06-25",
+      "tenderNumber": "11-2023",
+      "publishedAt": "2024-01-22",
       "kind": "tender",
-      "deadlineAt": "2026-06-25",
+      "status": "חדש",
+      "deadlineAt": "",
       "summary": "",
       "topics": [
-        "telecom"
+        "it"
       ],
       "score": 3,
       "matched": [
-        "תקשורת"
+        "מחשבים"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     },
     {
-      "id": "beeaecc38f099753",
-      "title": "מתן שירותי ייעוץ בתחום השידורים למשרד התקשורת",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000614061",
+      "id": "44f553cca07f6eb0",
+      "title": "RFI לעניין קבלת מידע עבור עמותות העוסקות בתרומת מחשבים",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000555983",
       "source": "mr-gov",
       "sourceName": "מנהל הרכש הממשלתי",
       "category": "ממשלה",
       "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "2026/01",
-      "publishedAt": "2026-02-10",
-      "kind": "tender",
-      "deadlineAt": "2026-02-10",
+      "tenderNumber": "8/22",
+      "publishedAt": "2022-08-07",
+      "kind": "rfi",
+      "status": "עודכן",
+      "deadlineAt": "",
       "summary": "",
       "topics": [
-        "telecom"
+        "it"
       ],
       "score": 3,
       "matched": [
-        "תקשורת"
+        "מחשבים"
       ],
       "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
-    },
-    {
-      "id": "f8aad7016f73621f",
-      "title": "שירותי יעוץ לתקשורת זרה בישראל",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000611527",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "11-2025",
-      "publishedAt": "2025-12-18",
-      "kind": "tender",
-      "deadlineAt": "2025-12-18",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 3,
-      "matched": [
-        "תקשורת"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
-    },
-    {
-      "id": "691f36c5db4098a5",
-      "title": "ניטור, ניתוח ומחקר תקשורתי במדיה המסורתית והדיגיטלית",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000611127",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "04/2025",
-      "publishedAt": "2025-12-11",
-      "kind": "tender",
-      "deadlineAt": "2025-12-11",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 3,
-      "matched": [
-        "תקשורת"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
-    },
-    {
-      "id": "7d61936f2a6ed2c7",
-      "title": "קב\"ט אבטחה למשרד התקשורת",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000609040",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "06/2025",
-      "publishedAt": "2025-11-10",
-      "kind": "tender",
-      "deadlineAt": "2025-11-10",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 3,
-      "matched": [
-        "תקשורת"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
-    },
-    {
-      "id": "9d2584df7f7d1088",
-      "title": "מכרז 6-2025 להקמה, התקנה ושירות למערכת פורטל פנים ארגונית - תקשורת ארגונית עבור המרכז הרפואי לבריאות הנפש מזור",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000610470",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מנהל הרכש הממשלתי",
-      "tenderNumber": "6-2025",
-      "publishedAt": "2025-12-01",
-      "kind": "tender",
-      "deadlineAt": "2025-12-01",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 3,
-      "matched": [
-        "תקשורת"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-18"
+      "lastSeen": "2026-08-18",
+      "deadlineChecked": true
     }
   ]
 }
