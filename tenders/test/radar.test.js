@@ -420,3 +420,37 @@ test('הודעות פטור שכבר במאגר יורדות בסריקה הבא
   const active = new Map([['iaa', { id:'iaa', allTenders:true }]]);
   assert.deepStrictEqual(R.mergeWithHistory([], prev, active, KW).map(t => t.id), ['ok']);
 });
+
+test('מכרז שהמקור מדווח עליו "חלף מועד הגשה" אינו נכנס', () => {
+  const src = { id: 'mr-gov', name: 'מנהל הרכש', allTenders: true, linkPattern: '/ilgstorefront/[a-z]{2}/p/\\d+' };
+  // ההקשר האמיתי כפי שהוא מגיע מאתר מנהל הרכש
+  const closed = 'מכרז פומבי אספקת ציוד תקשורת אקטיבי שם המפרסם: משרד האוצר מס׳ פרסום: 4000618789 | סטטוס: חלף מועד הגשה | מס׳ הליך: 37-2026 | תאריך פרסום: 25/06/2026';
+  const open   = 'מכרז פומבי אספקת ציוד תקשורת אקטיבי שם המפרסם: משרד האוצר מס׳ פרסום: 4000620724 | סטטוס: עודכן | מס׳ הליך: 01-2026 | תאריך פרסום: 10/08/2026';
+
+  assert.strictEqual(R.extractStatus(closed), 'חלף מועד הגשה');
+  assert.strictEqual(R.extractStatus(open), 'עודכן');
+  assert.ok(R.isClosedStatus('חלף מועד הגשה'));
+  assert.ok(!R.isClosedStatus('עודכן'));
+  assert.ok(!R.isClosedStatus(''));
+
+  const url = 'https://mr.gov.il/ilgstorefront/he/p/4000618789';
+  assert.strictEqual(
+    R.buildRecord({ title: 'אספקת ציוד תקשורת אקטיבי עבור משרדי הממשלה', url, context: closed }, src, KW),
+    null, 'מכרז שחלף מועדו נדחה');
+  const rec = R.buildRecord({ title: 'אספקת ציוד תקשורת אקטיבי עבור משרדי הממשלה', url, context: open }, src, KW);
+  assert.ok(rec && rec.status === 'עודכן', 'מכרז פעיל נשמר עם הסטטוס שלו');
+});
+
+test('מכרזים סגורים שכבר במאגר יורדים בסריקה הבאה', () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const prev = new Map([
+    ['closed', { id:'closed', source:'mr-gov', kind:'tender', status:'חלף מועד הגשה',
+                 title:'מכרז לאספקת ציוד תקשורת', url:'https://mr.gov.il/ilgstorefront/he/p/1',
+                 score:9, topics:['equipment'], firstSeen:'2020-01-01', lastSeen:today }],
+    ['open',   { id:'open', source:'mr-gov', kind:'tender', status:'עודכן',
+                 title:'מכרז לאספקת ציוד תקשורת', url:'https://mr.gov.il/ilgstorefront/he/p/2',
+                 score:9, topics:['equipment'], firstSeen:'2020-01-01', lastSeen:today }]
+  ]);
+  const active = new Map([['mr-gov', { id:'mr-gov', allTenders:true, linkPattern:'/ilgstorefront/[a-z]{2}/p/\\d+' }]]);
+  assert.deepStrictEqual(R.mergeWithHistory([], prev, active, KW).map(t => t.id), ['open']);
+});

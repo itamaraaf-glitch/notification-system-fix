@@ -717,6 +717,21 @@ function detectKind(title, url) {
   return 'tender';
 }
 
+/**
+ * סטטוס הפרסום כפי שהמקור מדווח אותו. במנהל הרכש ההקשר כולל "סטטוס: חלף מועד הגשה"
+ * למכרזים סגורים, ובסריקה אמיתית 52 מתוך 59 הממצאים היו כאלה — מכרזים אמיתיים
+ * ורלוונטיים, אבל שאי אפשר להגיש אליהם יותר. הסטטוס נחלץ ומשמש לסינון.
+ */
+const STATUS_RE = /סטטוס:\s*([^|<]{2,40}?)\s*(?:\||$)/;
+function extractStatus(context) {
+  const m = String(context || '').match(STATUS_RE);
+  return m ? m[1].trim() : '';
+}
+const CLOSED_STATUS_RE = /(חלף\s*מועד|נסגר|סגור|בוטל|הסתיים|לא\s*פעיל)/;
+function isClosedStatus(status) {
+  return CLOSED_STATUS_RE.test(String(status || ''));
+}
+
 function buildRecord(item, source, kw) {
   const haystack = `${item.title} ${item.summary || ''} ${item.context || ''}`;
   const titleAndSummary = `${item.title} ${item.summary || ''}`;
@@ -739,6 +754,10 @@ function buildRecord(item, source, kw) {
   const kind = detectKind(item.title, item.url);
   if ((kw.excludedKinds || []).includes(kind)) return null;
 
+  // מכרז שהמקור עצמו מדווח שמועד ההגשה שלו חלף אינו רלוונטי להגשה
+  const status = extractStatus(item.context);
+  if (isClosedStatus(status)) return null;
+
   const tenderNumber = extractTenderNumber(titleAndSummary) || extractTenderNumber(item.context || '');
   const host = (() => { try { return new URL(item.url).host; } catch (_) { return source.id; } })();
   const id = hashId(source.id + '|' + (tenderNumber || normKey(item.title)) + '|' + host);
@@ -758,6 +777,7 @@ function buildRecord(item, source, kw) {
     tenderNumber,
     publishedAt: item.publishedAt || '',
     kind,
+    status,
     deadlineAt,
     summary: (item.summary || '').trim(),
     topics: cls.topics,
@@ -805,6 +825,7 @@ function mergeWithHistory(current, prevById, activeSources, kw) {
       // סוג שהוחרג מהתצורה יורד גם אם כבר נמצא במאגר
       const prevKind = prev.kind || detectKind(prev.title, prev.url);
       if ((kw.excludedKinds || []).includes(prevKind)) continue;
+      if (isClosedStatus(prev.status)) continue;
       const recheck = classify(text, kw);
       if (!recheck.topics.length) continue;
       prev = { ...prev, topics: recheck.topics, score: recheck.score, matched: recheck.matched };
@@ -845,7 +866,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, harvestAnchors, findTenderLinks, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, harvestAnchors, findTenderLinks, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
