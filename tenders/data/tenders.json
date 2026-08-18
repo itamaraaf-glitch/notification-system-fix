@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T03:55:05.379Z",
+  "generatedAt": "2026-08-18T08:04:24.146Z",
   "generatedDate": "2026-08-18",
   "topics": {
     "telecom": {
@@ -371,15 +371,14 @@
     }
   ],
   "counts": {
-    "total": 14,
+    "total": 4,
     "new": 0,
     "open": 4,
     "closingSoon": 2,
     "byTopic": {
-      "it": 7,
-      "infosec": 2,
-      "telecom": 3,
-      "equipment": 3
+      "it": 2,
+      "infosec": 1,
+      "telecom": 1
     }
   },
   "sources": [
@@ -389,8 +388,8 @@
       "category": "ממשלה",
       "ok": true,
       "scanned": 116,
-      "count": 12,
-      "ms": 9321,
+      "count": 8,
+      "ms": 8939,
       "warn": "",
       "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER"
     },
@@ -402,7 +401,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.gov.il/he/departments/topics/tenders-sub/govil — HTTP 403",
-      "ms": 997,
+      "ms": 995,
       "searchUrl": "https://www.gov.il/he/departments/publications?publicationType=tender"
     },
     {
@@ -413,7 +412,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.moin.gov.il/Tenders — HTTP 403",
-      "ms": 1727,
+      "ms": 1726,
       "searchUrl": "https://www.moin.gov.il/Tenders"
     },
     {
@@ -421,9 +420,9 @@
       "name": "רשות שדות התעופה",
       "category": "תשתיות",
       "ok": true,
-      "scanned": 292,
-      "count": 10,
-      "ms": 3556,
+      "scanned": 294,
+      "count": 0,
+      "ms": 3551,
       "warn": "",
       "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
     },
@@ -434,7 +433,7 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 1848,
+      "ms": 1868,
       "warn": "",
       "searchUrl": "https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders"
     },
@@ -446,7 +445,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.nta.co.il/tenders/ — HTTP 403",
-      "ms": 1160,
+      "ms": 1205,
       "searchUrl": "https://www.nta.co.il/tenders/"
     },
     {
@@ -457,7 +456,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D — HTTP 403",
-      "ms": 1155,
+      "ms": 1163,
       "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
     },
     {
@@ -468,7 +467,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.transisrael.co.il/Tenders — HTTP 403",
-      "ms": 1015,
+      "ms": 1022,
       "searchUrl": "https://www.transisrael.co.il/Tenders?currentView=1"
     },
     {
@@ -478,7 +477,7 @@
       "ok": true,
       "scanned": 8,
       "count": 0,
-      "ms": 3718,
+      "ms": 3605,
       "warn": "",
       "searchUrl": "https://www.atarim.gov.il/tenders/"
     },
@@ -489,7 +488,7 @@
       "ok": true,
       "scanned": 639,
       "count": 0,
-      "ms": 3149,
+      "ms": 2793,
       "warn": "",
       "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx"
     },
@@ -500,7 +499,7 @@
       "ok": true,
       "scanned": 418,
       "count": 0,
-      "ms": 6101,
+      "ms": 6707,
       "warn": "",
       "discovered": [
         "https://www.haifa.muni.il/city-and-muni/legaladvice/contracts-and-tenders/",
@@ -515,7 +514,7 @@
       "ok": true,
       "scanned": 1956,
       "count": 0,
-      "ms": 4574,
+      "ms": 4933,
       "warn": "",
       "discovered": [
         "https://www.nzc.org.il/bids/",
@@ -530,7 +529,7 @@
       "ok": true,
       "scanned": 1192,
       "count": 0,
-      "ms": 3948,
+      "ms": 4053,
       "warn": "",
       "discovered": [
         "https://www.dsharon.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/",
@@ -545,7 +544,7 @@
       "ok": true,
       "scanned": 452,
       "count": 0,
-      "ms": 4285,
+      "ms": 4140,
       "warn": "",
       "discovered": [
         "https://www.eyz.org.il/bids/",
@@ -649,251 +648,6 @@
       "firstSeen": "2026-08-17",
       "lastSeen": "2026-08-18",
       "kind": "tender"
-    },
-    {
-      "id": "7b317303da43db39",
-      "title": "מתן שירותים משפטיים בתחום רישוי תוכנות, מחשוב ענן, הגנת פרטיות, אבטחת מידע, סייבר (לרבות טיפול במשברי סייבר), מאגרי מידע ודיני אינטרנט, עבור רשות שדות התעופה עם משרד דן חי ושות' עורכי דין",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_48_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-05-03",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "infosec",
-        "it"
-      ],
-      "score": 17,
-      "matched": [
-        "אינטרנט",
-        "אבטחת מידע",
-        "סייבר",
-        "מחשוב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-18",
-      "deadlineChecked": true,
-      "kind": "exemption"
-    },
-    {
-      "id": "f6ffd78af334a032",
-      "title": "מתן שירותי מחשוב וייעוץ בתחום התקשוב עבור רש\"ת",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_36_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 10,
-      "matched": [
-        "שירותי מחשוב",
-        "מחשוב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-18",
-      "deadlineChecked": true,
-      "kind": "exemption"
-    },
-    {
-      "id": "fb08a656d4bf51e3",
-      "title": "התקשרות לרישוי תוכנה, שירותי התקנה, אחזקה ושדרוגים של מערכת תמחיר SAS",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_05_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-01-18",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 6,
-      "matched": [
-        "רישוי תוכנה"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-18",
-      "deadlineChecked": true,
-      "kind": "exemption"
-    },
-    {
-      "id": "f661eb6fed6f3eac",
-      "title": "אספקת שירותי CRM בענן, עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_67_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-07-21",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 5,
-      "matched": [
-        "CRM"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-18",
-      "deadlineChecked": true,
-      "kind": "exemption"
-    },
-    {
-      "id": "09c588c88f7a8a3a",
-      "title": "התקנה, הטמעה ואחזקת מערכת ממוחשבת לניהול אירועים, עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_60_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-06-14",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 4,
-      "matched": [
-        "מערכת ממוחשבת"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-18",
-      "deadlineChecked": true,
-      "kind": "exemption"
-    },
-    {
-      "id": "2e7b1a00bbb55e9c",
-      "title": "מתן שירותי הודעות בזימונית ואחזקת ערכות כריזה של צופרים עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_75_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-08-17",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 3,
-      "matched": [
-        "כריזה"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-18",
-      "deadlineChecked": true,
-      "kind": "exemption"
-    },
-    {
-      "id": "6848cfdcbd7b98a3",
-      "title": "התקשרות לצורך הצבת ציוד קשר ואנטנות באתר החברה במושב בית אורן, עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_32_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-03-10",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 3,
-      "matched": [
-        "אנטנות"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-18",
-      "deadlineChecked": true,
-      "kind": "exemption"
-    },
-    {
-      "id": "e8251bd2681a5b50",
-      "title": "הסכם מסגרת לביצוע עבודות תאורת מסלולים ותשתיות חשמל ותקשורת באתרי רש\"ת",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_17_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-01-28",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 3,
-      "matched": [
-        "תקשורת"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-18",
-      "deadlineChecked": true,
-      "kind": "exemption"
-    },
-    {
-      "id": "6f148ed952cf08db",
-      "title": "מתן שירותי תכנון, אספקה, התקנה, שדרוג ואחזקה למערכת כריזה תפעולית מתוצרת BIAMP בכל מתקני רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_01_2026/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2026-01-04",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 3,
-      "matched": [
-        "כריזה"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-18",
-      "deadlineChecked": true,
-      "kind": "exemption"
-    },
-    {
-      "id": "924668b8d9f50460",
-      "title": "מתן שירותי אחזקה, אספקה והתקנה של מערכות התרעה אלחוטיות בנתב\"ג ומסוף טאבה, עבור רשות שדות התעופה",
-      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_ptor_102_2025/",
-      "source": "iaa",
-      "sourceName": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "publisher": "רשות שדות התעופה",
-      "tenderNumber": "",
-      "publishedAt": "2025-11-10",
-      "deadlineAt": "",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 3,
-      "matched": [
-        "אלחוטי"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-18",
-      "deadlineChecked": true,
-      "kind": "exemption"
     }
   ]
 }
