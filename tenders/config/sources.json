@@ -290,6 +290,28 @@
       "allTenders": false,
       "home": "https://www.clalit.co.il/",
       "searchUrl": "https://www.clalit.co.il/"
+    },
+    {
+      "_probeNote": "מקור בדיקה זמני לאיתור הפרמטר שמשנה את דף התוצאות במנהל הרכש. מנוטרל — משמש רק להרצת --debug=mr-probe.",
+      "id": "mr-probe",
+      "name": "בדיקת פרמטרים – מנהל הרכש",
+      "category": "בדיקה",
+      "kind": "html",
+      "enabled": false,
+      "allTenders": true,
+      "urls": [
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&page=1",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&currentPage=1",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%3Arelevance&page=1",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%AA%D7%A7%D7%A9%D7%95%D7%A8%D7%AA",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%AA%D7%A7%D7%A9%D7%95%D7%A8%D7%AA%3Arelevance",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&pageSize=100",
+        "https://mr.gov.il/ilgstorefront/he/search/results?s=TENDER&q=%D7%AA%D7%A7%D7%A9%D7%95%D7%A8%D7%AA"
+      ],
+      "linkPattern": "/ilgstorefront/[a-z]{2}/p/\\d+",
+      "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER",
+      "home": "https://mr.gov.il/ilgstorefront/he/"
     }
   ],
   "_manualComment": "אגרגטורים ומאגרים מסחריים/מוסדיים — מוצגים בממשק כקישורי חיפוש ידני ואינם נסרקים אוטומטית (מטעמי תנאי שימוש).",
