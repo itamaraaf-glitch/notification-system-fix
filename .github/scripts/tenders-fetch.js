@@ -443,6 +443,21 @@ function registrableDomain(host) {
 function sameSite(a, b) {
   return registrableDomain(new URL(a).host) === registrableDomain(new URL(b).host);
 }
+/**
+ * כתובת עמוד המדור שמעל הכתובת הנתונה, כשהשם של המדור הוא מכרזי. למשל
+ * /על-המרכז/דרושים-ומכרזים/דרושים-במכללה/ → /על-המרכז/דרושים-ומכרזים/
+ */
+function tenderSectionParent(u) {
+  try {
+    const url = new URL(u);
+    const parts = decodeURIComponent(url.pathname).split('/').filter(Boolean);
+    if (parts.length < 2) return '';
+    const parent = parts[parts.length - 2];
+    if (!/(מכרז|מיכרז|michraz|tender)/i.test(parent)) return '';
+    return url.origin + '/' + parts.slice(0, -1).map(encodeURIComponent).join('/') + '/';
+  } catch (_) { return ''; }
+}
+
 /** האם הכתובת היא שורש האתר — דף הבית לעולם אינו עמוד רשימת המכרזים */
 function isSiteRoot(u) {
   try { return new URL(u).pathname.replace(/\/+$/, '') === ''; } catch (_) { return false; }
@@ -511,6 +526,17 @@ function findTenderLinks(html, baseUrl) {
       - Math.min(20, a.title.length / 5);
     scored.push({ url: a.url, title: a.title, score });
   }
+  // עמוד מכרזים יושב לעיתים בתוך מדור שהשם שלו הוא המכרזי ("דרושים-ומכרזים"),
+  // בעוד שהעמוד עצמו הוא דרושים. במקרה כזה מוסיפים את עמוד המדור עצמו כמועמד —
+  // שם בדרך כלל יושבת הרשימה המשולבת. נמדד באתר הדסה האקדמית ירושלים.
+  for (const cand of scored.slice()) {
+    const parent = tenderSectionParent(cand.url);
+    if (parent && !seen.has(parent) && !sameUrl(parent, baseUrl) && !isSiteRoot(parent)) {
+      seen.add(parent);
+      scored.push({ url: parent, title: '(מדור מכרזים)', score: 30 });
+    }
+  }
+
   scored.sort((x, y) => y.score - x.score);
   // אם יש ולו עמוד אחד שאינו ארכיון/תוצאות — לא יורדים לארכיון בכלל
   const live = scored.filter(x => x.score > 0);
@@ -1199,7 +1225,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, sameSite, sameUrl, isSiteRoot, lastPathSegment, jobsOnly, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS

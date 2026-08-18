@@ -316,3 +316,20 @@ test('הגילוי מדלג על קישור לעמוד עצמו ועל דפי ד
   assert.ok(R.sameUrl('https://x.co.il/#top', 'https://x.co.il/'));
   assert.ok(!R.sameUrl('https://x.co.il/a', 'https://x.co.il/b'));
 });
+
+// באתר הדסה האקדמית עמוד המכרזים יושב בתוך מדור "דרושים-ומכרזים", אבל הקישור
+// מדף הבית מוביל לעמוד הדרושים שבתוכו. עמוד המדור עצמו נוסף כמועמד.
+test('מדור מכרזים נוסף כמועמד כשהקישור מוביל לעמוד פנימי שאינו מכרזים', () => {
+  const links = R.findTenderLinks(
+    '<a href="/על-המרכז/דרושים-ומכרזים/דרושים-במכללה/">דרושים ומכרזים</a>',
+    'https://www.hac.ac.il/');
+  const urls = links.map(l => decodeURIComponent(l.url));
+  assert.ok(urls[0].endsWith('/דרושים-ומכרזים/'), 'עמוד המדור נבחר: ' + urls.join(' , '));
+
+  assert.strictEqual(R.tenderSectionParent('https://x.co.il/a/michrazim/page1/'),
+    'https://x.co.il/a/michrazim/');
+  assert.strictEqual(R.tenderSectionParent('https://x.co.il/about/team/person/'), '',
+    'מדור שאינו מכרזי אינו מועמד');
+  assert.strictEqual(R.tenderSectionParent('https://x.co.il/tenders/'), '',
+    'אין הורה כשהעמוד עצמו הוא המדור');
+});
