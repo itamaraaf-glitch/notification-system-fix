@@ -814,9 +814,20 @@ async function main() {
   let merged = mergeWithHistory([...found.values()], prevById, activeSources, kw);
   await enrichDeadlines(merged);
   const beforeFilter = merged.length;
-  merged = merged.filter(isActionable);
+  const dropped = {};
+  const droppedSample = {};
+  merged = merged.filter(rec => {
+    const why = dropReason(rec);
+    if (!why) return true;
+    dropped[why] = (dropped[why] || 0) + 1;
+    if (!droppedSample[why]) droppedSample[why] = rec.title.slice(0, 80);
+    return false;
+  });
   if (beforeFilter !== merged.length) {
-    console.error(`\n🗂  הוסרו ${beforeFilter - merged.length} מכרזים שאי אפשר להגיש אליהם (מועד שחלף, ארכיון או התקשרות בתוקף)`);
+    console.error(`\n🗂  הוסרו ${beforeFilter - merged.length} מכרזים שאי אפשר להגיש אליהם:`);
+    for (const [why, n] of Object.entries(dropped).sort((a, b) => b[1] - a[1])) {
+      console.error(`     ${n} — ${DROP_LABELS[why] || why}   (לדוגמה: ${droppedSample[why]})`);
+    }
   }
   const payload = {
     generatedAt: new Date().toISOString(),
@@ -825,7 +836,7 @@ async function main() {
     kindLabels: KIND_LABELS,
     manualLinks: cfg.manualLinks || [],
     manualAuthorities: cfg.manualAuthorities || [],
-    counts: summarize(merged),
+    counts: { ...summarize(merged), dropped, droppedLabels: DROP_LABELS },
     sources: status,
     tenders: merged
   };
@@ -1134,13 +1145,28 @@ const ACTIVE_STATUS_RE = /(פורסם|עודכן|חדש)/;
  */
 const FRESH_WITHOUT_DEADLINE_DAYS = 90;
 function isActionable(rec) {
+  return dropReason(rec) === '';
+}
+
+/**
+ * למה מכרז לא נכנס לראדאר — מחרוזת ריקה פירושה שהוא נכנס.
+ *
+ * המספר "60 רלוונטיים אבל 16 נשמרו" לא אומר כלום בלי הפירוט: אי אפשר לדעת אם
+ * הסינון עובד או בולע מכרזים פתוחים. הסיבות נספרות ומדווחות בכל ריצה.
+ */
+const DROP_LABELS = {
+  expired: 'מועד ההגשה חלף',
+  stale: 'בלי מועד, ופורסם לפני יותר מ-' + 90 + ' יום',
+  unknown: 'בלי מועד ובלי סטטוס פעיל במקור'
+};
+function dropReason(rec) {
   if (rec.deadlineAt) {
     const left = daysBetween(today, rec.deadlineAt);
-    return left === null || left >= 0;
+    return (left === null || left >= 0) ? '' : 'expired';
   }
-  if (!ACTIVE_STATUS_RE.test(rec.status || '')) return false;
+  if (!ACTIVE_STATUS_RE.test(rec.status || '')) return 'unknown';
   const age = rec.publishedAt ? daysBetween(rec.publishedAt, today) : null;
-  return age !== null && age <= FRESH_WITHOUT_DEADLINE_DAYS;
+  return (age !== null && age <= FRESH_WITHOUT_DEADLINE_DAYS) ? '' : 'stale';
 }
 
 /**
@@ -1293,7 +1319,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
+  classify, dropReason, DROP_LABELS, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS

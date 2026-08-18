@@ -635,3 +635,26 @@ test('החיפוש במנהל הרכש מכסה את כל חמשת הנושאי�
     assert.ok(hit, `לנושא ${topic.label} (${id}) אין שאילתת חיפוש`);
   }
 });
+
+// "60 רלוונטיים אבל 16 נשמרו" לא אומר אם הסינון עובד או בולע מכרזים פתוחים.
+// לכל נשירה יש סיבה מסווגת, והיא נספרת ומדווחת בכל ריצה.
+test('לכל מכרז שנושר יש סיבה מסווגת', () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const future = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+  const past = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
+  const old = new Date(Date.now() - 200 * 86400000).toISOString().slice(0, 10);
+
+  assert.strictEqual(R.dropReason({ deadlineAt: future }), '', 'מועד עתידי — נכנס');
+  assert.strictEqual(R.dropReason({ deadlineAt: past }), 'expired');
+  assert.strictEqual(R.dropReason({ deadlineAt: '', status: '' }), 'unknown');
+  assert.strictEqual(R.dropReason({ deadlineAt: '', status: 'פורסם', publishedAt: today }), '',
+    'בלי מועד אבל פורסם היום ומסומן פעיל — נכנס');
+  assert.strictEqual(R.dropReason({ deadlineAt: '', status: 'פורסם', publishedAt: old }), 'stale');
+  assert.strictEqual(R.dropReason({ deadlineAt: '', status: 'פורסם', publishedAt: '' }), 'stale');
+
+  // isActionable נשאר העטיפה של אותה החלטה — שתי הפונקציות לא יכולות להיפרד
+  for (const rec of [{ deadlineAt: future }, { deadlineAt: past }, { deadlineAt: '', status: 'פורסם', publishedAt: today }]) {
+    assert.strictEqual(R.isActionable(rec), R.dropReason(rec) === '');
+  }
+  for (const why of Object.keys(R.DROP_LABELS)) assert.ok(R.DROP_LABELS[why], `לסיבה ${why} יש תיאור`);
+});

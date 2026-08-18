@@ -89,6 +89,22 @@ function summary(data) {
     lines.push('');
   }
 
+  // פירוט מה נשר: בלי זה "60 רלוונטיים אבל 16 נשמרו" לא אומר אם הסינון עובד
+  // או בולע מכרזים פתוחים
+  const dropped = c.dropped || {};
+  const dropLabels = c.droppedLabels || {};
+  const dropTotal = Object.values(dropped).reduce((a, b) => a + b, 0);
+  if (dropTotal) {
+    lines.push('### מה לא נכנס ולמה');
+    lines.push('');
+    lines.push('| סיבה | כמות |');
+    lines.push('| --- | --- |');
+    for (const [why, n] of Object.entries(dropped).sort((a, b) => b[1] - a[1])) {
+      lines.push(`| ${dropLabels[why] || why} | ${n} |`);
+    }
+    lines.push('');
+  }
+
   lines.push('### בריאות המקורות');
   lines.push('');
   lines.push('| מקור | מצב | נסרקו | רלוונטיים | הערה |');
