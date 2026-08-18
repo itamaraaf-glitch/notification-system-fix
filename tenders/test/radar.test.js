@@ -475,3 +475,17 @@ test('"התקשרות בתוקף" נחשבת סגורה — זה חוזה שנח
   assert.ok(R.isClosedStatus('התקשרות בתוקף'));
   assert.ok(!R.isClosedStatus('פורסם'));
 });
+
+test('המשרד המפרסם נחלץ מההקשר ולא נשאר שם המקור', () => {
+  const ctx = 'מכרז פומבי אספקת שירותי גישה לאינטרנט שם המפרסם: משרד התקשורת מס׳ פרסום: 4000620190 | סטטוס: עודכן | מס׳ הליך: 10-2026';
+  assert.strictEqual(R.extractPublisher(ctx), 'משרד התקשורת');
+  assert.strictEqual(R.extractPublisher('בלי מפרסם'), '');
+
+  const src = { id: 'mr-gov', name: 'מנהל הרכש הממשלתי', allTenders: true, linkPattern: '/ilgstorefront/[a-z]{2}/p/\\d+' };
+  const rec = R.buildRecord({
+    title: 'אספקת שירותי גישה לאינטרנט (ISP)',
+    url: 'https://mr.gov.il/ilgstorefront/he/p/4000620190', context: ctx
+  }, src, KW);
+  assert.strictEqual(rec.publisher, 'משרד התקשורת', 'המשרד המזמין, לא מנהל הרכש');
+  assert.strictEqual(rec.sourceName, 'מנהל הרכש הממשלתי', 'שם המקור נשמר בנפרד');
+});

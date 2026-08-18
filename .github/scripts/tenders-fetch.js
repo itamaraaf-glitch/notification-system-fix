@@ -759,6 +759,17 @@ function isActionable(rec) {
   return age !== null && age <= FRESH_WITHOUT_DEADLINE_DAYS;
 }
 
+/**
+ * המשרד או הגוף שמפרסם את המכרז, כפי שהוא מופיע בהקשר ("שם המפרסם: משרד התקשורת").
+ * בלי זה כל מכרזי מנהל הרכש הוצגו כאילו המפרסם הוא מנהל הרכש עצמו, בעוד שהמשרד
+ * המזמין הוא המידע המעשי — הוא זה שמולו עובדים.
+ */
+const PUBLISHER_RE = /שם\s*המפרסם:\s*([^|<]{2,60}?)\s*(?:\||מס['׳]|$)/;
+function extractPublisher(context) {
+  const m = String(context || '').match(PUBLISHER_RE);
+  return m ? m[1].trim() : '';
+}
+
 function buildRecord(item, source, kw) {
   const haystack = `${item.title} ${item.summary || ''} ${item.context || ''}`;
   const titleAndSummary = `${item.title} ${item.summary || ''}`;
@@ -800,7 +811,7 @@ function buildRecord(item, source, kw) {
     source: source.id,
     sourceName: source.name,
     category: source.category || '',
-    publisher: item.publisher || source.name,
+    publisher: item.publisher || extractPublisher(item.context) || source.name,
     tenderNumber,
     publishedAt: item.publishedAt || '',
     kind,
@@ -893,7 +904,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, harvestAnchors, findTenderLinks, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
