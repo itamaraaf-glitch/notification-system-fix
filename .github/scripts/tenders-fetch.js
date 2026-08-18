@@ -735,6 +735,10 @@ function buildRecord(item, source, kw) {
   const cls = classify(titleAndSummary, kw);
   if (cls.blocked || cls.topics.length === 0) return null;
 
+  // סוג פרסום שאינו מכרז להגשה (הודעת פטור, כוונה להתקשר) אינו נכנס לראדאר כלל
+  const kind = detectKind(item.title, item.url);
+  if ((kw.excludedKinds || []).includes(kind)) return null;
+
   const tenderNumber = extractTenderNumber(titleAndSummary) || extractTenderNumber(item.context || '');
   const host = (() => { try { return new URL(item.url).host; } catch (_) { return source.id; } })();
   const id = hashId(source.id + '|' + (tenderNumber || normKey(item.title)) + '|' + host);
@@ -753,7 +757,7 @@ function buildRecord(item, source, kw) {
     publisher: item.publisher || source.name,
     tenderNumber,
     publishedAt: item.publishedAt || '',
-    kind: detectKind(item.title, item.url),
+    kind,
     deadlineAt,
     summary: (item.summary || '').trim(),
     topics: cls.topics,
@@ -798,6 +802,9 @@ function mergeWithHistory(current, prevById, activeSources, kw) {
         ? (looksLikeTender(text, kw) || looksLikeTenderUrl(prev.url || '', srcCfg.linkPattern))
         : looksLikeTender(text, kw);
       if (!gatePassed) continue;
+      // סוג שהוחרג מהתצורה יורד גם אם כבר נמצא במאגר
+      const prevKind = prev.kind || detectKind(prev.title, prev.url);
+      if ((kw.excludedKinds || []).includes(prevKind)) continue;
       const recheck = classify(text, kw);
       if (!recheck.topics.length) continue;
       prev = { ...prev, topics: recheck.topics, score: recheck.score, matched: recheck.matched };

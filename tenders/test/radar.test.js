@@ -382,3 +382,41 @@ test('"התקשרות" לבדה אינה מסמנת פרסום כמכרז', () =
   assert.ok(R.looksLikeTender('הודעה על התקשרות עם ספק יחיד לאספקת רישוי תוכנה', KW));
   assert.ok(R.looksLikeTender('התקשרות בפטור ממכרז — שירותי תקשורת', KW));
 });
+
+test('הודעת פטור ממכרז אינה נכנסת לראדאר כלל', () => {
+  const src = { id: 'iaa', name: 'רש"ת', allTenders: true };
+  // כתובת אמיתית מרשות שדות התעופה — הודעת פטור, לא מכרז להגשה
+  const exempt = R.buildRecord({
+    title: 'מתן שירותי מחשוב וייעוץ בתחום התקשוב עבור רש"ת',
+    url: 'https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/log_1/',
+    context: ''
+  }, src, KW);
+  assert.strictEqual(exempt, null, 'הודעת פטור נדחית');
+
+  const intent = R.buildRecord({
+    title: 'הודעה על כוונה להתקשר עם ספק יחיד לאספקת רישוי תוכנה',
+    url: 'https://x.gov.il/tenders/5', context: ''
+  }, src, KW);
+  assert.strictEqual(intent, null, 'כוונת התקשרות נדחית');
+
+  // מכרז פומבי באותו אתר כן נכנס
+  const real = R.buildRecord({
+    title: 'מכרז פומבי לאספקת שירותי תקשורת ומחשוב',
+    url: 'https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_2/', context: ''
+  }, src, KW);
+  assert.ok(real && real.kind === 'tender', 'מכרז פומבי נשמר');
+});
+
+test('הודעות פטור שכבר במאגר יורדות בסריקה הבאה', () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const prev = new Map([
+    ['ex', { id:'ex', source:'iaa', kind:'exemption', title:'מכרז לאספקת ציוד תקשורת',
+             url:'https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/exemption-notifications/a/',
+             score:9, topics:['equipment'], firstSeen:'2020-01-01', lastSeen:today }],
+    ['ok', { id:'ok', source:'iaa', kind:'tender', title:'מכרז לאספקת ציוד תקשורת',
+             url:'https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/b/',
+             score:9, topics:['equipment'], firstSeen:'2020-01-01', lastSeen:today }]
+  ]);
+  const active = new Map([['iaa', { id:'iaa', allTenders:true }]]);
+  assert.deepStrictEqual(R.mergeWithHistory([], prev, active, KW).map(t => t.id), ['ok']);
+});
