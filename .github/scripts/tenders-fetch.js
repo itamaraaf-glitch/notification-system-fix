@@ -259,6 +259,10 @@ function extractTenderNumber(text) {
 
 /* ───────────────────────── שכבת רשת ───────────────────────── */
 
+/** הכתובת הסופית של כל הבאה, אחרי הפניות — נדרשת לבניית קישורים יחסיים נכונה */
+const LAST_FINAL_URL = new Map();
+function finalUrlOf(url) { return LAST_FINAL_URL.get(url) || url; }
+
 async function fetchText(url, { retries = RETRIES } = {}) {
   let lastErr;
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -281,7 +285,12 @@ async function fetchText(url, { retries = RETRIES } = {}) {
         if (res.status >= 400 && res.status < 500 && res.status !== 429) err.permanent = true;
         throw err;
       }
-      return await res.text();
+      const body = await res.text();
+      // הכתובת הסופית אחרי הפניות חשובה: www.braude.ac.il מפנה ל-w3.braude.ac.il,
+      // ובלי הכתובת הסופית קישורים יחסיים נבנים מול הדומיין הלא נכון והמסנן
+      // "אותו אתר" פוסל את עמוד המכרזים האמיתי.
+      LAST_FINAL_URL.set(url, res.url || url);
+      return body;
     } catch (e) {
       lastErr = e;
       if (e.permanent) break;
@@ -384,7 +393,7 @@ async function adapterDiscover(source) {
       // רמז הוא ניחוש מושכל, לא מקור: בלי ניסיון חוזר, כדי שכתובת שגויה
       // לא תבזבז את תקציב הזמן של הסריקה כולה
       const html = await fetchText(url, { retries: 0 });
-      const anchors = harvestAnchors(html, url);
+      const anchors = harvestAnchors(html, finalUrlOf(url));
       if (anchors.length) { hinted.push({ url, anchors }); break; }
     } catch (_) { /* רמז שלא נענה — ממשיכים לרמז הבא ואז לגילוי */ }
     await sleep(POLITE_DELAY_MS);
@@ -398,7 +407,7 @@ async function adapterDiscover(source) {
   }
 
   const homeHtml = await fetchText(start);
-  const links = findTenderLinks(homeHtml, start).slice(0, source.maxPages || 2);
+  const links = findTenderLinks(homeHtml, finalUrlOf(start)).slice(0, source.maxPages || 2);
   if (!links.length) throw new Error('לא נמצא קישור לעמוד מכרזים בדף הבית');
 
   const items = [];
@@ -409,7 +418,7 @@ async function adapterDiscover(source) {
     try {
       const html = await fetchText(link.url);
       ok++;
-      for (const a of harvestAnchors(html, link.url)) items.push(itemFromAnchor(a));
+      for (const a of harvestAnchors(html, finalUrlOf(link.url))) items.push(itemFromAnchor(a));
     } catch (e) {
       warnings.push(`${shortUrl(link.url)} — ${(e && e.message) || e}`);
     }
@@ -418,6 +427,21 @@ async function adapterDiscover(source) {
   items.warnings = warnings;
   items.discovered = links.map(l => l.url);
   return items;
+}
+
+/**
+ * האם שתי כתובות שייכות לאותו אתר. ההשוואה היא על הדומיין הרשום ולא על ה-host
+ * המלא, כי עמוד המכרזים יושב פעמים רבות בתת־דומיין נפרד (tenders.huji.ac.il,
+ * w3.braude.ac.il), וגם www מול לא-www הוא אותו אתר.
+ */
+function registrableDomain(host) {
+  const parts = String(host || '').toLowerCase().split('.').filter(Boolean);
+  // סיומות ישראליות דו־שלביות (co.il, ac.il, muni.il, org.il, gov.il) דורשות שלוש רמות
+  const twoLevel = parts.length >= 3 && /^(co|ac|muni|org|gov|net|k12|idf|muni)$/.test(parts[parts.length - 2]);
+  return parts.slice(twoLevel ? -3 : -2).join('.');
+}
+function sameSite(a, b) {
+  return registrableDomain(new URL(a).host) === registrableDomain(new URL(b).host);
 }
 
 /** מאתר בדף הבית קישורים שנראים כמובילים לעמוד המכרזים, מהמדויק לפחות מדויק */
@@ -431,9 +455,9 @@ function findTenderLinks(html, baseUrl) {
     if (!byText && !byUrl) continue;
     // לא יורדים לעמוד של מכרז בודד — מחפשים את עמוד הרשימה
     if (/\.(pdf|docx?|xlsx?|zip)$/i.test(a.url)) continue;
-    let host;
-    try { host = new URL(a.url).host; } catch (_) { continue; }
-    try { if (host !== new URL(baseUrl).host) continue; } catch (_) { /* נשאר באותו אתר */ }
+    // נשארים באותו אתר, אבל תת־דומיין נחשב אותו אתר: עמוד המכרזים של הטכניון,
+    // האוניברסיטה העברית ומכללת בראודה יושב על tenders./w3. ולא על www.
+    try { if (!sameSite(a.url, baseUrl)) continue; } catch (_) { continue; }
     if (seen.has(a.url)) continue;
     seen.add(a.url);
     // "מכרזים" כטקסט הקישור הוא האינדיקציה החזקה ביותר לעמוד רשימה
@@ -1126,7 +1150,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, sameSite, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS

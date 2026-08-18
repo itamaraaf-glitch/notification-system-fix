@@ -230,3 +230,38 @@ test('מקור שנתקע נכשל בתקרת הזמן ולא עוצר את הר
   // הבטחה שמסתיימת בזמן עוברת כרגיל, והשעון מנוקה
   assert.strictEqual(await R.withDeadline(Promise.resolve('ok'), 5000, 'לא אמור לקרות'), 'ok');
 });
+
+// עמוד המכרזים יושב פעמים רבות בתת־דומיין נפרד (tenders.huji.ac.il,
+// w3.braude.ac.il) או בלי www. מסנן "אותו host בדיוק" פסל אותם, ושלושה
+// מקורות שהמדידה מצאה נגישים נכשלו יום־יום ב"לא נמצא קישור לעמוד מכרזים".
+test('תת־דומיין ו-www נחשבים אותו אתר, אתר זר לא', () => {
+  const same = [
+    ['https://w3.braude.ac.il/about/tenders/', 'https://www.braude.ac.il/'],
+    ['https://tenders.huji.ac.il/', 'https://www.huji.ac.il/'],
+    ['https://yehud-monosson.muni.il/bids/', 'https://www.yehud-monosson.muni.il/'],
+    ['https://www.tau.ac.il/bidding', 'https://www.tau.ac.il/']
+  ];
+  for (const [a, b] of same) assert.ok(R.sameSite(a, b), `${a} ⟷ ${b}`);
+
+  const diff = [
+    ['https://www.facebook.com/x', 'https://www.huji.ac.il/'],
+    ['https://www.ramla.muni.il/x', 'https://www.lod.muni.il/'],
+    ['https://michrazim.org.il/x', 'https://www.lod.muni.il/']
+  ];
+  for (const [a, b] of diff) assert.ok(!R.sameSite(a, b), `${a} ⟷ ${b} אינם אותו אתר`);
+
+  // סיומות ישראליות דו־שלביות לא מקצרות יתר על המידה
+  assert.strictEqual(R.registrableDomain('www.lod.muni.il'), 'lod.muni.il');
+  assert.strictEqual(R.registrableDomain('w3.braude.ac.il'), 'braude.ac.il');
+  assert.strictEqual(R.registrableDomain('sub.example.com'), 'example.com');
+});
+
+test('גילוי עמוד המכרזים עוקב אחרי הפניה של דף הבית', async () => {
+  const srv = await startServer({ '/': HOME, '/he/business/michrazim': TENDERS });
+  const base = `http://127.0.0.1:${srv.address().port}`;
+  try {
+    const items = await R.adapterDiscover({ id: 'r', name: 'עם הפניה', kind: 'discover', home: base + '/' });
+    assert.ok(items.discovered[0].endsWith('/he/business/michrazim'));
+    assert.ok(items.length >= 3, 'הפריטים נקצרו מעמוד המכרזים');
+  } finally { srv.close(); }
+});
