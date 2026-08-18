@@ -588,8 +588,13 @@ async function main() {
     (ONLY_SOURCE ? (cfg.sources || []).filter(s => s.enabled !== false) : (cfg.sources || []).filter(s => s.enabled !== false))
       .map(s => [s.id, s])
   );
-  const merged = mergeWithHistory([...found.values()], prevById, activeSources, kw);
+  let merged = mergeWithHistory([...found.values()], prevById, activeSources, kw);
   await enrichDeadlines(merged);
+  const beforeFilter = merged.length;
+  merged = merged.filter(isActionable);
+  if (beforeFilter !== merged.length) {
+    console.error(`\n🗂  הוסרו ${beforeFilter - merged.length} מכרזים שאי אפשר להגיש אליהם (מועד שחלף, ארכיון או התקשרות בתוקף)`);
+  }
   const payload = {
     generatedAt: new Date().toISOString(),
     generatedDate: today,
@@ -727,9 +732,31 @@ function extractStatus(context) {
   const m = String(context || '').match(STATUS_RE);
   return m ? m[1].trim() : '';
 }
-const CLOSED_STATUS_RE = /(חלף\s*מועד|נסגר|סגור|בוטל|הסתיים|לא\s*פעיל)/;
+const CLOSED_STATUS_RE = /(חלף\s*מועד|נסגר|סגור|בוטל|הסתיים|לא\s*פעיל|התקשרות\s*בתוקף)/;
 function isClosedStatus(status) {
   return CLOSED_STATUS_RE.test(String(status || ''));
+}
+
+/** סטטוס שמעיד שהפרסום פעיל כרגע (להבדיל מארכיון או מהתקשרות שכבר נחתמה) */
+const ACTIVE_STATUS_RE = /(פורסם|עודכן|חדש)/;
+
+/**
+ * האם אפשר בכלל להגיש למכרז הזה.
+ *
+ * הסריקה מחזירה גם ארכיון: בעימוד הרשימה המלאה הגיעו מכרזים מ-2019 עד 2023,
+ * וחוזים בתוקף שכבר נחתמו. מכרז בלי מועד הגשה עתידי אינו ניתן להגשה, ולכן
+ * הוא נשמר רק אם המקור מדווח שהוא פורסם לאחרונה — מקרה שבו המועד פשוט לא
+ * נחלץ, וההעשרה מדף המכרז עוד עשויה למלא אותו.
+ */
+const FRESH_WITHOUT_DEADLINE_DAYS = 90;
+function isActionable(rec) {
+  if (rec.deadlineAt) {
+    const left = daysBetween(today, rec.deadlineAt);
+    return left === null || left >= 0;
+  }
+  if (!ACTIVE_STATUS_RE.test(rec.status || '')) return false;
+  const age = rec.publishedAt ? daysBetween(rec.publishedAt, today) : null;
+  return age !== null && age <= FRESH_WITHOUT_DEADLINE_DAYS;
 }
 
 function buildRecord(item, source, kw) {
@@ -866,7 +893,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, harvestAnchors, findTenderLinks, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, harvestAnchors, findTenderLinks, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS

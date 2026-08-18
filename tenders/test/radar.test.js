@@ -454,3 +454,24 @@ test('מכרזים סגורים שכבר במאגר יורדים בסריקה ה
   const active = new Map([['mr-gov', { id:'mr-gov', allTenders:true, linkPattern:'/ilgstorefront/[a-z]{2}/p/\\d+' }]]);
   assert.deepStrictEqual(R.mergeWithHistory([], prev, active, KW).map(t => t.id), ['open']);
 });
+
+test('רק מכרז שאפשר להגיש אליו נשמר', () => {
+  const future = new Date(Date.now() + 20 * 86400000).toISOString().slice(0, 10);
+  const past   = new Date(Date.now() - 20 * 86400000).toISOString().slice(0, 10);
+  const recent = new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10);
+  const old    = new Date(Date.now() - 200 * 86400000).toISOString().slice(0, 10);
+
+  assert.ok(R.isActionable({ deadlineAt: future }), 'מועד עתידי');
+  assert.ok(!R.isActionable({ deadlineAt: past }), 'מועד שחלף');
+  // בלי מועד: נשמר רק אם פורסם לאחרונה ובסטטוס פעיל
+  assert.ok(R.isActionable({ deadlineAt: '', status: 'פורסם', publishedAt: recent }));
+  assert.ok(!R.isActionable({ deadlineAt: '', status: 'פורסם', publishedAt: old }), 'פרסום ישן');
+  assert.ok(!R.isActionable({ deadlineAt: '', status: '', publishedAt: recent }), 'בלי סטטוס פעיל');
+  assert.ok(!R.isActionable({ deadlineAt: '', status: 'התקשרות בתוקף', publishedAt: recent }));
+  assert.ok(!R.isActionable({ deadlineAt: '' }), 'ארכיון בלי שום סימן');
+});
+
+test('"התקשרות בתוקף" נחשבת סגורה — זה חוזה שנחתם ולא מכרז', () => {
+  assert.ok(R.isClosedStatus('התקשרות בתוקף'));
+  assert.ok(!R.isClosedStatus('פורסם'));
+});
