@@ -265,3 +265,24 @@ test('גילוי עמוד המכרזים עוקב אחרי הפניה של דף 
     assert.ok(items.length >= 3, 'הפריטים נקצרו מעמוד המכרזים');
   } finally { srv.close(); }
 });
+
+// "תוצאות מכרזים" הוא עמוד מכרזים לכל דבר מבחינת הגילוי, אבל אין בו מה
+// להגיש — הוא מפרסם מי זכה. באתר עיריית אריאל הגילוי בחר בדיוק אותו.
+test('הגילוי מעדיף מכרזים פעילים ולא יורד לתוצאות או לארכיון', () => {
+  const html = `
+    <a href="/tenders-results/">תוצאות מכרזים</a>
+    <a href="/archive/michrazim/">ארכיון מכרזים</a>
+    <a href="/bids/">מכרזים</a>
+    <a href="/active-bids/">מכרזים פעילים</a>
+    <a href="/michrazim-protocols/">פרוטוקולים של ועדת מכרזים</a>`;
+  const links = R.findTenderLinks(html, 'https://www.x.muni.il/');
+  const urls = links.map(l => l.url);
+  assert.ok(urls[0].endsWith('/bids/'), 'עמוד המכרזים הראשי נבחר ראשון');
+  assert.ok(!urls.some(u => /results|archive|protocol/.test(u)),
+    'תוצאות, ארכיון ופרוטוקולים אינם נבחרים כשיש חלופה חיה: ' + urls.join(' , '));
+
+  // כשאין חלופה — עדיף עמוד תוצאות מכלום, אבל הוא לא מדורג ראשון בטעות
+  const onlyArchive = R.findTenderLinks('<a href="/tenders-results/">תוצאות מכרזים</a>',
+    'https://www.x.muni.il/');
+  assert.strictEqual(onlyArchive.length, 1, 'בהיעדר חלופה עדיין מוחזר משהו');
+});

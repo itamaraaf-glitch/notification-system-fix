@@ -444,6 +444,14 @@ function sameSite(a, b) {
   return registrableDomain(new URL(a).host) === registrableDomain(new URL(b).host);
 }
 
+/**
+ * עמוד "תוצאות מכרזים" / "ארכיון מכרזים" הוא עמוד מכרזים לכל דבר מבחינת הגילוי,
+ * אבל אין בו מה להגיש — הוא מפרסם את מי שזכה. באתר עיריית אריאל הגילוי בחר בדיוק
+ * אותו, ולכן הוא מקבל ניקוד שלילי חזק. עמוד "מכרזים פעילים" מקבל העדפה.
+ */
+const ARCHIVE_LINK_RE = /(תוצאות|ארכיון|שהסתיימו|שנסגרו|קודמים|היסטורי|זוכ(ה|ים)|פרוטוקול|archive|results)/;
+const ACTIVE_LINK_RE = /(פעילים|פתוחים|נוכחיים|חדשים|מכרזים\s*מתפרסמים)/;
+
 /** מאתר בדף הבית קישורים שנראים כמובילים לעמוד המכרזים, מהמדויק לפחות מדויק */
 function findTenderLinks(html, baseUrl) {
   const TEXT_RE = /(מכרז|מיכרז|michraz|tenders?)/i;
@@ -461,11 +469,17 @@ function findTenderLinks(html, baseUrl) {
     if (seen.has(a.url)) continue;
     seen.add(a.url);
     // "מכרזים" כטקסט הקישור הוא האינדיקציה החזקה ביותר לעמוד רשימה
+    const haystack = a.title + ' ' + decodeURIComponent(a.url);
     const score = (/^\s*מכרזים\s*$/.test(a.title) ? 100 : 0) + (byText ? 10 : 0) + (byUrl ? 5 : 0)
+      + (ACTIVE_LINK_RE.test(haystack) ? 40 : 0)
+      - (ARCHIVE_LINK_RE.test(haystack) ? 150 : 0)
       - Math.min(20, a.title.length / 5);
     scored.push({ url: a.url, title: a.title, score });
   }
-  return scored.sort((x, y) => y.score - x.score);
+  scored.sort((x, y) => y.score - x.score);
+  // אם יש ולו עמוד אחד שאינו ארכיון/תוצאות — לא יורדים לארכיון בכלל
+  const live = scored.filter(x => x.score > 0);
+  return live.length ? live : scored;
 }
 
 const RSS_ITEM_RE = /<(item|entry)\b[\s\S]*?<\/\1>/gi;
