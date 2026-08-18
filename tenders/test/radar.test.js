@@ -659,3 +659,29 @@ test('לכל מכרז שנושר יש סיבה מסווגת', () => {
   }
   for (const why of Object.keys(R.DROP_LABELS)) assert.ok(R.DROP_LABELS[why], `לסיבה ${why} יש תיאור`);
 });
+
+// מכרז שניסוח שונה מבריח — "מערכות ניטור וידאו" במקום "מצלמות אבטחה" — מקבל
+// מהטקסונומיה ניקוד אפס, לא "כמעט". מדידה על נתונים אמיתיים החזירה 0 מועמדים
+// כשהסף היה 2, ולכן הסף הוא 0: המועמד נשמר על סמך שער המכרז, לא על סמך ניקוד.
+test('פרסום שהוא מכרז אבל בלי נושא נשמר כמועמד לבדיקה', () => {
+  const src = { id: 's', name: 'מקור', allTenders: true };
+  const item = { title: 'מכרז לאספקה והתקנה של מערכות ניטור וידאו במוסדות העירייה',
+                 url: 'https://x.muni.il/t/1', context: '' };
+
+  assert.strictEqual(R.classify(item.title, KW).topics.length, 0, 'הטקסונומיה לא נותנת לו נושא');
+  assert.strictEqual(R.buildRecord(item, src, KW), null, 'בלי המצב הזה הוא נדחה כרגיל');
+
+  const cand = R.buildRecord(item, src, KW, { near: true });
+  assert.ok(cand, 'עם near:true הוא נשמר');
+  assert.strictEqual(cand.near, true, 'ומסומן כמועמד ולא כמכרז מלא');
+  assert.deepStrictEqual(cand.topics, [], 'בלי נושא');
+
+  // מה שאינו מכרז כלל אינו הופך למועמד גם במצב הזה
+  assert.strictEqual(R.buildRecord({ title: 'בית הספר לתקשורת חזותית', url: 'https://x.ac.il/d', context: '' },
+    { id: 's', name: 'מקור' }, KW, { near: true }), null, 'שער המכרז עדיין חוסם');
+
+  // מכרז שעבר את הסף נשאר מכרז רגיל ולא מועמד
+  const real = R.buildRecord({ title: 'מכרז לאספקת ציוד תקשורת ומתגים', url: 'https://x.muni.il/t/2', context: '' },
+    src, KW, { near: true });
+  assert.ok(real && !real.near, 'מכרז מסווג אינו מועמד');
+});

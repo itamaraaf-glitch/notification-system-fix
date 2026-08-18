@@ -837,13 +837,15 @@ async function main() {
       for (const t of droppedSample[why].slice(0, 3)) console.error(`          · ${t}`);
     }
   }
-  // כמעט־התאמות: הגבוהות בניקוד, ורק כאלה שאינן כבר בראדאר
+  // מועמדים לבדיקה: רק כאלה שאפשר להגיש אליהם. בלי הסינון הזה הרשימה מתמלאת
+  // בארכיון של כל מכרזי הגינון והבנייה מכל המקורות, ואין בה שום ערך.
   const inRadar = new Set(merged.map(t => t.id));
-  const nearList = [...nearMisses.values()]
-    .filter(r => !inRadar.has(r.id))
-    .sort((a, b) => (b.score || 0) - (a.score || 0))
+  const nearAll = [...nearMisses.values()].filter(r => !inRadar.has(r.id));
+  const nearActionable = nearAll.filter(isActionable);
+  const nearList = nearActionable
+    .sort((a, b) => (b.score || 0) - (a.score || 0) || String(b.deadlineAt || '').localeCompare(String(a.deadlineAt || '')))
     .slice(0, +(process.env.TENDERS_NEAR_LIMIT || 40));
-  if (nearList.length) console.error(`\n🔎 ${nearList.length} "כמעט התאמות" נשמרו לבדיקה`);
+  console.error(`\n🔎 מועמדים לבדיקה: ${nearAll.length} בלי נושא, מתוכם ${nearActionable.length} פתוחים להגשה, נשמרו ${nearList.length}`);
 
   const payload = {
     generatedAt: new Date().toISOString(),
@@ -1217,10 +1219,12 @@ function buildRecord(item, source, kw, opts = {}) {
 
   // הסיווג נעשה על הכותרת והתקציר בלבד, כדי שהקשר הדף לא ייצור התאמות שווא
   const cls = classify(titleAndSummary, kw);
-  // "כמעט התאמה": מכרז אמיתי שנגע במילות המפתח אבל לא הגיע לסף. אלה בדיוק
-  // המכרזים שניסוח שונה מבריח — "מערכות ניטור וידאו" במקום "מצלמות אבטחה" —
-  // ולכן הם נשמרים בנפרד לבדיקה (ידנית, או אוטומטית על ידי מודל).
-  const near = !cls.blocked && cls.topics.length === 0 && cls.score >= (kw.nearMissMin || 2);
+  // "מועמד לבדיקה": פרסום שעבר את שער "האם זה מכרז" אבל הטקסונומיה לא נתנה לו
+  // נושא. כאן בדיוק יושבים המכרזים שניסוח שונה מבריח — "מערכות ניטור וידאו"
+  // במקום "מצלמות אבטחה", "שדרוג תשתיות מיתוג" במקום "מתגים". מדידה הראתה
+  // שלרובם הניקוד הוא אפס ולא "כמעט": מילות המפתח לא נוגעות בהם בכלל, ולכן סף
+  // ניקוד היה מחמיץ בדיוק את מה שהוא נועד לתפוס.
+  const near = !cls.blocked && cls.topics.length === 0 && cls.score >= (kw.nearMissMin || 0);
   if (cls.blocked || (cls.topics.length === 0 && !(opts.near && near))) return null;
 
   // סוג פרסום שאינו מכרז להגשה (הודעת פטור, כוונה להתקשר) אינו נכנס לראדאר כלל
