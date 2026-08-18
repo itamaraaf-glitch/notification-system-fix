@@ -407,25 +407,28 @@ async function adapterDiscover(source) {
   }
 
   const homeHtml = await fetchText(start);
-  const links = findTenderLinks(homeHtml, finalUrlOf(start)).slice(0, source.maxPages || 2);
-  if (!links.length) throw new Error('לא נמצא קישור לעמוד מכרזים בדף הבית');
+  const candidates = findTenderLinks(homeHtml, finalUrlOf(start));
+  if (!candidates.length) throw new Error('לא נמצא קישור לעמוד מכרזים בדף הבית');
 
+  const wanted = source.maxPages || 2;
   const items = [];
   const warnings = [];
-  let ok = 0;
-  for (const link of links) {
+  const used = [];
+  // מנסים לפי סדר העדיפות ועוברים לבא בתור כשעמוד לא נטען, במקום לוותר על המקור
+  for (const link of candidates.slice(0, wanted + 3)) {
+    if (used.length >= wanted) break;
     await sleep(POLITE_DELAY_MS);
     try {
       const html = await fetchText(link.url);
-      ok++;
+      used.push(link.url);
       for (const a of harvestAnchors(html, finalUrlOf(link.url))) items.push(itemFromAnchor(a));
     } catch (e) {
       warnings.push(`${shortUrl(link.url)} — ${(e && e.message) || e}`);
     }
   }
-  if (!ok) throw new Error('עמוד המכרזים שאותר לא נטען: ' + warnings.join(' | '));
+  if (!used.length) throw new Error('עמוד המכרזים שאותר לא נטען: ' + warnings.join(' | '));
   items.warnings = warnings;
-  items.discovered = links.map(l => l.url);
+  items.discovered = used;
   return items;
 }
 
@@ -537,10 +540,10 @@ function findTenderLinks(html, baseUrl) {
     }
   }
 
-  scored.sort((x, y) => y.score - x.score);
-  // אם יש ולו עמוד אחד שאינו ארכיון/תוצאות — לא יורדים לארכיון בכלל
-  const live = scored.filter(x => x.score > 0);
-  return live.length ? live : scored;
+  // הדירוג הוא סדר הניסיון, לא סינון: עמוד חי נבדק ראשון, ועמוד ארכיון או
+  // דרושים נשאר בסוף התור. באתר הדסה האקדמית סינון מוחלט הפך את המקור לכושל
+  // כשהמועמד המועדף החזיר 404 — עדיף לנסות את הבא בתור מאשר לאבד את המקור.
+  return scored.sort((x, y) => y.score - x.score);
 }
 
 const RSS_ITEM_RE = /<(item|entry)\b[\s\S]*?<\/\1>/gi;

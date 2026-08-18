@@ -275,13 +275,15 @@ test('הגילוי מעדיף מכרזים פעילים ולא יורד לתוצ
     <a href="/bids/">מכרזים</a>
     <a href="/active-bids/">מכרזים פעילים</a>
     <a href="/michrazim-protocols/">פרוטוקולים של ועדת מכרזים</a>`;
-  const links = R.findTenderLinks(html, 'https://www.x.muni.il/');
-  const urls = links.map(l => l.url);
-  assert.ok(urls[0].endsWith('/bids/'), 'עמוד המכרזים הראשי נבחר ראשון');
-  assert.ok(!urls.some(u => /results|archive|protocol/.test(u)),
-    'תוצאות, ארכיון ופרוטוקולים אינם נבחרים כשיש חלופה חיה: ' + urls.join(' , '));
+  const urls = R.findTenderLinks(html, 'https://www.x.muni.il/').map(l => l.url);
+  assert.ok(urls[0].endsWith('/bids/'), 'עמוד המכרזים הראשי נוסה ראשון');
+  assert.ok(urls[1].endsWith('/active-bids/'), 'ואחריו "מכרזים פעילים"');
+  // תוצאות וארכיון נשארים בתור אבל בסופו — הדירוג הוא סדר ניסיון, לא סינון
+  const archiveAt = urls.findIndex(u => /results|archive|protocol/.test(u));
+  const liveAt = urls.findIndex(u => /\/bids\//.test(u));
+  assert.ok(archiveAt > liveAt, 'ארכיון ותוצאות בסוף התור: ' + urls.join(' , '));
 
-  // כשאין חלופה — עדיף עמוד תוצאות מכלום, אבל הוא לא מדורג ראשון בטעות
+  // כשאין חלופה — עדיף עמוד תוצאות מכלום
   const onlyArchive = R.findTenderLinks('<a href="/tenders-results/">תוצאות מכרזים</a>',
     'https://www.x.muni.il/');
   assert.strictEqual(onlyArchive.length, 1, 'בהיעדר חלופה עדיין מוחזר משהו');
@@ -302,13 +304,12 @@ test('הגילוי מדלג על קישור לעמוד עצמו ועל דפי ד
   assert.ok(!urls.some(u => R.isSiteRoot(u)),
     'שורש האתר אינו נבחר כעמוד מכרזים: ' + urls.join(' , '));
   assert.ok(urls[0].endsWith('/bidding'), 'עמוד המכרזים נבחר ראשון');
-  assert.ok(!urls.some(u => u.includes('/careers/')), 'עמוד דרושים בלבד אינו נבחר');
+  assert.ok(!urls[0].includes('/careers/'), 'עמוד דרושים בלבד אינו נבחר ראשון');
   // הדסה האקדמית: הנתיב מכיל "דרושים-ומכרזים" אבל העמוד עצמו הוא "דרושים-במכללה"
   const hac = R.findTenderLinks(
     '<a href="/דרושים-ומכרזים/דרושים-במכללה/">דרושים ומכרזים</a><a href="/tenders/">מכרזים</a>',
     'https://www.hac.ac.il/').map(l => decodeURIComponent(l.url));
-  assert.ok(hac[0].endsWith('/tenders/'), 'עמוד המכרזים נבחר, לא עמוד הדרושים: ' + hac.join(' , '));
-  assert.ok(!hac.some(u => u.includes('דרושים-במכללה')), 'עמוד דרושים לפי שם העמוד נפסל');
+  assert.ok(hac[0].endsWith('/tenders/'), 'עמוד המכרזים נוסה ראשון, לא עמוד הדרושים: ' + hac.join(' , '));
   assert.ok(urls.some(u => u.includes('michrazim-vedrushim')),
     'עמוד משולב "מכרזים ודרושים" כן נשאר — ברשויות רבות זה אותו עמוד');
 
@@ -332,4 +333,24 @@ test('מדור מכרזים נוסף כמועמד כשהקישור מוביל ל
     'מדור שאינו מכרזי אינו מועמד');
   assert.strictEqual(R.tenderSectionParent('https://x.co.il/tenders/'), '',
     'אין הורה כשהעמוד עצמו הוא המדור');
+});
+
+// המועמד המועדף עלול להחזיר 404 — כך קרה באתר הדסה האקדמית, שם עמוד המדור
+// שנוסף כמועמד אינו קיים. במקרה כזה עוברים למועמד הבא במקום לאבד את המקור.
+test('גילוי עובר למועמד הבא כשהמועדף לא נטען', async () => {
+  // "מכרזים" כטקסט מדויק הוא המועמד המדורג ראשון — וכאן הוא שבור
+  const HOME_TWO = `<a href="/missing-tenders/">מכרזים</a>
+                    <a href="/he/business/michrazim">עמוד המכרזים של הרשות</a>`;
+  const srv = await startServer({ '/': HOME_TWO, '/he/business/michrazim': TENDERS });
+  const base = `http://127.0.0.1:${srv.address().port}`;
+  try {
+    const items = await R.adapterDiscover({
+      id: 'f', name: 'מועמד ראשון שבור', kind: 'discover', home: base + '/', maxPages: 1
+    });
+    assert.deepStrictEqual(items.discovered, [base + '/he/business/michrazim'],
+      'העמוד שנטען בפועל הוא זה שנרשם');
+    assert.ok(items.length >= 3, 'הפריטים נקצרו מהמועמד השני');
+    assert.ok(items.warnings.some(w => w.includes('missing-tenders')),
+      'הכישלון של המועמד הראשון מדווח כאזהרה');
+  } finally { srv.close(); }
 });
