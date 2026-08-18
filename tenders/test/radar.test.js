@@ -650,7 +650,8 @@ test('לכל מכרז שנושר יש סיבה מסווגת', () => {
   assert.strictEqual(R.dropReason({ deadlineAt: '', status: 'פורסם', publishedAt: today }), '',
     'בלי מועד אבל פורסם היום ומסומן פעיל — נכנס');
   assert.strictEqual(R.dropReason({ deadlineAt: '', status: 'פורסם', publishedAt: old }), 'stale');
-  assert.strictEqual(R.dropReason({ deadlineAt: '', status: 'פורסם', publishedAt: '' }), 'stale');
+  assert.strictEqual(R.dropReason({ deadlineAt: '', status: 'פורסם', publishedAt: '' }), 'undated',
+    'בלי תאריך פרסום זה "לא ידוע" ולא "ישן" — ההפרדה נדרשת כדי לדעת מה הסינון מוריד');
 
   // isActionable נשאר העטיפה של אותה החלטה — שתי הפונקציות לא יכולות להיפרד
   for (const rec of [{ deadlineAt: future }, { deadlineAt: past }, { deadlineAt: '', status: 'פורסם', publishedAt: today }]) {

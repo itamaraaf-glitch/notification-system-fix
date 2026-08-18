@@ -820,13 +820,14 @@ async function main() {
     const why = dropReason(rec);
     if (!why) return true;
     dropped[why] = (dropped[why] || 0) + 1;
-    if (!droppedSample[why]) droppedSample[why] = rec.title.slice(0, 80);
+    (droppedSample[why] = droppedSample[why] || []).push(rec.title.slice(0, 70));
     return false;
   });
   if (beforeFilter !== merged.length) {
     console.error(`\n🗂  הוסרו ${beforeFilter - merged.length} מכרזים שאי אפשר להגיש אליהם:`);
     for (const [why, n] of Object.entries(dropped).sort((a, b) => b[1] - a[1])) {
-      console.error(`     ${n} — ${DROP_LABELS[why] || why}   (לדוגמה: ${droppedSample[why]})`);
+      console.error(`     ${n} — ${DROP_LABELS[why] || why}`);
+      for (const t of droppedSample[why].slice(0, 3)) console.error(`          · ${t}`);
     }
   }
   const payload = {
@@ -1156,7 +1157,8 @@ function isActionable(rec) {
  */
 const DROP_LABELS = {
   expired: 'מועד ההגשה חלף',
-  stale: 'בלי מועד, ופורסם לפני יותר מ-' + 90 + ' יום',
+  stale: 'בלי מועד, ופורסם לפני יותר מ-' + FRESH_WITHOUT_DEADLINE_DAYS + ' יום',
+  undated: 'סטטוס פעיל אבל בלי מועד ובלי תאריך פרסום',
   unknown: 'בלי מועד ובלי סטטוס פעיל במקור'
 };
 function dropReason(rec) {
@@ -1165,7 +1167,10 @@ function dropReason(rec) {
     return (left === null || left >= 0) ? '' : 'expired';
   }
   if (!ACTIVE_STATUS_RE.test(rec.status || '')) return 'unknown';
-  const age = rec.publishedAt ? daysBetween(rec.publishedAt, today) : null;
+  // אין תאריך פרסום כלל — זה לא "ישן", זה "לא ידוע". הפרדה בין השניים נדרשת
+  // כדי לדעת אם הסינון מוריד ארכיון או מכרזים פתוחים שפשוט לא פרסמו תאריך.
+  if (!rec.publishedAt) return 'undated';
+  const age = daysBetween(rec.publishedAt, today);
   return (age !== null && age <= FRESH_WITHOUT_DEADLINE_DAYS) ? '' : 'stale';
 }
 
