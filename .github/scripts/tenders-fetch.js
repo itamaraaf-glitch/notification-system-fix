@@ -190,7 +190,10 @@ function classify(text, kw) {
     penalty,
     matched: [...new Set(matched)].slice(0, 12),
     negative: negHits,
-    blocked: penalty >= total
+    // חסום = מונחי השלילה גוברים על החיוביים. בלי הדרישה שיהיה קיזוז בפועל,
+    // טקסט בלי שום התאמה (0 מול 0) נחשב "חסום" — מה שהסתיר מכרזים שאין להם
+    // התאמה כלל, בדיוק אלה שסקירת ה-AI אמורה לשפוט.
+    blocked: penalty > 0 && penalty >= total
   };
 }
 

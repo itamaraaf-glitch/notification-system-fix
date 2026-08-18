@@ -685,3 +685,17 @@ test('פרסום שהוא מכרז אבל בלי נושא נשמר כמועמד 
     src, KW, { near: true });
   assert.ok(real && !real.near, 'מכרז מסווג אינו מועמד');
 });
+
+// "חסום" אמור לומר שמונחי השלילה גוברים על החיוביים. בלי הדרישה שיהיה קיזוז
+// בפועל, טקסט בלי שום התאמה (0 מול 0) נחשב חסום — וזה הסתיר בדיוק את הפרסומים
+// שאין להם התאמה כלל, אלה שסקירת ה-AI אמורה לשפוט.
+test('טקסט בלי שום התאמה אינו נחשב "חסום"', () => {
+  const none = R.classify('מכרז לאספקה והתקנה של מערכות ניטור וידאו', KW);
+  assert.strictEqual(none.score, 0);
+  assert.strictEqual(none.penalty, 0);
+  assert.strictEqual(none.blocked, false, 'אין מה לחסום כשאין מונחי שלילה');
+
+  const blocked = R.classify('מכרז לשירותי קלינאי תקשורת', KW);
+  assert.ok(blocked.penalty > 0, 'כאן יש מונח שלילה');
+  assert.strictEqual(blocked.blocked, true, 'והוא גובר על החיובי');
+});
