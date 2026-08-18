@@ -11,14 +11,28 @@
       "allTenders": true,
       "urls": [
         "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%AA%D7%A7%D7%A9%D7%95%D7%A8%D7%AA",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%A6%D7%99%D7%95%D7%93%20%D7%AA%D7%A7%D7%A9%D7%95%D7%A8%D7%AA",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%AA%D7%A7%D7%A9%D7%95%D7%91",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%98%D7%9C%D7%A4%D7%95%D7%A0%D7%99%D7%94",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%9E%D7%A8%D7%9B%D7%96%D7%99%D7%95%D7%AA",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%A1%D7%99%D7%91%D7%99%D7%9D%20%D7%90%D7%95%D7%A4%D7%98%D7%99%D7%99%D7%9D",
         "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%90%D7%91%D7%98%D7%97%D7%AA%20%D7%9E%D7%99%D7%93%D7%A2",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%A1%D7%99%D7%99%D7%91%D7%A8",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%94%D7%92%D7%A0%D7%AA%20%D7%A1%D7%99%D7%99%D7%91%D7%A8",
         "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%9E%D7%97%D7%A9%D7%95%D7%91",
-        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%A1%D7%99%D7%99%D7%91%D7%A8"
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%9E%D7%A2%D7%A8%D7%9B%D7%95%D7%AA%20%D7%9E%D7%99%D7%93%D7%A2",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%A8%D7%99%D7%A9%D7%95%D7%99%20%D7%AA%D7%95%D7%9B%D7%A0%D7%94",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%A9%D7%A8%D7%AA%D7%99%D7%9D",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%A9%D7%99%D7%A8%D7%95%D7%AA%D7%99%20%D7%A2%D7%A0%D7%9F",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%95%D7%99%D7%A8%D7%98%D7%95%D7%90%D7%9C%D7%99%D7%96%D7%A6%D7%99%D7%94",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%9E%D7%97%D7%A9%D7%91%D7%99%D7%9D%20%D7%A0%D7%99%D7%99%D7%93%D7%99%D7%9D",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&q=%D7%AA%D7%A9%D7%AA%D7%99%D7%95%D7%AA%20%D7%9E%D7%97%D7%A9%D7%95%D7%91"
       ],
       "_linkPatternReason": "כתובות המכרזים באתר מנהל הרכש אינן מכילות מילה מזהה אלא מזהה מספרי (/ilgstorefront/he/p/4000620724), ולכן השער הכללי דחה מכרזים אמיתיים.",
       "linkPattern": "/ilgstorefront/[a-z]{2}/p/\\d+",
       "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER",
-      "home": "https://mr.gov.il/ilgstorefront/he/"
+      "home": "https://mr.gov.il/ilgstorefront/he/",
+      "_queriesNote": "כל מונח הוא חיפוש נפרד באתר מנהל הרכש — בקשה אחת ליום למונח. זה המקור היחיד שמחזיר מכרזים פומביים עם מועדי הגשה, ולכן הרחבת המונחים כאן היא הדרך היעילה ביותר להגדיל כיסוי בלי לאבד דיוק."
     },
     {
       "id": "gov-il",
@@ -196,6 +210,86 @@
       "allTenders": false,
       "home": "https://www.eyz.org.il/",
       "searchUrl": "https://www.eyz.org.il/"
+    },
+    {
+      "id": "rail",
+      "name": "רכבת ישראל",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "kind": "discover",
+      "enabled": true,
+      "allTenders": false,
+      "home": "https://www.rail.co.il/",
+      "searchUrl": "https://www.rail.co.il/"
+    },
+    {
+      "id": "mekorot",
+      "name": "מקורות",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "kind": "discover",
+      "enabled": true,
+      "allTenders": false,
+      "home": "https://www.mekorot.co.il/",
+      "searchUrl": "https://www.mekorot.co.il/"
+    },
+    {
+      "id": "ports",
+      "name": "חברת נמלי ישראל",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "kind": "discover",
+      "enabled": true,
+      "allTenders": false,
+      "home": "https://www.israports.co.il/",
+      "searchUrl": "https://www.israports.co.il/"
+    },
+    {
+      "id": "ashdod-port",
+      "name": "נמל אשדוד",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "kind": "discover",
+      "enabled": true,
+      "allTenders": false,
+      "home": "https://www.ashdodport.co.il/",
+      "searchUrl": "https://www.ashdodport.co.il/"
+    },
+    {
+      "id": "haifa-port",
+      "name": "נמל חיפה",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "kind": "discover",
+      "enabled": true,
+      "allTenders": false,
+      "home": "https://www.haifaport.co.il/",
+      "searchUrl": "https://www.haifaport.co.il/"
+    },
+    {
+      "id": "post",
+      "name": "דואר ישראל",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "kind": "discover",
+      "enabled": true,
+      "allTenders": false,
+      "home": "https://www.israelpost.co.il/",
+      "searchUrl": "https://www.israelpost.co.il/"
+    },
+    {
+      "id": "bituach-leumi",
+      "name": "המוסד לביטוח לאומי",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "kind": "discover",
+      "enabled": true,
+      "allTenders": false,
+      "home": "https://www.btl.gov.il/",
+      "searchUrl": "https://www.btl.gov.il/"
+    },
+    {
+      "id": "clalit",
+      "name": "שירותי בריאות כללית",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "kind": "discover",
+      "enabled": true,
+      "allTenders": false,
+      "home": "https://www.clalit.co.il/",
+      "searchUrl": "https://www.clalit.co.il/"
     }
   ],
   "_manualComment": "אגרגטורים ומאגרים מסחריים/מוסדיים — מוצגים בממשק כקישורי חיפוש ידני ואינם נסרקים אוטומטית (מטעמי תנאי שימוש).",
