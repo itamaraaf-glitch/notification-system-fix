@@ -1,0 +1,11 @@
+{
+  "name": "notification-system-fix",
+  "private": true,
+  "description": "CRM + ראדאר מכרזים. הסורק עצמו חסר תלויות; החבילה נדרשת רק לסקירת ה-AI האופציונלית.",
+  "scripts": {
+    "test": "node --test tenders/test/radar.test.js tenders/test/report.test.js tenders/test/discover.test.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.70.0"
+  }
+}

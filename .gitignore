@@ -1,3 +1,5 @@
 node_modules/
-package-lock.json
-package.json
+
+# package.json ו-package-lock.json היו מנוטרלים כשהמאגר היה חסר תלויות לגמרי.
+# סקירת ה-AI האופציונלית של ראדאר המכרזים דורשת את @anthropic-ai/sdk, ולכן שני
+# הקבצים מנוהלים בגרסאות — בלעדיהם npm ci בריצת ה-Actions אינו יכול לעבוד.

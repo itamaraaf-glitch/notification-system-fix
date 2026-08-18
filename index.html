@@ -7273,6 +7273,9 @@ function _radarRender(){
     // סוג הפרסום — פטור ממכרז או קול קורא אינם מכרז פומבי להגשה, וחשוב לדעת לפני שנכנסים
     const kindLbl=((_radar&&_radar.kindLabels)||{})[t.kind]||'';
     const kindTag=(t.kind&&t.kind!=='tender'&&kindLbl)?`<span class="rdr-kindtag">${esc(kindLbl)}</span>`:'';
+    // מכרז שנכנס בזכות סקירת AI ולא בזכות מילת מפתח — חשוב שיהיה גלוי, כי רמת
+    // הוודאות שונה והמשתמש צריך לדעת על סמך מה הוא נכנס
+    const aiTag=t.aiMatched?`<span class="rdr-kindtag" style="background:rgba(6,214,160,.16);color:#06d6a0;border-color:rgba(6,214,160,.45)" title="${esc(t.aiReason||'זוהה כרלוונטי בסקירת AI')}">🤖 זוהה ע״י AI</span>`:'';
     return `<div class="rdr-card ${hidden?'dim':''}" style="border-right-color:${m0.color}">
       <div class="rdr-ctop">
         <div class="rdr-ctitle">${u?`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t.title)}</a>`:esc(t.title)}</div>
@@ -7285,7 +7288,7 @@ function _radarRender(){
         <span>מקור: <b>${esc(t.sourceName||t.source||'–')}</b></span>
         <span>רלוונטיות: <b>${t.score||0}</b></span>
       </div>
-      <div class="rdr-tags">${pill}${kindTag}${tags}${kws}</div>
+      <div class="rdr-tags">${pill}${kindTag}${aiTag}${tags}${kws}</div>
       <div class="rdr-cact">
         ${inCrm?'<span class="rdr-incrm">✓ במערכת</span>'
                :`<label class="rdr-pick"><input type="checkbox" ${_radarPick.has(t.id)?'checked':''} onchange="_radarTogglePick('${esc(t.id)}',this.checked)"> בחר</label>
@@ -7348,6 +7351,26 @@ function _radarRender(){
     <div class="tw"><div class="tscroll"><table><thead><tr><th>מכרז</th><th>מפרסם</th><th>נמחק בתאריך</th><th></th></tr></thead><tbody>${delRows}</tbody></table></div></div>
     <button class="btn btns" style="margin-top:11px" onclick="_radarRestoreAll()">↩ שחזר את כולם</button></details>`:'';
 
+  /* ── כמעט התאמות ──
+     מכרזים שנגעו במילות המפתח אבל לא הגיעו לסף. בדרך כלל הם באמת לא רלוונטיים,
+     אבל בדיוק כאן מסתתר מכרז שנוסח אחרת — "מערכות ניטור וידאו" במקום "מצלמות
+     אבטחה". כשמוגדר מפתח API, סקירת AI מכריעה לגביהם אוטומטית לפני התצוגה. */
+  const nears=(_radar.nearMisses||[]).filter(t=>!_radarHidden.has(t.id));
+  const nearRows=nears.map(t=>{const u=safeUrl(t.url);
+    return `<tr><td><b>${u?`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t.title)}</a>`:esc(t.title)}</b></td>
+      <td style="color:var(--text3)">${esc(t.publisher||t.sourceName||'–')}</td>
+      <td style="color:var(--text3)">${esc((t.matched||[]).slice(0,3).join(', ')||'–')}</td>
+      <td><b>${t.score||0}</b></td>
+      <td><button class="btn btns" onclick="_radarDelete('${esc(t.id)}')" title="לא רלוונטי — הסתרה מהרשימה">🗑</button></td></tr>`;
+  }).join('');
+  const aiOn=!!_radar.aiReviewedAt;
+  const nearPanel=nears.length?`<details class="rdr-panel"><summary>🔎 כמעט התאמות <span style="font-size:10.5px;font-weight:400;color:var(--text3)">— ${nears.length}</span></summary>
+    <p style="font-size:11px;color:var(--text2);margin:12px 0 10px;line-height:1.7">
+      פרסומים שנגעו במילות המפתח אבל לא הגיעו לסף הרלוונטיות. לרוב הם באמת אינם בתחום — אבל כאן
+      מסתתר מכרז שנוסח אחרת, למשל "מערכות ניטור וידאו" במקום "מצלמות אבטחה".
+      ${aiOn?'סקירת ה-AI כבר עברה עליהם ואישרה את מה שהיה רלוונטי.':'סקירת AI אינה פעילה — הרשימה כאן לסריקת עין מהירה.'}</p>
+    <div class="tw"><div class="tscroll"><table><thead><tr><th>פרסום</th><th>מפרסם</th><th>מילים שנמצאו</th><th>ניקוד</th><th></th></tr></thead><tbody>${nearRows}</tbody></table></div></div></details>`:'';
+
   const failed=srcs.filter(s=>!s.ok).length;
   const upd=gen?(db(gen,nd())===0?'עודכן היום':db(gen,nd())===1?'עודכן אתמול':'עודכן '+fmtDate(gen)):'טרם הורץ';
   const pickN=[..._radarPick].filter(id=>all.some(t=>t.id===id&&!_radarInCrm(t))).length;
@@ -7387,7 +7410,7 @@ function _radarRender(){
       <button class="btn btns" onclick="addSelectedFromRadar()" style="border-color:#06d6a0;color:#06d6a0">➕ הוסף את הנבחרים למכרזים</button>
       <button class="btn btns" onclick="_radarDeleteSelected()" style="border-color:#e63946;color:#e63946">🗑 מחק את הנבחרים</button>
       <button class="btn btns" onclick="_radarClearPick()">✕ ניקוי בחירה</button></div>`:''}
-    ${delPanel}${srcPanel}${authPanel}${mlPanel}`;
+    ${nearPanel}${delPanel}${srcPanel}${authPanel}${mlPanel}`;
 }
 
 /** שם המשתמש המחובר — כדי שרשומה שנוספת מהראדאר לא תגיע בלי מטפל */

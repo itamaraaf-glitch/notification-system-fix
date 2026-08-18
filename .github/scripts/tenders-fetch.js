@@ -747,6 +747,7 @@ async function main() {
 
   const status = [];
   const found = new Map();
+  const nearMisses = new Map();
 
   const skipped = [];
   const scanOne = async (source) => {
@@ -761,8 +762,14 @@ async function main() {
         `חריגה מזמן הסריקה של המקור (${Math.round(sourceBudget(source) / 1000)} שניות)`);
       let kept = 0;
       for (const item of raw) {
-        const rec = buildRecord(item, source, kw);
+        const rec = buildRecord(item, source, kw, { near: true });
         if (!rec) continue;
+        // כמעט־התאמה אינה נכנסת לראדאר עצמו — היא נשמרת בצד לבדיקה
+        if (rec.near) {
+          const prev = nearMisses.get(rec.id);
+          if (!prev || rec.score > prev.score) nearMisses.set(rec.id, rec);
+          continue;
+        }
         if (kept >= MAX_PER_SOURCE) break;
         // בבחירה בין כפילויות — שומרים את הרשומה עם הניקוד הגבוה יותר
         const existing = found.get(rec.id);
@@ -830,6 +837,14 @@ async function main() {
       for (const t of droppedSample[why].slice(0, 3)) console.error(`          · ${t}`);
     }
   }
+  // כמעט־התאמות: הגבוהות בניקוד, ורק כאלה שאינן כבר בראדאר
+  const inRadar = new Set(merged.map(t => t.id));
+  const nearList = [...nearMisses.values()]
+    .filter(r => !inRadar.has(r.id))
+    .sort((a, b) => (b.score || 0) - (a.score || 0))
+    .slice(0, +(process.env.TENDERS_NEAR_LIMIT || 40));
+  if (nearList.length) console.error(`\n🔎 ${nearList.length} "כמעט התאמות" נשמרו לבדיקה`);
+
   const payload = {
     generatedAt: new Date().toISOString(),
     generatedDate: today,
@@ -837,7 +852,8 @@ async function main() {
     kindLabels: KIND_LABELS,
     manualLinks: cfg.manualLinks || [],
     manualAuthorities: cfg.manualAuthorities || [],
-    counts: { ...summarize(merged), dropped, droppedLabels: DROP_LABELS },
+    counts: { ...summarize(merged), dropped, droppedLabels: DROP_LABELS, near: nearList.length },
+    nearMisses: nearList,
     sources: status,
     tenders: merged
   };
@@ -1185,7 +1201,7 @@ function extractPublisher(context) {
   return m ? m[1].trim() : '';
 }
 
-function buildRecord(item, source, kw) {
+function buildRecord(item, source, kw, opts = {}) {
   const haystack = `${item.title} ${item.summary || ''} ${item.context || ''}`;
   const titleAndSummary = `${item.title} ${item.summary || ''}`;
 
@@ -1201,7 +1217,11 @@ function buildRecord(item, source, kw) {
 
   // הסיווג נעשה על הכותרת והתקציר בלבד, כדי שהקשר הדף לא ייצור התאמות שווא
   const cls = classify(titleAndSummary, kw);
-  if (cls.blocked || cls.topics.length === 0) return null;
+  // "כמעט התאמה": מכרז אמיתי שנגע במילות המפתח אבל לא הגיע לסף. אלה בדיוק
+  // המכרזים שניסוח שונה מבריח — "מערכות ניטור וידאו" במקום "מצלמות אבטחה" —
+  // ולכן הם נשמרים בנפרד לבדיקה (ידנית, או אוטומטית על ידי מודל).
+  const near = !cls.blocked && cls.topics.length === 0 && cls.score >= (kw.nearMissMin || 2);
+  if (cls.blocked || (cls.topics.length === 0 && !(opts.near && near))) return null;
 
   // סוג פרסום שאינו מכרז להגשה (הודעת פטור, כוונה להתקשר) אינו נכנס לראדאר כלל
   const kind = detectKind(item.title, item.url);
@@ -1221,6 +1241,7 @@ function buildRecord(item, source, kw) {
 
   return {
     id,
+    near: cls.topics.length === 0 ? true : undefined,
     title: item.title.trim(),
     url: item.url,
     source: source.id,

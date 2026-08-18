@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: בדיקות ליבת הראדאר
-        run: node --test tenders/test/radar.test.js tenders/test/report.test.js tenders/test/discover.test.js
+        run: node --test tenders/test/radar.test.js tenders/test/report.test.js tenders/test/discover.test.js tenders/test/ai.test.js
 
       # מצב אבחון: מריץ רק את ההדפסה ומדלג על שמירה ודיווח
       - name: אבחון מקור
@@ -65,6 +65,20 @@ jobs:
           else
             node .github/scripts/tenders-fetch.js
           fi
+
+      # סקירת AI ל"כמעט התאמות" — רצה רק אם הוגדר סוד ANTHROPIC_API_KEY.
+      # בלעדיו הצעד מדלג את עצמו והראדאר עובד בדיוק כמו קודם.
+      - name: התקנת תלויות לסקירת AI
+        if: inputs.debug == '' && inputs.probe == '' && env.ANTHROPIC_API_KEY != ''
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: npm ci --omit=dev
+
+      - name: סקירת AI למכרזים שכמעט נכנסו
+        if: inputs.debug == '' && inputs.probe == '' && env.ANTHROPIC_API_KEY != ''
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node .github/scripts/tenders-ai.js
 
       - name: סיכום הריצה
         if: inputs.debug == '' && inputs.probe == ''

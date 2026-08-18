@@ -257,6 +257,16 @@ footer{text-align:center;font-size:10.5px;color:var(--text3);margin-top:26px;lin
 
   <div id="results" class="results"></div>
 
+  <details class="panel" id="nearpanel" style="display:none">
+    <summary>🔎 כמעט התאמות <span id="nearcount" style="font-size:11px;font-weight:400;color:var(--text3)"></span></summary>
+    <p style="font-size:11.5px;color:var(--text2);margin-bottom:11px;line-height:1.7">
+      פרסומים שנגעו במילות המפתח אבל לא הגיעו לסף הרלוונטיות. לרוב הם באמת אינם בתחום — אבל
+      כאן מסתתר מכרז שנוסח אחרת, למשל "מערכות ניטור וידאו" במקום "מצלמות אבטחה".
+      <span id="nearai"></span>
+    </p>
+    <div id="neartable"></div>
+  </details>
+
   <details class="panel" id="delpanel" style="display:none">
     <summary>🗑 מכרזים שנמחקו <span id="delcount" style="font-size:11px;font-weight:400;color:var(--text3)"></span></summary>
     <p style="font-size:11.5px;color:var(--text2);margin-bottom:11px;line-height:1.7">
@@ -578,6 +588,7 @@ function visible(){
 /* ── רינדור ── */
 function render(){
   renderKpis();
+  renderNear();
   renderDeleted();
   const list = visible();
   const box = $('results');
@@ -630,6 +641,33 @@ function kindBreakdown(list){
 }
 
 /** פאנל המכרזים שנמחקו — מחיקה היא החלטה של המשתמש ולכן היא הפיכה */
+/** פאנל "כמעט התאמות" — מה שהסינון פסל בקושי, לסריקת עין או לסקירת AI */
+function renderNear(){
+  const rows = (DATA.nearMisses || []).filter(t => !isDeleted(t.id));
+  const panel = $('nearpanel');
+  if(!rows.length){ panel.style.display = 'none'; return; }
+  panel.style.display = '';
+  $('nearcount').textContent = `— ${rows.length}`;
+  $('nearai').textContent = DATA.aiReviewedAt
+    ? 'סקירת ה-AI כבר עברה עליהם ואישרה את מה שהיה רלוונטי.'
+    : 'סקירת AI אינה פעילה — הרשימה כאן לסריקת עין מהירה.';
+  $('neartable').innerHTML = `<div class="tw"><table>
+    <thead><tr><th>פרסום</th><th>מפרסם</th><th>מילים שנמצאו</th><th>ניקוד</th><th></th></tr></thead>
+    <tbody>${rows.map(t => { const u = safeUrl(t.url); return `<tr>
+      <td><b>${u ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t.title)}</a>` : esc(t.title)}</b></td>
+      <td style="color:var(--text3)">${esc(t.publisher || t.sourceName || '–')}</td>
+      <td style="color:var(--text3)">${esc((t.matched || []).slice(0, 3).join(', ') || '–')}</td>
+      <td><b>${t.score || 0}</b></td>
+      <td><button class="btn" data-neardrop="${esc(t.id)}" title="לא רלוונטי">🗑</button></td>
+    </tr>`; }).join('')}</tbody></table></div>`;
+  $('neartable').querySelectorAll('[data-neardrop]').forEach(btn => {
+    btn.onclick = () => {
+      deleted[btn.dataset.neardrop] = todayYmd();
+      saveDeleted(); toast('הוסר מהרשימה'); render();
+    };
+  });
+}
+
 function renderDeleted(){
   const rows = (DATA.tenders || []).filter(t => isDeleted(t.id));
   const panel = $('delpanel');
@@ -671,6 +709,13 @@ function renderKpis(){
       saveFilters(); render();
     };
   });
+}
+
+/** תווית למכרז שנכנס בזכות סקירת AI ולא בזכות מילת מפתח — רמת הוודאות שונה */
+function aiTag(t){
+  if(!t.aiMatched) return '';
+  return `<span class="rdr-kindtag" style="background:rgba(6,214,160,.16);color:#06d6a0;border-color:rgba(6,214,160,.45)"
+    title="${esc(t.aiReason || 'זוהה כרלוונטי בסקירת AI')}">🤖 זוהה ע״י AI</span>`;
 }
 
 function deadlinePill(t){
@@ -718,7 +763,7 @@ function cardHtml(t){
       <span>מקור: <b>${esc(t.sourceName || t.source || '–')}</b></span>
       <span>רלוונטיות: <b>${t.score || 0}</b></span>
     </div>
-    <div class="tags">${deadlinePill(t)}${kindTag}${topicTags}${kwTags}</div>
+    <div class="tags">${deadlinePill(t)}${kindTag}${aiTag(t)}${topicTags}${kwTags}</div>
     <div class="cact">
       <label class="pick"><input type="checkbox" data-pick="${esc(t.id)}" ${picked.has(t.id) ? 'checked' : ''}> בחר</label>
       ${url ? `<a class="btn" href="${esc(url)}" target="_blank" rel="noopener noreferrer">↗ פתח במקור</a>` : ''}
