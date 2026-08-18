@@ -263,10 +263,11 @@ footer{text-align:center;font-size:10.5px;color:var(--text3);margin-top:26px;lin
   </details>
 
   <details class="panel" id="authpanel" style="display:none">
-    <summary>🏛️ רשויות מקומיות – בדיקה ידנית <span id="authcount" style="font-size:11px;font-weight:400;color:var(--text3)"></span></summary>
+    <summary>🏛️ רשויות ומוסדות – בדיקה ידנית <span id="authcount" style="font-size:11px;font-weight:400;color:var(--text3)"></span></summary>
     <p style="font-size:11.5px;color:var(--text2);margin-bottom:11px;line-height:1.7">
-      אתרי הרשויות האלה חוסמים סריקה אוטומטית (403) או מסרבים חיבור מכתובות שרת. הן לא נסרקות —
-      אבל הקישורים כאן פותחים את אתר הרשות ישירות, לסריקה ידנית מהירה.
+      הרשויות המקומיות והמוסדות האקדמיים האלה נמדדו ולא ניתן לסרוק אותם אוטומטית: הם חוסמים
+      סריקה (403), אינם נענים מכתובת שרת, או שעמוד המכרזים שלהם אינו נגיש מדף הבית. הקישורים
+      כאן פותחים את עמוד המכרזים שלהם בלחיצה אחת, לבדיקה ידנית מהירה.
     </p>
     <div class="mlinks" id="authlinks"></div>
   </details>
@@ -744,7 +745,7 @@ function renderAuthorities(){
   const list = DATA.manualAuthorities || [];
   if(!list.length) return;
   $('authpanel').style.display = '';
-  $('authcount').textContent = `— ${list.length} רשויות`;
+  $('authcount').textContent = `— ${list.length} גופים`;
   $('authlinks').innerHTML = list.map(a => {
     const u = safeUrl(a.url);
     if(!u) return '';

@@ -7231,8 +7231,8 @@ function _radarRender(){
     // הקישור מוביל לעמוד המכרזים של הרשות ולא לדף הבית — האתרים חוסמים סריקה
     // ולכן אין בידינו את הנתיב, וחיפוש מתוחם לדומיין נוחת עליו בלחיצה אחת
     return u?`<a class="rdr-mlink" href="${esc(_tendersSearchUrl(u))}" target="_blank" rel="noopener noreferrer" title="חיפוש עמוד המכרזים באתר ${esc(a.name)}">${esc(a.name)}<small>מכרזים ↗</small></a>`:''}).join('');
-  const authPanel=auths?`<details class="rdr-panel"><summary>🏛️ רשויות מקומיות – בדיקה ידנית <span style="font-size:10.5px;font-weight:400;color:var(--text3)">— ${(_radar.manualAuthorities||[]).length} רשויות</span></summary>
-    <p style="font-size:11px;color:var(--text2);margin:12px 0 10px;line-height:1.7">אתרי הרשויות האלה חוסמים סריקה אוטומטית או מסרבים חיבור מכתובות שרת. הקישורים פותחים את אתר הרשות לבדיקה ידנית מהירה.</p>
+  const authPanel=auths?`<details class="rdr-panel"><summary>🏛️ רשויות ומוסדות – בדיקה ידנית <span style="font-size:10.5px;font-weight:400;color:var(--text3)">— ${(_radar.manualAuthorities||[]).length} גופים</span></summary>
+    <p style="font-size:11px;color:var(--text2);margin:12px 0 10px;line-height:1.7">הרשויות המקומיות והמוסדות האקדמיים האלה נמדדו ולא ניתן לסרוק אותם אוטומטית — חוסמים סריקה, אינם נענים מכתובת שרת, או שעמוד המכרזים שלהם אינו נגיש מדף הבית. הקישורים פותחים את עמוד המכרזים שלהם לבדיקה ידנית מהירה.</p>
     <div class="rdr-mlinks">${auths}</div></details>`:'';
 
   const mls=(_radar.manualLinks||[]).map(l=>{const u=safeUrl(l.url);

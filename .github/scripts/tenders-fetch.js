@@ -361,7 +361,9 @@ async function adapterDiscover(source) {
   const hinted = [];
   for (const url of (source.tendersUrls || [])) {
     try {
-      const html = await fetchText(url);
+      // רמז הוא ניחוש מושכל, לא מקור: בלי ניסיון חוזר, כדי שכתובת שגויה
+      // לא תבזבז את תקציב הזמן של הסריקה כולה
+      const html = await fetchText(url, { retries: 0 });
       const anchors = harvestAnchors(html, url);
       if (anchors.length) { hinted.push({ url, anchors }); break; }
     } catch (_) { /* רמז שלא נענה — ממשיכים לרמז הבא ואז לגילוי */ }
