@@ -7005,8 +7005,31 @@ function rMeetingsArchive(){
 let _radar=null,_radarErr='',_radarLoading=false;
 const _radarF={q:'',topics:new Set(),kinds:new Set(),cats:new Set(),source:'',sort:'deadline',onlyOpen:false,onlyNew:false,showHidden:false,kpi:''};
 let _radarPick=new Set();
-let _radarHidden=new Set((()=>{try{return JSON.parse(localStorage.getItem('crm_radar_hidden_v1'))||[]}catch(e){return[]}})());
-function _radarSaveHidden(){try{localStorage.setItem('crm_radar_hidden_v1',JSON.stringify([..._radarHidden]))}catch(e){}}
+/* ── מכרזים שנמחקו ──
+   מכרז שאינו רלוונטי נמחק מהראדאר ולא חוזר בסריקות הבאות. השמירה היא מפה של
+   מזהה → תאריך המחיקה, כדי שאפשר יהיה להציג מתי נמחק ולנקות מזהים ישנים שכבר
+   אינם קיימים בנתונים. המבנה הישן (מערך מזהים) מהוגר אוטומטית. */
+const _RADAR_DEL_KEY='crm_radar_hidden_v1';
+let _radarDeleted=(()=>{
+  try{
+    const raw=JSON.parse(localStorage.getItem(_RADAR_DEL_KEY));
+    if(Array.isArray(raw)){const m={};raw.forEach(id=>m[id]=''); return m;}   // מבנה ישן
+    return (raw&&typeof raw==='object')?raw:{};
+  }catch(e){return {};}
+})();
+const _radarHidden={ has:id=>Object.prototype.hasOwnProperty.call(_radarDeleted,id) };
+function _radarSaveHidden(){try{localStorage.setItem(_RADAR_DEL_KEY,JSON.stringify(_radarDeleted))}catch(e){}}
+/* מזהה שנמחק נשמר גם כשהמכרז אינו בנתונים הנוכחיים: מקור שנכשל ליום אחד מעלים
+   את המכרז מהסריקה, ואם היינו מוחקים את הרישום הוא היה חוזר למחרת כאילו לא נמחק.
+   הגידול נחסם בתקרה בלבד — כשעוברים אותה יורדות המחיקות הישנות ביותר. */
+const _RADAR_DEL_MAX=500;
+function _radarPruneDeleted(){
+  const ids=Object.keys(_radarDeleted);
+  if(ids.length<=_RADAR_DEL_MAX)return;
+  ids.sort((a,b)=>String(_radarDeleted[a]||'').localeCompare(String(_radarDeleted[b]||'')));
+  ids.slice(0,ids.length-_RADAR_DEL_MAX).forEach(id=>delete _radarDeleted[id]);
+  _radarSaveHidden();
+}
 
 async function rTenderRadar(){
   const box=document.getElementById('tenradar'); if(!box)return;
@@ -7054,10 +7077,41 @@ function _radarClear(){
   _radarF.kinds.clear();_radarF.cats.clear();_radarF.onlyOpen=false;_radarF.onlyNew=false;
   _radarRender();
 }
-function _radarToggleHide(id){
-  _radarHidden.has(id)?_radarHidden.delete(id):_radarHidden.add(id);
+/** מוחק מכרז מהראדאר. ההצגה חוזרת רק דרך שחזור מפורש. */
+function _radarDelete(id){
+  const t=((_radar&&_radar.tenders)||[]).find(x=>x.id===id);
+  _radarDeleted[id]=nd();
+  _radarPick.delete(id);
   _radarSaveHidden();
-  showToast(_radarHidden.has(id)?'🙈 המכרז הוסתר':'👁 ההסתרה בוטלה','info');
+  showToastWithAction('🗑 המכרז נמחק'+(t?': '+t.title.slice(0,40):''),'ביטול',()=>_radarRestore(id));
+  _radarRender();
+}
+function _radarRestore(id){
+  delete _radarDeleted[id];
+  _radarSaveHidden();
+  showToast('↩ המכרז שוחזר','ok');
+  _radarRender();
+}
+function _radarRestoreAll(){
+  const n=Object.keys(_radarDeleted).length;
+  if(!n)return;
+  const backup={..._radarDeleted};
+  _radarDeleted={};
+  _radarSaveHidden();
+  showToastWithAction(`↩ ${n} מכרזים שוחזרו`,'ביטול',()=>{_radarDeleted=backup;_radarSaveHidden();_radarRender();});
+  _radarRender();
+}
+/** מחיקת כל הנבחרים בבת אחת — הדרך המהירה לנקות רשימה שלמה שאינה רלוונטית */
+function _radarDeleteSelected(){
+  const ids=[..._radarPick];
+  if(!ids.length)return;
+  ids.forEach(id=>{_radarDeleted[id]=nd();});
+  _radarPick.clear();
+  _radarSaveHidden();
+  showToastWithAction(`🗑 ${ids.length} מכרזים נמחקו`,'ביטול',()=>{
+    ids.forEach(id=>delete _radarDeleted[id]);
+    _radarSaveHidden();_radarRender();
+  });
   _radarRender();
 }
 function _radarTogglePick(id,on){ on?_radarPick.add(id):_radarPick.delete(id); _radarRender(); }
@@ -7074,6 +7128,7 @@ function _radarCopy(id){
 
 function _radarRender(){
   const box=document.getElementById('tenradar'); if(!box)return;
+  _radarPruneDeleted();
 
   if(_radarErr){
     box.innerHTML=`<div class="rdr-empty"><div class="ico">📡</div><h4>לא ניתן לטעון את ממצאי הראדאר</h4>
@@ -7094,10 +7149,15 @@ function _radarRender(){
   const gen=_radar.generatedDate||'';
   const isNew=t=>t.firstSeen===gen;
 
+  /* מכרז שנמחק יוצא מכל הספירות — אריחים, שבבים ורשימת המקורות — ולא רק
+     מהרשימה עצמה. אחרת "פתוחים להגשה" היה סופר מכרזים שהמשתמש כבר פסל. */
+  const live=all.filter(t=>!_radarHidden.has(t.id));
+  const base=_radarF.showHidden?all:live;
+
   /* ── סוגי פרסום ──
      רוב הממצאים בפועל הם הודעות פטור ממכרז ולא מכרזים פומביים, ולכן "סה\"כ" לבדו
      מטעה. ההרכב מוצג באריח, והשבבים מאפשרים להישאר רק על מה שאפשר להגיש אליו. */
-  const kindCnt={}; all.forEach(t=>{const k=t.kind||'tender';kindCnt[k]=(kindCnt[k]||0)+1;});
+  const kindCnt={}; base.forEach(t=>{const k=t.kind||'tender';kindCnt[k]=(kindCnt[k]||0)+1;});
   const kindLabels=(_radar&&_radar.kindLabels)||{};
   const kindOrder=Object.keys(kindCnt).sort((a,b)=>a==='tender'?-1:b==='tender'?1:kindCnt[b]-kindCnt[a]);
   const kindChips=kindOrder.map(k=>{
@@ -7110,7 +7170,7 @@ function _radarRender(){
   /* ── מגזרים ──
      "מיקוד על המוניציפלי ומכללות" הוא בקשה חוזרת: מכרז של עירייה או מכללה הוא
      לקוח אחר לגמרי ממכרז של משרד ממשלתי. השבבים מאפשרים להישאר על מגזר אחד. */
-  const catCnt={}; all.forEach(t=>{const c=t.category||'אחר';catCnt[c]=(catCnt[c]||0)+1;});
+  const catCnt={}; base.forEach(t=>{const c=t.category||'אחר';catCnt[c]=(catCnt[c]||0)+1;});
   const CAT_ICON={'רשויות מקומיות':'🏛️','מוסדות אקדמיים':'🎓','ממשלה':'🏢','תשתיות':'🚧','חברות ממשלתיות וגופים גדולים':'🏭'};
   const catOrder=Object.keys(catCnt).sort((a,b)=>catCnt[b]-catCnt[a]);
   const catChips=catOrder.map(c=>{
@@ -7120,11 +7180,11 @@ function _radarRender(){
   }).join('');
 
   /* ── אריחי סיכום ── */
-  const openCnt=all.filter(t=>{const d=_radarDl(t.deadlineAt);return d!==null&&d>=0}).length;
-  const soonCnt=all.filter(t=>{const d=_radarDl(t.deadlineAt);return d!==null&&d>=0&&d<=7}).length;
-  const newCnt=all.filter(isNew).length;
+  const openCnt=base.filter(t=>{const d=_radarDl(t.deadlineAt);return d!==null&&d>=0}).length;
+  const soonCnt=base.filter(t=>{const d=_radarDl(t.deadlineAt);return d!==null&&d>=0&&d<=7}).length;
+  const newCnt=base.filter(isNew).length;
   const kpis=[
-    {k:'',cls:'',lb:'סה"כ במאגר',vl:all.length,sb:kindBreak||'כל המכרזים הרלוונטיים'},
+    {k:'',cls:'',lb:'סה"כ במאגר',vl:base.length,sb:kindBreak||'כל המכרזים הרלוונטיים'},
     {k:'new',cls:'k-new',lb:'חדשים בסריקה',vl:newCnt,sb:'התגלו בריצה האחרונה'},
     {k:'open',cls:'k-open',lb:'פתוחים להגשה',vl:openCnt,sb:'מועד ההגשה עוד לא חלף'},
     {k:'soon',cls:'k-soon',lb:'נסגרים בשבוע',vl:soonCnt,sb:'עד 7 ימים להגשה'}
@@ -7159,13 +7219,13 @@ function _radarRender(){
   rows.sort({deadline:byDl,score:(a,b)=>(b.score||0)-(a.score||0)||byDl(a,b),published:desc('publishedAt'),firstSeen:desc('firstSeen')}[_radarF.sort]||byDl);
 
   /* ── שבבי נושאים ומקורות ── */
-  const cnt={}; all.forEach(t=>(t.topics||[]).forEach(id=>cnt[id]=(cnt[id]||0)+1));
+  const cnt={}; base.forEach(t=>(t.topics||[]).forEach(id=>cnt[id]=(cnt[id]||0)+1));
   const chips=Object.keys((_radar&&_radar.topics)||{}).map(id=>{
     const m=_radarTopic(id),on=_radarF.topics.has(id);
     return `<span class="rdr-chip ${on?'on':''}" onclick="_radarToggleTopic('${id}')"
       style="${on?`background:${m.color};border-color:${m.color};color:#08101f`:''}">${m.icon} ${esc(m.label)} <span class="cnt">${cnt[id]||0}</span></span>`;
   }).join('');
-  const srcNames=new Map(); all.forEach(t=>{if(t.source)srcNames.set(t.source,t.sourceName||t.source)});
+  const srcNames=new Map(); base.forEach(t=>{if(t.source)srcNames.set(t.source,t.sourceName||t.source)});
   const srcOpts='<option value="">כל המקורות</option>'+[...srcNames].sort((a,b)=>a[1].localeCompare(b[1],'he'))
     .map(([id,n])=>`<option value="${esc(id)}" ${_radarF.source===id?'selected':''}>${esc(n)}</option>`).join('');
 
@@ -7202,7 +7262,8 @@ function _radarRender(){
                  <button class="btn btns" onclick="addTenderFromRadar('${esc(t.id)}')" title="הוספה לטבלת המכרזים" style="border-color:#06d6a0;color:#06d6a0">➕ הוסף למכרזים</button>`}
         ${u?`<a class="btn btns" href="${esc(u)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none">↗ פתח במקור</a>`:''}
         <button class="btn btns" onclick="_radarCopy('${esc(t.id)}')">📋 העתק</button>
-        <button class="btn btns" onclick="_radarToggleHide('${esc(t.id)}')">${hidden?'👁 בטל הסתרה':'🙈 הסתר'}</button>
+        ${hidden?`<button class="btn btns" onclick="_radarRestore('${esc(t.id)}')" style="border-color:#4cc9f0;color:#4cc9f0">↩ שחזר</button>`
+                :`<button class="btn btns" onclick="_radarDelete('${esc(t.id)}')" title="מחיקה מהראדאר — לא יחזור בסריקות הבאות" style="border-color:#e63946;color:#e63946">🗑 לא רלוונטי</button>`}
       </div></div>`;
   }).join('')||`<div class="rdr-empty"><div class="ico">🔍</div><h4>אין מכרזים שמתאימים לסינון</h4>
       <div>נסה לנקות את הסינון, להרחיב את הנושאים או לחפש מונח אחר.</div></div>`;
@@ -7241,6 +7302,22 @@ function _radarRender(){
     <p style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.7">אגרגטורים שאינם נסרקים אוטומטית — שווה מעבר ידני שבועי.</p>
     <div class="rdr-mlinks">${mls}</div></div>`:'';
 
+  /* ── מכרזים שנמחקו ──
+     מחיקה היא החלטה של המשתמש ולא של המערכת, ולכן היא הפיכה: הפאנל מציג מה נמחק
+     ומתי, ומאפשר שחזור פרטני או מלא. */
+  const delIds=Object.keys(_radarDeleted).filter(id=>all.some(t=>t.id===id));
+  const delRows=delIds.map(id=>{
+    const t=all.find(x=>x.id===id);
+    return `<tr><td><b>${esc(t.title)}</b></td>
+      <td style="color:var(--text3)">${esc(t.publisher||t.sourceName||'–')}</td>
+      <td style="color:var(--text3);white-space:nowrap">${_radarDeleted[id]?fmtDate(_radarDeleted[id]):'–'}</td>
+      <td><button class="btn btns" onclick="_radarRestore('${esc(id)}')">↩ שחזר</button></td></tr>`;
+  }).join('');
+  const delPanel=delIds.length?`<details class="rdr-panel"><summary>🗑 מכרזים שנמחקו <span style="font-size:10.5px;font-weight:400;color:var(--text3)">— ${delIds.length}</span></summary>
+    <p style="font-size:11px;color:var(--text2);margin:12px 0 10px;line-height:1.7">מכרזים שסימנת כלא רלוונטיים. הם אינם מופיעים ברשימה, לא נספרים באריחים ולא מייצרים התראות — אבל אפשר לשחזר אותם בכל רגע. המחיקה נשמרת בדפדפן הזה בלבד ואינה משפיעה על הסריקה עצמה.</p>
+    <div class="tw"><div class="tscroll"><table><thead><tr><th>מכרז</th><th>מפרסם</th><th>נמחק בתאריך</th><th></th></tr></thead><tbody>${delRows}</tbody></table></div></div>
+    <button class="btn btns" style="margin-top:11px" onclick="_radarRestoreAll()">↩ שחזר את כולם</button></details>`:'';
+
   const failed=srcs.filter(s=>!s.ok).length;
   const upd=gen?(db(gen,nd())===0?'עודכן היום':db(gen,nd())===1?'עודכן אתמול':'עודכן '+fmtDate(gen)):'טרם הורץ';
   const pickN=[..._radarPick].filter(id=>all.some(t=>t.id===id&&!_radarInCrm(t))).length;
@@ -7266,7 +7343,7 @@ function _radarRender(){
         <select onchange="_radarSetSource(this.value)">${srcOpts}</select>
         <label class="rdr-tgl"><input type="checkbox" ${_radarF.onlyOpen?'checked':''} onchange="_radarSetFlag('onlyOpen',this.checked)"> רק מכרזים פתוחים</label>
         <label class="rdr-tgl"><input type="checkbox" ${_radarF.onlyNew?'checked':''} onchange="_radarSetFlag('onlyNew',this.checked)"> רק חדשים</label>
-        <label class="rdr-tgl"><input type="checkbox" ${_radarF.showHidden?'checked':''} onchange="_radarSetFlag('showHidden',this.checked)"> הצג מוסתרים</label>
+        <label class="rdr-tgl"><input type="checkbox" ${_radarF.showHidden?'checked':''} onchange="_radarSetFlag('showHidden',this.checked)"> הצג גם מחוקים</label>
         <span style="flex:1"></span>
         <span style="font-size:10px;color:var(--text3)">${esc(upd)} · ${all.length} ממצאים${failed?` · ${failed} מקורות לא נסרקו`:''}</span>
         <button class="btn btns" onclick="_radarClear()">✕ נקה סינון</button>
@@ -7274,12 +7351,13 @@ function _radarRender(){
         <a class="btn btns" href="tenders.html" target="_blank" rel="noopener noreferrer" style="border-color:#4cc9f0;color:#4cc9f0;text-decoration:none">📡 ראדאר מלא</a>
       </div>
     </div>
-    <div style="font-size:10.5px;color:var(--text3);margin-bottom:9px">${rows.length} מוצגים מתוך ${all.length}</div>
+    <div style="font-size:10.5px;color:var(--text3);margin-bottom:9px">${rows.length} מוצגים מתוך ${base.length}${delIds.length?` · ${delIds.length} נמחקו`:''}</div>
     <div class="rdr-cards">${cards}</div>
     ${pickN?`<div class="rdr-selbar"><span>${pickN} מכרזים נבחרו</span>
       <button class="btn btns" onclick="addSelectedFromRadar()" style="border-color:#06d6a0;color:#06d6a0">➕ הוסף את הנבחרים למכרזים</button>
+      <button class="btn btns" onclick="_radarDeleteSelected()" style="border-color:#e63946;color:#e63946">🗑 מחק את הנבחרים</button>
       <button class="btn btns" onclick="_radarClearPick()">✕ ניקוי בחירה</button></div>`:''}
-    ${srcPanel}${authPanel}${mlPanel}`;
+    ${delPanel}${srcPanel}${authPanel}${mlPanel}`;
 }
 
 /** שם המשתמש המחובר — כדי שרשומה שנוספת מהראדאר לא תגיע בלי מטפל */
