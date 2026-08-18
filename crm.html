@@ -9257,7 +9257,11 @@ function _distTrackPayload(d){
 }
 // ===== קישור מעקב "חי": אותו קישור מתעדכן לבד =====
 // טוקן יציב ובלתי-ניתן-לניחוש לכל הפצה — משמש כמפתח לרשומת המעקב הציבורית בענן.
-function _genTrackTok(){ return (Date.now().toString(36)+Math.random().toString(36).slice(2,12)).replace(/[^a-z0-9]/gi,''); }
+// טוקן מעקב חזק קריפטוגרפית (128 ביט) — מגן על נתוני הלקוח שבקישור מפני ניחוש. נפילה חיננית ל-Math.random.
+function _genTrackTok(){
+  try{ const a=crypto.getRandomValues(new Uint8Array(16)); let s=''; for(const b of a)s+=b.toString(16).padStart(2,'0'); return s; }
+  catch(e){ return (Date.now().toString(36)+Math.random().toString(36).slice(2,12)+Math.random().toString(36).slice(2,12)).replace(/[^a-z0-9]/gi,''); }
+}
 // שורש ה-Firebase (ללא נתיב הסנכרון המוצפן) — כדי לכתוב/לקרוא נתיב מעקב ציבורי נפרד.
 // ריק אם אין ענן מוגדר → הקישור נשאר "תמונת-מצב" מקודדת בלבד (התנהגות קודמת, ללא רגרסיה).
 function _trackDbBase(){
