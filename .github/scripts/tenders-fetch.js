@@ -443,6 +443,17 @@ function registrableDomain(host) {
 function sameSite(a, b) {
   return registrableDomain(new URL(a).host) === registrableDomain(new URL(b).host);
 }
+/** האם הכתובת היא שורש האתר — דף הבית לעולם אינו עמוד רשימת המכרזים */
+function isSiteRoot(u) {
+  try { return new URL(u).pathname.replace(/\/+$/, '') === ''; } catch (_) { return false; }
+}
+/** הקטע האחרון בנתיב, מפוענח — שם העמוד עצמו, בלי הנתיב שמעליו */
+function lastPathSegment(u) {
+  try {
+    const parts = decodeURIComponent(new URL(u).pathname).split('/').filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : '';
+  } catch (_) { return ''; }
+}
 /** אותה כתובת, בהתעלם מעוגן ומקו נטוי מסיים */
 function sameUrl(a, b) {
   const norm = u => {
@@ -465,6 +476,11 @@ const ACTIVE_LINK_RE = /(פעילים|פתוחים|נוכחיים|חדשים|מ�
 // "דרושים במכללה" — עמוד משרות. קישור שמדבר על משרות ולא על מכרז מקבל ניקוד שלילי,
 // אבל עמוד משולב ("מכרזים ודרושים") נשאר, כי ברשויות רבות זה אותו עמוד.
 const JOBS_LINK_RE = /(דרושים|משרות|קריירה|כוח\s*אדם|jobs?|careers?|vacanc)/i;
+/** מדבר על משרות ולא על מכרז. עמוד משולב ("מכרזים ודרושים") אינו נחשב כזה. */
+function jobsOnly(text) {
+  const t = String(text || '');
+  return JOBS_LINK_RE.test(t) && !/(מכרז|מיכרז|michraz|tender)/i.test(t);
+}
 
 /** מאתר בדף הבית קישורים שנראים כמובילים לעמוד המכרזים, מהמדויק לפחות מדויק */
 function findTenderLinks(html, baseUrl) {
@@ -482,15 +498,16 @@ function findTenderLinks(html, baseUrl) {
     try { if (!sameSite(a.url, baseUrl)) continue; } catch (_) { continue; }
     if (seen.has(a.url)) continue;
     seen.add(a.url);
-    // קישור שחוזר לעמוד הנוכחי אינו עמוד המכרזים. בלי זה אתר שבו קישור התפריט
-    // "מכרזים" מצביע על "#" או על "/" הביא לקציר של דף הבית עצמו.
-    if (sameUrl(a.url, baseUrl)) continue;
+    // קישור שחוזר לעמוד הנוכחי, או לשורש האתר, אינו עמוד המכרזים. באתר
+    // אוניברסיטת תל אביב קישור התפריט "מכרזים" מצביע על "/" בעוד שדף הבית עצמו
+    // מוגש מ-"/he", ולכן השוואה לעמוד הנוכחי לבדה לא תפסה את זה.
+    if (sameUrl(a.url, baseUrl) || isSiteRoot(a.url)) continue;
     // "מכרזים" כטקסט הקישור הוא האינדיקציה החזקה ביותר לעמוד רשימה
     const haystack = a.title + ' ' + decodeURIComponent(a.url);
     const score = (/^\s*מכרזים\s*$/.test(a.title) ? 100 : 0) + (byText ? 10 : 0) + (byUrl ? 5 : 0)
       + (ACTIVE_LINK_RE.test(haystack) ? 40 : 0)
       - (ARCHIVE_LINK_RE.test(haystack) ? 150 : 0)
-      - (JOBS_LINK_RE.test(a.title) && !TEXT_RE.test(a.title) ? 150 : 0)
+      - (jobsOnly(a.title) || jobsOnly(lastPathSegment(a.url)) ? 150 : 0)
       - Math.min(20, a.title.length / 5);
     scored.push({ url: a.url, title: a.title, score });
   }
@@ -1182,7 +1199,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, sameSite, sameUrl, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, sameSite, sameUrl, isSiteRoot, lastPathSegment, jobsOnly, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS

@@ -296,11 +296,19 @@ test('הגילוי מדלג על קישור לעמוד עצמו ועל דפי ד
     <a href="/bidding">מכרזי רכש</a>
     <a href="/careers/jobs">דרושים במכללה</a>
     <a href="/michrazim-vedrushim/">מכרזים ודרושים</a>`;
-  const urls = R.findTenderLinks(html, 'https://www.tau.ac.il/').map(l => l.url);
-  assert.ok(!urls.some(u => R.sameUrl(u, 'https://www.tau.ac.il/')),
-    'קישור שחוזר לעמוד הנוכחי אינו נבחר: ' + urls.join(' , '));
+  // דף הבית של האתר מוגש מ-"/he" בעוד שקישור התפריט מצביע על "/" — לכן גם
+  // השוואה לעמוד הנוכחי וגם פסילת שורש האתר נדרשות
+  const urls = R.findTenderLinks(html, 'https://www.tau.ac.il/he').map(l => l.url);
+  assert.ok(!urls.some(u => R.isSiteRoot(u)),
+    'שורש האתר אינו נבחר כעמוד מכרזים: ' + urls.join(' , '));
   assert.ok(urls[0].endsWith('/bidding'), 'עמוד המכרזים נבחר ראשון');
   assert.ok(!urls.some(u => u.includes('/careers/')), 'עמוד דרושים בלבד אינו נבחר');
+  // הדסה האקדמית: הנתיב מכיל "דרושים-ומכרזים" אבל העמוד עצמו הוא "דרושים-במכללה"
+  const hac = R.findTenderLinks(
+    '<a href="/דרושים-ומכרזים/דרושים-במכללה/">דרושים ומכרזים</a><a href="/tenders/">מכרזים</a>',
+    'https://www.hac.ac.il/').map(l => decodeURIComponent(l.url));
+  assert.ok(hac[0].endsWith('/tenders/'), 'עמוד המכרזים נבחר, לא עמוד הדרושים: ' + hac.join(' , '));
+  assert.ok(!hac.some(u => u.includes('דרושים-במכללה')), 'עמוד דרושים לפי שם העמוד נפסל');
   assert.ok(urls.some(u => u.includes('michrazim-vedrushim')),
     'עמוד משולב "מכרזים ודרושים" כן נשאר — ברשויות רבות זה אותו עמוד');
 
