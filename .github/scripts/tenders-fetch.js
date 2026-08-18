@@ -828,6 +828,19 @@ async function debugSource(cfg, kw) {
 
     const relevant = anchors.filter(a => classify(a.title, kw).topics.length);
     console.log(`מתוכם רלוונטיים לנושאים שלנו: ${relevant.length}`);
+
+    // מה באמת נכנס לראדאר מהעמוד הזה — אחרי שער "האם זה מכרז", סיווג, סוג פרסום
+    // וסטטוס. זה המספר שמשנה; "רלוונטיים לנושאים" הוא רק הסיווג הגולמי.
+    const passed = [];
+    for (const a of anchors) {
+      const rec = buildRecord(itemFromAnchor(a), source, kw);
+      if (rec) passed.push(rec);
+    }
+    console.log(`עוברים את כל השערים ונכנסים לראדאר: ${passed.length}`);
+    for (const r of passed.slice(0, 12)) {
+      console.log(`  ▸ ${r.title.slice(0, 90)}`);
+      console.log(`    סוג=${r.kind} מועד=${r.deadlineAt || '—'} פורסם=${r.publishedAt || '—'} סטטוס=${r.status || '—'} ניתן-להגשה=${isActionable(r) ? 'כן' : 'לא'} התאמות=${(r.matched || []).slice(0, 4).join(',')}`);
+    }
     for (const a of relevant.slice(0, 4)) {
       console.log(`\n  כותרת : ${a.title.slice(0, 110)}`);
       console.log(`  קישור : ${a.url}`);
