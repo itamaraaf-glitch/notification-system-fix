@@ -794,7 +794,23 @@ async function debugSource(cfg, kw) {
     return;
   }
   console.log(`=== אבחון מקור: ${source.name} (${source.id}) ===`);
-  for (const url of (source.urls || [])) {
+
+  // מקור discover אינו מחזיק רשימת כתובות — צריך קודם לאתר את עמוד המכרזים,
+  // בדיוק כמו בסריקה עצמה, אחרת האבחון מדפיס כלום ולא עוזר.
+  let urls = source.urls || [];
+  if (!urls.length) {
+    urls = (source.tendersUrls || []).slice();
+    const start = source.home || '';
+    if (start) {
+      try {
+        const found = findTenderLinks(await fetchText(start), start).slice(0, source.maxPages || 2);
+        for (const l of found) if (!urls.includes(l.url)) urls.push(l.url);
+        console.log(`עמודי מכרזים שאותרו מדף הבית: ${found.map(l => l.url).join(' , ') || 'לא נמצאו'}`);
+      } catch (e) { console.log('דף הבית לא נטען:', (e && e.message) || e); }
+    }
+  }
+
+  for (const url of urls) {
     console.log(`\n--- ${url} ---`);
     let html;
     try { html = await fetchText(url); }
@@ -817,6 +833,23 @@ async function debugSource(cfg, kw) {
       console.log(`  קישור : ${a.url}`);
       console.log(`  הקשר  : ${a.context.slice(0, 400).replace(/\s+/g, ' ')}`);
       console.log(`  חולץ  : פרסום=${dateAfterHint(a.context, PUBLISH_HINTS) || '—'} הגשה=${dateAfterHint(a.context, DEADLINE_HINTS) || '—'} תאריך-כלשהו=${parseDateNear(a.context) || '—'}`);
+    }
+
+    // דף המכרז עצמו: כשהמועד חסר בדף הרשימה, כאן אפשר לראות איך הוא באמת כתוב
+    const first = relevant[0];
+    if (first && first.url) {
+      try {
+        const detail = stripTags(await fetchText(first.url)).replace(/\s+/g, ' ');
+        console.log(`\n  --- דף המכרז: ${first.url} ---`);
+        console.log(`  אורך טקסט: ${detail.length}`);
+        const dates = detail.match(/\d{1,2}[./]\d{1,2}[./]\d{2,4}|\d{4}-\d{2}-\d{2}/g) || [];
+        console.log(`  תאריכים בדף (${dates.length}): ${dates.slice(0, 12).join(' , ') || 'אין'}`);
+        for (const hint of ['מועד אחרון', 'מועד הגשה', 'תאריך אחרון', 'להגשה', 'הגשת הצעות', 'סגירה', 'תאריך פרסום']) {
+          const i = detail.indexOf(hint);
+          if (i >= 0) console.log(`  "${hint}" → …${detail.slice(Math.max(0, i - 40), i + 120)}…`);
+        }
+        console.log(`  חולץ מדף המכרז: הגשה=${dateAfterHint(detail, DEADLINE_HINTS) || '—'} פרסום=${dateAfterHint(detail, PUBLISH_HINTS) || '—'}`);
+      } catch (e) { console.log('  דף המכרז לא נטען:', (e && e.message) || e); }
     }
     await sleep(POLITE_DELAY_MS);
   }
