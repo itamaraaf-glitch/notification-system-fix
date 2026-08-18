@@ -156,3 +156,34 @@ test('העשרה אינה חוזרת על מכרז שכבר נבדק, ולא נ�
     assert.ok(!oldRec.deadlineChecked, 'רשומה שלא נראתה בסריקה הזו לא נבדקת');
   } finally { srv.close(); }
 });
+
+test('מדידת נגישות מבדילה בין מקור שעונה, מקור חוסם ודף בית בלי עמוד מכרזים', async () => {
+  const NO_TENDERS = `<!doctype html><html><body><nav>
+    <a href="/he/residents">תושבים</a><a href="/he/contact">צור קשר</a></nav></body></html>`;
+  const srv = await startServer({
+    '/': HOME, '/he/business/michrazim': TENDERS, '/plain/': NO_TENDERS
+  });
+  const base = `http://127.0.0.1:${srv.address().port}`;
+  const lines = [];
+  const realLog = console.log;
+  console.log = (...a) => lines.push(a.join(' '));
+  try {
+    await R.probeSources({ sources: [
+      { id: 'good', name: 'רשות שעונה', category: 'רשויות מקומיות', kind: 'discover', home: base + '/' },
+      { id: 'bare', name: 'רשות בלי עמוד מכרזים', category: 'רשויות מקומיות', kind: 'discover', home: base + '/plain/' },
+      { id: 'dead', name: 'רשות שלא קיימת', category: 'רשויות מקומיות', kind: 'discover', home: base + '/missing' },
+      { id: 'off',  name: 'מקור מושבת', category: 'רשויות מקומיות', kind: 'discover', home: base + '/', enabled: false }
+    ] });
+  } finally { console.log = realLog; srv.close(); }
+
+  const out = lines.join('\n');
+  const json = JSON.parse(out.match(/<!--PROBE-JSON\n([\s\S]*?)\nPROBE-JSON-->/)[1]);
+  const by = Object.fromEntries(json.map(r => [r.id, r]));
+  assert.strictEqual(json.length, 3, 'מקור מושבת אינו נמדד');
+  assert.strictEqual(by.good.verdict, 'ok');
+  assert.ok(by.good.tendersUrl.endsWith('/he/business/michrazim'), 'אותר עמוד המכרזים עצמו');
+  assert.ok(by.good.tendersAnchors > 0, 'נמדדו קישורים בעמוד המכרזים');
+  assert.strictEqual(by.bare.verdict, 'no-tenders-link');
+  assert.strictEqual(by.dead.verdict, 'http-404');
+  assert.ok(/מדידת נגישות מקורות — 1\/3 נגישים/.test(out), 'הסיכום מונה רק את הנגישים');
+});

@@ -17,6 +17,10 @@ on:
         description: 'מצב אבחון: מזהה מקור להדפסת הקישורים, ההקשר והתאריכים שנמצאו בדף. לא שומר ולא מדווח.'
         required: false
         default: ''
+      probe:
+        description: 'מדידת נגישות: "all" לכל המקורות, או שם קטגוריה / מזהה מקור. בודק מי נענה ומי חוסם, בלי לשמור ובלי לדווח.'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -29,7 +33,7 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
 
@@ -41,8 +45,18 @@ jobs:
         if: inputs.debug != ''
         run: node .github/scripts/tenders-fetch.js --debug="${{ inputs.debug }}" | tee -a "$GITHUB_STEP_SUMMARY"
 
+      # מדידת נגישות: בקשה אחת לכל מקור, בלי סריקה, בלי שמירה ובלי דיווח
+      - name: מדידת נגישות מקורות
+        if: inputs.probe != ''
+        run: |
+          if [ "${{ inputs.probe }}" = "all" ]; then
+            node .github/scripts/tenders-fetch.js --probe | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            node .github/scripts/tenders-fetch.js --probe="${{ inputs.probe }}" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: סריקת מקורות המכרזים
-        if: inputs.debug == ''
+        if: inputs.debug == '' && inputs.probe == ''
         env:
           TENDERS_ONLY_SOURCE: ${{ inputs.source }}
         run: |
@@ -53,11 +67,11 @@ jobs:
           fi
 
       - name: סיכום הריצה
-        if: inputs.debug == ''
+        if: inputs.debug == '' && inputs.probe == ''
         run: node .github/scripts/tenders-report.js --summary >> "$GITHUB_STEP_SUMMARY"
 
       - name: שמירת התוצאות במאגר
-        if: inputs.debug == ''
+        if: inputs.debug == '' && inputs.probe == ''
         run: |
           if git diff --quiet -- tenders/data; then
             echo "אין שינוי בנתוני המכרזים — אין מה לשמור"
@@ -77,7 +91,7 @@ jobs:
           exit 1
 
       - name: פתיחת Issue עם המכרזים החדשים
-        if: inputs.debug == ''
+        if: inputs.debug == '' && inputs.probe == ''
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}

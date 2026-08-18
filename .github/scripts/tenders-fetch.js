@@ -24,13 +24,18 @@ const DRY_RUN = ARGS.includes('--dry-run');
 // --debug=<id> מדפיס את הקישורים שנקצרו מהמקור יחד עם חלון ההקשר שלהם,
 // כדי לאבחן חילוץ תאריכים בלי לנחש את מבנה הדף
 const DEBUG_SOURCE = (ARGS.find(a => a.startsWith('--debug=')) || '').split('=')[1] || '';
+// --probe[=<קטגוריה>] בודק נגישות בלבד: לכל מקור בקשה אחת, ומדווח מי נענה, מי חוסם
+// ומי לא קיים. זו מדידה ולא סריקה — היא לא שומרת נתונים ולא מדווחת מכרזים, ומטרתה
+// להחליט אילו מקורות שווים סריקה אוטומטית ואילו יעברו לרשימת הבדיקה הידנית.
+const PROBE = ARGS.some(a => a === '--probe' || a.startsWith('--probe='));
+const PROBE_FILTER = (ARGS.find(a => a.startsWith('--probe=')) || '').split('=')[1] || '';
 
 const TIMEOUT_MS = +(process.env.TENDERS_TIMEOUT_MS || 15000);
 const RETRIES = +(process.env.TENDERS_RETRIES || 1);
 // תקציב זמן כולל לסריקה. עם עשרות רשויות מקומיות, כמה אתרים איטיים או לא זמינים
 // יכולים למתוח את הריצה בלי גבול; בחריגה מהתקציב הסריקה נעצרת ושומרת את מה שנאסף,
 // והמקורות שלא הגיע אליהם התור מדווחים במפורש — עדיף על ריצה שנקטלת בלי תוצאות.
-const BUDGET_MS = +(process.env.TENDERS_BUDGET_MS || 20 * 60 * 1000);
+const BUDGET_MS = +(process.env.TENDERS_BUDGET_MS || 32 * 60 * 1000);
 const RUN_STARTED = Date.now();
 const budgetLeft = () => BUDGET_MS - (Date.now() - RUN_STARTED);
 const KEEP_DAYS = +(process.env.TENDERS_KEEP_DAYS || 45);
@@ -522,6 +527,7 @@ async function main() {
   }
 
   if (DEBUG_SOURCE) { await debugSource(cfg, kw); return; }
+  if (PROBE) { await probeSources(cfg); return; }
 
   const previous = readJson(path.join(DATA_DIR, 'tenders.json'), { tenders: [] });
   const prevById = new Map((previous.tenders || []).map(t => [t.id, t]));
@@ -620,6 +626,88 @@ async function main() {
   }, null, 2) + '\n', 'utf8');
 
   console.error(`\n✔ נשמרו ${merged.length} מכרזים (${payload.counts.new} חדשים) → tenders/data/tenders.json`);
+}
+
+/**
+ * מדידת נגישות של המקורות.
+ *
+ * לפני שמוסיפים עשרות רשויות ומכללות לסריקה היומית צריך לדעת מי מהן בכלל עונה.
+ * כאן נשלחת בקשה אחת לכל מקור, ולמקורות מסוג discover נבדק גם אם נמצא בדף הבית
+ * קישור לעמוד מכרזים ואם הוא נטען. הפלט הוא טבלה + JSON, כדי שאפשר יהיה לגזור
+ * ממנו החלטה: מי נשאר בסריקה האוטומטית ומי עובר לבדיקה ידנית.
+ */
+async function probeSources(cfg) {
+  const timeout = +(process.env.TENDERS_PROBE_TIMEOUT_MS || 10000);
+  const parallel = +(process.env.TENDERS_PROBE_PARALLEL || 5);
+  const list = (cfg.sources || []).filter(s => s.enabled !== false)
+    .filter(s => !PROBE_FILTER || (s.category || '').includes(PROBE_FILTER) || s.id === PROBE_FILTER);
+
+  const hit = async (url) => {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), timeout);
+    try {
+      const res = await fetch(url, {
+        signal: ctl.signal, redirect: 'follow',
+        headers: { 'User-Agent': UA, 'Accept': 'text/html,*/*;q=0.8', 'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8' }
+      });
+      const body = res.ok ? await res.text() : '';
+      return { status: res.status, ok: res.ok, body, finalUrl: res.url || url };
+    } catch (e) {
+      return { status: 0, ok: false, body: '', error: e && e.name === 'AbortError' ? 'timeout' : String((e && e.message) || e) };
+    } finally { clearTimeout(timer); }
+  };
+
+  const one = async (source) => {
+    const entry = source.searchUrl || source.home || (source.urls || [])[0] || '';
+    const started = Date.now();
+    const out = { id: source.id, name: source.name, category: source.category || '', kind: source.kind, url: entry };
+    if (!entry) { out.verdict = 'no-url'; return out; }
+    const r = await hit(entry);
+    out.status = r.status;
+    out.ms = Date.now() - started;
+    if (!r.ok) {
+      out.verdict = r.status ? 'http-' + r.status : (r.error || 'error');
+      return out;
+    }
+    out.bytes = r.body.length;
+    if (source.kind === 'discover') {
+      const links = findTenderLinks(r.body, r.finalUrl || entry);
+      if (!links.length) { out.verdict = 'no-tenders-link'; return out; }
+      out.tendersUrl = links[0].url;
+      const t = await hit(links[0].url);
+      if (!t.ok) { out.verdict = 'tenders-page-' + (t.status || t.error); return out; }
+      out.tendersAnchors = harvestAnchors(t.body, links[0].url).length;
+      out.verdict = out.tendersAnchors ? 'ok' : 'tenders-page-empty';
+      return out;
+    }
+    out.anchors = harvestAnchors(r.body, entry).length;
+    out.verdict = out.anchors ? 'ok' : 'empty';
+    return out;
+  };
+
+  const results = [];
+  for (let i = 0; i < list.length; i += parallel) {
+    const chunk = list.slice(i, i + parallel);
+    results.push(...await Promise.all(chunk.map(one)));
+    process.stderr.write(`… נבדקו ${Math.min(i + parallel, list.length)}/${list.length}\n`);
+    await sleep(300);
+  }
+
+  const okList = results.filter(r => r.verdict === 'ok');
+  console.log(`## מדידת נגישות מקורות — ${okList.length}/${results.length} נגישים\n`);
+  const byCat = {};
+  for (const r of results) (byCat[r.category || '—'] = byCat[r.category || '—'] || []).push(r);
+  for (const [cat, rows] of Object.entries(byCat)) {
+    const good = rows.filter(r => r.verdict === 'ok').length;
+    console.log(`\n### ${cat} — ${good}/${rows.length}\n`);
+    console.log('| מקור | תוצאה | קישורים | זמן |');
+    console.log('| --- | --- | --- | --- |');
+    for (const r of rows.sort((a, b) => (a.verdict === 'ok' ? 0 : 1) - (b.verdict === 'ok' ? 0 : 1))) {
+      const n = r.tendersAnchors != null ? r.tendersAnchors : (r.anchors != null ? r.anchors : '—');
+      console.log(`| ${r.name} (\`${r.id}\`) | ${r.verdict === 'ok' ? '✅ נגיש' : '❌ ' + r.verdict} | ${n} | ${r.ms || 0}ms |`);
+    }
+  }
+  console.log('\n<!--PROBE-JSON\n' + JSON.stringify(results) + '\nPROBE-JSON-->');
 }
 
 /** מצב אבחון: מדפיס מה נקצר ממקור בודד, כדי לראות איפה התאריכים יושבים בדף */
@@ -904,7 +992,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, probeSources, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
