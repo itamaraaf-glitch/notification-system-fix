@@ -589,3 +589,49 @@ test('תכניות לימוד בבינה מלאכותית אינן מכרזים'
   // "ML" לבדו אינו מספיק — הוא גם יחידת נפח
   assert.strictEqual(R.classify('מכרז לאספקת 500 ML של חומר ניקוי', KW).topics.length, 0);
 });
+
+// במנהל הרכש הממשלתי החיפוש מילולי: מכרז שאינו מכיל את מילת החיפוש לא מגיע
+// לדף התוצאות. תחזוקה ידנית של רשימת השאילתות נגררה אחרי הטקסונומיה — מתוך
+// המונחים במשקל 5 ומעלה, "מתגים", "טמ״ס", "מבדקי חדירה" ו"ראייה ממוחשבת"
+// לא נשאלו כלל. לכן השאילתות נגזרות מהטקסונומיה עצמה.
+test('שאילתות החיפוש נגזרות מהטקסונומיה, בלי כפילויות', () => {
+  const src = {
+    id: 's', urls: ['https://x/?text=' + encodeURIComponent('תקשורת')],
+    searchFromKeywords: { template: 'https://x/?text={term}', minWeight: 5, maxPerTopic: 3, max: 10 }
+  };
+  const kw = { topics: { t: { terms: [
+    ['תקשורת', 9],            // כבר נשאל
+    ['שירותי תקשורת', 9],     // צמצום של שאילתה קיימת — לא מוסיף מכרזים
+    ['מתגים', 5],
+    ['ראיה ממוחשבת', 6],
+    ['ראייה ממוחשבת', 6],     // וריאנט כתיב של הקודם
+    ['טמ"ס', 5],
+    ['טמ״ס', 5],              // וריאנט גרשיים
+    ['קישוריות', 3]           // מתחת לסף המשקל
+  ] } } };
+  const q = u => decodeURIComponent(u).split('text=')[1];
+  const out = R.expandSearchUrls(src, kw).urls.map(q);
+
+  assert.ok(out.includes('מתגים'), 'מונח שלא נשאל נוסף');
+  assert.ok(!out.includes('שירותי תקשורת'), 'צמצום של שאילתה קיימת מדולג');
+  assert.ok(!out.includes('קישוריות'), 'מונח מתחת לסף המשקל מדולג');
+  assert.strictEqual(out.filter(x => x.startsWith('רא')).length, 1, 'וריאנט כתיב אחד בלבד');
+  assert.strictEqual(out.filter(x => x.startsWith('טמ')).length, 1, 'וריאנט גרשיים אחד בלבד');
+  assert.ok(out.length <= 1 + 3, 'תקרת השאילתות לנושא נשמרת');
+
+  // מקור בלי ההגדרה אינו משתנה כלל
+  const plain = { id: 'p', urls: ['https://y/'] };
+  assert.deepStrictEqual(R.expandSearchUrls(plain, kw).urls, ['https://y/']);
+});
+
+test('החיפוש במנהל הרכש מכסה את כל חמשת הנושאים', () => {
+  const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config', 'sources.json'), 'utf8'));
+  const src = cfg.sources.find(s => s.id === 'mr-gov');
+  const queries = R.expandSearchUrls(src, KW).urls
+    .map(u => { const p = decodeURIComponent(u).split('text='); return p.length > 1 ? p[1] : ''; })
+    .filter(Boolean);
+  for (const [id, topic] of Object.entries(KW.topics)) {
+    const hit = queries.some(q => (topic.terms || []).some(([t]) => t === q));
+    assert.ok(hit, `לנושא ${topic.label} (${id}) אין שאילתת חיפוש`);
+  }
+});

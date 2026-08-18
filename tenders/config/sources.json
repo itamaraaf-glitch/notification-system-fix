@@ -39,7 +39,14 @@
       "linkPattern": "/ilgstorefront/[a-z]{2}/p/\\d+",
       "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER",
       "home": "https://mr.gov.il/ilgstorefront/he/",
-      "_queriesNote": "פרמטר החיפוש באתר הוא text ולא q. באבחון מ-18/08/2026 כל החיפושים עם q החזירו דף זהה (2 תוצאות), בעוד text=תקשורת החזיר 13 תוצאות רלוונטיות. בנוסף page= מעמד את הרשימה המלאה, ולכן נסרקים גם ארבעת העמודים הראשונים כדי לתפוס מכרזים שהמונחים מפספסים. currentPage, pageSize ו-q:relevance נבדקו ואינם משפיעים."
+      "_queriesNote": "פרמטר החיפוש באתר הוא text ולא q. באבחון מ-18/08/2026 כל החיפושים עם q החזירו דף זהה (2 תוצאות), בעוד text=תקשורת החזיר 13 תוצאות רלוונטיות. בנוסף page= מעמד את הרשימה המלאה, ולכן נסרקים גם ארבעת העמודים הראשונים כדי לתפוס מכרזים שהמונחים מפספסים. currentPage, pageSize ו-q:relevance נבדקו ואינם משפיעים.",
+      "searchFromKeywords": {
+        "_note": "שאילתות החיפוש נגזרות אוטומטית מהטקסונומיה: המונחים הכבדים בכל נושא. במנהל הרכש החיפוש מילולי, ומכרז שאינו מכיל את מילת החיפוש לא מגיע לדף התוצאות כלל.",
+        "template": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text={term}",
+        "minWeight": 5,
+        "maxPerTopic": 8,
+        "max": 34
+      }
     },
     {
       "id": "gov-il",

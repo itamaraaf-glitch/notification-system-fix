@@ -657,6 +657,69 @@ function mapCkanRecord(rec) {
 
 const ADAPTERS = { html: adapterHtml, discover: adapterDiscover, rss: adapterRss, ckan: adapterCkan };
 
+/**
+ * הרחבת שאילתות החיפוש מתוך הטקסונומיה.
+ *
+ * במנהל הרכש הממשלתי החיפוש מילולי: מכרז שאינו מכיל את מילת החיפוש פשוט לא מגיע
+ * לדף התוצאות. כשהוספנו את נושא הבינה המלאכותית זה הוכח בפועל — שלושת מכרזי המטה
+ * הלאומי הגיעו רק אחרי שנוספה השאילתה "בינה מלאכותית". אבל תחזוקה ידנית של רשימת
+ * השאילתות נגררת אחרי הטקסונומיה: מתוך 142 המונחים במשקל 5 ומעלה, רק 58 היו
+ * מכוסים בחיפוש, ו"מתגים", "טמ״ס", "מבדקי חדירה" ו"עיבוד שפה טבעית" לא נשאלו כלל.
+ *
+ * לכן השאילתות נגזרות מהטקסונומיה עצמה: המונחים הכבדים ביותר בכל נושא, עם תקרה
+ * לנושא ולסך הכול כדי לא להציף את המקור בבקשות. הוספת מונח כבד לטקסונומיה מרחיבה
+ * מעכשיו גם את החיפוש, בלי לזכור לעדכן שני מקומות.
+ */
+function expandSearchUrls(source, kw) {
+  const spec = source.searchFromKeywords;
+  if (!spec || !spec.template) return source;
+  const minWeight = spec.minWeight || 5;
+  const perTopic = spec.maxPerTopic || 8;
+  const max = spec.max || 34;
+
+  const urls = [...(source.urls || [])];
+  const existing = urls.map(u => { let d = u; try { d = decodeURIComponent(u); } catch (_) {} 
+    const m = d.split('text='); return m.length > 1 ? m[1] : ''; }).filter(Boolean);
+
+  // מונח שמכיל בתוכו שאילתה קיימת הוא צמצום שלה — "אספקת ציוד תקשורת" מחזיר תת־קבוצה
+  // של "ציוד תקשורת" ולכן אינו מוסיף מכרזים. מונח כזה מדולג.
+  const redundant = (term, against) => against.some(q => term.includes(q));
+  const wordsOf = t => String(t).split(/\s+/).filter(Boolean);
+  const words = t => wordsOf(t).length;
+  // וריאנטים של אותו מונח ("ראיה"/"ראייה", "רשת"/"רשתות") מחזירים כמעט את אותן
+  // תוצאות ומבזבזים שאילתה. שני מונחים נחשבים זהים אם יש להם אותו מספר מילים
+  // וכל מילה חולקת את שלוש האותיות הראשונות.
+  // גרשיים ומקפים אינם מבדילים בין וריאנטים: טמ"ס/טמ״ס, צ'אטבוט/צ׳אטבוט,
+  // אנטי-וירוס/אנטי וירוס — שאילתה אחת לכל משפחה מספיקה.
+  const norm = t => String(t).replace(/["'׳״]/g, '').replace(/[-\u2010-\u2015]/g, ' ');
+  const sameStem = (a, b) => {
+    const x = wordsOf(norm(a)), y = wordsOf(norm(b));
+    return x.length === y.length && x.every((w, i) => w.slice(0, 3) === y[i].slice(0, 3));
+  };
+
+  const chosen = [];
+  for (const topic of Object.values(kw.topics || {})) {
+    const picked = [];
+    // דירוג לחיפוש מילולי אינו דירוג לפי משקל: מונח קצר הוא שאילתה רחבה שמחזירה
+    // יותר מכרזים, ולכן קודם מספר המילים ורק אחריו המשקל.
+    const ranked = (topic.terms || []).filter(([, w]) => w >= minWeight)
+      .sort((a, b) => words(a[0]) - words(b[0]) || b[1] - a[1] || a[0].localeCompare(b[0], 'he'));
+    for (const [term] of ranked) {
+      if (picked.length >= perTopic) break;
+      if (redundant(term, existing) || redundant(term, chosen)) continue;
+      if (existing.some(q => sameStem(term, q)) || chosen.some(c => sameStem(term, c))) continue;
+      picked.push(term);
+      chosen.push(term);
+    }
+  }
+
+  const added = chosen.slice(0, max);
+  for (const term of added) urls.push(spec.template.replace('{term}', encodeURIComponent(term)));
+  if (added.length) console.error(`  \u21b3 ${source.id}: ${added.length} שאילתות חיפוש נוספו מהטקסונומיה`);
+  return { ...source, urls };
+}
+
+
 /* ───────────────────────── תהליך ראשי ───────────────────────── */
 
 function readJson(file, fallback) {
@@ -679,7 +742,8 @@ async function main() {
   const prevById = new Map((previous.tenders || []).map(t => [t.id, t]));
 
   const sources = (cfg.sources || []).filter(s => s.enabled !== false)
-    .filter(s => !ONLY_SOURCE || s.id === ONLY_SOURCE);
+    .filter(s => !ONLY_SOURCE || s.id === ONLY_SOURCE)
+    .map(s => expandSearchUrls(s, kw));
 
   const status = [];
   const found = new Map();
@@ -890,7 +954,8 @@ async function probeSources(cfg) {
 
 /** מצב אבחון: מדפיס מה נקצר ממקור בודד, כדי לראות איפה התאריכים יושבים בדף */
 async function debugSource(cfg, kw) {
-  const source = (cfg.sources || []).find(s => s.id === DEBUG_SOURCE);
+  const raw = (cfg.sources || []).find(s => s.id === DEBUG_SOURCE);
+  const source = raw ? expandSearchUrls(raw, kw) : raw;
   if (!source) {
     console.log(`מקור לא נמצא: ${DEBUG_SOURCE}. מקורות קיימים: ${(cfg.sources||[]).map(s => s.id).join(', ')}`);
     return;
@@ -1228,7 +1293,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
+  classify, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
