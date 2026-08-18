@@ -1730,6 +1730,9 @@ body.logged-in #ai-fab{display:flex}
     <div class="dpanel"><h4 style="--h4-accent:#a78bfa;--h4-color:#a78bfa">🔻 צנרת עסקאות לפי שלב</h4><div id="dash-pipeline"></div></div>
   </div>
   <div class="dgrid">
+    <div class="dpanel" style="grid-column:1/-1"><h4 style="--h4-accent:#a78bfa;--h4-color:#a78bfa">🚀 תזרים הפצות · החודש מול קודמים</h4><div id="dash-cashflow"></div></div>
+  </div>
+  <div class="dgrid">
     <div class="dpanel" style="grid-column:1/-1"><h4 style="--h4-accent:#06d6a0;--h4-color:#06d6a0">🧩 התפלגות מוצרים אצל לקוחות</h4><div id="dash-products"></div></div>
   </div>
   <div class="dgrid">
@@ -6288,8 +6291,35 @@ function rDash(){
     qsRow('📋 מכרזים פעילים',''+D.tenders.filter(t=>t.submitted!=='כן').length,'#f4a261','tenders')+
     qsRow('📋 הוגשו',''+D.tenders.filter(t=>t.submitted==='כן').length,'var(--teal)','tenders');
   // כל סקשן עצמאי — כשל בחישוב של אחד (על נתון חריג) לא ימחק את השאר (במיוחד את העוזר החכם)
-  [renderUpcomingMeetings,renderQuickActions,renderAiSpotlight,renderDashRevChart,renderDashPipeline,renderDashProducts]
+  [renderUpcomingMeetings,renderQuickActions,renderAiSpotlight,renderDashRevChart,renderDashPipeline,renderDashProducts,renderDashCashflow]
     .forEach(fn=>{ try{ fn(); }catch(e){ console.error('rDash section failed:',fn.name,e); } });
+}
+// תזרים הפצות בדשבורד — אותה הפרדה חודשית של מסך ההפצות, נגישה כבר מהבית.
+// שלושה אריחים לחיצים (הכנסת החודש / ממתינות מחודשים קודמים / ממתינות החודש) הפותחים את אותו פירוט הפצות.
+function renderDashCashflow(){
+  const el=document.getElementById('dash-cashflow'); if(!el)return;
+  const curM=nd().substring(0,7), all=D.dists||[], mo=d=>String(d.dt||'').substring(0,7);
+  const money=d=>(+d.inc||0)||(+d.tgt||0);
+  if(!all.length){ el.innerHTML='<div style="color:var(--text3);font-size:12px;text-align:center;padding:22px">אין הפצות רשומות עדיין — הוסף הפצה כדי לראות את תזרים החודש</div>'; return; }
+  const cur=all.filter(d=>mo(d)===curM);
+  const curInc=cur.reduce((a,d)=>a+(+d.inc||0),0);
+  const curDone=cur.filter(d=>d.st==='הושלם').length;
+  const curPend=cur.filter(d=>d.st!=='הושלם');
+  const curPendVal=curPend.reduce((a,d)=>a+money(d),0);
+  const carried=all.filter(d=>mo(d)&&mo(d)<curM&&d.st!=='הושלם');
+  const carriedVal=carried.reduce((a,d)=>a+money(d),0);
+  const tile=(lb,val,sub,clr,bd,which)=>`<div class="cl-kpi-tile" onclick="nav('dists');setTimeout(()=>showDistGroupDetail('${which}'),90)" title="לחץ לפירוט מלא — מספרי פרויקט ופרטים"
+      style="background:rgba(255,255,255,.03);border:1px solid ${bd};border-radius:11px;padding:12px 14px;min-width:0;cursor:pointer">
+      <div style="font-size:10.5px;color:var(--text3);font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lb} <span style="opacity:.5">→</span></div>
+      <div style="font-size:20px;font-weight:900;color:${clr};line-height:1.1">${val}</div>
+      <div style="font-size:9.5px;color:var(--text3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub}</div></div>`;
+  el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;padding:4px 0 2px">
+      ${tile('💰 הכנסת הפצות — החודש',fmt(curInc),cur.length+' הפצות · '+curDone+' הושלמו',(curInc>0?'var(--teal)':'var(--text2)'),'rgba(6,214,160,.28)','income')}
+      ${tile('⏳ ממתינות מחודשים קודמים',''+carried.length,'שווי צפוי '+fmt(carriedVal),(carried.length?'#f4a261':'var(--teal)'),(carried.length?'rgba(244,162,97,.4)':'rgba(6,214,160,.28)'),'carried')}
+      ${tile('🔄 ממתינות החודש',''+curPend.length,'שווי צפוי '+fmt(curPendVal),'#4cc9f0','rgba(76,201,240,.28)','curpending')}
+    </div>
+    ${carried.length?`<div style="margin-top:9px;padding:9px 13px;background:rgba(244,162,97,.09);border:1px solid rgba(244,162,97,.3);border-radius:11px;font-size:11px;color:#f4a261;line-height:1.5">
+      ⏳ <b>${carried.length} ${carried.length===1?'הפצה ממתינה':'הפצות ממתינות'}</b> מחודשים קודמים · שווי צפוי <b>${fmt(carriedVal)}</b> — טרם הושלמו.</div>`:''}`;
 }
 // התפלגות מוצרים אצל לקוחות — סרגלים אופקיים לפי כמות, צבועים בצבע המוצר (עד 8 מובילים)
 function renderDashProducts(){
