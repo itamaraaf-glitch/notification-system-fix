@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T08:04:24.146Z",
+  "generatedAt": "2026-08-18T08:12:58.013Z",
   "generatedDate": "2026-08-18",
   "topics": {
     "telecom": {
@@ -387,9 +387,9 @@
       "name": "מנהל הרכש הממשלתי",
       "category": "ממשלה",
       "ok": true,
-      "scanned": 116,
-      "count": 8,
-      "ms": 8939,
+      "scanned": 493,
+      "count": 34,
+      "ms": 30314,
       "warn": "",
       "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER"
     },
@@ -401,7 +401,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.gov.il/he/departments/topics/tenders-sub/govil — HTTP 403",
-      "ms": 995,
+      "ms": 974,
       "searchUrl": "https://www.gov.il/he/departments/publications?publicationType=tender"
     },
     {
@@ -412,7 +412,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.moin.gov.il/Tenders — HTTP 403",
-      "ms": 1726,
+      "ms": 1506,
       "searchUrl": "https://www.moin.gov.il/Tenders"
     },
     {
@@ -422,7 +422,7 @@
       "ok": true,
       "scanned": 294,
       "count": 0,
-      "ms": 3551,
+      "ms": 3298,
       "warn": "",
       "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
     },
@@ -433,7 +433,7 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 1868,
+      "ms": 1767,
       "warn": "",
       "searchUrl": "https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders"
     },
@@ -445,7 +445,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.nta.co.il/tenders/ — HTTP 403",
-      "ms": 1205,
+      "ms": 1118,
       "searchUrl": "https://www.nta.co.il/tenders/"
     },
     {
@@ -456,7 +456,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D — HTTP 403",
-      "ms": 1163,
+      "ms": 1112,
       "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
     },
     {
@@ -467,7 +467,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.transisrael.co.il/Tenders — HTTP 403",
-      "ms": 1022,
+      "ms": 969,
       "searchUrl": "https://www.transisrael.co.il/Tenders?currentView=1"
     },
     {
@@ -477,7 +477,7 @@
       "ok": true,
       "scanned": 8,
       "count": 0,
-      "ms": 3605,
+      "ms": 3208,
       "warn": "",
       "searchUrl": "https://www.atarim.gov.il/tenders/"
     },
@@ -488,7 +488,7 @@
       "ok": true,
       "scanned": 639,
       "count": 0,
-      "ms": 2793,
+      "ms": 2417,
       "warn": "",
       "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx"
     },
@@ -499,7 +499,7 @@
       "ok": true,
       "scanned": 418,
       "count": 0,
-      "ms": 6707,
+      "ms": 6441,
       "warn": "",
       "discovered": [
         "https://www.haifa.muni.il/city-and-muni/legaladvice/contracts-and-tenders/",
@@ -514,7 +514,7 @@
       "ok": true,
       "scanned": 1956,
       "count": 0,
-      "ms": 4933,
+      "ms": 4099,
       "warn": "",
       "discovered": [
         "https://www.nzc.org.il/bids/",
@@ -529,7 +529,7 @@
       "ok": true,
       "scanned": 1192,
       "count": 0,
-      "ms": 4053,
+      "ms": 3912,
       "warn": "",
       "discovered": [
         "https://www.dsharon.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/",
@@ -544,13 +544,105 @@
       "ok": true,
       "scanned": 452,
       "count": 0,
-      "ms": 4140,
+      "ms": 4213,
       "warn": "",
       "discovered": [
         "https://www.eyz.org.il/bids/",
         "https://www.eyz.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
       ],
       "searchUrl": "https://www.eyz.org.il/"
+    },
+    {
+      "id": "rail",
+      "name": "רכבת ישראל",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 87,
+      "searchUrl": "https://www.rail.co.il/"
+    },
+    {
+      "id": "mekorot",
+      "name": "מקורות",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 679,
+      "searchUrl": "https://www.mekorot.co.il/"
+    },
+    {
+      "id": "ports",
+      "name": "חברת נמלי ישראל",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22491,
+      "searchUrl": "https://www.israports.co.il/"
+    },
+    {
+      "id": "ashdod-port",
+      "name": "נמל אשדוד",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 2784,
+      "searchUrl": "https://www.ashdodport.co.il/"
+    },
+    {
+      "id": "haifa-port",
+      "name": "נמל חיפה",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 643,
+      "searchUrl": "https://www.haifaport.co.il/"
+    },
+    {
+      "id": "post",
+      "name": "דואר ישראל",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "לא נמצא קישור לעמוד מכרזים בדף הבית",
+      "ms": 11755,
+      "searchUrl": "https://www.israelpost.co.il/"
+    },
+    {
+      "id": "bituach-leumi",
+      "name": "המוסד לביטוח לאומי",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "ok": true,
+      "scanned": 421,
+      "count": 0,
+      "ms": 5128,
+      "warn": "",
+      "discovered": [
+        "https://www.btl.gov.il/About/tenders/Pages/default.aspx",
+        "https://www.btl.gov.il/About/tenders/Pages/MichrazimResults.aspx"
+      ],
+      "searchUrl": "https://www.btl.gov.il/"
+    },
+    {
+      "id": "clalit",
+      "name": "שירותי בריאות כללית",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 221,
+      "searchUrl": "https://www.clalit.co.il/"
     }
   ],
   "tenders": [
