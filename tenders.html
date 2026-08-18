@@ -258,10 +258,11 @@ footer{text-align:center;font-size:10.5px;color:var(--text3);margin-top:26px;lin
   <div id="results" class="results"></div>
 
   <details class="panel" id="nearpanel" style="display:none">
-    <summary>🔎 כמעט התאמות <span id="nearcount" style="font-size:11px;font-weight:400;color:var(--text3)"></span></summary>
+    <summary>🔎 מכרזים שלא סווגו <span id="nearcount" style="font-size:11px;font-weight:400;color:var(--text3)"></span></summary>
     <p style="font-size:11.5px;color:var(--text2);margin-bottom:11px;line-height:1.7">
-      פרסומים שנגעו במילות המפתח אבל לא הגיעו לסף הרלוונטיות. לרוב הם באמת אינם בתחום — אבל
+      מכרזים פתוחים להגשה שמילות המפתח לא נתנו להם נושא. רובם באמת אינם בתחום — אבל
       כאן מסתתר מכרז שנוסח אחרת, למשל "מערכות ניטור וידאו" במקום "מצלמות אבטחה".
+      מסודרים לפי קרבת מועד ההגשה.
       <span id="nearai"></span>
     </p>
     <div id="neartable"></div>
@@ -652,12 +653,11 @@ function renderNear(){
     ? 'סקירת ה-AI כבר עברה עליהם ואישרה את מה שהיה רלוונטי.'
     : 'סקירת AI אינה פעילה — הרשימה כאן לסריקת עין מהירה.';
   $('neartable').innerHTML = `<div class="tw"><table>
-    <thead><tr><th>פרסום</th><th>מפרסם</th><th>מילים שנמצאו</th><th>ניקוד</th><th></th></tr></thead>
+    <thead><tr><th>מכרז</th><th>מפרסם</th><th>מועד הגשה</th><th></th></tr></thead>
     <tbody>${rows.map(t => { const u = safeUrl(t.url); return `<tr>
       <td><b>${u ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t.title)}</a>` : esc(t.title)}</b></td>
       <td style="color:var(--text3)">${esc(t.publisher || t.sourceName || '–')}</td>
-      <td style="color:var(--text3)">${esc((t.matched || []).slice(0, 3).join(', ') || '–')}</td>
-      <td><b>${t.score || 0}</b></td>
+      <td style="color:var(--text3);white-space:nowrap">${t.deadlineAt ? fmtDate(t.deadlineAt) : 'לא אותר'}</td>
       <td><button class="btn" data-neardrop="${esc(t.id)}" title="לא רלוונטי">🗑</button></td>
     </tr>`; }).join('')}</tbody></table></div>`;
   $('neartable').querySelectorAll('[data-neardrop]').forEach(btn => {

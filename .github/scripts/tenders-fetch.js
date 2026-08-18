@@ -845,8 +845,13 @@ async function main() {
   const inRadar = new Set(merged.map(t => t.id));
   const nearAll = [...nearMisses.values()].filter(r => !inRadar.has(r.id));
   const nearActionable = nearAll.filter(isActionable);
-  const nearList = nearActionable
-    .sort((a, b) => (b.score || 0) - (a.score || 0) || String(b.deadlineAt || '').localeCompare(String(a.deadlineAt || '')))
+  // הקרוב להיסגר קודם: הרשימה חתוכה בתקרה, וחבל לחתוך דווקא את מה שנסגר מחר.
+  // מכרז בלי מועד יורד לסוף — אי אפשר לדעת כמה הוא דחוף.
+  const byDeadline = (a, b) => {
+    const da = a.deadlineAt || '9999-99-99', db2 = b.deadlineAt || '9999-99-99';
+    return da.localeCompare(db2) || (b.score || 0) - (a.score || 0);
+  };
+  const nearList = nearActionable.sort(byDeadline)
     .slice(0, +(process.env.TENDERS_NEAR_LIMIT || 40));
   console.error(`\n🔎 מועמדים לבדיקה: ${nearAll.length} בלי נושא, מתוכם ${nearActionable.length} פתוחים להגשה, נשמרו ${nearList.length}`);
 

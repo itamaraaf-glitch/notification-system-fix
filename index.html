@@ -7359,17 +7359,17 @@ function _radarRender(){
   const nearRows=nears.map(t=>{const u=safeUrl(t.url);
     return `<tr><td><b>${u?`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(t.title)}</a>`:esc(t.title)}</b></td>
       <td style="color:var(--text3)">${esc(t.publisher||t.sourceName||'–')}</td>
-      <td style="color:var(--text3)">${esc((t.matched||[]).slice(0,3).join(', ')||'–')}</td>
-      <td><b>${t.score||0}</b></td>
+      <td style="color:var(--text3);white-space:nowrap">${t.deadlineAt?fmtDate(t.deadlineAt):'לא אותר'}</td>
       <td><button class="btn btns" onclick="_radarDelete('${esc(t.id)}')" title="לא רלוונטי — הסתרה מהרשימה">🗑</button></td></tr>`;
   }).join('');
   const aiOn=!!_radar.aiReviewedAt;
-  const nearPanel=nears.length?`<details class="rdr-panel"><summary>🔎 כמעט התאמות <span style="font-size:10.5px;font-weight:400;color:var(--text3)">— ${nears.length}</span></summary>
+  const nearPanel=nears.length?`<details class="rdr-panel"><summary>🔎 מכרזים שלא סווגו <span style="font-size:10.5px;font-weight:400;color:var(--text3)">— ${nears.length}</span></summary>
     <p style="font-size:11px;color:var(--text2);margin:12px 0 10px;line-height:1.7">
-      פרסומים שנגעו במילות המפתח אבל לא הגיעו לסף הרלוונטיות. לרוב הם באמת אינם בתחום — אבל כאן
-      מסתתר מכרז שנוסח אחרת, למשל "מערכות ניטור וידאו" במקום "מצלמות אבטחה".
+      מכרזים פתוחים להגשה שמילות המפתח לא נתנו להם נושא. רובם באמת אינם בתחום — אבל כאן
+      מסתתר מכרז שנוסח אחרת, למשל "מערכות ניטור וידאו" במקום "מצלמות אבטחה". מסודרים לפי
+      קרבת מועד ההגשה.
       ${aiOn?'סקירת ה-AI כבר עברה עליהם ואישרה את מה שהיה רלוונטי.':'סקירת AI אינה פעילה — הרשימה כאן לסריקת עין מהירה.'}</p>
-    <div class="tw"><div class="tscroll"><table><thead><tr><th>פרסום</th><th>מפרסם</th><th>מילים שנמצאו</th><th>ניקוד</th><th></th></tr></thead><tbody>${nearRows}</tbody></table></div></div></details>`:'';
+    <div class="tw"><div class="tscroll"><table><thead><tr><th>מכרז</th><th>מפרסם</th><th>מועד הגשה</th><th></th></tr></thead><tbody>${nearRows}</tbody></table></div></div></details>`:'';
 
   const failed=srcs.filter(s=>!s.ok).length;
   const upd=gen?(db(gen,nd())===0?'עודכן היום':db(gen,nd())===1?'עודכן אתמול':'עודכן '+fmtDate(gen)):'טרם הורץ';
