@@ -23,6 +23,12 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const DATA_FILE = path.join(ROOT, 'tenders', 'data', 'tenders.json');
 const KW_FILE = path.join(ROOT, 'tenders', 'config', 'keywords.json');
 
+// --decisions=<file> מחיל סקירה שכבר נעשתה, במקום לקרוא ל-API. הקובץ הוא מערך של
+// { id, relevant, topic, reason }. זה מאפשר להחיל סקירה גם כשאין מפתח API —
+// למשל סקירה שנעשתה ידנית או בסביבה אחרת — דרך אותו מסלול קוד בדיוק.
+const DECISIONS_FILE = (process.argv.slice(2).find(a => a.startsWith('--decisions=')) || '').split('=')[1] || '';
+const REVIEWER = process.env.TENDERS_AI_REVIEWER || (DECISIONS_FILE ? 'external' : 'api');
+
 const MODEL = process.env.TENDERS_AI_MODEL || 'claude-opus-5';
 const BATCH = +(process.env.TENDERS_AI_BATCH || 20);
 const MAX_ITEMS = +(process.env.TENDERS_AI_MAX || 40);
@@ -115,7 +121,7 @@ async function judgeBatch(client, kw, batch) {
 }
 
 async function main() {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!DECISIONS_FILE && !process.env.ANTHROPIC_API_KEY) {
     console.error('ℹ️  אין ANTHROPIC_API_KEY — סקירת ה-AI מדולגת, הראדאר לא משתנה');
     return;
   }
@@ -125,24 +131,33 @@ async function main() {
   if (!data || !kw) { console.error('✖ חסרים קבצי נתונים או תצורה'); process.exit(1); }
 
   const pending = (data.nearMisses || []).slice(0, MAX_ITEMS);
-  if (!pending.length) { console.error('ℹ️  אין "כמעט התאמות" לבדיקה'); return; }
+  if (!pending.length) { console.error('ℹ️  אין מועמדים לבדיקה'); return; }
 
-  let Anthropic;
-  try { Anthropic = require('@anthropic-ai/sdk'); }
-  catch (_) { console.error('✖ החבילה @anthropic-ai/sdk אינה מותקנת — הרץ npm ci'); process.exit(1); }
-  // החבילה מתפרסמת גם כ-ESM וגם כ-CJS; require מחזיר את המודול או את default שלו
-  const Ctor = Anthropic.default || Anthropic;
-  const client = new Ctor();
+  let decisions = [];
+  if (DECISIONS_FILE) {
+    const byId = new Map(pending.map(r => [r.id, r]));
+    const raw = readJson(path.resolve(DECISIONS_FILE), null);
+    if (!Array.isArray(raw)) { console.error('✖ קובץ ההחלטות אינו מערך'); process.exit(1); }
+    decisions = raw.filter(d => byId.has(d.id)).map(d => ({ ...d, rec: byId.get(d.id) }));
+    const unknown = raw.length - decisions.length;
+    if (unknown) console.error(`⚠️  ${unknown} החלטות מתייחסות למזהים שאינם ברשימת המועמדים ולכן דולגו`);
+  } else {
+    let Anthropic;
+    try { Anthropic = require('@anthropic-ai/sdk'); }
+    catch (_) { console.error('✖ החבילה @anthropic-ai/sdk אינה מותקנת — הרץ npm ci'); process.exit(1); }
+    // החבילה מתפרסמת גם כ-ESM וגם כ-CJS; require מחזיר את המודול או את default שלו
+    const Ctor = Anthropic.default || Anthropic;
+    const client = new Ctor();
 
-  const decisions = [];
-  for (let i = 0; i < pending.length; i += BATCH) {
-    const batch = pending.slice(i, i + BATCH);
-    try {
-      decisions.push(...await judgeBatch(client, kw, batch));
-    } catch (e) {
-      // כשל בסקירה אינו מפיל את הראדאר — הנתונים נשארים כפי שהם
-      console.error(`✖ סקירת AI נכשלה על קבוצה ${i / BATCH + 1}: ${(e && e.message) || e}`);
-      return;
+    for (let i = 0; i < pending.length; i += BATCH) {
+      const batch = pending.slice(i, i + BATCH);
+      try {
+        decisions.push(...await judgeBatch(client, kw, batch));
+      } catch (e) {
+        // כשל בסקירה אינו מפיל את הראדאר — הנתונים נשארים כפי שהם
+        console.error(`✖ סקירת AI נכשלה על קבוצה ${i / BATCH + 1}: ${(e && e.message) || e}`);
+        return;
+      }
     }
   }
 
@@ -153,7 +168,7 @@ async function main() {
     if (known.has(d.rec.id)) continue;
     known.add(d.rec.id);
     const { near, ...rec } = d.rec;
-    promoted.push({ ...rec, topics: [d.topic], aiMatched: true, aiReason: String(d.reason || '').slice(0, 120) });
+    promoted.push({ ...rec, topics: [d.topic], aiMatched: true, aiReviewer: REVIEWER, aiReason: String(d.reason || '').slice(0, 120) });
   }
 
   const rejectedIds = new Set(decisions.filter(d => !d.relevant).map(d => d.rec.id));
@@ -164,6 +179,7 @@ async function main() {
   data.counts.aiMatched = (data.counts.aiMatched || 0) + promoted.length;
   data.counts.near = data.nearMisses.length;
   data.aiReviewedAt = new Date().toISOString();
+  data.aiReviewer = REVIEWER;
 
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2) + '\n', 'utf8');
   console.error(`\n🤖 סקירת AI: נבדקו ${decisions.length}, אושרו ${promoted.length}, נדחו ${rejectedIds.size}`);

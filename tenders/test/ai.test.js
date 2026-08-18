@@ -92,3 +92,13 @@ test('הסכימה מגבילה את התחום לערכים מהטקסונומ�
   }
   assert.ok(topics.includes(''), 'מחרוזת ריקה מותרת עבור "לא רלוונטי"');
 });
+
+test('מצב --decisions מוגדר כך שאפשר להחיל סקירה גם בלי מפתח API', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', '..', '.github', 'scripts', 'tenders-ai.js'), 'utf8');
+  assert.ok(src.includes('--decisions='), 'הדגל קיים');
+  assert.ok(/if \(!DECISIONS_FILE && !process\.env\.ANTHROPIC_API_KEY\)/.test(src),
+    'קובץ החלטות פוטר מהדרישה למפתח');
+  assert.ok(src.includes('aiReviewer'), 'נרשם מי ביצע את הסקירה — API או גורם חיצוני');
+  assert.ok(src.includes('decisions = raw.filter(d => byId.has(d.id))'),
+    'החלטה על מזהה שאינו ברשימת המועמדים מדולגת ולא מייצרת רשומה יש מאין');
+});
