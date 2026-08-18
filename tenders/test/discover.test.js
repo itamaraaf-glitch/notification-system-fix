@@ -187,3 +187,26 @@ test('מדידת נגישות מבדילה בין מקור שעונה, מקור 
   assert.strictEqual(by.dead.verdict, 'http-404');
   assert.ok(/מדידת נגישות מקורות — 1\/3 נגישים/.test(out), 'הסיכום מונה רק את הנגישים');
 });
+
+// באתרים רבים עמוד המכרזים לא מקושר מדף הבית (ניווט JavaScript, תת־דומיין נפרד),
+// ולכן הגילוי לבדו מחמיץ אותם. tendersUrls הוא רמז לכתובת ידועה — נבדק ראשון,
+// עם נפילה חזרה לגילוי אם הרמז לא נענה.
+test('כתובת מכרזים ידועה נבדקת לפני דף הבית, עם נפילה חזרה לגילוי', async () => {
+  const srv = await startServer({ '/': HOME, '/he/business/michrazim': TENDERS, '/known/tenders': TENDERS });
+  const base = `http://127.0.0.1:${srv.address().port}`;
+  try {
+    const viaHint = await R.adapterDiscover({
+      id: 'h', name: 'רמז תקין', kind: 'discover',
+      home: base + '/', tendersUrls: [base + '/known/tenders']
+    });
+    assert.deepStrictEqual(viaHint.discovered, [base + '/known/tenders'], 'הרמז שימש ישירות');
+    assert.ok(viaHint.length >= 3);
+
+    const viaFallback = await R.adapterDiscover({
+      id: 'f', name: 'רמז שבור', kind: 'discover',
+      home: base + '/', tendersUrls: [base + '/nope', base + '/also-nope']
+    });
+    assert.ok(viaFallback.discovered[0].endsWith('/he/business/michrazim'),
+      'רמז שלא נענה לא מפיל את המקור — הגילוי מדף הבית ממשיך');
+  } finally { srv.close(); }
+});

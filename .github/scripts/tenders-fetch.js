@@ -353,6 +353,28 @@ async function adapterHtml(source) {
 async function adapterDiscover(source) {
   const start = source.home || (source.urls || [])[0];
   if (!start) throw new Error('למקור אין כתובת דף בית');
+
+  // באתרים רבים עמוד המכרזים קיים אבל אינו מקושר מדף הבית — הוא יושב עמוק בתפריט
+  // "אודות" או בתת־דומיין נפרד. tendersUrls הוא רמז מפורש לכתובת הידועה: מנסים אותה
+  // קודם, ורק אם היא לא נענית חוזרים לגילוי מדף הבית. כך אתר עם ניווט מבוסס JavaScript
+  // עדיין נסרק, ואם הכתובת תשתנה — הגילוי האוטומטי עדיין מכסה.
+  const hinted = [];
+  for (const url of (source.tendersUrls || [])) {
+    try {
+      const html = await fetchText(url);
+      const anchors = harvestAnchors(html, url);
+      if (anchors.length) { hinted.push({ url, anchors }); break; }
+    } catch (_) { /* רמז שלא נענה — ממשיכים לרמז הבא ואז לגילוי */ }
+    await sleep(POLITE_DELAY_MS);
+  }
+  if (hinted.length) {
+    const items = [];
+    for (const a of hinted[0].anchors) items.push(itemFromAnchor(a));
+    items.warnings = [];
+    items.discovered = [hinted[0].url];
+    return items;
+  }
+
   const homeHtml = await fetchText(start);
   const links = findTenderLinks(homeHtml, start).slice(0, source.maxPages || 2);
   if (!links.length) throw new Error('לא נמצא קישור לעמוד מכרזים בדף הבית');
@@ -637,12 +659,24 @@ async function main() {
  * ממנו החלטה: מי נשאר בסריקה האוטומטית ומי עובר לבדיקה ידנית.
  */
 async function probeSources(cfg) {
-  const timeout = +(process.env.TENDERS_PROBE_TIMEOUT_MS || 10000);
+  const timeout = +(process.env.TENDERS_PROBE_TIMEOUT_MS || 20000);
   const parallel = +(process.env.TENDERS_PROBE_PARALLEL || 5);
   const list = (cfg.sources || []).filter(s => s.enabled !== false)
     .filter(s => !PROBE_FILTER || (s.category || '').includes(PROBE_FILTER) || s.id === PROBE_FILTER);
 
+  // כשל רשת (timeout / חיבור שנסגר) הוא לעיתים רגעי. מקור לא נפסל על סמך ניסיון
+  // אחד — רק כשל שחוזר בשני ניסיונות נחשב תשובה. שגיאת HTTP היא תשובה מוחלטת
+  // של השרת ואין טעם לחזור עליה.
   const hit = async (url) => {
+    const first = await hitOnce(url);
+    if (first.status !== 0) return first;
+    await sleep(1200);
+    const second = await hitOnce(url);
+    if (second.status === 0) second.retried = true;
+    return second;
+  };
+
+  const hitOnce = async (url) => {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), timeout);
     try {
@@ -662,6 +696,17 @@ async function probeSources(cfg) {
     const started = Date.now();
     const out = { id: source.id, name: source.name, category: source.category || '', kind: source.kind, url: entry };
     if (!entry) { out.verdict = 'no-url'; return out; }
+    // כמו במסלול האמיתי: כתובת ידועה נבדקת לפני דף הבית, כך שאתר שחוסם את דף הבית
+    // אבל פותח את עמוד המכרזים עדיין נמדד כנגיש
+    for (const hint of (source.tendersUrls || [])) {
+      const h = await hit(hint);
+      if (!h.ok) { (out.hintTried = out.hintTried || []).push(hint + ' → ' + (h.status || h.error)); continue; }
+      const n = harvestAnchors(h.body, hint).length;
+      if (!n) { (out.hintTried = out.hintTried || []).push(hint + ' → ריק'); continue; }
+      out.tendersUrl = hint; out.tendersAnchors = n; out.verdict = 'ok-hint';
+      out.ms = Date.now() - started;
+      return out;
+    }
     const r = await hit(entry);
     out.status = r.status;
     out.ms = Date.now() - started;
@@ -693,18 +738,20 @@ async function probeSources(cfg) {
     await sleep(300);
   }
 
-  const okList = results.filter(r => r.verdict === 'ok');
+  const OKV = v => v === 'ok' || v === 'ok-hint';
+  const okList = results.filter(r => OKV(r.verdict));
   console.log(`## מדידת נגישות מקורות — ${okList.length}/${results.length} נגישים\n`);
   const byCat = {};
   for (const r of results) (byCat[r.category || '—'] = byCat[r.category || '—'] || []).push(r);
   for (const [cat, rows] of Object.entries(byCat)) {
-    const good = rows.filter(r => r.verdict === 'ok').length;
+    const good = rows.filter(r => OKV(r.verdict)).length;
     console.log(`\n### ${cat} — ${good}/${rows.length}\n`);
     console.log('| מקור | תוצאה | קישורים | זמן |');
     console.log('| --- | --- | --- | --- |');
-    for (const r of rows.sort((a, b) => (a.verdict === 'ok' ? 0 : 1) - (b.verdict === 'ok' ? 0 : 1))) {
+    for (const r of rows.sort((a, b) => (OKV(a.verdict) ? 0 : 1) - (OKV(b.verdict) ? 0 : 1))) {
       const n = r.tendersAnchors != null ? r.tendersAnchors : (r.anchors != null ? r.anchors : '—');
-      console.log(`| ${r.name} (\`${r.id}\`) | ${r.verdict === 'ok' ? '✅ נגיש' : '❌ ' + r.verdict} | ${n} | ${r.ms || 0}ms |`);
+      const mark = r.verdict === 'ok' ? '✅ נגיש' : r.verdict === 'ok-hint' ? '✅ נגיש (כתובת ידועה)' : '❌ ' + r.verdict;
+      console.log(`| ${r.name} (\`${r.id}\`) | ${mark} | ${n} | ${r.ms || 0}ms |`);
     }
   }
   console.log('\n<!--PROBE-JSON\n' + JSON.stringify(results) + '\nPROBE-JSON-->');

@@ -223,7 +223,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.rail.co.il/",
-      "searchUrl": "https://www.rail.co.il/"
+      "searchUrl": "https://www.rail.co.il/",
+      "tendersUrls": [
+        "https://www.rail.co.il/tenders",
+        "https://www.rail.co.il/מכרזים"
+      ]
     },
     {
       "id": "mekorot",
@@ -233,7 +237,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.mekorot.co.il/",
-      "searchUrl": "https://www.mekorot.co.il/"
+      "searchUrl": "https://www.mekorot.co.il/",
+      "tendersUrls": [
+        "https://www.mekorot.co.il/tenders/",
+        "https://www.mekorot.co.il/מכרזים/"
+      ]
     },
     {
       "id": "ports",
@@ -243,7 +251,10 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.israports.co.il/",
-      "searchUrl": "https://www.israports.co.il/"
+      "searchUrl": "https://www.israports.co.il/",
+      "tendersUrls": [
+        "https://www.israports.co.il/tenders/"
+      ]
     },
     {
       "id": "ashdod-port",
@@ -273,7 +284,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.israelpost.co.il/",
-      "searchUrl": "https://www.israelpost.co.il/"
+      "searchUrl": "https://www.israelpost.co.il/",
+      "tendersUrls": [
+        "https://www.israelpost.co.il/tenders/",
+        "https://www.israelpost.co.il/about/tenders/"
+      ]
     },
     {
       "id": "bituach-leumi",
@@ -293,7 +308,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.clalit.co.il/",
-      "searchUrl": "https://www.clalit.co.il/"
+      "searchUrl": "https://www.clalit.co.il/",
+      "tendersUrls": [
+        "https://www.clalit.co.il/he/info/tenders/",
+        "https://www.clalit.co.il/he/tenders/"
+      ]
     },
     {
       "id": "tau",
@@ -313,7 +332,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.huji.ac.il/",
-      "searchUrl": "https://www.huji.ac.il/"
+      "searchUrl": "https://www.huji.ac.il/",
+      "tendersUrls": [
+        "https://www.huji.ac.il/tenders",
+        "https://tenders.huji.ac.il/"
+      ]
     },
     {
       "id": "technion",
@@ -323,7 +346,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.technion.ac.il/",
-      "searchUrl": "https://www.technion.ac.il/"
+      "searchUrl": "https://www.technion.ac.il/",
+      "tendersUrls": [
+        "https://www.technion.ac.il/tenders/",
+        "https://www.technion.ac.il/מכרזים/"
+      ]
     },
     {
       "id": "bgu",
@@ -333,7 +360,12 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.bgu.ac.il/",
-      "searchUrl": "https://www.bgu.ac.il/"
+      "searchUrl": "https://www.bgu.ac.il/",
+      "tendersUrls": [
+        "https://in.bgu.ac.il/mchr/Pages/michrazim.aspx",
+        "https://in.bgu.ac.il/mchr/Pages/default.aspx",
+        "https://www.bgu.ac.il/tenders"
+      ]
     },
     {
       "id": "biu",
@@ -343,7 +375,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.biu.ac.il/",
-      "searchUrl": "https://www.biu.ac.il/"
+      "searchUrl": "https://www.biu.ac.il/",
+      "tendersUrls": [
+        "https://www.biu.ac.il/tenders",
+        "https://www1.biu.ac.il/tenders"
+      ]
     },
     {
       "id": "haifa-uni",
@@ -353,7 +389,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.haifa.ac.il/",
-      "searchUrl": "https://www.haifa.ac.il/"
+      "searchUrl": "https://www.haifa.ac.il/",
+      "tendersUrls": [
+        "https://tenders.haifa.ac.il/",
+        "https://www.haifa.ac.il/index.php/he/tenders"
+      ]
     },
     {
       "id": "weizmann",
@@ -363,7 +403,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.weizmann.ac.il/",
-      "searchUrl": "https://www.weizmann.ac.il/"
+      "searchUrl": "https://www.weizmann.ac.il/",
+      "tendersUrls": [
+        "https://www.weizmann.ac.il/purchasing/tenders",
+        "https://www.weizmann.ac.il/tenders"
+      ]
     },
     {
       "id": "openu",
@@ -383,7 +427,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.ariel.ac.il/",
-      "searchUrl": "https://www.ariel.ac.il/"
+      "searchUrl": "https://www.ariel.ac.il/",
+      "tendersUrls": [
+        "https://www.ariel.ac.il/wp/tenders/",
+        "https://www.ariel.ac.il/tenders"
+      ]
     },
     {
       "id": "runi",
@@ -393,7 +441,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.runi.ac.il/",
-      "searchUrl": "https://www.runi.ac.il/"
+      "searchUrl": "https://www.runi.ac.il/",
+      "tendersUrls": [
+        "https://www.runi.ac.il/tenders/",
+        "https://www.runi.ac.il/about/tenders"
+      ]
     },
     {
       "id": "sapir",
@@ -443,7 +495,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.sce.ac.il/",
-      "searchUrl": "https://www.sce.ac.il/"
+      "searchUrl": "https://www.sce.ac.il/",
+      "tendersUrls": [
+        "https://www.sce.ac.il/tenders",
+        "https://www.sce.ac.il/michrazim"
+      ]
     },
     {
       "id": "braude",
@@ -463,7 +519,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.jce.ac.il/",
-      "searchUrl": "https://www.jce.ac.il/"
+      "searchUrl": "https://www.jce.ac.il/",
+      "tendersUrls": [
+        "https://www.jce.ac.il/tenders",
+        "https://www.jce.ac.il/michrazim"
+      ]
     },
     {
       "id": "telhai",
@@ -473,7 +533,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.telhai.ac.il/",
-      "searchUrl": "https://www.telhai.ac.il/"
+      "searchUrl": "https://www.telhai.ac.il/",
+      "tendersUrls": [
+        "https://www.telhai.ac.il/tenders",
+        "https://www.telhai.ac.il/michrazim"
+      ]
     },
     {
       "id": "yvc",
@@ -493,7 +557,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.kinneret.ac.il/",
-      "searchUrl": "https://www.kinneret.ac.il/"
+      "searchUrl": "https://www.kinneret.ac.il/",
+      "tendersUrls": [
+        "https://www.kinneret.ac.il/tenders",
+        "https://www.kinneret.ac.il/michrazim"
+      ]
     },
     {
       "id": "beitberl",
@@ -533,7 +601,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.ono.ac.il/",
-      "searchUrl": "https://www.ono.ac.il/"
+      "searchUrl": "https://www.ono.ac.il/",
+      "tendersUrls": [
+        "https://www.ono.ac.il/tenders/",
+        "https://www.ono.ac.il/מכרזים/"
+      ]
     },
     {
       "id": "ruppin",
@@ -543,7 +615,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.ruppin.ac.il/",
-      "searchUrl": "https://www.ruppin.ac.il/"
+      "searchUrl": "https://www.ruppin.ac.il/",
+      "tendersUrls": [
+        "https://www.ruppin.ac.il/tenders",
+        "https://www.ruppin.ac.il/about/tenders"
+      ]
     },
     {
       "id": "zefat-ac",
@@ -553,7 +629,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.zefat.ac.il/",
-      "searchUrl": "https://www.zefat.ac.il/"
+      "searchUrl": "https://www.zefat.ac.il/",
+      "tendersUrls": [
+        "https://www.zefat.ac.il/tenders",
+        "https://www.zefat.ac.il/michrazim"
+      ]
     },
     {
       "id": "pac",
@@ -563,7 +643,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.pac.ac.il/",
-      "searchUrl": "https://www.pac.ac.il/"
+      "searchUrl": "https://www.pac.ac.il/",
+      "tendersUrls": [
+        "https://www.pac.ac.il/tenders/",
+        "https://www.pac.ac.il/מכרזים/"
+      ]
     },
     {
       "id": "achva",
@@ -573,7 +657,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.achva.ac.il/",
-      "searchUrl": "https://www.achva.ac.il/"
+      "searchUrl": "https://www.achva.ac.il/",
+      "tendersUrls": [
+        "https://www.achva.ac.il/tenders",
+        "https://www.achva.ac.il/michrazim"
+      ]
     },
     {
       "id": "muni-m-yehuda",
@@ -903,7 +991,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.modiin.muni.il/",
-      "searchUrl": "https://www.modiin.muni.il/"
+      "searchUrl": "https://www.modiin.muni.il/",
+      "tendersUrls": [
+        "https://www.modiin.muni.il/bids",
+        "https://www.modiin.muni.il/tenders"
+      ]
     },
     {
       "id": "muni-maale-adumim",
@@ -983,7 +1075,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.akko.muni.il/",
-      "searchUrl": "https://www.akko.muni.il/"
+      "searchUrl": "https://www.akko.muni.il/",
+      "tendersUrls": [
+        "https://www.akko.muni.il/bids/",
+        "https://www.akko.muni.il/tenders/"
+      ]
     },
     {
       "id": "muni-afula",
@@ -1013,7 +1109,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.petah-tikva.muni.il/",
-      "searchUrl": "https://www.petah-tikva.muni.il/"
+      "searchUrl": "https://www.petah-tikva.muni.il/",
+      "tendersUrls": [
+        "https://www.petah-tikva.muni.il/Tenders/Pages/default.aspx",
+        "https://www.petah-tikva.muni.il/bids/"
+      ]
     },
     {
       "id": "muni-zefat",
@@ -1133,7 +1233,11 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.ramat-gan.muni.il/",
-      "searchUrl": "https://www.ramat-gan.muni.il/"
+      "searchUrl": "https://www.ramat-gan.muni.il/",
+      "tendersUrls": [
+        "https://www.ramat-gan.muni.il/tenders",
+        "https://www.ramat-gan.muni.il/bids"
+      ]
     },
     {
       "id": "muni-raanana",
