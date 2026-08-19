@@ -10613,7 +10613,20 @@ async function _aiLLM(messages,systemOverride){
   const key=_aiKey(); if(!key) throw new Error('אין מפתח');
   const msgs=Array.isArray(messages)?messages:[{role:'user',content:String(messages||'')}];
   const system=systemOverride||_aiSystemPrompt();
-  return _aiProvider()==='gemini' ? _aiCallGemini(key,system,msgs) : _aiCallAnthropic(key,system,msgs);
+  if(_aiProvider()!=='gemini') return _aiCallAnthropic(key,system,msgs);
+  const chosen=_aiModel();
+  try{ return await _aiCallGemini(key,system,msgs); }
+  catch(e){
+    // נפילת-חסד: אם המודל שנבחר לא מגיב (למשל "חשיבה" שאוכלת את כל הפלט, או שם-מודל תקול),
+    // ננסה אוטומטית את המודל החינמי היציב gemini-2.0-flash — כדי שתמיד תתקבל תשובה אם המפתח תקין.
+    if(chosen!=='gemini-2.0-flash'){
+      try{
+        const t=await _aiCallGemini(key,system,msgs,'gemini-2.0-flash');
+        return t+'\n\n_(המודל '+chosen+' לא הגיב — עברתי אוטומטית ל-gemini-2.0-flash. אפשר לקבע אותו בקביעות דרך "חבר AI")_';
+      }catch(e2){ throw e; } // גם הגיבוי נכשל (למשל מפתח לא תקין) — נחזיר את השגיאה המקורית המפורטת
+    }
+    throw e;
+  }
 }
 // חילוץ הודעת השגיאה האמיתית מגוף התשובה (Anthropic: error.message · Google: error.message)
 async function _aiErrDetail(r){ try{ const j=await r.json(); const m=(j&&j.error&&j.error.message)||''; return m?(' · '+String(m).slice(0,160)):''; }catch(e){ return ''; } }
