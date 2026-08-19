@@ -855,6 +855,25 @@ async function main() {
     .slice(0, +(process.env.TENDERS_NEAR_LIMIT || 40));
   console.error(`\n🔎 מועמדים לבדיקה: ${nearAll.length} בלי נושא, מתוכם ${nearActionable.length} פתוחים להגשה, נשמרו ${nearList.length}`);
 
+  // הכרעות AI שנשמרו מריצות קודמות מוחלות מחדש: הסורק כותב את הקובץ מחדש בכל
+  // ריצה, ובלעדיהן כל מכרז שסקירת ה-AI אישרה היה נעלם בסריקה הבאה.
+  const aiStore = readJson(path.join(DATA_DIR, 'ai-decisions.json'), { decisions: {} });
+  const aiDec = aiStore.decisions || {};
+  let restored = 0;
+  for (const [id, d] of Object.entries(aiDec)) {
+    const cand = nearMisses.get(id);
+    if (!cand || inRadar.has(id)) continue;
+    if (!d.relevant || !kw.topics[d.topic] || !isActionable(cand)) continue;
+    const { near, ...rec } = cand;
+    merged.push({ ...rec, topics: [d.topic], aiMatched: true, aiReviewer: d.reviewer || 'api', aiReason: d.reason || '' });
+    inRadar.add(id);
+    restored++;
+  }
+  if (restored) console.error(`\n🤖 ${restored} מכרזים הוחזרו מהכרעות AI שמורות`);
+
+  // מועמד שכבר הוכרע — לחיוב או לשלילה — אינו מוצג שוב ברשימת הבדיקה
+  const nearFinal = nearList.filter(r => !aiDec[r.id] && !inRadar.has(r.id));
+
   const payload = {
     generatedAt: new Date().toISOString(),
     generatedDate: today,
@@ -862,8 +881,8 @@ async function main() {
     kindLabels: KIND_LABELS,
     manualLinks: cfg.manualLinks || [],
     manualAuthorities: cfg.manualAuthorities || [],
-    counts: { ...summarize(merged), dropped, droppedLabels: DROP_LABELS, near: nearList.length },
-    nearMisses: nearList,
+    counts: { ...summarize(merged), dropped, droppedLabels: DROP_LABELS, near: nearFinal.length },
+    nearMisses: nearFinal,
     sources: status,
     tenders: merged
   };

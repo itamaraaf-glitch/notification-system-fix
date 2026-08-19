@@ -102,3 +102,19 @@ test('מצב --decisions מוגדר כך שאפשר להחיל סקירה גם �
   assert.ok(src.includes('decisions = raw.filter(d => byId.has(d.id))'),
     'החלטה על מזהה שאינו ברשימת המועמדים מדולגת ולא מייצרת רשומה יש מאין');
 });
+
+// הסורק כותב את tenders.json מחדש בכל ריצה. בלי אחסון נפרד להכרעות, כל מכרז
+// שסקירת ה-AI אישרה נמחק בסריקה הבאה — וזה בדיוק מה שקרה בפועל: 4 מכרזים
+// שאושרו נעלמו למחרת.
+test('ההכרעות נשמרות בקובץ נפרד ששורד סריקה מחדש', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', '..', '.github', 'scripts', 'tenders-ai.js'), 'utf8');
+  assert.ok(src.includes('ai-decisions.json'), 'הסוקר כותב לאחסון ההכרעות');
+  assert.ok(/store\.decisions\[d\.rec\.id\]/.test(src), 'ההכרעה נשמרת לפי מזהה המכרז');
+  assert.ok(/relevant: !!d\.relevant/.test(src), 'גם דחייה נשמרת — כדי לא לשאול שוב על אותו מכרז');
+
+  const fetcher = fs.readFileSync(path.join(__dirname, '..', '..', '.github', 'scripts', 'tenders-fetch.js'), 'utf8');
+  assert.ok(fetcher.includes("readJson(path.join(DATA_DIR, 'ai-decisions.json')"), 'הסורק קורא את האחסון');
+  assert.ok(/aiMatched: true, aiReviewer: d\.reviewer/.test(fetcher), 'ומחזיר את המכרזים שאושרו');
+  assert.ok(/nearList\.filter\(r => !aiDec\[r\.id\]/.test(fetcher),
+    'מועמד שכבר הוכרע אינו מוצג שוב ברשימת הבדיקה');
+});

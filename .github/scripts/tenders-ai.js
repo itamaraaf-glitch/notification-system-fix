@@ -22,6 +22,9 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..', '..');
 const DATA_FILE = path.join(ROOT, 'tenders', 'data', 'tenders.json');
 const KW_FILE = path.join(ROOT, 'tenders', 'config', 'keywords.json');
+// ההכרעות נשמרות בנפרד מהנתונים: הסורק כותב את tenders.json מחדש בכל ריצה, ובלי
+// הקובץ הזה כל מכרז שהסקירה אישרה היה נמחק בסריקה הבאה.
+const DECISIONS_STORE = path.join(ROOT, 'tenders', 'data', 'ai-decisions.json');
 
 // --decisions=<file> מחיל סקירה שכבר נעשתה, במקום לקרוא ל-API. הקובץ הוא מערך של
 // { id, relevant, topic, reason }. זה מאפשר להחיל סקירה גם כשאין מפתח API —
@@ -32,6 +35,8 @@ const REVIEWER = process.env.TENDERS_AI_REVIEWER || (DECISIONS_FILE ? 'external'
 const MODEL = process.env.TENDERS_AI_MODEL || 'claude-opus-5';
 const BATCH = +(process.env.TENDERS_AI_BATCH || 20);
 const MAX_ITEMS = +(process.env.TENDERS_AI_MAX || 40);
+
+const today = () => new Date().toISOString().slice(0, 10);
 
 function readJson(file, fallback) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
@@ -180,6 +185,23 @@ async function main() {
   data.counts.near = data.nearMisses.length;
   data.aiReviewedAt = new Date().toISOString();
   data.aiReviewer = REVIEWER;
+
+  // שמירת ההכרעות: כך הן שורדות את הסריקה הבאה, וגם אין צורך לשאול את המודל
+  // שוב על אותם מכרזים
+  const store = readJson(DECISIONS_STORE, { decisions: {} });
+  store.decisions = store.decisions || {};
+  for (const d of decisions) {
+    store.decisions[d.rec.id] = {
+      relevant: !!d.relevant,
+      topic: d.relevant ? d.topic : '',
+      reason: String(d.reason || '').slice(0, 120),
+      title: d.rec.title.slice(0, 120),
+      reviewer: REVIEWER,
+      at: today()
+    };
+  }
+  store.updatedAt = new Date().toISOString();
+  fs.writeFileSync(DECISIONS_STORE, JSON.stringify(store, null, 2) + '\n', 'utf8');
 
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2) + '\n', 'utf8');
   console.error(`\n🤖 סקירת AI: נבדקו ${decisions.length}, אושרו ${promoted.length}, נדחו ${rejectedIds.size}`);
