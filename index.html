@@ -10908,7 +10908,8 @@ function _aiErrMsg(status){
     ? 'בקשה נדחתה — ודא שהעתקת את המפתח במלואו (אייקון ההעתקה 📋 ב-'+cfg.linkLabel+', לא הטקסט המקוצר עם "..."), ושהמודל '+cfg.model+' תקין'
     : 'בקשה שגויה — ייתכן שם מודל לא תקין. נסה '+cfg.model+' בשדה המודל';
   if(status===402) return 'אין קרדיט/חיוב בחשבון — הוסף אמצעי תשלום';
-  if(status===429) return 'חריגה במכסה/קצב — המתן דקה ונסה שוב'+(cfg.free?'. אם חוזר: החלף מודל ל-gemini-1.5-flash בשדה המודל (מכסה חינמית נדיבה יותר)':'');
+  if(status===429) return 'חריגה במכסה/קצב — המתן דקה ונסה שוב'+(cfg.free?'. אם חוזר: החלף מודל ל-gemini-2.5-flash בשדה המודל':'');
+  if(status===503) return 'המודל עמוס כרגע בצד הספק ("high demand") — ניסיתי שוב ובמודלים חלופיים. אם נמשך: המתן דקה ונסה שוב';
   if(status>=500) return 'שירות ה-AI זמנית לא זמין — נסה שוב מאוחר יותר';
   return 'שגיאת API '+status;
 }
@@ -11176,18 +11177,18 @@ async function _aiLLM(messages,systemOverride){
   const system=systemOverride||_aiSystemPrompt();
   if(_aiProvider()!=='gemini') return _aiCallAnthropic(key,system,msgs);
   const chosen=_aiModel();
-  try{ return await _aiCallGemini(key,system,msgs); }
-  catch(e){
-    // נפילת-חסד: אם המודל שנבחר לא מגיב (למשל "חשיבה" שאוכלת את כל הפלט, או שם-מודל תקול),
-    // ננסה אוטומטית את המודל החינמי היציב gemini-2.0-flash — כדי שתמיד תתקבל תשובה אם המפתח תקין.
-    if(chosen!=='gemini-2.0-flash'){
-      try{
-        const t=await _aiCallGemini(key,system,msgs,'gemini-2.0-flash');
-        return t+'\n\n_(המודל '+chosen+' לא הגיב — עברתי אוטומטית ל-gemini-2.0-flash. אפשר לקבע אותו בקביעות דרך "חבר AI")_';
-      }catch(e2){ throw e; } // גם הגיבוי נכשל (למשל מפתח לא תקין) — נחזיר את השגיאה המקורית המפורטת
-    }
-    throw e;
+  // שרשרת מודלים: אם המודל שנבחר עמוס/נכשל (למשל 503 "high demand", או "חשיבה" שאוכלת את הפלט),
+  // עוברים אוטומטית למודל חלופי — כדי שתמיד תתקבל תשובה אם המפתח תקין. כל מודל מנסה שוב לבד על עומס זמני.
+  const chain=[...new Set([chosen,'gemini-2.0-flash','gemini-2.5-flash','gemini-flash-latest'])];
+  let firstErr=null;
+  for(let i=0;i<chain.length;i++){
+    const m=chain[i];
+    try{
+      const t=await _aiCallGemini(key,system,msgs,m);
+      return i===0 ? t : (t+'\n\n_(המודל '+chosen+' לא היה זמין כרגע — עניתי דרך '+m+'. אפשר לקבע אותו בקביעות דרך "חבר AI")_');
+    }catch(e){ if(!firstErr)firstErr=e; } // ננסה את המודל הבא בשרשרת
   }
+  throw firstErr||new Error('לא התקבלה תשובה');
 }
 // חילוץ הודעת השגיאה האמיתית מגוף התשובה (Anthropic: error.message · Google: error.message)
 async function _aiErrDetail(r){ try{ const j=await r.json(); const m=(j&&j.error&&j.error.message)||''; return m?(' · '+String(m).slice(0,160)):''; }catch(e){ return ''; } }
@@ -11225,8 +11226,11 @@ async function _aiCallGemini(key,system,msgs,modelOverride){
   const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent';
   const contents=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:String(m.content||'')}]}));
   // המפתח נשלח ב-header (x-goog-api-key) — השיטה הרשמית, תואמת גם לפורמט החדש (AQ.) וגם לישן (AIza)
-  const post=gc=>fetch(url,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},
+  const TRANSIENT=[429,500,502,503,504]; // עומס זמני בצד גוגל ("high demand" = 503) — שווה ניסיון חוזר
+  const rawPost=gc=>fetch(url,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},
     body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,generationConfig:gc})});
+  // ניסיון חוזר עם השהיה גוברת על עומס זמני — כדי ש"המודל עמוס" לא ייכשל מיד
+  const post=async gc=>{ let r; for(let i=0;i<3;i++){ r=await rawPost(gc); if(r.ok||!TRANSIENT.includes(r.status))return r; if(i<2)await new Promise(res=>setTimeout(res,[600,1500][i])); } return r; };
   // ניסיון ראשון: רגיל, תקציב-פלט גדול (בלי דגלי-חשיבה — לא לשבור מודלים ישנים כמו 2.0/1.5)
   let r=await post({maxOutputTokens:8192,temperature:0.7});
   if(!r.ok) throw new Error(_aiErrMsg(r.status)+(await _aiErrDetail(r)));
