@@ -10286,7 +10286,7 @@ const _AI_PROVIDERS={
     link:'https://console.anthropic.com/settings/keys',linkLabel:'console.anthropic.com',
     note:'⚠️ מנוי Claude (Pro/Max) אינו כולל API — צריך חשבון API נפרד עם חיוב לפי שימוש.'},
   gemini:{label:'Gemini (Google · חינם)',keyPre:'',ph:'מפתח Google AI (מ-AI Studio)',model:'gemini-2.0-flash',free:true,
-    models:['gemini-2.0-flash','gemini-1.5-flash','gemini-2.5-flash','gemini-flash-latest'],
+    models:['gemini-2.0-flash','gemini-2.5-flash','gemini-2.5-flash-lite','gemini-flash-latest'],
     link:'https://aistudio.google.com/app/apikey',linkLabel:'aistudio.google.com',
     note:'🎁 ל-Google Gemini יש שכבה חינמית, ללא חיוב וללא כרטיס אשראי. ב-AI Studio לחץ "Create API key" והעתק את המפתח במלואו (אייקון ההעתקה 📋). המפתח יכול להתחיל ב-AIza או ב-AQ. — שניהם תקינים.'}
 };
@@ -10320,23 +10320,23 @@ async function _aiTestConn(){
   let k=((document.getElementById('ai-key-inp')||{}).value||'').replace(/\s+/g,'').replace(/^["']+|["']+$/g,'')||_aiKey();
   const model=((document.getElementById('ai-model-inp')||{}).value||'').trim()||cfg.model;
   if(!k){ if(box)box.innerHTML='<span style="color:#f4a261">הזן מפתח קודם</span>'; return; }
-  if(box)box.innerHTML='<span style="color:var(--text3)">🧪 בודק מול '+esc(cfg.label)+'…</span>';
+  if(box)box.innerHTML='<span style="color:var(--text3)">🧪 בודק תשובה אמיתית מ-'+esc(cfg.label)+'…</span>';
   try{
-    let r;
-    if(_aiProvider()==='gemini'){
-      r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',
-        {method:'POST',headers:{'content-type':'application/json','x-goog-api-key':k},
-         body:JSON.stringify({contents:[{role:'user',parts:[{text:'ping'}]}],generationConfig:{maxOutputTokens:5}})});
+    // בדיקה מקצה-לקצה: לא רק "התחבר" (200) אלא שמתקבל טקסט אמיתי — כך ש"תקין" באמת אומר שזה עובד.
+    // מריצה את אותו נתיב-קריאה של השימוש בפועל (כולל טיפול ב"חשיבה" של מודלי 2.5), עם מפתח/מודל שהוזנו.
+    const sys='אתה עוזר. ענה קצר מאוד בעברית.';
+    const msgs=[{role:'user',content:'אמור בדיוק את המילה: תקין'}];
+    const txt=_aiProvider()==='gemini'
+      ? await _aiCallGemini(k,sys,msgs,model)
+      : await _aiCallAnthropic(k,sys,msgs,model);
+    const clean=String(txt||'').replace(/\s/g,'');
+    if(clean&&clean.indexOf('לאהתקבלהתשובה')<0){
+      if(box)box.innerHTML='<span style="color:var(--teal);font-weight:700">✅ החיבור עובד! המודל החזיר תשובה. לחץ "שמור וחבר".</span>';
     }else{
-      r=await fetch('https://api.anthropic.com/v1/messages',
-        {method:'POST',headers:{'content-type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-         body:JSON.stringify({model:model,max_tokens:5,messages:[{role:'user',content:'ping'}]})});
+      if(box)box.innerHTML='<span style="color:#f4a261;font-weight:700">⚠️ התחבר אך לא הוחזר טקסט מהמודל — נסה מודל אחר בשדה המודל (למשל gemini-2.0-flash).</span>';
     }
-    if(r.ok){ if(box)box.innerHTML='<span style="color:var(--teal);font-weight:700">✅ החיבור תקין! המפתח והמודל עובדים. לחץ "שמור וחבר".</span>'; return; }
-    const detail=await _aiErrDetail(r);
-    if(box)box.innerHTML='<span style="color:#e76f51;font-weight:700">❌ שגיאה '+r.status+':</span> <span style="color:var(--text2)">'+esc(_aiErrMsg(r.status)+detail)+'</span>';
   }catch(e){
-    if(box)box.innerHTML='<span style="color:#e76f51;font-weight:700">❌ החיבור נכשל:</span> <span style="color:var(--text2)">'+esc(String(e&&e.message||e))+' — בדוק חיבור אינטרנט/חסימת דפדפן</span>';
+    if(box)box.innerHTML='<span style="color:#e76f51;font-weight:700">❌ </span><span style="color:var(--text2)">'+esc(String(e&&e.message||e))+'</span>';
   }
 }
 // הודעת שגיאה ידידותית ומעשית לפי קוד הסטטוס
@@ -10617,11 +10617,11 @@ async function _aiLLM(messages,systemOverride){
 }
 // חילוץ הודעת השגיאה האמיתית מגוף התשובה (Anthropic: error.message · Google: error.message)
 async function _aiErrDetail(r){ try{ const j=await r.json(); const m=(j&&j.error&&j.error.message)||''; return m?(' · '+String(m).slice(0,160)):''; }catch(e){ return ''; } }
-async function _aiCallAnthropic(key,system,msgs){
+async function _aiCallAnthropic(key,system,msgs,modelOverride){
   const r=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:_aiModel(),max_tokens:4096,system,messages:msgs})
+    body:JSON.stringify({model:modelOverride||_aiModel(),max_tokens:4096,system,messages:msgs})
   });
   if(!r.ok){ throw new Error(_aiErrMsg(r.status)+(await _aiErrDetail(r))); }
   const j=await r.json();
@@ -10629,21 +10629,46 @@ async function _aiCallAnthropic(key,system,msgs){
   if(j&&j.stop_reason==='max_tokens')txt+='\n\n…(התשובה ארוכה ונקטעה — כתוב "המשך" לקבלת ההמשך)';
   return txt;
 }
-async function _aiCallGemini(key,system,msgs){
-  const model=_aiModel();
+// חילוץ טקסט מתשובת Gemini עם אבחון סיבת-ריקנות: חסימת בטיחות / "חשיבה" שאכלה את כל תקציב הפלט / ריק
+function _aiGeminiExtract(j){
+  const pf=j&&j.promptFeedback;
+  if(pf&&pf.blockReason) return {err:'הבקשה נחסמה בבדיקת בטיחות ('+pf.blockReason+') — נסח מחדש'};
+  const cand=((j&&j.candidates)||[])[0];
+  if(!cand) return {err:'המודל לא החזיר תשובה'};
+  const parts=(cand.content&&cand.content.parts)||[];
+  let txt=parts.map(p=>(p&&p.text)||'').join('').trim();
+  const fr=cand.finishReason;
+  if(!txt){
+    if(fr==='SAFETY'||fr==='RECITATION') return {err:'התשובה נחסמה ('+fr+') — נסח מחדש'};
+    if(fr==='MAX_TOKENS') return {thinking:true}; // כל תקציב-הפלט הלך ל"חשיבה" פנימית — טקסט ריק
+    return {err:'המודל החזיר תשובה ריקה — נסה מודל אחר בשדה המודל'};
+  }
+  if(fr==='MAX_TOKENS')txt+='\n\n…(התשובה ארוכה ונקטעה — כתוב "המשך" לקבלת ההמשך)';
+  return {txt};
+}
+async function _aiCallGemini(key,system,msgs,modelOverride){
+  const model=modelOverride||_aiModel();
   const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent';
-  const body={ systemInstruction:{parts:[{text:system}]},
-    contents:msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:String(m.content||'')}]})),
-    generationConfig:{maxOutputTokens:4096} };
-  // המפתח נשלח ב-header (x-goog-api-key) — השיטה הרשמית הנוכחית, תואמת גם למפתחות בפורמט החדש (AQ.) וגם לישן (AIza)
-  const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},body:JSON.stringify(body)});
-  if(!r.ok){ throw new Error(_aiErrMsg(r.status)+(await _aiErrDetail(r))); }
-  const j=await r.json();
-  let txt='',cand=null;
-  try{ cand=(j.candidates||[])[0]; const parts=(cand&&cand.content&&cand.content.parts)||[]; txt=parts.map(p=>p.text||'').join('').trim(); }catch(e){}
-  if(!txt)return '(לא התקבלה תשובה)';
-  if(cand&&cand.finishReason==='MAX_TOKENS')txt+='\n\n…(התשובה ארוכה ונקטעה — כתוב "המשך" לקבלת ההמשך)';
-  return txt;
+  const contents=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:String(m.content||'')}]}));
+  // המפתח נשלח ב-header (x-goog-api-key) — השיטה הרשמית, תואמת גם לפורמט החדש (AQ.) וגם לישן (AIza)
+  const post=gc=>fetch(url,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},
+    body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,generationConfig:gc})});
+  // ניסיון ראשון: רגיל, תקציב-פלט גדול (בלי דגלי-חשיבה — לא לשבור מודלים ישנים כמו 2.0/1.5)
+  let r=await post({maxOutputTokens:8192,temperature:0.7});
+  if(!r.ok) throw new Error(_aiErrMsg(r.status)+(await _aiErrDetail(r)));
+  let o=_aiGeminiExtract(await r.json());
+  if(o.txt) return o.txt;
+  // מודל 2.5 שהוציא את כל תקציב-הפלט על "חשיבה" והחזיר טקסט ריק — כבה חשיבה ונסה שוב (השורש של "מתחבר אבל לא עובד")
+  if(o.thinking){
+    r=await post({maxOutputTokens:8192,temperature:0.7,thinkingConfig:{thinkingBudget:0}});
+    if(r.ok){ o=_aiGeminiExtract(await r.json()); if(o.txt) return o.txt; }
+    else if(r.status===400){ // מודל שדוחה thinkingBudget:0 — הגדל תקציב במקום כדי שיישאר מקום לטקסט אחרי החשיבה
+      r=await post({maxOutputTokens:24576,temperature:0.7});
+      if(r.ok){ o=_aiGeminiExtract(await r.json()); if(o.txt) return o.txt; }
+    }
+    throw new Error('המודל '+model+' מוציא את תקציב-הפלט על "חשיבה" ולא מחזיר טקסט — בחר מודל קל יותר (למשל gemini-2.0-flash) בשדה המודל');
+  }
+  throw new Error(o.err||'לא התקבלה תשובה');
 }
 // עיצוב טקסט התשובה: תמיכה קלה ב-Markdown (מודגש/רשימות/כותרות) — בטוח (esc קודם, ואז רק תגיות משלנו)
 function _aiFmt(raw){
