@@ -10788,8 +10788,11 @@ async function _aiSubmit(){
         _aiRenderChat(false);
       }
     }catch(e){
-      const loc=_aiAsk(q); const lt=loc?(loc.title+': '+String(loc.text).replace(/<[^>]+>/g,'')):'';
-      _aiChat.push({role:'assistant',content:'⚠️ AI חכם לא זמין ('+String(e&&e.message||e).slice(0,80)+').'+(lt?'\n\nתשובה מקומית — '+lt:'')});
+      // הספק החיצוני נכשל — לא משאירים את המשתמש בלי תשובה: עונים מיד מהמנוע המקומי (על הנתונים במכשיר),
+      // ומוסיפים בשקט הערה קטנה בסוף על מה שקרה. כך "העוזר תמיד עובד" גם כשה-AI החיצוני מושבת.
+      const loc=_aiAsk(q); const lt=loc?((loc.title?('**'+loc.title+'**\n'):'')+String(loc.text||'').replace(/<[^>]+>/g,'')):'';
+      const why='_(העוזר החכם החיצוני לא זמין כרגע: '+String(e&&e.message||e).slice(0,90)+' — התשובה למעלה מבוססת על הנתונים במכשיר)_';
+      _aiChat.push({role:'assistant',content:lt?(lt+'\n\n'+why):('⚠️ '+why)});
       _aiRenderChat(false);
     }
     return;
