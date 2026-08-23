@@ -716,3 +716,24 @@ test('מכסת מועמדים שמורה לרשויות מקומיות ולמו�
   const enrichAt = src.indexOf('NEEDS_ENRICH_FIRST.has(b.category');
   assert.ok(enrichAt > 0, 'המיון לפי מגזר קיים בהעשרה');
 });
+
+// באתרי הרשויות המקומיות רוב הפריטים בעמוד המכרזים אינם מכרזים אלא הודעות על
+// התקשרות ללא הליך תחרותי. במועצה אזורית דרום השרון כל ארבעת הממצאים היו כאלה:
+// "מכרז משכ״ל לשירותי תקשורת" תחת הכותרת "התקשרויות ללא מכרז פומבי", ו"החלטה
+// על התקשרות" לשירותי IT ולהגנת סייבר.
+test('"התקשרות ללא מכרז" ו"החלטה על התקשרות" מזוהות כפטור וככוונה', () => {
+  assert.strictEqual(R.detectKind('התקשרות ללא מכרז פומבי לאספקת ציוד תקשורת', ''), 'exemption');
+  assert.strictEqual(R.detectKind('התקשרויות ללא מכרז פומבי — שירותי תקשוב', ''), 'exemption');
+  assert.strictEqual(R.detectKind('החלטה על התקשרות לאספקת שירותי הגנת סייבר', ''), 'intent');
+  assert.strictEqual(R.detectKind('החלטה על התקשרות לשירותי ניהול ופיקוח מכרז מחשוב', ''), 'intent');
+  // ומכרז אמיתי נשאר מכרז
+  assert.strictEqual(R.detectKind('מכרז פומבי 4/2026 לאספקת ציוד תקשורת', ''), 'tender');
+  assert.strictEqual(R.detectKind('מכרז משכ"ל לאספקת שירותי תקשורת ותקשוב', ''), 'tender');
+
+  // שני הסוגים אינם נכנסים לראדאר
+  for (const t of ['התקשרות ללא מכרז פומבי לאספקת ציוד תקשורת',
+                   'החלטה על התקשרות לאספקת שירותי הגנת סייבר']) {
+    assert.strictEqual(R.buildRecord({ title: t, url: 'https://x.org.il/bids/1', context: '' },
+      { id: 's', name: 'מועצה', allTenders: true }, KW), null, `"${t}" אינו נכנס`);
+  }
+});

@@ -7103,7 +7103,15 @@ function _radarDl(x){ return x?db(nd(),x):null; }
 
 /* ── פקדי סינון ── */
 function _radarToggleTopic(id){ _radarF.topics.has(id)?_radarF.topics.delete(id):_radarF.topics.add(id); _radarRender(); }
-function _radarToggleCat(id){ _radarF.cats.has(id)?_radarF.cats.delete(id):_radarF.cats.add(id); _radarRender(); }
+/* סינון המגזר נשמר בין ביקורים: מי שמתמקד ברשויות מקומיות לא רוצה לבחור את זה
+   מחדש בכל כניסה למסך. */
+const _RADAR_CATS_KEY='crm_radar_cats_v1';
+try{ (JSON.parse(localStorage.getItem(_RADAR_CATS_KEY))||[]).forEach(c=>_radarF.cats.add(c)); }catch(e){}
+function _radarSaveCats(){try{localStorage.setItem(_RADAR_CATS_KEY,JSON.stringify([..._radarF.cats]))}catch(e){}}
+function _radarToggleCat(id){
+  _radarF.cats.has(id)?_radarF.cats.delete(id):_radarF.cats.add(id);
+  _radarSaveCats(); _radarRender();
+}
 function _radarToggleKind(id){ _radarF.kinds.has(id)?_radarF.kinds.delete(id):_radarF.kinds.add(id); _radarRender(); }
 function _radarSearch(v){ _radarF.q=v; _srchDebounce('radar',_radarRender,140); }
 function _radarSetSort(v){ _radarF.sort=v; _radarRender(); }
@@ -7112,7 +7120,7 @@ function _radarSetFlag(k,v){ _radarF[k]=v; _radarRender(); }
 function _radarSetKpi(k){ _radarF.kpi=(k&&_radarF.kpi!==k)?k:''; _radarRender(); }
 function _radarClear(){
   _radarF.q='';_radarF.topics.clear();_radarF.source='';_radarF.kpi='';
-  _radarF.kinds.clear();_radarF.cats.clear();_radarF.onlyOpen=false;_radarF.onlyNew=false;
+  _radarF.kinds.clear();_radarF.cats.clear();_radarSaveCats();_radarF.onlyOpen=false;_radarF.onlyNew=false;
   _radarRender();
 }
 /** מוחק מכרז מהראדאר. ההצגה חוזרת רק דרך שחזור מפורש. */
