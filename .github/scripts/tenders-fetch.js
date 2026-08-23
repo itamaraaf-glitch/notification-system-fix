@@ -491,8 +491,12 @@ function sameUrl(a, b) {
  * אבל אין בו מה להגיש — הוא מפרסם את מי שזכה. באתר עיריית אריאל הגילוי בחר בדיוק
  * אותו, ולכן הוא מקבל ניקוד שלילי חזק. עמוד "מכרזים פעילים" מקבל העדפה.
  */
-const ARCHIVE_LINK_RE = /(תוצאות|ארכיון|שהסתיימו|שנסגרו|קודמים|היסטורי|זוכ(ה|ים)|פרוטוקול|archive|results)/;
+const ARCHIVE_LINK_RE = /(תוצאות|ארכיון|שהסתיימו|שנסגרו|קודמים|היסטורי|זוכ(ה|ים)|פרוטוקול|archive|results|protocol)/i;
 const ACTIVE_LINK_RE = /(פעילים|פתוחים|נוכחיים|חדשים|מכרזים\s*מתפרסמים)/;
+// נתיב שהוא במפורש עמוד מכרזים הוא האינדיקציה החזקה ביותר, חזקה מטקסט הקישור:
+// באתר עיריית נס ציונה הגילוי נחת על /protocols/ — עמוד פרוטוקולי ועדות מ-2021 —
+// בעוד ש-/bids/ הוא עמוד המכרזים האמיתי.
+const TENDER_PATH_RE = /\/(bids?|michrazim|mihrazim|tenders?|michraz|tender)(\/|$|\?)/i;
 // "מכרזי כוח אדם" ודפי דרושים אינם מכרזי רכש. באתר הדסה האקדמית הגילוי נחת על
 // "דרושים במכללה" — עמוד משרות. קישור שמדבר על משרות ולא על מכרז מקבל ניקוד שלילי,
 // אבל עמוד משולב ("מכרזים ודרושים") נשאר, כי ברשויות רבות זה אותו עמוד.
@@ -527,6 +531,7 @@ function findTenderLinks(html, baseUrl) {
     const haystack = a.title + ' ' + decodeURIComponent(a.url);
     const score = (/^\s*מכרזים\s*$/.test(a.title) ? 100 : 0) + (byText ? 10 : 0) + (byUrl ? 5 : 0)
       + (ACTIVE_LINK_RE.test(haystack) ? 40 : 0)
+      + (TENDER_PATH_RE.test(a.url) ? 60 : 0)
       - (ARCHIVE_LINK_RE.test(haystack) ? 150 : 0)
       - (jobsOnly(a.title) || jobsOnly(lastPathSegment(a.url)) ? 150 : 0)
       - Math.min(20, a.title.length / 5);
@@ -1376,7 +1381,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, dropReason, DROP_LABELS, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
+  classify, dropReason, DROP_LABELS, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS

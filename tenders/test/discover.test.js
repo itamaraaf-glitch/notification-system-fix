@@ -354,3 +354,23 @@ test('גילוי עובר למועמד הבא כשהמועדף לא נטען', a
       'הכישלון של המועמד הראשון מדווח כאזהרה');
   } finally { srv.close(); }
 });
+
+// באתר עיריית נס ציונה הגילוי נחת על /protocols/ — עמוד פרוטוקולי ועדות מ-2021
+// — בעוד ש-/bids/ הוא עמוד המכרזים. זה הסביר למה כל הרשויות החזירו אפס: הן
+// נסרקו, אבל לא את העמוד הנכון.
+test('נתיב שהוא במפורש עמוד מכרזים גובר על טקסט הקישור', () => {
+  const html = `
+    <a href="/protocols/">פרוטוקולים ומכרזים</a>
+    <a href="/bids/">מכרזים</a>
+    <a href="/committees/michrazim">ועדת מכרזים</a>`;
+  const urls = R.findTenderLinks(html, 'https://www.nzc.org.il/').map(l => l.url);
+  assert.ok(urls[0].endsWith('/bids/'), 'עמוד המכרזים ראשון: ' + urls.join(' , '));
+  assert.ok(urls.indexOf('https://www.nzc.org.il/protocols/') > 1,
+    'עמוד הפרוטוקולים בסוף התור');
+
+  assert.ok(R.TENDER_PATH_RE.test('https://x.muni.il/bids/'));
+  assert.ok(R.TENDER_PATH_RE.test('https://x.muni.il/he/tenders'));
+  assert.ok(R.TENDER_PATH_RE.test('https://x.muni.il/michrazim/'));
+  assert.ok(!R.TENDER_PATH_RE.test('https://x.muni.il/protocols/'));
+  assert.ok(!R.TENDER_PATH_RE.test('https://x.muni.il/about/'));
+});
