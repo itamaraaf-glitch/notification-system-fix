@@ -699,3 +699,20 @@ test('טקסט בלי שום התאמה אינו נחשב "חסום"', () => {
   assert.ok(blocked.penalty > 0, 'כאן יש מונח שלילה');
   assert.strictEqual(blocked.blocked, true, 'והוא גובר על החיובי');
 });
+
+// מנהל הרכש הממשלתי מייצר אלפי קישורים ליום ותופס את כל מקומות רשימת הבדיקה.
+// במדידה: 40 מועמדים, מתוכם 0 מוניציפליים — בעוד שרשות אחת הפיקה 4 ממצאים.
+// לכן חצי מהמקומות שמורים לרשויות ולמוסדות, ומה שלא נוצל חוזר לשאר.
+test('מכסת מועמדים שמורה לרשויות מקומיות ולמוסדות אקדמיים', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', '..', '.github', 'scripts', 'tenders-fetch.js'), 'utf8');
+  assert.ok(/const LOCAL_CATS = new Set\(\['רשויות מקומיות', 'מוסדות אקדמיים'\]\)/.test(src),
+    'המגזרים המועדפים מוגדרים');
+  assert.ok(/Math\.ceil\(NEAR_LIMIT \/ 2\)/.test(src), 'חצי מהמקומות שמורים');
+  assert.ok(/rest\.slice\(0, NEAR_LIMIT - localQuota\)/.test(src),
+    'מכסה שלא נוצלה חוזרת לשאר ולא הולכת לאיבוד');
+
+  // העשרת המועדים מעדיפה את אותם מגזרים — שם המועד באמת חסר
+  assert.ok(/NEEDS_ENRICH_FIRST/.test(src), 'העשרת המועדים מעדיפה רשויות ומוסדות');
+  const enrichAt = src.indexOf('NEEDS_ENRICH_FIRST.has(b.category');
+  assert.ok(enrichAt > 0, 'המיון לפי מגזר קיים בהעשרה');
+});

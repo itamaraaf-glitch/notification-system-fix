@@ -856,8 +856,18 @@ async function main() {
     const da = a.deadlineAt || '9999-99-99', db2 = b.deadlineAt || '9999-99-99';
     return da.localeCompare(db2) || (b.score || 0) - (a.score || 0);
   };
-  const nearList = nearActionable.sort(byDeadline)
-    .slice(0, +(process.env.TENDERS_NEAR_LIMIT || 40));
+  // מכסה מגזרית: בלעדיה מנהל הרכש הממשלתי — שמייצר אלפי קישורים ליום — תופס את
+  // כל 40 המקומות, ומועמד מוניציפלי אחד לא מגיע לבדיקה. חצי מהמקומות שמורים
+  // לרשויות מקומיות ולמוסדות אקדמיים, ומה שלא נוצל חוזר לשאר.
+  const NEAR_LIMIT = +(process.env.TENDERS_NEAR_LIMIT || 40);
+  const LOCAL_CATS = new Set(['רשויות מקומיות', 'מוסדות אקדמיים']);
+  const sorted = nearActionable.sort(byDeadline);
+  const local = sorted.filter(r => LOCAL_CATS.has(r.category || ''));
+  const rest = sorted.filter(r => !LOCAL_CATS.has(r.category || ''));
+  const localQuota = Math.min(local.length, Math.ceil(NEAR_LIMIT / 2));
+  const nearList = [...local.slice(0, localQuota), ...rest.slice(0, NEAR_LIMIT - localQuota)]
+    .sort(byDeadline);
+  if (local.length) console.error(`   מתוכם ${local.length} מרשויות ומוסדות — ${localQuota} נכנסו למכסה השמורה`);
   console.error(`\n🔎 מועמדים לבדיקה: ${nearAll.length} בלי נושא, מתוכם ${nearActionable.length} פתוחים להגשה, נשמרו ${nearList.length}`);
 
   // הכרעות AI שנשמרו מריצות קודמות מוחלות מחדש: הסורק כותב את הקובץ מחדש בכל
@@ -1107,8 +1117,14 @@ async function debugSource(cfg, kw) {
  */
 async function enrichDeadlines(records) {
   const limit = +(process.env.TENDERS_ENRICH_LIMIT || 25);
+  // סדר עדיפות: רשויות מקומיות ומוסדות אקדמיים קודם. מכרזי מנהל הרכש כבר מגיעים
+  // עם מועד מדף הרשימה, ואילו דפי הרשויות כמעט לעולם לא — בלי העדפה, התקציב
+  // המוגבל נבלע על ידי המקורות הממשלתיים ומכרזי הרשויות נושרים כ"בלי מועד".
+  const NEEDS_ENRICH_FIRST = new Set(['רשויות מקומיות', 'מוסדות אקדמיים']);
   const targets = records.filter(r =>
-    r.lastSeen === today && !r.deadlineAt && !r.deadlineChecked && r.url).slice(0, limit);
+    r.lastSeen === today && !r.deadlineAt && !r.deadlineChecked && r.url)
+    .sort((a, b) => (NEEDS_ENRICH_FIRST.has(b.category || '') ? 1 : 0) - (NEEDS_ENRICH_FIRST.has(a.category || '') ? 1 : 0))
+    .slice(0, limit);
   if (!targets.length) return;
 
   let filled = 0;
