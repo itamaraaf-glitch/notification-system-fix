@@ -1353,13 +1353,37 @@ function buildRecord(item, source, kw, opts = {}) {
   };
 }
 
+/**
+ * שדות שההעשרה מילאה מדף המכרז עצמו — הסריקה הבאה לא תמצא אותם שוב.
+ *
+ * דף רשימת המכרזים של רשות אינו מכיל את מועד ההגשה; הוא נמצא רק בדף המכרז,
+ * ולשם נכנסים פעם אחת בלבד לכל מכרז. הפעולה `{ ...prev, ...rec }` דרסה את
+ * הערך השמור במחרוזת הריקה שהסריקה החדשה מחזירה, ולכן כל ריצה מחקה את מה
+ * שהריצה הקודמת גילתה: המדידה הראתה 35 מכרזים עם מועד יורדים ל-25 למחרת,
+ * ותשע רשומות חוזרות לנשור כ"בלי מועד" — לצמיתות, כי deadlineChecked כן שרד
+ * והן לא נבדקו שוב לעולם.
+ *
+ * ערך חדש מהסריקה עדיין גובר: דף הרשימה הוא המקור הסמכותי, ומועד שהוארך
+ * צריך לעדכן את השמור.
+ */
+const ENRICHED_FIELDS = ['deadlineAt', 'publishedAt', 'tenderNumber'];
+function keepEnriched(prev, rec) {
+  const merged = { ...prev, ...rec };
+  for (const f of ENRICHED_FIELDS) if (!merged[f] && prev[f]) merged[f] = prev[f];
+  // מקור המועד חייב לתאר את המועד שנשמר בפועל, אחרת מועד טרי מדף הרשימה
+  // היה מוצג כאילו נשלף מדף המכרז
+  if (rec.deadlineAt) merged.deadlineFrom = rec.deadlineFrom || '';
+  else if (prev.deadlineAt) merged.deadlineFrom = prev.deadlineFrom;
+  return merged;
+}
+
 function mergeWithHistory(current, prevById, activeSources, kw) {
   const out = new Map();
 
   for (const rec of current) {
     const prev = prevById.get(rec.id);
     out.set(rec.id, prev
-      ? { ...prev, ...rec, firstSeen: prev.firstSeen || rec.firstSeen, lastSeen: today }
+      ? { ...keepEnriched(prev, rec), firstSeen: prev.firstSeen || rec.firstSeen, lastSeen: today }
       : rec);
   }
 
@@ -1437,7 +1461,7 @@ if (require.main === module) {
 
 module.exports = {
   classify, dropReason, DROP_LABELS, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, BINARY_URL_RE,
-  extractTenderNumber, buildRecord, mergeWithHistory, summarize,
+  extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
 };

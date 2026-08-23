@@ -791,3 +791,30 @@ test('ייעוץ אסטרטגי־תקשורתי אינו תחום התקשורת
   assert.ok(topicsOf('מכרז לשירותי תקשורת נתונים DATA').includes('telecom'));
   assert.ok(topicsOf('מכרז לתשתית תקשורת פסיבית ותקשוב').includes('telecom'));
 });
+
+// הסריקה של 23/08 שמרה 35 מכרזים עם מועד; הריצה שאחריה החזירה 25, ותשע רשומות
+// חזרו לנשור כ"בלי מועד". הסיבה: { ...prev, ...rec } דרס את המועד שההעשרה
+// מילאה במחרוזת הריקה שדף הרשימה מחזיר — ו-deadlineChecked כן שרד, ולכן הן לא
+// נבדקו שוב לעולם.
+test('מועד שההעשרה מילאה שורד את הסריקה הבאה', () => {
+  const prev = { id: 'x', title: 'מכרז ציוד תקשורת', url: 'https://a.muni.il/t/1',
+                 deadlineAt: '2026-09-30', deadlineFrom: 'detail', deadlineChecked: true,
+                 publishedAt: '2026-08-01', tenderNumber: '5/2026', firstSeen: '2026-08-01' };
+  const rec  = { id: 'x', title: 'מכרז ציוד תקשורת', url: 'https://a.muni.il/t/1',
+                 deadlineAt: '', publishedAt: '', tenderNumber: '' };
+
+  const kept = R.keepEnriched(prev, rec);
+  assert.strictEqual(kept.deadlineAt, '2026-09-30', 'המועד לא נמחק');
+  assert.strictEqual(kept.deadlineFrom, 'detail');
+  assert.strictEqual(kept.publishedAt, '2026-08-01');
+  assert.strictEqual(kept.tenderNumber, '5/2026');
+
+  // מועד חדש מדף הרשימה גובר — הארכת מועד צריכה לעדכן
+  const extended = R.keepEnriched(prev, { ...rec, deadlineAt: '2026-10-15' });
+  assert.strictEqual(extended.deadlineAt, '2026-10-15');
+  assert.ok(!extended.deadlineFrom, 'מועד טרי מדף הרשימה אינו מסומן כאילו נשלף מדף המכרז');
+
+  // ואותו דבר דרך המיזוג המלא
+  const merged = R.mergeWithHistory([rec], new Map([['x', prev]]), null, null);
+  assert.strictEqual(merged.find(r => r.id === 'x').deadlineAt, '2026-09-30');
+});
