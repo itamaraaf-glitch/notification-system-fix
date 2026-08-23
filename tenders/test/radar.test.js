@@ -737,3 +737,41 @@ test('"התקשרות ללא מכרז" ו"החלטה על התקשרות" מזו
       { id: 's', name: 'מועצה', allTenders: true }, KW), null, `"${t}" אינו נכנס`);
   }
 });
+
+// ─────────── מועד ההגשה בדף רשימה עמוס ובקישור לקובץ ───────────
+// שני ליקויים שהאבחון על אתר מ.א. לכיש חשף, בטקסט אמיתי מהעמוד.
+
+test('מתוך כמה ביטויי מועד בהקשר נבחר זה שטרם חלף', () => {
+  const future = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+  const [y, m, d] = future.split('-');
+  const ctx = `מכרז ישן — המועד המעודכן להגשה עד 13.6.2024 בשעה 12:00 . ` +
+              `תשלום עבור השתתפות במכרז – להגשה עד ${d}/${m}/${y} בשעה 12:00`;
+  assert.strictEqual(R.dateAfterHint(ctx, R.DEADLINE_HINTS), future,
+    'ההיקרות הראשונה היא מכרז שחלף — צריך להמשיך לזו שטרם חלפה');
+
+  // כשכל המועדים חלפו מוחזר הראשון, כדי שהסינון יזהה מכרז סגור ולא "בלי מועד"
+  const past = 'מועד אחרון להגשה 13.6.2024 . מועד הגשה 17/06/2024';
+  assert.strictEqual(R.dateAfterHint(past, R.DEADLINE_HINTS), '2024-06-13');
+
+  // בלי ביטוי רמז אין תאריך, גם כשיש תאריכים בטקסט
+  assert.strictEqual(R.dateAfterHint('פורסם 01/01/2026 ועודכן 02/01/2026', R.DEADLINE_HINTS), '');
+});
+
+test('קישור לקובץ אינו נשלח להעשרת מועדים', async () => {
+  for (const u of ['https://lachish.org.il/wp-content/uploads/2026/02/mich.pdf',
+                   'https://x.muni.il/files/a.DOCX', 'https://x.muni.il/f.xlsx?v=2',
+                   'https://x.muni.il/f.zip#p']) {
+    assert.ok(R.BINARY_URL_RE.test(u), `${u} הוא קובץ`);
+  }
+  for (const u of ['https://x.muni.il/bids/123', 'https://x.muni.il/tender.aspx?id=5',
+                   'https://x.muni.il/pdf-viewer/7']) {
+    assert.ok(!R.BINARY_URL_RE.test(u), `${u} הוא עמוד`);
+  }
+
+  // enrichDeadlines לא מבצע ולו בקשה אחת כשכל המועמדים הם קבצים
+  const today = new Date().toISOString().slice(0, 10);
+  const recs = [{ id: 'a', lastSeen: today, url: 'https://x.muni.il/a.pdf', category: 'רשויות מקומיות' }];
+  await R.enrichDeadlines(recs);
+  assert.strictEqual(recs[0].deadlineChecked, undefined, 'קובץ אינו מסומן כנבדק');
+  assert.strictEqual(recs[0].deadlineAt, undefined);
+});

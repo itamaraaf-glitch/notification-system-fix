@@ -246,13 +246,39 @@ function normalizeParts(y, m, d) {
 const DEADLINE_HINTS = /(מועד\s*אחרון|תאריך\s*אחרון|להגשה\s*עד|מועד\s*ההגשה|מועד\s*הגשה|תום\s*המועד|נעילת|סגירת\s*המכרז|הגשה\s*עד)/;
 const PUBLISH_HINTS = /(תאריך\s*פרסום|פורסם\s*ב|מועד\s*פרסום|תאריך\s*הפרסום)/;
 
-/** מחפש תאריך שמופיע אחרי ביטוי רמז, בתוך חלון טקסט */
+/**
+ * מחפש תאריך שמופיע אחרי ביטוי רמז, בתוך חלון טקסט.
+ *
+ * בדף רשימה של רשות מקומית מופיעים עשרות מכרזים זה אחר זה, וחלון ההקשר של
+ * קישור אחד בולע גם את שכניו. אבחון על אתר מ.א. לכיש הראה את התוצאה: ההקשר
+ * הכיל גם "המועד המעודכן להגשה עד 13.6.2024" של מכרז ישן וגם "להגשה עד
+ * 25/08/2026" של מכרז פתוח, והבדיקה על ההיקרות הראשונה בלבד החזירה את הישן.
+ * לכן עוברים על כל ההיקרויות ומעדיפים מועד שטרם חלף; אם אין כזה, מוחזר
+ * הראשון שנמצא, כדי שהסינון יוכל לזהות אותו כמכרז שנסגר.
+ */
 function dateAfterHint(context, hintRe) {
-  const m = context.match(hintRe);
-  if (!m) return '';
-  const after = context.slice(m.index, m.index + 140);
-  return parseDateNear(after);
+  const text = String(context || '');
+  const re = new RegExp(hintRe.source, hintRe.flags.includes('g') ? hintRe.flags : hintRe.flags + 'g');
+  let first = '';
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    re.lastIndex = m.index + m[0].length;
+    const d = parseDateNear(text.slice(m.index, m.index + 140));
+    if (!d) continue;
+    if (!first) first = d;
+    if (daysBetween(today, d) >= 0) return d;
+  }
+  return first;
 }
+
+/**
+ * קישור לקובץ ולא לעמוד. ברשויות מקומיות רוב קישורי המכרזים מובילים ישירות
+ * ל-PDF, ו"קריאת" PDF כטקסט מחזירה בייטים דחוסים — לא טקסט. אבחון על מ.א.
+ * לכיש הראה בדיוק את זה: 209,567 תווים שמתוכם שני תאריכים, שניהם מטא-דאטה של
+ * הקובץ. לכן קישור כזה אינו נשלח להעשרת מועדים: הבקשה לעולם לא תניב מועד,
+ * והיא גוזלת מהתקציב עמוד HTML שכן היה מניב.
+ */
+const BINARY_URL_RE = /\.(pdf|docx?|xlsx?|pptx?|odt|zip|rar|7z)(\?|#|$)/i;
 
 const TENDER_NUM = /(?:מכרז|הליך|פנייה|פניה)[^\d\n]{0,25}(\d{1,4}\s*[\/\-]\s*\d{2,4})/;
 function extractTenderNumber(text) {
@@ -1124,11 +1150,17 @@ async function enrichDeadlines(records) {
   // עם מועד מדף הרשימה, ואילו דפי הרשויות כמעט לעולם לא — בלי העדפה, התקציב
   // המוגבל נבלע על ידי המקורות הממשלתיים ומכרזי הרשויות נושרים כ"בלי מועד".
   const NEEDS_ENRICH_FIRST = new Set(['רשויות מקומיות', 'מוסדות אקדמיים']);
-  const targets = records.filter(r =>
-    r.lastSeen === today && !r.deadlineAt && !r.deadlineChecked && r.url)
+  const pending = records.filter(r =>
+    r.lastSeen === today && !r.deadlineAt && !r.deadlineChecked && r.url);
+  const fetchable = pending.filter(r => !BINARY_URL_RE.test(r.url));
+  const skipped = pending.length - fetchable.length;
+  const targets = fetchable
     .sort((a, b) => (NEEDS_ENRICH_FIRST.has(b.category || '') ? 1 : 0) - (NEEDS_ENRICH_FIRST.has(a.category || '') ? 1 : 0))
     .slice(0, limit);
-  if (!targets.length) return;
+  if (!targets.length) {
+    if (skipped) console.error(`\n🔎 העשרת מועדים: אין דף מכרז לבדיקה (${skipped} קישורים לקבצים דולגו)`);
+    return;
+  }
 
   let filled = 0;
   for (const rec of targets) {
@@ -1151,7 +1183,8 @@ async function enrichDeadlines(records) {
     } catch (_) { /* דף מכרז שלא נטען — נשאר בלי מועד */ }
     await sleep(POLITE_DELAY_MS);
   }
-  console.error(`\n🔎 העשרת מועדים: נבדקו ${targets.length} דפי מכרז, נמצאו ${filled} מועדי הגשה`);
+  console.error(`\n🔎 העשרת מועדים: נבדקו ${targets.length} דפי מכרז, נמצאו ${filled} מועדי הגשה` +
+    (skipped ? ` (${skipped} קישורים לקבצים דולגו — PDF אינו נקרא כטקסט)` : ''));
 }
 
 /**
@@ -1403,7 +1436,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, dropReason, DROP_LABELS, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint,
+  classify, dropReason, DROP_LABELS, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, BINARY_URL_RE,
   extractTenderNumber, buildRecord, mergeWithHistory, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
