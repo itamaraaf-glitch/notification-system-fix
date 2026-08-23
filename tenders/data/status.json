@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-20T03:57:42.259Z",
+  "generatedAt": "2026-08-23T03:59:54.104Z",
   "sources": [
     {
       "id": "gov-il",
@@ -9,7 +9,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.gov.il/he/departments/topics/tenders-sub/govil — HTTP 403",
-      "ms": 973,
+      "ms": 1111,
       "searchUrl": "https://www.gov.il/he/departments/publications?publicationType=tender"
     },
     {
@@ -20,8 +20,19 @@
       "scanned": 0,
       "count": 0,
       "error": "www.moin.gov.il/Tenders — HTTP 403",
-      "ms": 1729,
+      "ms": 1730,
       "searchUrl": "https://www.moin.gov.il/Tenders"
+    },
+    {
+      "id": "iaa",
+      "name": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "ok": true,
+      "scanned": 291,
+      "count": 1,
+      "ms": 5204,
+      "warn": "",
+      "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
     },
     {
       "id": "iec",
@@ -30,7 +41,7 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 1805,
+      "ms": 3196,
       "warn": "",
       "searchUrl": "https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders"
     },
@@ -42,19 +53,8 @@
       "scanned": 0,
       "count": 0,
       "error": "www.nta.co.il/tenders/ — HTTP 403",
-      "ms": 1159,
+      "ms": 3501,
       "searchUrl": "https://www.nta.co.il/tenders/"
-    },
-    {
-      "id": "iaa",
-      "name": "רשות שדות התעופה",
-      "category": "תשתיות",
-      "ok": true,
-      "scanned": 291,
-      "count": 1,
-      "ms": 7006,
-      "warn": "",
-      "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
     },
     {
       "id": "transisrael",
@@ -64,7 +64,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.transisrael.co.il/Tenders — HTTP 403",
-      "ms": 2323,
+      "ms": 1086,
       "searchUrl": "https://www.transisrael.co.il/Tenders?currentView=1"
     },
     {
@@ -75,7 +75,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D — HTTP 403",
-      "ms": 2434,
+      "ms": 1099,
       "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
     },
     {
@@ -85,7 +85,7 @@
       "ok": true,
       "scanned": 639,
       "count": 0,
-      "ms": 2751,
+      "ms": 2344,
       "warn": "",
       "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx"
     },
@@ -96,7 +96,7 @@
       "ok": true,
       "scanned": 8,
       "count": 0,
-      "ms": 3759,
+      "ms": 4461,
       "warn": "",
       "searchUrl": "https://www.atarim.gov.il/tenders/"
     },
@@ -107,7 +107,7 @@
       "ok": true,
       "scanned": 424,
       "count": 0,
-      "ms": 6891,
+      "ms": 6244,
       "warn": "",
       "discovered": [
         "https://www.haifa.muni.il/city-and-muni/legaladvice/contracts-and-tenders/",
@@ -120,9 +120,9 @@
       "name": "עיריית נס ציונה",
       "category": "רשויות מקומיות",
       "ok": true,
-      "scanned": 1956,
+      "scanned": 1961,
       "count": 0,
-      "ms": 4778,
+      "ms": 4031,
       "warn": "",
       "discovered": [
         "https://www.nzc.org.il/bids/",
@@ -137,7 +137,7 @@
       "ok": true,
       "scanned": 1192,
       "count": 0,
-      "ms": 3948,
+      "ms": 3496,
       "warn": "",
       "discovered": [
         "https://www.dsharon.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/",
@@ -153,7 +153,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 186,
+      "ms": 316,
       "searchUrl": "https://www.rail.co.il/"
     },
     {
@@ -164,8 +164,23 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 816,
+      "ms": 742,
       "searchUrl": "https://www.mekorot.co.il/"
+    },
+    {
+      "id": "muni-emek-yizrael",
+      "name": "מועצה אזורית עמק יזרעאל",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 453,
+      "count": 0,
+      "ms": 3723,
+      "warn": "",
+      "discovered": [
+        "https://www.eyz.org.il/bids/",
+        "https://www.eyz.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
+      ],
+      "searchUrl": "https://www.eyz.org.il/"
     },
     {
       "id": "ashdod-port",
@@ -175,7 +190,7 @@
       "scanned": 0,
       "count": 0,
       "error": "fetch failed",
-      "ms": 3005,
+      "ms": 2815,
       "searchUrl": "https://www.ashdodport.co.il/"
     },
     {
@@ -186,23 +201,8 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 700,
+      "ms": 1455,
       "searchUrl": "https://www.haifaport.co.il/"
-    },
-    {
-      "id": "muni-emek-yizrael",
-      "name": "מועצה אזורית עמק יזרעאל",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 453,
-      "count": 0,
-      "ms": 8610,
-      "warn": "",
-      "discovered": [
-        "https://www.eyz.org.il/bids/",
-        "https://www.eyz.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
-      ],
-      "searchUrl": "https://www.eyz.org.il/"
     },
     {
       "id": "post",
@@ -211,7 +211,7 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 2601,
+      "ms": 2371,
       "warn": "",
       "discovered": [
         "https://doar.israelpost.co.il/content/tenders/"
@@ -226,7 +226,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 211,
+      "ms": 606,
       "searchUrl": "https://www.clalit.co.il/"
     },
     {
@@ -236,7 +236,7 @@
       "ok": true,
       "scanned": 420,
       "count": 0,
-      "ms": 6096,
+      "ms": 5215,
       "warn": "",
       "discovered": [
         "https://www.btl.gov.il/About/tenders/Pages/default.aspx",
@@ -251,26 +251,12 @@
       "ok": true,
       "scanned": 116,
       "count": 0,
-      "ms": 2319,
+      "ms": 1988,
       "warn": "",
       "discovered": [
         "https://www.tau.ac.il/bidding"
       ],
       "searchUrl": "https://www.tau.ac.il/"
-    },
-    {
-      "id": "weizmann",
-      "name": "מכון ויצמן למדע",
-      "category": "מוסדות אקדמיים",
-      "ok": true,
-      "scanned": 3,
-      "count": 0,
-      "ms": 2008,
-      "warn": "",
-      "discovered": [
-        "https://www.weizmann.ac.il/purchasing/tenders"
-      ],
-      "searchUrl": "https://www.weizmann.ac.il/"
     },
     {
       "id": "huji",
@@ -279,12 +265,26 @@
       "ok": true,
       "scanned": 2,
       "count": 0,
-      "ms": 3329,
+      "ms": 3356,
       "warn": "",
       "discovered": [
         "https://tenders.huji.ac.il/"
       ],
       "searchUrl": "https://www.huji.ac.il/"
+    },
+    {
+      "id": "weizmann",
+      "name": "מכון ויצמן למדע",
+      "category": "מוסדות אקדמיים",
+      "ok": true,
+      "scanned": 3,
+      "count": 0,
+      "ms": 2744,
+      "warn": "",
+      "discovered": [
+        "https://www.weizmann.ac.il/purchasing/tenders"
+      ],
+      "searchUrl": "https://www.weizmann.ac.il/"
     },
     {
       "id": "openu",
@@ -293,7 +293,7 @@
       "ok": true,
       "scanned": 8,
       "count": 0,
-      "ms": 3565,
+      "ms": 2548,
       "warn": "",
       "discovered": [
         "https://www.openu.ac.il/bid/"
@@ -307,7 +307,7 @@
       "ok": true,
       "scanned": 118,
       "count": 0,
-      "ms": 2905,
+      "ms": 2642,
       "warn": "",
       "discovered": [
         "https://www.sapir.ac.il/tenders"
@@ -322,22 +322,8 @@
       "scanned": 0,
       "count": 0,
       "error": "fetch failed",
-      "ms": 22014,
+      "ms": 21951,
       "searchUrl": "https://www.israports.co.il/"
-    },
-    {
-      "id": "hit",
-      "name": "HIT מכון טכנולוגי חולון",
-      "category": "מוסדות אקדמיים",
-      "ok": true,
-      "scanned": 89,
-      "count": 0,
-      "ms": 2921,
-      "warn": "",
-      "discovered": [
-        "https://www.hit.ac.il/tenders/"
-      ],
-      "searchUrl": "https://www.hit.ac.il/"
     },
     {
       "id": "afeka",
@@ -346,12 +332,37 @@
       "ok": true,
       "scanned": 143,
       "count": 0,
-      "ms": 3346,
+      "ms": 3458,
       "warn": "",
       "discovered": [
         "https://www.afeka.ac.il/about-afeka/general-information/tenders/"
       ],
       "searchUrl": "https://www.afeka.ac.il/"
+    },
+    {
+      "id": "hit",
+      "name": "HIT מכון טכנולוגי חולון",
+      "category": "מוסדות אקדמיים",
+      "ok": true,
+      "scanned": 89,
+      "count": 0,
+      "ms": 2682,
+      "warn": "",
+      "discovered": [
+        "https://www.hit.ac.il/tenders/"
+      ],
+      "searchUrl": "https://www.hit.ac.il/"
+    },
+    {
+      "id": "jce",
+      "name": "מכללת עזריאלי ירושלים",
+      "category": "מוסדות אקדמיים",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 1170,
+      "searchUrl": "https://www.jce.ac.il/"
     },
     {
       "id": "shenkar",
@@ -360,26 +371,12 @@
       "ok": true,
       "scanned": 195,
       "count": 5,
-      "ms": 3178,
+      "ms": 2755,
       "warn": "",
       "discovered": [
         "https://www.shenkar.ac.il/he/pages/tenders-shenkar/"
       ],
       "searchUrl": "https://www.shenkar.ac.il/"
-    },
-    {
-      "id": "jce",
-      "name": "מכללת עזריאלי ירושלים",
-      "category": "מוסדות אקדמיים",
-      "ok": true,
-      "scanned": 104,
-      "count": 0,
-      "ms": 2831,
-      "warn": "",
-      "discovered": [
-        "https://www.jce.ac.il/tenders"
-      ],
-      "searchUrl": "https://www.jce.ac.il/"
     },
     {
       "id": "braude",
@@ -388,12 +385,23 @@
       "ok": true,
       "scanned": 217,
       "count": 0,
-      "ms": 3705,
+      "ms": 3089,
       "warn": "",
       "discovered": [
         "https://w3.braude.ac.il/about/tenders/"
       ],
       "searchUrl": "https://www.braude.ac.il/"
+    },
+    {
+      "id": "telhai",
+      "name": "המכללה האקדמית תל חי",
+      "category": "מוסדות אקדמיים",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 1131,
+      "searchUrl": "https://www.telhai.ac.il/"
     },
     {
       "id": "yvc",
@@ -402,40 +410,12 @@
       "ok": true,
       "scanned": 159,
       "count": 0,
-      "ms": 3759,
+      "ms": 3178,
       "warn": "",
       "discovered": [
         "https://www.yvc.ac.il/tender/"
       ],
       "searchUrl": "https://www.yvc.ac.il/"
-    },
-    {
-      "id": "telhai",
-      "name": "המכללה האקדמית תל חי",
-      "category": "מוסדות אקדמיים",
-      "ok": true,
-      "scanned": 222,
-      "count": 0,
-      "ms": 7682,
-      "warn": "",
-      "discovered": [
-        "https://www.telhai.ac.il/tenders"
-      ],
-      "searchUrl": "https://www.telhai.ac.il/"
-    },
-    {
-      "id": "beitberl",
-      "name": "מכללת בית ברל",
-      "category": "מוסדות אקדמיים",
-      "ok": true,
-      "scanned": 117,
-      "count": 0,
-      "ms": 6311,
-      "warn": "",
-      "discovered": [
-        "https://www.beitberl.ac.il/about-information/auctions/"
-      ],
-      "searchUrl": "https://www.beitberl.ac.il/"
     },
     {
       "id": "levinsky",
@@ -444,7 +424,7 @@
       "ok": true,
       "scanned": 146,
       "count": 2,
-      "ms": 3482,
+      "ms": 2728,
       "warn": "",
       "discovered": [
         "https://www.smkb.ac.il/us/contact-us/biddings/bidding/"
@@ -452,18 +432,18 @@
       "searchUrl": "https://www.smkb.ac.il/"
     },
     {
-      "id": "muni-oryehuda",
-      "name": "עיריית אור יהודה",
-      "category": "רשויות מקומיות",
+      "id": "beitberl",
+      "name": "מכללת בית ברל",
+      "category": "מוסדות אקדמיים",
       "ok": true,
-      "scanned": 118,
+      "scanned": 117,
       "count": 0,
-      "ms": 2807,
+      "ms": 4768,
       "warn": "",
       "discovered": [
-        "https://www.oryehuda.muni.il/bids/?id=472"
+        "https://www.beitberl.ac.il/about-information/auctions/"
       ],
-      "searchUrl": "https://www.oryehuda.muni.il/"
+      "searchUrl": "https://www.beitberl.ac.il/"
     },
     {
       "id": "hac",
@@ -472,7 +452,7 @@
       "ok": true,
       "scanned": 250,
       "count": 0,
-      "ms": 7002,
+      "ms": 5828,
       "warn": "www.jmc.ac.il/%D7%A2%D7%9C-%D7%94%D7%9E%D7%A8%D7%9B%D — HTTP 404",
       "discovered": [
         "https://www.jmc.ac.il/%D7%A2%D7%9C-%D7%94%D7%9E%D7%A8%D7%9B%D7%96/%D7%93%D7%A8%D7%95%D7%A9%D7%99%D7%9D-%D7%95%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%93%D7%A8%D7%95%D7%A9%D7%99%D7%9D-%D7%91%D7%9E%D7%9B%D7%9C%D7%9C%D7%94/",
@@ -481,18 +461,39 @@
       "searchUrl": "https://www.hac.ac.il/"
     },
     {
+      "id": "muni-yehud-monosson",
+      "name": "עיריית יהוד-מונוסון",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 30,
+      "count": 0,
+      "ms": 4369,
+      "warn": "",
+      "discovered": [
+        "https://yehud-monosson.muni.il/%d7%9e%d7%9b%d7%a8%d7%96%d7%99%d7%9d-%d7%95%d7%93%d7%a8%d7%95%d7%a9%d7%99%d7%9d/"
+      ],
+      "searchUrl": "https://www.yehud-monosson.muni.il/"
+    },
+    {
+      "id": "muni-oryehuda",
+      "name": "עיריית אור יהודה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 22175,
+      "searchUrl": "https://www.oryehuda.muni.il/"
+    },
+    {
       "id": "muni-ariel",
       "name": "עיריית אריאל",
       "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 497,
+      "ok": false,
+      "scanned": 0,
       "count": 0,
-      "ms": 4764,
-      "warn": "",
-      "discovered": [
-        "https://www.ariel.muni.il/bids/",
-        "https://www.ariel.muni.il/%D7%AA%D7%95%D7%A6%D7%90%D7%95%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
-      ],
+      "error": "fetch failed",
+      "ms": 22301,
       "searchUrl": "https://www.ariel.muni.il/"
     },
     {
@@ -502,7 +503,7 @@
       "ok": true,
       "scanned": 1,
       "count": 0,
-      "ms": 1798,
+      "ms": 1302,
       "warn": "",
       "discovered": [
         "https://www.modiin.muni.il/bids"
@@ -510,61 +511,14 @@
       "searchUrl": "https://www.modiin.muni.il/"
     },
     {
-      "id": "muni-yehud-monosson",
-      "name": "עיריית יהוד-מונוסון",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 30,
-      "count": 0,
-      "ms": 6498,
-      "warn": "",
-      "discovered": [
-        "https://yehud-monosson.muni.il/%d7%9e%d7%9b%d7%a8%d7%96%d7%99%d7%9d-%d7%95%d7%93%d7%a8%d7%95%d7%a9%d7%99%d7%9d/"
-      ],
-      "searchUrl": "https://www.yehud-monosson.muni.il/"
-    },
-    {
-      "id": "muni-nahariya",
-      "name": "עיריית נהריה",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 317,
-      "count": 0,
-      "ms": 4363,
-      "warn": "",
-      "discovered": [
-        "https://www.nahariya.muni.il/bids/",
-        "https://www.nahariya.muni.il/%D7%93%D7%A8%D7%95%D7%A9%D7%99%D7%9D-%D7%95%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
-      ],
-      "searchUrl": "https://www.nahariya.muni.il/"
-    },
-    {
-      "id": "muni-rosh-haayin",
-      "name": "עיריית ראש העין",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 233,
-      "count": 0,
-      "ms": 6340,
-      "warn": "www.rosh-haayin.muni.il/bids/637/ — HTTP 404",
-      "discovered": [
-        "https://www.rosh-haayin.muni.il/56/",
-        "https://www.rosh-haayin.muni.il/bids/461/"
-      ],
-      "searchUrl": "https://www.rosh-haayin.muni.il/"
-    },
-    {
       "id": "muni-lod",
       "name": "עיריית לוד",
       "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 449,
+      "ok": false,
+      "scanned": 0,
       "count": 0,
-      "ms": 12153,
-      "warn": "www.lod.muni.il/he/he/wanted/ — HTTP 404 | www.lod.muni.il/he/he/351/ — HTTP 404 | www.lod.muni.il/he/he/521/ — HTTP 404 | www.lod.muni.il/he/he/439/ — HTTP 404",
-      "discovered": [
-        "https://www.lod.muni.il/he/he/bids/"
-      ],
+      "error": "fetch failed",
+      "ms": 22398,
       "searchUrl": "https://www.lod.muni.il/"
     },
     {
@@ -573,22 +527,44 @@
       "category": "ממשלה",
       "ok": true,
       "scanned": 1506,
-      "count": 59,
-      "ms": 106305,
+      "count": 55,
+      "ms": 97255,
       "warn": "",
       "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER"
+    },
+    {
+      "id": "muni-nahariya",
+      "name": "עיריית נהריה",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 25335,
+      "searchUrl": "https://www.nahariya.muni.il/"
+    },
+    {
+      "id": "muni-rosh-haayin",
+      "name": "עיריית ראש העין",
+      "category": "רשויות מקומיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "fetch failed",
+      "ms": 25632,
+      "searchUrl": "https://www.rosh-haayin.muni.il/"
     }
   ],
   "counts": {
-    "total": 25,
-    "new": 8,
-    "open": 25,
+    "total": 26,
+    "new": 9,
+    "open": 26,
     "closingSoon": 4,
     "byTopic": {
       "telecom": 4,
       "infosec": 2,
-      "it": 14,
-      "ai": 3,
+      "ai": 5,
+      "it": 13,
       "equipment": 2
     },
     "dropped": {
@@ -602,6 +578,6 @@
       "undated": "סטטוס פעיל אבל בלי מועד ובלי תאריך פרסום",
       "unknown": "בלי מועד ובלי סטטוס פעיל במקור"
     },
-    "near": 11
+    "near": 22
   }
 }
