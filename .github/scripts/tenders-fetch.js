@@ -929,7 +929,10 @@ async function probeSources(cfg) {
   const timeout = +(process.env.TENDERS_PROBE_TIMEOUT_MS || 20000);
   const parallel = +(process.env.TENDERS_PROBE_PARALLEL || 5);
   const list = (cfg.sources || []).filter(s => s.enabled !== false)
-    .filter(s => !PROBE_FILTER || (s.category || '').includes(PROBE_FILTER) || s.id === PROBE_FILTER);
+    // הסינון תופס קטגוריה, מזהה מדויק, או תחילית מזהה — כדי שאפשר יהיה למדוד
+    // קבוצת מקורות שנוספה יחד (למשל "alt-" לוריאציות כתובת) בלי לסרוק את הכול
+    .filter(s => !PROBE_FILTER || (s.category || '').includes(PROBE_FILTER)
+      || s.id === PROBE_FILTER || s.id.startsWith(PROBE_FILTER));
 
   // כשל רשת (timeout / חיבור שנסגר) הוא לעיתים רגעי. מקור לא נפסל על סמך ניסיון
   // אחד — רק כשל שחוזר בשני ניסיונות נחשב תשובה. שגיאת HTTP היא תשובה מוחלטת
