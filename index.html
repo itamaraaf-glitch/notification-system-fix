@@ -2049,6 +2049,13 @@ body.logged-in #ai-fab{display:flex}
     <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="openProjectsReport()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(6,214,160,.1)">🗂️</div><div class="exp-tile-ttl">דו"ח פרויקטים מלא</div><div class="exp-tile-sub">סיכום על המסך · כל מס' הפרויקט · כולל ארכיון</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📊 הצג + הורד</div></div></div>
     <div class="tw" style="cursor:pointer;border-top:3px solid #e63946" onclick="exportAll()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(230,57,70,.1)">📊</div><div class="exp-tile-ttl">כל הנתונים</div><div class="exp-tile-sub">כל הנושאים</div><div class="exp-tile-btn" style="background:#e63946;color:#fff">📥 ייצוא הכל</div></div></div>
   </div>
+  <div style="font-size:11px;font-weight:800;color:rgba(76,201,240,.7);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;padding:0 2px">🔗 שילוב ERP / הנהלת חשבונות</div>
+  <div style="font-size:10.5px;color:var(--text3);line-height:1.6;margin-bottom:10px;padding:0 2px">קבצי CSV בפורמט אוניברסלי שכל מערכת ERP / הנהלת חשבונות יודעת לקלוט (חשבונית ירוקה, iCount, ריווחית, פריוריטי ועוד). הנתונים נשארים אצלך — הקובץ נוצר במכשיר בלבד, בלי שליחה לרשת 🔒</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px">
+    <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0" onclick="exportErpClients()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(76,201,240,.1)">🏢</div><div class="exp-tile-ttl">לקוחות ל-ERP</div><div class="exp-tile-sub" id="erp-clients-count">0 לקוחות · שם · ח.פ · איש קשר · טלפון · מייל</div><div class="exp-tile-btn" style="background:#0e6fb8;color:#fff">🔗 ייצוא לקוחות</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #a78bfa" onclick="exportErpProjects()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(167,139,250,.1)">🚀</div><div class="exp-tile-ttl">פרויקטים/הפצות ל-ERP</div><div class="exp-tile-sub" id="erp-projects-count">0 רשומות · מס' פרויקט · יעד · הכנסה · סטטוס</div><div class="exp-tile-btn" style="background:#0e6fb8;color:#fff">🔗 ייצוא פרויקטים</div></div></div>
+    <div class="tw" style="cursor:pointer;border-top:3px solid #06d6a0" onclick="exportErpBundle()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(6,214,160,.1)">📦</div><div class="exp-tile-ttl">חבילת ERP מלאה</div><div class="exp-tile-sub">לקוחות + פרויקטים בקליק אחד</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📦 ייצוא הכל ל-ERP</div></div></div>
+  </div>
   <div style="font-size:11px;font-weight:800;color:rgba(200,169,110,.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding:0 2px">🛡️ גיבוי ושחזור</div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px">
     <div class="tw" style="cursor:pointer;border-top:3px solid #0078d4" onclick="backupData()"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(0,120,212,.1)">💾</div><div class="exp-tile-ttl">גיבוי מלא</div><div class="exp-tile-sub">קובץ JSON לשחזור</div><div class="exp-tile-btn" style="background:#0078d4;color:#fff">💾 הורד גיבוי</div></div></div>
@@ -13065,6 +13072,42 @@ function updateExportCounts(){
   const _wpN=(D.clients||[]).reduce((s,c)=>s+((c.potential||[]).length),0);
   const m={deals:D.deals.length,tenders:D.tenders.length,dists:D.dists.length,salary:D.salary.length,meetings:D.meetings.length,clients:D.clients.length,tasks:(D.tasks||[]).length,inbox:(D.inbox||[]).length,workplan:_wpN};
   Object.entries(m).forEach(([k,v])=>{const el=document.getElementById('exp-'+k+'-count');if(el)el.textContent=v+(k==='clients'?' לקוחות':k==='workplan'?' מוצרים':' רשומות');});
+  // מוני שילוב ERP
+  const ec=document.getElementById('erp-clients-count'); if(ec)ec.textContent=(D.clients||[]).length+' לקוחות · שם · ח.פ · איש קשר · טלפון · מייל';
+  const ep=document.getElementById('erp-projects-count'); if(ep)ep.textContent=([...(D.dists||[]),...(D.archivedDists||[])].length)+" רשומות · מס' פרויקט · יעד · הכנסה · סטטוס";
+}
+// ===== שילוב ERP / הנהלת חשבונות — ייצוא קבצים גנריים שכל מערכת ERP יודעת לקלוט =====
+// CSV בתקן אוניברסלי (UTF-8 עם BOM → עברית תקינה באקסל וב-ERP). הכול מקומי, ללא שליחה לרשת.
+function _erpClientsData(){
+  const hdrs=['שם לקוח','מספר לקוח / ח.פ','איש קשר','טלפון','אימייל','כתובת','סטטוס'];
+  const rows=(D.clients||[]).map(c=>[c.name||'',c.cp||'',c.contact||'',c.phone||'',c.email||'',c.address||'',c.status||'']);
+  return {hdrs,rows};
+}
+function exportErpClients(){
+  const {hdrs,rows}=_erpClientsData();
+  if(!rows.length){ showToast('אין לקוחות לייצוא','warn'); return; }
+  dlCSV('ERP_לקוחות',toCSV(hdrs,rows));
+  showToast('🔗 קובץ לקוחות ל-ERP יוצא — '+rows.length+' לקוחות (פורמט אוניברסלי)','ok');
+}
+function _erpProjectsData(){
+  const hdrs=['מספר פרויקט','שם לקוח','חברה','תיאור / פתרון','תאריך','יעד הכנסה','הכנסה בפועל','סטטוס'];
+  const rows=[...(D.dists||[]),...(D.archivedDists||[])].map(d=>[d.no||'',d.cl||'',d.co||'',d.so||'',d.dt||'',(+d.tgt||0),(+d.inc||0),d.st||'']);
+  return {hdrs,rows};
+}
+function _erpProjTotals(rows){ return ['סה"כ ('+rows.length+' רשומות)','','','','',rows.reduce((a,r)=>a+(+r[5]||0),0),rows.reduce((a,r)=>a+(+r[6]||0),0),'']; }
+function exportErpProjects(){
+  const {hdrs,rows}=_erpProjectsData();
+  if(!rows.length){ showToast('אין פרויקטים/הפצות לייצוא','warn'); return; }
+  dlCSV('ERP_פרויקטים',toCSV(hdrs,[...rows,_erpProjTotals(rows)]));
+  showToast('🔗 קובץ פרויקטים/הפצות ל-ERP יוצא — '+rows.length+' רשומות','ok');
+}
+function exportErpBundle(){
+  const c=_erpClientsData(), p=_erpProjectsData();
+  if(!c.rows.length&&!p.rows.length){ showToast('אין נתונים לייצוא','warn'); return; }
+  if(c.rows.length)dlCSV('ERP_לקוחות',toCSV(c.hdrs,c.rows));
+  // עיכוב קטן בין שתי ההורדות — חלק מהדפדפנים חוסמים שתי הורדות רצופות
+  if(p.rows.length)setTimeout(()=>dlCSV('ERP_פרויקטים',toCSV(p.hdrs,[...p.rows,_erpProjTotals(p.rows)])),350);
+  showToast('📦 חבילת ERP יוצאה — '+c.rows.length+' לקוחות · '+p.rows.length+' פרויקטים','ok');
 }
 
 // ===== WHATSAPP =====
