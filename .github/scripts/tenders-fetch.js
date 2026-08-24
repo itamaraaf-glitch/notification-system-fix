@@ -29,6 +29,10 @@ const DEBUG_SOURCE = (ARGS.find(a => a.startsWith('--debug=')) || '').split('=')
 // להחליט אילו מקורות שווים סריקה אוטומטית ואילו יעברו לרשימת הבדיקה הידנית.
 const PROBE = ARGS.some(a => a === '--probe' || a.startsWith('--probe='));
 const PROBE_FILTER = (ARGS.find(a => a.startsWith('--probe=')) || '').split('=')[1] || '';
+// --audit=<קטגוריה|מזהה> מריץ את הסריקה האמיתית על קבוצת מקורות ומדווח את המשפך
+// המלא: כמה קישורים נקצרו, כמה עברו כל שער, ובאיזה שלב נפל השאר. בלי זה אפשר
+// לאבחן מקור אחד בכל פעם, וזה לא מספיק כדי לדעת איפה 30 רשויות נופלות.
+const AUDIT_FILTER = (ARGS.find(a => a.startsWith('--audit=')) || '').split('=')[1] || '';
 
 const TIMEOUT_MS = +(process.env.TENDERS_TIMEOUT_MS || 15000);
 const RETRIES = +(process.env.TENDERS_RETRIES || 1);
@@ -769,6 +773,7 @@ async function main() {
     process.exit(1);
   }
 
+  if (AUDIT_FILTER) { await auditSources(cfg, kw); return; }
   if (DEBUG_SOURCE) { await debugSource(cfg, kw); return; }
   if (PROBE) { await probeSources(cfg); return; }
 
@@ -951,6 +956,83 @@ async function main() {
  * קישור לעמוד מכרזים ואם הוא נטען. הפלט הוא טבלה + JSON, כדי שאפשר יהיה לגזור
  * ממנו החלטה: מי נשאר בסריקה האוטומטית ומי עובר לבדיקה ידנית.
  */
+
+/**
+ * ביקורת משפך על קבוצת מקורות.
+ *
+ * "נסרקו 664, רלוונטיים 10, בראדאר 0" לא אומר כלום: אי אפשר לדעת אם הטקסונומיה
+ * מפספסת ניסוח מוניציפלי, אם השערים בולעים מכרזים אמיתיים, או אם הרשויות פשוט
+ * לא מפרסמות בתחום. הביקורת מריצה את המסלול האמיתי — אותם אדפטרים, אותו
+ * buildRecord — וסופרת כל שלב בנפרד, עם דוגמאות.
+ */
+async function auditSources(cfg, kw) {
+  const list = (cfg.sources || []).filter(s => s.enabled !== false)
+    .filter(s => (s.category || '').includes(AUDIT_FILTER) || s.id === AUDIT_FILTER || s.id.startsWith(AUDIT_FILTER))
+    .map(s => expandSearchUrls(s, kw));
+  if (!list.length) { console.log(`אין מקורות שתואמים ל-"${AUDIT_FILTER}"`); return; }
+
+  console.log(`\n🔬 ביקורת משפך על ${list.length} מקורות — "${AUDIT_FILTER}"\n`);
+
+  const totals = { anchors: 0, radar: 0, near: 0 };
+  const stages = new Map();
+  const drops = new Map();
+  const samples = new Map();
+  const rows = [];
+  const topicHits = new Map();
+
+  const note = (map, key, example) => {
+    map.set(key, (map.get(key) || 0) + 1);
+    const arr = samples.get(key) || [];
+    if (arr.length < 4 && example) { arr.push(example); samples.set(key, arr); }
+  };
+
+  const one = async (source) => {
+    const row = { name: source.name, anchors: 0, radar: 0, near: 0, err: '' };
+    try {
+      const raw = await withDeadline(ADAPTERS[source.kind](source), sourceBudget(source), 'חריגה מזמן הסריקה');
+      row.anchors = raw.length;
+      for (const item of raw) {
+        const trace = {};
+        const rec = buildRecord(item, source, kw, { near: true, trace });
+        if (!rec) { note(stages, trace.stage || 'לא ידוע', (trace.detail ? `[${trace.detail}] ` : '') + item.title.slice(0, 70)); continue; }
+        if (rec.near) { row.near++; note(stages, 'מועמד לבדיקה (בלי נושא)', item.title.slice(0, 70)); continue; }
+        const why = dropReason(rec);
+        if (why) { note(drops, DROP_LABELS[why] || why, rec.title.slice(0, 70)); continue; }
+        row.radar++;
+        for (const tp of rec.topics) topicHits.set(tp, (topicHits.get(tp) || 0) + 1);
+        note(stages, '✅ נכנס לראדאר', `${source.name}: ${rec.title.slice(0, 60)}`);
+      }
+    } catch (e) { row.err = (e && e.message) || String(e); }
+    totals.anchors += row.anchors; totals.radar += row.radar; totals.near += row.near;
+    rows.push(row);
+  };
+
+  for (let i = 0; i < list.length; i += SOURCE_PARALLEL) {
+    await Promise.all(list.slice(i, i + SOURCE_PARALLEL).map(one));
+  }
+
+  rows.sort((a, b) => b.anchors - a.anchors);
+  console.log('| מקור | קישורים | לראדאר | מועמדים | שגיאה |');
+  console.log('| --- | ---: | ---: | ---: | --- |');
+  for (const r of rows) console.log(`| ${r.name} | ${r.anchors} | ${r.radar} | ${r.near} | ${r.err.slice(0, 40)} |`);
+
+  console.log(`\n**סה"כ: ${totals.anchors} קישורים → ${totals.radar} בראדאר, ${totals.near} מועמדים לבדיקה**\n`);
+
+  const table = (title, map) => {
+    if (!map.size) return;
+    console.log(`\n### ${title}\n`);
+    console.log('| שלב | כמות | דוגמאות |');
+    console.log('| --- | ---: | --- |');
+    for (const [k, v] of [...map].sort((a, b) => b[1] - a[1])) {
+      const ex = (samples.get(k) || []).map(s => s.replace(/\|/g, '/')).join(' · ') || '—';
+      console.log(`| ${k} | ${v} | ${ex.slice(0, 260)} |`);
+    }
+  };
+  table('איפה נפלו הקישורים', stages);
+  table('מה עבר את הסינון אבל נשר כלא-ניתן להגשה', drops);
+  if (topicHits.size) console.log(`\nנושאים שנתפסו: ${[...topicHits].map(([k, v]) => `${k}=${v}`).join(', ')}`);
+}
+
 async function probeSources(cfg) {
   const timeout = +(process.env.TENDERS_PROBE_TIMEOUT_MS || 20000);
   const parallel = +(process.env.TENDERS_PROBE_PARALLEL || 5);
@@ -1300,6 +1382,17 @@ function extractPublisher(context) {
  * את מי שברשימה. ההשוואה היא הכלה במחרוזת, כדי ש"משרד התחבורה" יתפוס גם
  * "משרד התחבורה והבטיחות בדרכים".
  */
+/**
+ * דיווח סיבת הדחייה. buildRecord מחזיר null בשישה מקומות שונים, ובלי לדעת
+ * באיזה מהם — אי אפשר לדעת אם הטקסונומיה מפספסת ניסוח, אם השערים בולעים
+ * מכרזים אמיתיים, או אם פשוט אין מה למצוא. `opts.trace` הופך את זה למדיד
+ * בלי לשכפל את הלוגיקה למקום שני שיסטה ממנה עם הזמן.
+ */
+function reject(opts, stage, detail) {
+  if (opts && opts.trace) { opts.trace.stage = stage; opts.trace.detail = detail || ''; }
+  return null;
+}
+
 function publisherAllowed(publisher, source) {
   const who = String(publisher || '');
   const only = source.onlyPublishers || [];
@@ -1321,7 +1414,7 @@ function buildRecord(item, source, kw, opts = {}) {
   const gatePassed = source.allTenders
     ? (looksLikeTender(titleAndSummary, kw) || looksLikeTenderUrl(item.url, source.linkPattern))
     : looksLikeTender(titleAndSummary, kw);
-  if (!gatePassed) return null;
+  if (!gatePassed) return reject(opts, 'לא נוסח כמכרז');
 
   // הסיווג נעשה על הכותרת והתקציר בלבד, כדי שהקשר הדף לא ייצור התאמות שווא
   const cls = classify(titleAndSummary, kw);
@@ -1331,20 +1424,21 @@ function buildRecord(item, source, kw, opts = {}) {
   // שלרובם הניקוד הוא אפס ולא "כמעט": מילות המפתח לא נוגעות בהם בכלל, ולכן סף
   // ניקוד היה מחמיץ בדיוק את מה שהוא נועד לתפוס.
   const near = !cls.blocked && cls.topics.length === 0 && cls.score >= (kw.nearMissMin || 0);
-  if (cls.blocked || (cls.topics.length === 0 && !(opts.near && near))) return null;
+  if (cls.blocked) return reject(opts, 'נחסם במילות שלילה', cls.negative.join(','));
+  if (cls.topics.length === 0 && !(opts.near && near)) return reject(opts, 'אין נושא מהטקסונומיה');
 
   // סוג פרסום שאינו מכרז להגשה (הודעת פטור, כוונה להתקשר) אינו נכנס לראדאר כלל
   const kind = detectKind(item.title, item.url);
-  if ((kw.excludedKinds || []).includes(kind)) return null;
+  if ((kw.excludedKinds || []).includes(kind)) return reject(opts, 'סוג פרסום מוחרג', KIND_LABELS[kind] || kind);
 
   // מכרז שהמקור עצמו מדווח שמועד ההגשה שלו חלף אינו רלוונטי להגשה
   const status = extractStatus(item.context);
-  if (isClosedStatus(status)) return null;
+  if (isClosedStatus(status)) return reject(opts, 'המקור מדווח שנסגר', status);
 
   // סינון לפי הגוף המפרסם — נעשה לפני בניית הרשומה, כדי שמשרד שאינו נסרק
   // לא ייכנס גם לרשימת המועמדים לבדיקה
   const publisher = item.publisher || extractPublisher(item.context) || source.name;
-  if (!publisherAllowed(publisher, source)) return null;
+  if (!publisherAllowed(publisher, source)) return reject(opts, 'גוף מפרסם שאינו נסרק', publisher);
 
   const tenderNumber = extractTenderNumber(titleAndSummary) || extractTenderNumber(item.context || '');
   const host = (() => { try { return new URL(item.url).host; } catch (_) { return source.id; } })();
@@ -1486,7 +1580,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, dropReason, DROP_LABELS, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, BINARY_URL_RE,
+  classify, dropReason, DROP_LABELS, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, BINARY_URL_RE,
   extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, publisherAllowed, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
