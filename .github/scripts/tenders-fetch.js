@@ -464,7 +464,12 @@ async function adapterDiscover(source) {
       // רמז הוא ניחוש מושכל, לא מקור: בלי ניסיון חוזר, כדי שכתובת שגויה
       // לא תבזבז את תקציב הזמן של הסריקה כולה
       const html = await fetchText(url, { retries: 0 });
-      const anchors = harvestAnchors(html, finalUrlOf(url));
+      const landed = finalUrlOf(url);
+      // רמז שהופנה לדף הבית הוא 404 רך, לא עמוד מכרזים. בלי הבדיקה הזו ניחוש
+      // כתובת שגוי "מצליח" — הוא מחזיר קישורים, כולם מתפריט הניווט — ומשתלט
+      // על מקור שהגילוי האוטומטי היה מטפל בו נכון.
+      if (isSiteRoot(landed)) continue;
+      const anchors = harvestAnchors(html, landed);
       if (anchors.length) { hinted.push({ url, anchors }); break; }
     } catch (_) { /* רמז שלא נענה — ממשיכים לרמז הבא ואז לגילוי */ }
     await sleep(POLITE_DELAY_MS);
@@ -1117,7 +1122,10 @@ async function probeSources(cfg) {
     for (const hint of (source.tendersUrls || [])) {
       const h = await hit(hint);
       if (!h.ok) { (out.hintTried = out.hintTried || []).push(hint + ' → ' + (h.status || h.error)); continue; }
-      const n = harvestAnchors(h.body, hint).length;
+      // אותה בדיקה כמו במסלול האמיתי: רמז שהופנה לדף הבית הוא 404 רך
+      const landed = h.finalUrl || hint;
+      if (isSiteRoot(landed)) { (out.hintTried = out.hintTried || []).push(hint + ' → הופנה לדף הבית'); continue; }
+      const n = harvestAnchors(h.body, landed).length;
       if (!n) { (out.hintTried = out.hintTried || []).push(hint + ' → ריק'); continue; }
       out.tendersUrl = hint; out.tendersAnchors = n; out.verdict = 'ok-hint';
       out.ms = Date.now() - started;
