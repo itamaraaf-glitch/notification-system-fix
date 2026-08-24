@@ -201,7 +201,38 @@ function classify(text, kw) {
   };
 }
 
+/**
+ * כותרת שהיא תווית ניווט ולא מכרז.
+ *
+ * ביקורת המשפך הראתה ש-13 המועמדים לבדיקה שנשארו הם כולם קישורי תפריט:
+ * "ועדת מכרזים", "מכרזי עירייה", "מכרזים והצעות מחיר", "לתשלום עבור מסמכי
+ * המכרז - לחצו כאן". כולם מכילים "מכרז" ולכן עוברים את שער "האם זה מכרז",
+ * וממלאים את רשימת הבדיקה במקום מכרזים אמיתיים.
+ *
+ * ההבחנה: כותרת של מכרז אמיתי אומרת **מה** נרכש. תווית ניווט אומרת רק
+ * "מכרזים" ועוד מילה מנהלית.
+ */
+const NAV_TITLE_RE = new RegExp([
+  '^\\s*ועד(ת|ות)\\s*(ה)?מכרזים',
+  '^\\s*מכרזי\\s*(ה)?(עירייה|עיריה|מועצה|חברה|רשות)',
+  '^\\s*מכרזים\\s*[ו,]',
+  '^\\s*(ל)?מכרזי\\s*(ה)?(עירייה|עיריה|מועצה)\\s*ישנים',
+  '^\\s*קול\\s*קורא\\s*לקבלת\\s*מידע\\s*(ו\\/?או|$)',
+  'לתשלום\\s*עבור',
+  'לחצו\\s*כאן',
+  'טופס\\s*בקשה',
+  'חופש\\s*המידע',
+  'רישום\\s*למאגר',
+  'מאגר\\s*נותני\\s*שירות',
+  'ניתן\\s*לפנות',
+  'אינ(ם|ן)\\s*מופיע'
+].join('|'));
+function isNavTitle(title) {
+  return NAV_TITLE_RE.test(String(title || ''));
+}
+
 function looksLikeTender(text, kw) {
+  if (isNavTitle(text)) return false;
   return (kw.tenderGate || []).some(g => termRegex(g).test(text));
 }
 
@@ -1652,7 +1683,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, dropReason, DROP_LABELS, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
+  classify, dropReason, DROP_LABELS, looksLikeTender, isNavTitle, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
   extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, publisherAllowed, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
