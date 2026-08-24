@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: בדיקות ליבת הראדאר
-        run: node --test tenders/test/radar.test.js tenders/test/report.test.js tenders/test/discover.test.js tenders/test/ai.test.js
+        run: npm test
 
       # מצב אבחון: מריץ רק את ההדפסה ומדלג על שמירה ודיווח
       - name: אבחון מקור
@@ -67,15 +67,27 @@ jobs:
           fi
 
       # סקירת AI ל"כמעט התאמות" — רצה רק אם הוגדר סוד ANTHROPIC_API_KEY.
-      # בלעדיו הצעד מדלג את עצמו והראדאר עובד בדיוק כמו קודם.
+      # בלעדיו הצעדים מדלגים את עצמם והראדאר עובד בדיוק כמו קודם.
+      #
+      # התנאי בודק את secrets ולא את env: ה-env של צעד אינו זמין ל-if של אותו
+      # צעד עצמו, ולכן התנאי הקודם (env.ANTHROPIC_API_KEY) לא היה יכול להתקיים
+      # גם אחרי הוספת הסוד — הצעד היה מדלג את עצמו לנצח.
+      - name: מצב סקירת ה-AI
+        if: inputs.debug == '' && inputs.probe == ''
+        run: |
+          if [ "${{ secrets.ANTHROPIC_API_KEY != '' }}" = "true" ]; then
+            echo "🤖 הסוד ANTHROPIC_API_KEY מוגדר — סקירת ה-AI תרוץ" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ℹ️ הסוד ANTHROPIC_API_KEY אינו מוגדר — סקירת ה-AI מדולגת, הראדאר עובד כרגיל." >> "$GITHUB_STEP_SUMMARY"
+            echo "להפעלה: Settings → Secrets and variables → Actions → New repository secret, בשם ANTHROPIC_API_KEY." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: התקנת תלויות לסקירת AI
-        if: inputs.debug == '' && inputs.probe == '' && env.ANTHROPIC_API_KEY != ''
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        if: inputs.debug == '' && inputs.probe == '' && secrets.ANTHROPIC_API_KEY != ''
         run: npm ci --omit=dev
 
       - name: סקירת AI למכרזים שכמעט נכנסו
-        if: inputs.debug == '' && inputs.probe == '' && env.ANTHROPIC_API_KEY != ''
+        if: inputs.debug == '' && inputs.probe == '' && secrets.ANTHROPIC_API_KEY != ''
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node .github/scripts/tenders-ai.js
