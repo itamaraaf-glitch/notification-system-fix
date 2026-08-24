@@ -6994,6 +6994,28 @@ function renderDistMonthSummary(){
 }
 // עוזר: חלון הפירוט הפתוח (הפצות/עסקאות) — לתיחום ניווט Tab והבהוב
 function _detailOv(){ return document.getElementById('deal-detail-ov')||document.getElementById('dist-detail-ov'); }
+// סינון שורות בתוך חלון הפירוט (עסקאות/הפצות) — לפי טקסט חופשי. שורות מפריד-החודש מוסתרות
+// כשאין תחתן שורות גלויות, ומופיעה שורת "אין תוצאות" כשהסינון לא מחזיר כלום.
+function _detailFilter(inp,which){
+  const ov=which==='dist'?document.getElementById('dist-detail-ov'):document.getElementById('deal-detail-ov');
+  if(!ov)return;
+  const tbody=ov.querySelector('tbody'); if(!tbody)return;
+  const q=String(inp.value||'').trim().toLowerCase();
+  const rows=[...tbody.querySelectorAll('tr')].filter(tr=>!tr.hasAttribute('data-noresults'));
+  const isDivider=tr=>tr.children.length===1&&tr.children[0].hasAttribute('colspan');
+  let anyHit=false;
+  rows.forEach(tr=>{ if(isDivider(tr))return; const hit=!q||tr.textContent.toLowerCase().includes(q); tr.style.display=hit?'':'none'; if(hit)anyHit=true; });
+  // מפריד-חודש גלוי רק אם יש שורת-נתונים גלויה תחתיו (עד המפריד הבא)
+  for(let i=0;i<rows.length;i++){ if(!isDivider(rows[i]))continue;
+    let vis=false;
+    for(let j=i+1;j<rows.length&&!isDivider(rows[j]);j++){ if(rows[j].style.display!=='none'){vis=true;break;} }
+    rows[i].style.display=vis?'':'none';
+  }
+  // שורת "אין תוצאות"
+  const prev=tbody.querySelector('tr[data-noresults]'); if(prev)prev.remove();
+  if(!anyHit){ const colspan=which==='dist'?9:8; const tr=document.createElement('tr'); tr.setAttribute('data-noresults','1');
+    tr.innerHTML='<td colspan="'+colspan+'" style="padding:20px;text-align:center;color:var(--text3);font-size:12px">אין תוצאות ל"'+esc(q)+'"</td>'; tbody.appendChild(tr); }
+}
 // קיבוץ שורות חלון-פירוט לפי חודש (לפי שדה תאריך), עם מפריד חודש שמציג כמות ושווי
 function _monthGroupRows(list,dateOf,moneyOf,col,rowOf,colspan){
   const NM=['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
@@ -7039,6 +7061,7 @@ function showDealGroupDetail(which){
       <div style="font-size:15px;font-weight:900;color:${col}">${title} <span style="font-size:12px;color:var(--text3);font-weight:600">· ${list.length} עסקאות · ${which==='next'?'לחודש הבא':'חודשי'} ${fmt(total)}</span></div>
       <button onclick="closeDealDetail()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
+    <div style="padding:9px 14px 5px"><input type="text" oninput="_detailFilter(this,'deal')" placeholder="🔍 סינון — חברה / שירות / סטטוס / תאריך" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-family:inherit;font-size:12px;outline:none;direction:rtl;text-align:right"></div>
     <div style="overflow:auto;padding:4px 8px 10px">
       <table style="width:100%;border-collapse:collapse">
         <thead><tr style="color:var(--text3);font-size:10px;text-align:right;text-transform:uppercase;letter-spacing:.4px">
@@ -7084,6 +7107,7 @@ function showDistGroupDetail(which){
       <div style="font-size:15px;font-weight:900;color:${col}">${title} <span style="font-size:12px;color:var(--text3);font-weight:600">· ${list.length} הפצות · שווי ${fmt(total)}</span></div>
       <button onclick="closeDistDetail()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
+    <div style="padding:9px 14px 5px"><input type="text" oninput="_detailFilter(this,'dist')" placeholder="🔍 סינון — מס׳ פרויקט / חברה / לקוח / פתרון / סטטוס" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-family:inherit;font-size:12px;outline:none;direction:rtl;text-align:right"></div>
     <div style="overflow:auto;padding:4px 8px 10px">
       <table style="width:100%;border-collapse:collapse">
         <thead><tr style="color:var(--text3);font-size:10px;text-align:right;text-transform:uppercase;letter-spacing:.4px">
