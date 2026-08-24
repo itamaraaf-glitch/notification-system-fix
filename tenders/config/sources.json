@@ -175,7 +175,8 @@
         "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx"
       ],
       "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx",
-      "home": "https://www.tel-aviv.gov.il/"
+      "home": "https://www.tel-aviv.gov.il/",
+      "keepUndated": true
     },
     {
       "_disabledReason": "בסריקה מ-17/08/2026 המקור החזיר 60 רשומות, כולן מכרזים היסטוריים משנים 2015–2022, והקישורים שלהם מובילים לדף מערך הנתונים ולא למכרז עצמו. זה מאגר ארכיון רכש — שימושי למחקר שוק ולתמחור, אבל לא לאיתור מכרזים פתוחים להגשה, ולכן הוא מנוטרל כברירת מחדל. להפעלה לצורך מחקר: enabled = true.",
@@ -205,7 +206,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.haifa.muni.il/",
-      "searchUrl": "https://www.haifa.muni.il/"
+      "searchUrl": "https://www.haifa.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-nes-ziona",
@@ -215,7 +217,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.nzc.org.il/",
-      "searchUrl": "https://www.nzc.org.il/"
+      "searchUrl": "https://www.nzc.org.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-drom-hasharon",
@@ -225,7 +228,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.dsharon.org.il/",
-      "searchUrl": "https://www.dsharon.org.il/"
+      "searchUrl": "https://www.dsharon.org.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-emek-yizrael",
@@ -235,7 +239,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.eyz.org.il/",
-      "searchUrl": "https://www.eyz.org.il/"
+      "searchUrl": "https://www.eyz.org.il/",
+      "keepUndated": true
     },
     {
       "id": "rail",
@@ -325,7 +330,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.tau.ac.il/",
-      "searchUrl": "https://www.tau.ac.il/"
+      "searchUrl": "https://www.tau.ac.il/",
+      "keepUndated": true
     },
     {
       "id": "huji",
@@ -338,7 +344,8 @@
       "searchUrl": "https://www.huji.ac.il/",
       "tendersUrls": [
         "https://tenders.huji.ac.il/"
-      ]
+      ],
+      "keepUndated": true
     },
     {
       "id": "weizmann",
@@ -351,7 +358,8 @@
       "searchUrl": "https://www.weizmann.ac.il/",
       "tendersUrls": [
         "https://www.weizmann.ac.il/purchasing/tenders"
-      ]
+      ],
+      "keepUndated": true
     },
     {
       "id": "openu",
@@ -361,7 +369,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.openu.ac.il/",
-      "searchUrl": "https://www.openu.ac.il/"
+      "searchUrl": "https://www.openu.ac.il/",
+      "keepUndated": true
     },
     {
       "id": "sapir",
@@ -371,7 +380,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.sapir.ac.il/",
-      "searchUrl": "https://www.sapir.ac.il/"
+      "searchUrl": "https://www.sapir.ac.il/",
+      "keepUndated": true
     },
     {
       "id": "afeka",
@@ -381,7 +391,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.afeka.ac.il/",
-      "searchUrl": "https://www.afeka.ac.il/"
+      "searchUrl": "https://www.afeka.ac.il/",
+      "keepUndated": true
     },
     {
       "id": "hit",
@@ -391,7 +402,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.hit.ac.il/",
-      "searchUrl": "https://www.hit.ac.il/"
+      "searchUrl": "https://www.hit.ac.il/",
+      "keepUndated": true
     },
     {
       "id": "shenkar",
@@ -401,7 +413,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.shenkar.ac.il/",
-      "searchUrl": "https://www.shenkar.ac.il/"
+      "searchUrl": "https://www.shenkar.ac.il/",
+      "keepUndated": true
     },
     {
       "id": "braude",
@@ -411,7 +424,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.braude.ac.il/",
-      "searchUrl": "https://www.braude.ac.il/"
+      "searchUrl": "https://www.braude.ac.il/",
+      "keepUndated": true
     },
     {
       "id": "jce",
@@ -424,7 +438,8 @@
       "searchUrl": "https://www.jce.ac.il/",
       "tendersUrls": [
         "https://www.jce.ac.il/tenders"
-      ]
+      ],
+      "keepUndated": true
     },
     {
       "id": "telhai",
@@ -437,7 +452,8 @@
       "searchUrl": "https://www.telhai.ac.il/",
       "tendersUrls": [
         "https://www.telhai.ac.il/tenders"
-      ]
+      ],
+      "keepUndated": true
     },
     {
       "id": "yvc",
@@ -447,7 +463,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.yvc.ac.il/",
-      "searchUrl": "https://www.yvc.ac.il/"
+      "searchUrl": "https://www.yvc.ac.il/",
+      "keepUndated": true
     },
     {
       "id": "beitberl",
@@ -457,7 +474,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.beitberl.ac.il/",
-      "searchUrl": "https://www.beitberl.ac.il/"
+      "searchUrl": "https://www.beitberl.ac.il/",
+      "keepUndated": true
     },
     {
       "id": "levinsky",
@@ -467,7 +485,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.smkb.ac.il/",
-      "searchUrl": "https://www.smkb.ac.il/"
+      "searchUrl": "https://www.smkb.ac.il/",
+      "keepUndated": true
     },
     {
       "id": "hac",
@@ -477,7 +496,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.hac.ac.il/",
-      "searchUrl": "https://www.hac.ac.il/"
+      "searchUrl": "https://www.hac.ac.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-oryehuda",
@@ -487,7 +507,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.oryehuda.muni.il/",
-      "searchUrl": "https://www.oryehuda.muni.il/"
+      "searchUrl": "https://www.oryehuda.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-ariel",
@@ -497,7 +518,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.ariel.muni.il/",
-      "searchUrl": "https://www.ariel.muni.il/"
+      "searchUrl": "https://www.ariel.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-yehud-monosson",
@@ -507,7 +529,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.yehud-monosson.muni.il/",
-      "searchUrl": "https://www.yehud-monosson.muni.il/"
+      "searchUrl": "https://www.yehud-monosson.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-lod",
@@ -517,7 +540,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.lod.muni.il/",
-      "searchUrl": "https://www.lod.muni.il/"
+      "searchUrl": "https://www.lod.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-modiin",
@@ -530,7 +554,8 @@
       "searchUrl": "https://www.modiin.muni.il/",
       "tendersUrls": [
         "https://www.modiin.muni.il/bids"
-      ]
+      ],
+      "keepUndated": true
     },
     {
       "id": "muni-nahariya",
@@ -540,7 +565,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.nahariya.muni.il/",
-      "searchUrl": "https://www.nahariya.muni.il/"
+      "searchUrl": "https://www.nahariya.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-rosh-haayin",
@@ -550,7 +576,8 @@
       "enabled": true,
       "allTenders": false,
       "home": "https://www.rosh-haayin.muni.il/",
-      "searchUrl": "https://www.rosh-haayin.muni.il/"
+      "searchUrl": "https://www.rosh-haayin.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-arraba",
@@ -559,7 +586,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.arraba.muni.il/"
+      "home": "https://www.arraba.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-ramat-hasharon",
@@ -568,7 +596,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.ramat-hasharon.muni.il/"
+      "home": "https://www.ramat-hasharon.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-brener",
@@ -577,7 +606,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.brener.org.il/"
+      "home": "https://www.brener.org.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-golan",
@@ -586,7 +616,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.golan.org.il/"
+      "home": "https://www.golan.org.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-galil-elion",
@@ -595,7 +626,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.galil-elion.org.il/"
+      "home": "https://www.galil-elion.org.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-modiin-region",
@@ -604,7 +636,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.modiin-region.muni.il/"
+      "home": "https://www.modiin-region.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-lachish",
@@ -613,7 +646,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.lachish.org.il/"
+      "home": "https://www.lachish.org.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-rng",
@@ -622,7 +656,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.rng.org.il/"
+      "home": "https://www.rng.org.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-shomron",
@@ -631,7 +666,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.shomron.org.il/"
+      "home": "https://www.shomron.org.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-sng",
@@ -640,7 +676,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.sng.org.il/"
+      "home": "https://www.sng.org.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-azor",
@@ -649,7 +686,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.azor.muni.il/"
+      "home": "https://www.azor.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-zy1882",
@@ -658,7 +696,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.zy1882.co.il/"
+      "home": "https://www.zy1882.co.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-kadima-zoran",
@@ -667,7 +706,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.kadima-zoran.muni.il/"
+      "home": "https://www.kadima-zoran.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-abugosh",
@@ -676,7 +716,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.abugosh.muni.il/"
+      "home": "https://www.abugosh.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-hevel-yavne",
@@ -685,7 +726,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.hevel-yavne.org.il/"
+      "home": "https://www.hevel-yavne.org.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-beit-dagan",
@@ -694,7 +736,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.beitdagan.muni.il/"
+      "home": "https://www.beitdagan.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-kiryat-ekron",
@@ -703,7 +746,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.kiryat-ekron.muni.il/"
+      "home": "https://www.kiryat-ekron.muni.il/",
+      "keepUndated": true
     },
     {
       "id": "muni-or-akiva",
@@ -712,7 +756,8 @@
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
-      "home": "https://www.orakiva.muni.il/"
+      "home": "https://www.orakiva.muni.il/",
+      "keepUndated": true
     }
   ],
   "_manualComment": "אגרגטורים ומאגרים מסחריים/מוסדיים — מוצגים בממשק כקישורי חיפוש ידני ואינם נסרקים אוטומטית (מטעמי תנאי שימוש).",

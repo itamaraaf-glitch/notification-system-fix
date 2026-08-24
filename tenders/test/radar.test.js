@@ -864,3 +864,36 @@ test('גוף מפרסם שהוסר מהתצורה יורד גם מההיסטור
 
   assert.deepStrictEqual(out.map(r => r.id), ['keep']);
 });
+
+// ביקורת המשפך על 30 רשויות מדדה 11,940 קישורים, מהם 14 בלבד קיבלו נושא
+// מהטקסונומיה — וכל 14 נשרו על תאריכים. ברשות מועד ההגשה יושב בתוך ה-PDF ולא
+// בדף הרשימה, ולכן הכלל שנבנה למקורות ממשלתיים מחק את כל המגזר המוניציפלי.
+test('ברשות מקומית פרסום בלי מועד נשמר, וארכיון עדיין יורד', () => {
+  const muni = { keepUndated: true };
+  assert.strictEqual(R.dropReason({ ...muni, publishedAt: '' }), '',
+    'בלי שום תאריך — נשמר, כי זו הנורמה ברשויות');
+  assert.strictEqual(R.dropReason({ ...muni, publishedAt: R.todayYmd ? R.todayYmd() : new Date().toISOString().slice(0, 10) }), '');
+
+  // קובץ שהועלה לפני יותר משנה הוא ארכיון גם בלי מועד
+  assert.strictEqual(R.dropReason({ ...muni, publishedAt: '2019-05-15' }), 'archived');
+
+  // מועד שחלף עדיין מוריד, גם ברשות
+  assert.strictEqual(R.dropReason({ ...muni, deadlineAt: '2020-01-01' }), 'expired');
+
+  // ומקור ממשלתי לא הושפע
+  assert.strictEqual(R.dropReason({ publishedAt: '' }), 'unknown');
+  assert.ok(R.DROP_LABELS.archived, 'לכל סיבת נשירה יש תווית');
+});
+
+// ברשויות רבות קישור המכרז מוביל ישירות ל-PDF תחת נתיב וורדפרס שמכיל שנה
+// וחודש. זו לרוב האינדיקציה היחידה לגיל הפרסום.
+test('תאריך פרסום נגזר מנתיב הקובץ ומ"עדכון אחרון"', () => {
+  assert.strictEqual(R.dateFromUrl('https://lachish.org.il/wp-content/uploads/2026/02/a.pdf'), '2026-02-15');
+  assert.strictEqual(R.dateFromUrl('https://x.org.il/wp-content/uploads/2024/05/b.pdf'), '2024-05-15');
+  assert.strictEqual(R.dateFromUrl('https://x.muni.il/bids/12'), '', 'נתיב בלי שנה/חודש');
+  assert.strictEqual(R.dateFromUrl('https://x.muni.il/2026/13/c.pdf'), '', 'חודש 13 אינו חודש');
+
+  // אתרי רשויות כותבים תאריך עם מקפים; ISO חייב להיקרא נכון ולא הפוך
+  assert.strictEqual(R.parseDateNear('תאריך עדכון אחרון: 14-07-2026'), '2026-07-14');
+  assert.strictEqual(R.parseDateNear('2026-08-24'), '2026-08-24');
+});

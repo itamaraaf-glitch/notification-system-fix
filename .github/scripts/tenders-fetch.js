@@ -227,7 +227,9 @@ function looksLikeTenderUrl(url, linkPattern) {
 /* ───────────────────────── חילוץ תאריכים ומספרי מכרז ───────────────────────── */
 
 const DATE_ISO = /(\d{4})-(\d{1,2})-(\d{1,2})/;
-const DATE_DMY = /(\d{1,2})[./](\d{1,2})[./](\d{2,4})/;
+// המפריד כולל מקף: אתרי רשויות כותבים "תאריך עדכון אחרון: 14-07-2026". הבדיקה
+// של ISO קודמת תמיד, אחרת "2026-08-24" היה נקרא כ-24/08/2026 הפוך.
+const DATE_DMY = /(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/;
 
 function parseDateNear(text) {
   const iso = text.match(DATE_ISO);
@@ -249,6 +251,24 @@ function normalizeParts(y, m, d) {
 
 const DEADLINE_HINTS = /(מועד\s*אחרון|תאריך\s*אחרון|להגשה\s*עד|מועד\s*ההגשה|מועד\s*הגשה|תום\s*המועד|נעילת|סגירת\s*המכרז|הגשה\s*עד)/;
 const PUBLISH_HINTS = /(תאריך\s*פרסום|פורסם\s*ב|מועד\s*פרסום|תאריך\s*הפרסום)/;
+// "תאריך עדכון אחרון" אינו תאריך פרסום, אבל הוא העדות הטובה ביותר שיש בדפי
+// הרשויות לכך שהפרסום עדיין חי. הביקורת על 30 רשויות מצאה מכרז אתר אינטרנט
+// שנשר כ"בלי מועד ובלי סטטוס" בעוד שבכותרת שלו כתוב "עדכון אחרון: 14-07-2026".
+const UPDATED_HINTS = /(תאריך\s*עדכון\s*אחרון|עדכון\s*אחרון|עודכן\s*ב)/;
+
+/**
+ * תאריך מתוך נתיב הכתובת.
+ *
+ * ברשויות רבות קישור המכרז מוביל ישירות ל-PDF תחת נתיב שמכיל שנה וחודש —
+ * /wp-content/uploads/2026/02/... — כי הן רצות על וורדפרס. זה תאריך העלאת
+ * הקובץ, וזו לרוב האינדיקציה היחידה לגיל הפרסום כשדף הרשימה לא נותן תאריך.
+ * מוחזר אמצע החודש, כי היום אינו ידוע.
+ */
+const URL_YM_RE = /\/(20\d{2})\/(0[1-9]|1[0-2])\//;
+function dateFromUrl(url) {
+  const m = String(url || '').match(URL_YM_RE);
+  return m ? `${m[1]}-${m[2]}-15` : '';
+}
 
 /**
  * מחפש תאריך שמופיע אחרי ביטוי רמז, בתוך חלון טקסט.
@@ -377,7 +397,9 @@ function itemFromAnchor(a) {
     title: a.title,
     url: a.url,
     context: a.context,
-    publishedAt: dateAfterHint(a.context, PUBLISH_HINTS),
+    publishedAt: dateAfterHint(a.context, PUBLISH_HINTS)
+      || dateAfterHint(a.context, UPDATED_HINTS)
+      || dateFromUrl(a.url),
     deadlineAt: dateAfterHint(a.context, DEADLINE_HINTS)
   };
 }
@@ -1342,16 +1364,37 @@ function isActionable(rec) {
  * המספר "60 רלוונטיים אבל 16 נשמרו" לא אומר כלום בלי הפירוט: אי אפשר לדעת אם
  * הסינון עובד או בולע מכרזים פתוחים. הסיבות נספרות ומדווחות בכל ריצה.
  */
+/**
+ * ברשויות מקומיות "בלי מועד" הוא הנורמה, לא עדות לארכיון.
+ *
+ * ביקורת המשפך על 30 רשויות (24/08/2026) מדדה 11,940 קישורים, מהם 14 בלבד
+ * קיבלו נושא מהטקסונומיה — **וכל 14 נשרו על תאריכים**. ביניהם "מכרז משכ״ל
+ * לאספקת שירותי תקשורת, תקשורת קווית ותשתית אלחוטית" ו"שירותי ניהול, תפעול
+ * ואחזקת מחשוב ורשת" — בדיוק התחום. הסיבה מבנית: ברשות מועד ההגשה יושב בתוך
+ * ה-PDF, לא בדף הרשימה, ולכן הכלל שנבנה למקורות ממשלתיים מוחק את כל המגזר.
+ *
+ * במקור עם `keepUndated` פרסום בלי מועד נשמר ומוצג בלי מועד, ובמקום זה נבחן
+ * הגיל: תאריך פרסום שנגזר מהכותרת או מנתיב הקובץ מסנן את הארכיון (2024)
+ * ומשאיר את מה שעלה השנה.
+ */
+const UNDATED_MAX_AGE_DAYS = 365;
+
 const DROP_LABELS = {
   expired: 'מועד ההגשה חלף',
   stale: 'בלי מועד, ופורסם לפני יותר מ-' + FRESH_WITHOUT_DEADLINE_DAYS + ' יום',
   undated: 'סטטוס פעיל אבל בלי מועד ובלי תאריך פרסום',
-  unknown: 'בלי מועד ובלי סטטוס פעיל במקור'
+  unknown: 'בלי מועד ובלי סטטוס פעיל במקור',
+  archived: 'בלי מועד, והקובץ הועלה לפני יותר משנה'
 };
 function dropReason(rec) {
   if (rec.deadlineAt) {
     const left = daysBetween(today, rec.deadlineAt);
     return (left === null || left >= 0) ? '' : 'expired';
+  }
+  if (rec.keepUndated) {
+    if (!rec.publishedAt) return '';
+    const age = daysBetween(rec.publishedAt, today);
+    return (age !== null && age > UNDATED_MAX_AGE_DAYS) ? 'archived' : '';
   }
   if (!ACTIVE_STATUS_RE.test(rec.status || '')) return 'unknown';
   // אין תאריך פרסום כלל — זה לא "ישן", זה "לא ידוע". הפרדה בין השניים נדרשת
@@ -1459,6 +1502,7 @@ function buildRecord(item, source, kw, opts = {}) {
     publisher,
     tenderNumber,
     publishedAt: item.publishedAt || '',
+    keepUndated: source.keepUndated ? true : undefined,
     kind,
     status,
     deadlineAt,
@@ -1580,7 +1624,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, dropReason, DROP_LABELS, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, BINARY_URL_RE,
+  classify, dropReason, DROP_LABELS, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, BINARY_URL_RE,
   extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, publisherAllowed, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
