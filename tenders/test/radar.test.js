@@ -818,3 +818,49 @@ test('מועד שההעשרה מילאה שורד את הסריקה הבאה', (
   const merged = R.mergeWithHistory([rec], new Map([['x', prev]]), null, null);
   assert.strictEqual(merged.find(r => r.id === 'x').deadlineAt, '2026-09-30');
 });
+
+// מנהל הרכש הממשלתי הוא מקור אחד שמפרסם עבור כל משרדי הממשלה, ולכן אי אפשר
+// לנטרל משרד בודד על ידי נטרול המקור. ההבחנה היחידה היא שדה הגוף המפרסם.
+test('סינון לפי גוף מפרסם משאיר רק את המשרדים שברשימה', () => {
+  const src = { id: 'mr-gov', name: 'מנהל הרכש הממשלתי', allTenders: true,
+                onlyPublishers: ['משרד התחבורה'] };
+
+  // הכלה במחרוזת — "משרד התחבורה" תופס גם את השם המלא
+  assert.ok(R.publisherAllowed('משרד התחבורה והבטיחות בדרכים', src));
+  assert.ok(!R.publisherAllowed('משרד הבריאות', src));
+  assert.ok(!R.publisherAllowed('משרד האוצר - החשב הכללי', src));
+  assert.ok(!R.publisherAllowed('', src), 'בלי גוף מפרסם — לא נכנס');
+
+  // מקור בלי הגבלה ממשיך לקבל הכול
+  assert.ok(R.publisherAllowed('משרד הבריאות', { id: 'x', name: 'x' }));
+
+  // blockPublishers הוא הכיוון ההפוך
+  const blocked = { id: 'y', name: 'y', blockPublishers: ['משרד הבריאות'] };
+  assert.ok(!R.publisherAllowed('משרד הבריאות', blocked));
+  assert.ok(R.publisherAllowed('משרד התחבורה', blocked));
+
+  // והשער עובד דרך buildRecord: אותה כותרת, שני מפרסמים
+  const item = t => ({ title: 'מכרז לאספקת ציוד תקשורת ומתגים',
+                       url: 'https://mr.gov.il/p/1', context: 'הגוף המפרסם: ' + t,
+                       publisher: t, deadlineAt: '2099-01-01' });
+  assert.ok(R.buildRecord(item('משרד התחבורה והבטיחות בדרכים'), src, KW), 'תחבורה נכנס');
+  assert.strictEqual(R.buildRecord(item('משרד הבריאות'), src, KW), null, 'בריאות לא נכנס');
+});
+
+// רשומה שכבר במאגר יורדת כשהמשרד שלה מוסר מהתצורה — אחרת היא הייתה נשארת
+// עד 45 יום אחרי השינוי
+test('גוף מפרסם שהוסר מהתצורה יורד גם מההיסטוריה', () => {
+  const src = { id: 'mr-gov', name: 'מנהל הרכש', allTenders: true,
+                onlyPublishers: ['משרד התחבורה'] };
+  const active = new Map([['mr-gov', src]]);
+  const mk = (id, pub) => ({ id, source: 'mr-gov', title: 'מכרז לאספקת ציוד תקשורת ומתגים',
+    url: 'https://mr.gov.il/p/' + id, publisher: pub, kind: 'tender',
+    lastSeen: new Date().toISOString().slice(0, 10), deadlineAt: '2099-01-01' });
+
+  const out = R.mergeWithHistory([], new Map([
+    ['keep', mk('keep', 'משרד התחבורה והבטיחות בדרכים')],
+    ['drop', mk('drop', 'משרד הבריאות')],
+  ]), active, KW);
+
+  assert.deepStrictEqual(out.map(r => r.id), ['keep']);
+});

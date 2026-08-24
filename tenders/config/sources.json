@@ -46,33 +46,41 @@
         "minWeight": 5,
         "maxPerTopic": 8,
         "max": 34
-      }
+      },
+      "onlyPublishers": [
+        "משרד התחבורה"
+      ],
+      "_publisherNote": "מנהל הרכש מפרסם עבור כל המשרדים; לבקשת המשתמש נשמר רק משרד התחבורה"
     },
     {
       "id": "gov-il",
       "name": "מכרזי משרדי הממשלה (gov.il)",
       "category": "ממשלה",
       "kind": "html",
-      "enabled": true,
+      "enabled": false,
       "allTenders": false,
       "urls": [
         "https://www.gov.il/he/departments/topics/tenders-sub/govil-landing-page"
       ],
       "searchUrl": "https://www.gov.il/he/departments/publications?publicationType=tender",
-      "home": "https://www.gov.il/"
+      "home": "https://www.gov.il/",
+      "disabled": true,
+      "_disabledReason": "לבקשת המשתמש — מכרזי משרדי ממשלה הוסרו, חוץ ממשרד התחבורה"
     },
     {
       "id": "moin",
       "name": "משרד הפנים",
       "category": "ממשלה",
       "kind": "html",
-      "enabled": true,
+      "enabled": false,
       "allTenders": true,
       "urls": [
         "https://www.moin.gov.il/Tenders"
       ],
       "searchUrl": "https://www.moin.gov.il/Tenders",
-      "home": "https://www.moin.gov.il/"
+      "home": "https://www.moin.gov.il/",
+      "disabled": true,
+      "_disabledReason": "לבקשת המשתמש — מכרזי משרדי ממשלה הוסרו, חוץ ממשרד התחבורה"
     },
     {
       "id": "iaa",
@@ -144,13 +152,15 @@
       "name": "החברה הממשלתית לתיירות (אתרים)",
       "category": "ממשלה",
       "kind": "html",
-      "enabled": true,
+      "enabled": false,
       "allTenders": true,
       "urls": [
         "https://www.atarim.gov.il/tenders/"
       ],
       "searchUrl": "https://www.atarim.gov.il/tenders/",
-      "home": "https://www.atarim.gov.il/"
+      "home": "https://www.atarim.gov.il/",
+      "disabled": true,
+      "_disabledReason": "לבקשת המשתמש — מכרזי משרדי ממשלה הוסרו, חוץ ממשרד התחבורה"
     },
     {
       "id": "tlv",

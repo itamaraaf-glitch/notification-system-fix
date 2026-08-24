@@ -1290,6 +1290,25 @@ function extractPublisher(context) {
   return m ? m[1].trim() : '';
 }
 
+/**
+ * סינון לפי הגוף המפרסם.
+ *
+ * מנהל הרכש הממשלתי הוא מקור אחד שמפרסם עבור כל משרדי הממשלה — הבריאות,
+ * האוצר, החינוך, המשפטים וכן הלאה. אי אפשר לנטרל משרד בודד על ידי נטרול
+ * המקור, כי כולם מגיעים מאותה כתובת; ההבחנה היחידה היא שדה הגוף המפרסם.
+ * `onlyPublishers` שומר רק את המשרדים שברשימה, ו-`blockPublishers` מוריד
+ * את מי שברשימה. ההשוואה היא הכלה במחרוזת, כדי ש"משרד התחבורה" יתפוס גם
+ * "משרד התחבורה והבטיחות בדרכים".
+ */
+function publisherAllowed(publisher, source) {
+  const who = String(publisher || '');
+  const only = source.onlyPublishers || [];
+  const block = source.blockPublishers || [];
+  if (block.length && block.some(b => who.includes(b))) return false;
+  if (only.length) return only.some(o => who.includes(o));
+  return true;
+}
+
 function buildRecord(item, source, kw, opts = {}) {
   const haystack = `${item.title} ${item.summary || ''} ${item.context || ''}`;
   const titleAndSummary = `${item.title} ${item.summary || ''}`;
@@ -1322,6 +1341,11 @@ function buildRecord(item, source, kw, opts = {}) {
   const status = extractStatus(item.context);
   if (isClosedStatus(status)) return null;
 
+  // סינון לפי הגוף המפרסם — נעשה לפני בניית הרשומה, כדי שמשרד שאינו נסרק
+  // לא ייכנס גם לרשימת המועמדים לבדיקה
+  const publisher = item.publisher || extractPublisher(item.context) || source.name;
+  if (!publisherAllowed(publisher, source)) return null;
+
   const tenderNumber = extractTenderNumber(titleAndSummary) || extractTenderNumber(item.context || '');
   const host = (() => { try { return new URL(item.url).host; } catch (_) { return source.id; } })();
   const id = hashId(source.id + '|' + (tenderNumber || normKey(item.title)) + '|' + host);
@@ -1338,7 +1362,7 @@ function buildRecord(item, source, kw, opts = {}) {
     source: source.id,
     sourceName: source.name,
     category: source.category || '',
-    publisher: item.publisher || extractPublisher(item.context) || source.name,
+    publisher,
     tenderNumber,
     publishedAt: item.publishedAt || '',
     kind,
@@ -1414,6 +1438,8 @@ function mergeWithHistory(current, prevById, activeSources, kw) {
       // סוג שהוחרג מהתצורה יורד גם אם כבר נמצא במאגר
       const prevKind = prev.kind || detectKind(prev.title, prev.url);
       if ((kw.excludedKinds || []).includes(prevKind)) continue;
+      // גוף מפרסם שהוסר מהתצורה יורד גם אם כבר נמצא במאגר
+      if (!publisherAllowed(prev.publisher, srcCfg)) continue;
       if (isClosedStatus(prev.status)) continue;
       const recheck = classify(text, kw);
       if (!recheck.topics.length) continue;
@@ -1461,7 +1487,7 @@ if (require.main === module) {
 
 module.exports = {
   classify, dropReason, DROP_LABELS, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, BINARY_URL_RE,
-  extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, summarize,
+  extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, publisherAllowed, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
 };
