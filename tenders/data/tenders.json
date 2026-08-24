@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-24T13:59:38.147Z",
+  "generatedAt": "2026-08-24T14:27:02.677Z",
   "generatedDate": "2026-08-24",
   "topics": {
     "telecom": {
@@ -847,20 +847,18 @@
     }
   ],
   "counts": {
-    "total": 37,
-    "new": 15,
-    "open": 35,
-    "closingSoon": 4,
+    "total": 5,
+    "new": 3,
+    "open": 5,
+    "closingSoon": 0,
     "byTopic": {
-      "infosec": 3,
-      "ai": 6,
-      "it": 18,
-      "telecom": 6,
-      "equipment": 4
+      "it": 3,
+      "infosec": 1,
+      "equipment": 1
     },
     "dropped": {
       "unknown": 11,
-      "expired": 4
+      "expired": 1
     },
     "droppedLabels": {
       "expired": "מועד ההגשה חלף",
@@ -868,44 +866,137 @@
       "undated": "סטטוס פעיל אבל בלי מועד ובלי תאריך פרסום",
       "unknown": "בלי מועד ובלי סטטוס פעיל במקור"
     },
-    "near": 0,
-    "aiMatched": 2
+    "near": 6
   },
-  "nearMisses": [],
-  "sources": [
+  "nearMisses": [
     {
-      "id": "gov-il",
-      "name": "מכרזי משרדי הממשלה (gov.il)",
+      "id": "19efad5049c418bc",
+      "near": true,
+      "title": "קול קורא לקבלת התייחסות הציבור להחלת מנגנונים של העדפת ייצור מקומי במסגרת הפעלת קווי שירות בתחבורה הציבורית",
+      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620280",
+      "source": "mr-gov",
+      "sourceName": "מנהל הרכש הממשלתי",
       "category": "ממשלה",
-      "ok": false,
-      "scanned": 0,
-      "count": 0,
-      "error": "www.gov.il/he/departments/topics/tenders-sub/govil — HTTP 403",
-      "ms": 1027,
-      "searchUrl": "https://www.gov.il/he/departments/publications?publicationType=tender"
+      "publisher": "משרד התחבורה והבטיחות בדרכים",
+      "tenderNumber": "17/2026",
+      "publishedAt": "2026-07-30",
+      "kind": "call",
+      "status": "עודכן",
+      "deadlineAt": "2026-09-09",
+      "summary": "",
+      "topics": [],
+      "score": 0,
+      "matched": [],
+      "firstSeen": "2026-08-24",
+      "lastSeen": "2026-08-24"
     },
     {
-      "id": "moin",
-      "name": "משרד הפנים",
-      "category": "ממשלה",
-      "ok": false,
-      "scanned": 0,
-      "count": 0,
-      "error": "www.moin.gov.il/Tenders — HTTP 403",
-      "ms": 1838,
-      "searchUrl": "https://www.moin.gov.il/Tenders"
-    },
-    {
-      "id": "iaa",
-      "name": "רשות שדות התעופה",
+      "id": "ef80a7d085febc30",
+      "near": true,
+      "title": "מכרז פומבי להתקשרות בחוזה מסגרת למתן שירותי פוטוגרמטריה ואורתופוטו עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007261/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
       "category": "תשתיות",
-      "ok": true,
-      "scanned": 292,
-      "count": 1,
-      "ms": 5388,
-      "warn": "",
-      "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "27/07",
+      "publishedAt": "2026-07-27",
+      "kind": "tender",
+      "status": "",
+      "deadlineAt": "2026-09-10",
+      "summary": "",
+      "topics": [],
+      "score": 0,
+      "matched": [],
+      "firstSeen": "2026-08-24",
+      "lastSeen": "2026-08-24"
     },
+    {
+      "id": "c62605c68c49b172",
+      "near": true,
+      "title": "בקשה לקבלת מידע (RFI) - מערכת בקרת דלק וניטור דליפות",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/requests-for-information/log_rfi_he_01_2026/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "11/08",
+      "publishedAt": "2026-08-11",
+      "kind": "rfi",
+      "status": "",
+      "deadlineAt": "2026-09-10",
+      "summary": "",
+      "topics": [],
+      "score": 0,
+      "matched": [],
+      "firstSeen": "2026-08-24",
+      "lastSeen": "2026-08-24"
+    },
+    {
+      "id": "f69f6897b42731c1",
+      "near": true,
+      "title": "מכרז פומבי להתקשרות בחוזה מסגרת למתן שירותי הדברת מזיקים, הדברת יתושים, טיפול בבעלי חיים והצבת מערכות משדרות לאיתור ולכידת מכרסמים בנתב\"ג עבור רשות שדות התעופה",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007058/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "12/08",
+      "publishedAt": "2026-08-12",
+      "kind": "tender",
+      "status": "",
+      "deadlineAt": "2026-09-17",
+      "summary": "",
+      "topics": [],
+      "score": 0,
+      "matched": [],
+      "firstSeen": "2026-08-24",
+      "lastSeen": "2026-08-24"
+    },
+    {
+      "id": "a1e2e1f0150bb8f4",
+      "near": true,
+      "title": "מכרז פומבי להתקשרות בחוזה לביצוע עבודות להרחבת המבנה הקרקעי של טרמינל 3 בנתב\"ג לכיוון מזרח",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007161/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "01/07",
+      "publishedAt": "2026-07-01",
+      "kind": "tender",
+      "status": "",
+      "deadlineAt": "2026-09-24",
+      "summary": "",
+      "topics": [],
+      "score": 0,
+      "matched": [],
+      "firstSeen": "2026-08-24",
+      "lastSeen": "2026-08-24"
+    },
+    {
+      "id": "00d73f4a55487d5c",
+      "near": true,
+      "title": "מכרז מסגרת פומבי להתקשרות בחוזה מסגרת לאספקת שירותי תכנון, עיצוב, הפקה והקמה של אירועים",
+      "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007398/",
+      "source": "iaa",
+      "sourceName": "רשות שדות התעופה",
+      "category": "תשתיות",
+      "publisher": "רשות שדות התעופה",
+      "tenderNumber": "24/08",
+      "publishedAt": "2026-08-24",
+      "kind": "framework",
+      "status": "",
+      "deadlineAt": "2026-10-05",
+      "summary": "",
+      "topics": [],
+      "score": 0,
+      "matched": [],
+      "firstSeen": "2026-08-24",
+      "lastSeen": "2026-08-24"
+    }
+  ],
+  "sources": [
     {
       "id": "nta",
       "name": "נת\"ע – נתיבי תחבורה עירוניים",
@@ -914,7 +1005,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.nta.co.il/tenders/ — HTTP 403",
-      "ms": 3593,
+      "ms": 2537,
       "searchUrl": "https://www.nta.co.il/tenders/"
     },
     {
@@ -924,20 +1015,20 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 4494,
+      "ms": 2907,
       "warn": "",
       "searchUrl": "https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders"
     },
     {
-      "id": "iroads",
-      "name": "נתיבי ישראל",
+      "id": "iaa",
+      "name": "רשות שדות התעופה",
       "category": "תשתיות",
-      "ok": false,
-      "scanned": 0,
-      "count": 0,
-      "error": "www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D — HTTP 403",
-      "ms": 1161,
-      "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
+      "ok": true,
+      "scanned": 292,
+      "count": 1,
+      "ms": 5444,
+      "warn": "",
+      "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
     },
     {
       "id": "transisrael",
@@ -947,19 +1038,19 @@
       "scanned": 0,
       "count": 0,
       "error": "www.transisrael.co.il/Tenders — HTTP 403",
-      "ms": 1013,
+      "ms": 1165,
       "searchUrl": "https://www.transisrael.co.il/Tenders?currentView=1"
     },
     {
-      "id": "atarim",
-      "name": "החברה הממשלתית לתיירות (אתרים)",
-      "category": "ממשלה",
-      "ok": true,
-      "scanned": 8,
+      "id": "iroads",
+      "name": "נתיבי ישראל",
+      "category": "תשתיות",
+      "ok": false,
+      "scanned": 0,
       "count": 0,
-      "ms": 3686,
-      "warn": "",
-      "searchUrl": "https://www.atarim.gov.il/tenders/"
+      "error": "www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D — HTTP 403",
+      "ms": 1530,
+      "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
     },
     {
       "id": "tlv",
@@ -968,24 +1059,9 @@
       "ok": true,
       "scanned": 639,
       "count": 0,
-      "ms": 4184,
+      "ms": 4059,
       "warn": "",
       "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx"
-    },
-    {
-      "id": "muni-haifa",
-      "name": "עיריית חיפה",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 414,
-      "count": 0,
-      "ms": 7021,
-      "warn": "",
-      "discovered": [
-        "https://www.haifa.muni.il/city-and-muni/legaladvice/contracts-and-tenders/",
-        "https://www.haifa.muni.il/resident-service/jobs/supplier-auctions/"
-      ],
-      "searchUrl": "https://www.haifa.muni.il/"
     },
     {
       "id": "muni-nes-ziona",
@@ -994,7 +1070,7 @@
       "ok": true,
       "scanned": 1688,
       "count": 0,
-      "ms": 4579,
+      "ms": 4392,
       "warn": "",
       "discovered": [
         "https://www.nzc.org.il/bids/",
@@ -1003,13 +1079,28 @@
       "searchUrl": "https://www.nzc.org.il/"
     },
     {
+      "id": "muni-haifa",
+      "name": "עיריית חיפה",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 414,
+      "count": 0,
+      "ms": 7347,
+      "warn": "",
+      "discovered": [
+        "https://www.haifa.muni.il/city-and-muni/legaladvice/contracts-and-tenders/",
+        "https://www.haifa.muni.il/resident-service/jobs/supplier-auctions/"
+      ],
+      "searchUrl": "https://www.haifa.muni.il/"
+    },
+    {
       "id": "muni-drom-hasharon",
       "name": "מועצה אזורית דרום השרון",
       "category": "רשויות מקומיות",
       "ok": true,
       "scanned": 1274,
       "count": 2,
-      "ms": 4519,
+      "ms": 4260,
       "warn": "",
       "discovered": [
         "https://www.dsharon.org.il/bids/#bids_3",
@@ -1025,8 +1116,23 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 569,
+      "ms": 300,
       "searchUrl": "https://www.rail.co.il/"
+    },
+    {
+      "id": "muni-emek-yizrael",
+      "name": "מועצה אזורית עמק יזרעאל",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 460,
+      "count": 0,
+      "ms": 4082,
+      "warn": "",
+      "discovered": [
+        "https://www.eyz.org.il/bids/",
+        "https://www.eyz.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
+      ],
+      "searchUrl": "https://www.eyz.org.il/"
     },
     {
       "id": "mekorot",
@@ -1036,34 +1142,8 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 977,
+      "ms": 1928,
       "searchUrl": "https://www.mekorot.co.il/"
-    },
-    {
-      "id": "muni-emek-yizrael",
-      "name": "מועצה אזורית עמק יזרעאל",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 460,
-      "count": 0,
-      "ms": 4402,
-      "warn": "",
-      "discovered": [
-        "https://www.eyz.org.il/bids/",
-        "https://www.eyz.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
-      ],
-      "searchUrl": "https://www.eyz.org.il/"
-    },
-    {
-      "id": "haifa-port",
-      "name": "נמל חיפה",
-      "category": "חברות ממשלתיות וגופים גדולים",
-      "ok": false,
-      "scanned": 0,
-      "count": 0,
-      "error": "HTTP 403",
-      "ms": 802,
-      "searchUrl": "https://www.haifaport.co.il/"
     },
     {
       "id": "ashdod-port",
@@ -1073,8 +1153,19 @@
       "scanned": 0,
       "count": 0,
       "error": "fetch failed",
-      "ms": 3037,
+      "ms": 2911,
       "searchUrl": "https://www.ashdodport.co.il/"
+    },
+    {
+      "id": "haifa-port",
+      "name": "נמל חיפה",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "HTTP 403",
+      "ms": 2652,
+      "searchUrl": "https://www.haifaport.co.il/"
     },
     {
       "id": "post",
@@ -1083,7 +1174,7 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 2725,
+      "ms": 2524,
       "warn": "",
       "discovered": [
         "https://doar.israelpost.co.il/content/tenders/"
@@ -1098,7 +1189,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 420,
+      "ms": 362,
       "searchUrl": "https://www.clalit.co.il/"
     },
     {
@@ -1106,9 +1197,9 @@
       "name": "המוסד לביטוח לאומי",
       "category": "חברות ממשלתיות וגופים גדולים",
       "ok": true,
-      "scanned": 420,
+      "scanned": 422,
       "count": 0,
-      "ms": 6704,
+      "ms": 6344,
       "warn": "",
       "discovered": [
         "https://www.btl.gov.il/About/tenders/Pages/default.aspx",
@@ -1123,7 +1214,7 @@
       "ok": true,
       "scanned": 116,
       "count": 0,
-      "ms": 2731,
+      "ms": 2677,
       "warn": "",
       "discovered": [
         "https://www.tau.ac.il/bidding"
@@ -1137,7 +1228,7 @@
       "ok": true,
       "scanned": 3,
       "count": 0,
-      "ms": 2290,
+      "ms": 2227,
       "warn": "",
       "discovered": [
         "https://www.weizmann.ac.il/purchasing/tenders"
@@ -1151,12 +1242,26 @@
       "ok": true,
       "scanned": 2,
       "count": 0,
-      "ms": 3597,
+      "ms": 4447,
       "warn": "",
       "discovered": [
         "https://tenders.huji.ac.il/"
       ],
       "searchUrl": "https://www.huji.ac.il/"
+    },
+    {
+      "id": "openu",
+      "name": "האוניברסיטה הפתוחה",
+      "category": "מוסדות אקדמיים",
+      "ok": true,
+      "scanned": 8,
+      "count": 0,
+      "ms": 3373,
+      "warn": "",
+      "discovered": [
+        "https://www.openu.ac.il/bid/"
+      ],
+      "searchUrl": "https://www.openu.ac.il/"
     },
     {
       "id": "sapir",
@@ -1165,7 +1270,7 @@
       "ok": true,
       "scanned": 118,
       "count": 0,
-      "ms": 2663,
+      "ms": 2280,
       "warn": "",
       "discovered": [
         "https://www.sapir.ac.il/tenders"
@@ -1180,22 +1285,8 @@
       "scanned": 0,
       "count": 0,
       "error": "fetch failed",
-      "ms": 22288,
+      "ms": 22283,
       "searchUrl": "https://www.israports.co.il/"
-    },
-    {
-      "id": "openu",
-      "name": "האוניברסיטה הפתוחה",
-      "category": "מוסדות אקדמיים",
-      "ok": true,
-      "scanned": 8,
-      "count": 0,
-      "ms": 6916,
-      "warn": "",
-      "discovered": [
-        "https://www.openu.ac.il/bid/"
-      ],
-      "searchUrl": "https://www.openu.ac.il/"
     },
     {
       "id": "afeka",
@@ -1204,7 +1295,7 @@
       "ok": true,
       "scanned": 143,
       "count": 0,
-      "ms": 3773,
+      "ms": 3102,
       "warn": "",
       "discovered": [
         "https://www.afeka.ac.il/about-afeka/general-information/tenders/"
@@ -1218,7 +1309,7 @@
       "ok": true,
       "scanned": 89,
       "count": 0,
-      "ms": 2878,
+      "ms": 2904,
       "warn": "",
       "discovered": [
         "https://www.hit.ac.il/tenders/"
@@ -1232,7 +1323,7 @@
       "ok": true,
       "scanned": 195,
       "count": 5,
-      "ms": 3178,
+      "ms": 3241,
       "warn": "",
       "discovered": [
         "https://www.shenkar.ac.il/he/pages/tenders-shenkar/"
@@ -1246,7 +1337,7 @@
       "ok": true,
       "scanned": 217,
       "count": 0,
-      "ms": 3851,
+      "ms": 3740,
       "warn": "",
       "discovered": [
         "https://w3.braude.ac.il/about/tenders/"
@@ -1260,7 +1351,7 @@
       "ok": true,
       "scanned": 104,
       "count": 0,
-      "ms": 5880,
+      "ms": 2986,
       "warn": "",
       "discovered": [
         "https://www.jce.ac.il/tenders"
@@ -1274,7 +1365,7 @@
       "ok": true,
       "scanned": 222,
       "count": 0,
-      "ms": 5159,
+      "ms": 3615,
       "warn": "",
       "discovered": [
         "https://www.telhai.ac.il/tenders"
@@ -1288,26 +1379,12 @@
       "ok": true,
       "scanned": 160,
       "count": 0,
-      "ms": 3770,
+      "ms": 3657,
       "warn": "",
       "discovered": [
         "https://www.yvc.ac.il/tender/"
       ],
       "searchUrl": "https://www.yvc.ac.il/"
-    },
-    {
-      "id": "levinsky",
-      "name": "סמינר הקיבוצים – לוינסקי",
-      "category": "מוסדות אקדמיים",
-      "ok": true,
-      "scanned": 146,
-      "count": 2,
-      "ms": 3450,
-      "warn": "",
-      "discovered": [
-        "https://www.smkb.ac.il/us/contact-us/biddings/bidding/"
-      ],
-      "searchUrl": "https://www.smkb.ac.il/"
     },
     {
       "id": "beitberl",
@@ -1316,12 +1393,26 @@
       "ok": true,
       "scanned": 117,
       "count": 0,
-      "ms": 5432,
+      "ms": 4947,
       "warn": "",
       "discovered": [
         "https://www.beitberl.ac.il/about-information/auctions/"
       ],
       "searchUrl": "https://www.beitberl.ac.il/"
+    },
+    {
+      "id": "levinsky",
+      "name": "סמינר הקיבוצים – לוינסקי",
+      "category": "מוסדות אקדמיים",
+      "ok": true,
+      "scanned": 146,
+      "count": 2,
+      "ms": 3045,
+      "warn": "",
+      "discovered": [
+        "https://www.smkb.ac.il/us/contact-us/biddings/bidding/"
+      ],
+      "searchUrl": "https://www.smkb.ac.il/"
     },
     {
       "id": "muni-oryehuda",
@@ -1330,7 +1421,7 @@
       "ok": true,
       "scanned": 118,
       "count": 0,
-      "ms": 2836,
+      "ms": 2664,
       "warn": "",
       "discovered": [
         "https://www.oryehuda.muni.il/bids/?id=472"
@@ -1344,7 +1435,7 @@
       "ok": true,
       "scanned": 250,
       "count": 0,
-      "ms": 7521,
+      "ms": 5951,
       "warn": "www.jmc.ac.il/%D7%A2%D7%9C-%D7%94%D7%9E%D7%A8%D7%9B%D — HTTP 404",
       "discovered": [
         "https://www.jmc.ac.il/%D7%A2%D7%9C-%D7%94%D7%9E%D7%A8%D7%9B%D7%96/%D7%93%D7%A8%D7%95%D7%A9%D7%99%D7%9D-%D7%95%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%93%D7%A8%D7%95%D7%A9%D7%99%D7%9D-%D7%91%D7%9E%D7%9B%D7%9C%D7%9C%D7%94/",
@@ -1359,7 +1450,7 @@
       "ok": true,
       "scanned": 496,
       "count": 0,
-      "ms": 4488,
+      "ms": 4222,
       "warn": "",
       "discovered": [
         "https://www.ariel.muni.il/bids/",
@@ -1374,7 +1465,7 @@
       "ok": true,
       "scanned": 1,
       "count": 0,
-      "ms": 1965,
+      "ms": 1769,
       "warn": "",
       "discovered": [
         "https://www.modiin.muni.il/bids"
@@ -1388,7 +1479,7 @@
       "ok": true,
       "scanned": 30,
       "count": 0,
-      "ms": 4751,
+      "ms": 5257,
       "warn": "",
       "discovered": [
         "https://yehud-monosson.muni.il/%d7%9e%d7%9b%d7%a8%d7%96%d7%99%d7%9d-%d7%95%d7%93%d7%a8%d7%95%d7%a9%d7%99%d7%9d/"
@@ -1402,7 +1493,7 @@
       "ok": true,
       "scanned": 334,
       "count": 0,
-      "ms": 4151,
+      "ms": 3922,
       "warn": "",
       "discovered": [
         "https://www.nahariya.muni.il/bids/",
@@ -1417,7 +1508,7 @@
       "ok": true,
       "scanned": 233,
       "count": 0,
-      "ms": 6257,
+      "ms": 5932,
       "warn": "www.rosh-haayin.muni.il/bids/637/ — HTTP 404",
       "discovered": [
         "https://www.rosh-haayin.muni.il/bids/461/",
@@ -1432,7 +1523,7 @@
       "ok": true,
       "scanned": 449,
       "count": 0,
-      "ms": 11122,
+      "ms": 10522,
       "warn": "www.lod.muni.il/he/he/wanted/ — HTTP 404 | www.lod.muni.il/he/he/351/ — HTTP 404 | www.lod.muni.il/he/he/521/ — HTTP 404 | www.lod.muni.il/he/he/439/ — HTTP 404",
       "discovered": [
         "https://www.lod.muni.il/he/he/bids/"
@@ -1446,7 +1537,7 @@
       "ok": true,
       "scanned": 274,
       "count": 0,
-      "ms": 5428,
+      "ms": 5347,
       "warn": "",
       "discovered": [
         "https://www.arraba.muni.il/he/bids/?categoryId=3",
@@ -1461,7 +1552,7 @@
       "ok": true,
       "scanned": 404,
       "count": 0,
-      "ms": 4259,
+      "ms": 3612,
       "warn": "",
       "discovered": [
         "https://www.brener.org.il/bids/?category=1",
@@ -1476,7 +1567,7 @@
       "ok": true,
       "scanned": 126,
       "count": 0,
-      "ms": 3994,
+      "ms": 2250,
       "warn": "",
       "discovered": [
         "https://www.golan.org.il/bids/"
@@ -1490,7 +1581,7 @@
       "ok": true,
       "scanned": 330,
       "count": 2,
-      "ms": 10071,
+      "ms": 9702,
       "warn": "",
       "discovered": [
         "https://ramat-hasharon.muni.il/all-tenders/#tab_2",
@@ -1505,7 +1596,7 @@
       "ok": true,
       "scanned": 359,
       "count": 0,
-      "ms": 5692,
+      "ms": 4851,
       "warn": "",
       "discovered": [
         "https://www.galil-elion.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D-2021",
@@ -1520,7 +1611,7 @@
       "ok": true,
       "scanned": 576,
       "count": 0,
-      "ms": 5613,
+      "ms": 5236,
       "warn": "",
       "discovered": [
         "https://www.modiin-region.muni.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99-%D7%9E%D7%A2%D7%92%D7%9C%D7%99%D7%9D/",
@@ -1535,7 +1626,7 @@
       "ok": true,
       "scanned": 360,
       "count": 0,
-      "ms": 4540,
+      "ms": 4040,
       "warn": "",
       "discovered": [
         "https://www.rng.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/",
@@ -1550,7 +1641,7 @@
       "ok": true,
       "scanned": 666,
       "count": 8,
-      "ms": 7095,
+      "ms": 6210,
       "warn": "",
       "discovered": [
         "https://lachish.org.il/%d7%9e%d7%9b%d7%a8%d7%96%d7%99%d7%9d/",
@@ -1565,7 +1656,7 @@
       "ok": true,
       "scanned": 579,
       "count": 0,
-      "ms": 5331,
+      "ms": 4661,
       "warn": "",
       "discovered": [
         "https://www.shomron.org.il/bids/",
@@ -1574,19 +1665,18 @@
       "searchUrl": "https://www.shomron.org.il/"
     },
     {
-      "id": "muni-azor",
-      "name": "מועצת אזור",
+      "id": "muni-zy1882",
+      "name": "מועצת זכרון יעקב",
       "category": "רשויות מקומיות",
       "ok": true,
-      "scanned": 378,
+      "scanned": 50,
       "count": 0,
-      "ms": 3361,
+      "ms": 2170,
       "warn": "",
       "discovered": [
-        "https://www.azor.muni.il/bids/",
-        "https://www.azor.muni.il/14/"
+        "https://www.zy1882.co.il/Branches/Branches.aspx?nodeId=1265"
       ],
-      "searchUrl": "https://www.azor.muni.il/"
+      "searchUrl": "https://www.zy1882.co.il/"
     },
     {
       "id": "muni-sng",
@@ -1595,7 +1685,7 @@
       "ok": true,
       "scanned": 291,
       "count": 0,
-      "ms": 4635,
+      "ms": 4410,
       "warn": "",
       "discovered": [
         "https://www.sng.org.il/bids/",
@@ -1604,29 +1694,19 @@
       "searchUrl": "https://www.sng.org.il/"
     },
     {
-      "id": "muni-zy1882",
-      "name": "מועצת זכרון יעקב",
+      "id": "muni-azor",
+      "name": "מועצת אזור",
       "category": "רשויות מקומיות",
       "ok": true,
-      "scanned": 50,
+      "scanned": 378,
       "count": 0,
-      "ms": 2393,
+      "ms": 3837,
       "warn": "",
       "discovered": [
-        "https://www.zy1882.co.il/Branches/Branches.aspx?nodeId=1265"
+        "https://www.azor.muni.il/bids/",
+        "https://www.azor.muni.il/14/"
       ],
-      "searchUrl": "https://www.zy1882.co.il/"
-    },
-    {
-      "id": "mr-gov",
-      "name": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "ok": true,
-      "scanned": 1506,
-      "count": 52,
-      "ms": 103624,
-      "warn": "",
-      "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER"
+      "searchUrl": "https://www.azor.muni.il/"
     },
     {
       "id": "muni-hevel-yavne",
@@ -1635,7 +1715,7 @@
       "ok": true,
       "scanned": 299,
       "count": 0,
-      "ms": 4594,
+      "ms": 2069,
       "warn": "",
       "discovered": [
         "https://www.hevel-yavne.org.il/bids/"
@@ -1649,7 +1729,7 @@
       "ok": true,
       "scanned": 83,
       "count": 0,
-      "ms": 7270,
+      "ms": 5473,
       "warn": "",
       "discovered": [
         "https://abugosh.muni.il/he/category/%D7%9E%D7%9B%D7%A8%D7%96/",
@@ -1658,19 +1738,15 @@
       "searchUrl": "https://www.abugosh.muni.il/"
     },
     {
-      "id": "muni-kadima-zoran",
-      "name": "מועצת קדימה-צורן",
-      "category": "רשויות מקומיות",
+      "id": "mr-gov",
+      "name": "מנהל הרכש הממשלתי",
+      "category": "ממשלה",
       "ok": true,
-      "scanned": 605,
-      "count": 0,
-      "ms": 12415,
-      "warn": "www.kadima-zoran.muni.il/tender-category/ — HTTP 404",
-      "discovered": [
-        "https://www.kadima-zoran.muni.il/tender/",
-        "https://www.kadima-zoran.muni.il/tender-category/%d7%9e%d7%9b%d7%a8%d7%96%d7%99-%d7%a8%d7%9b%d7%a9/"
-      ],
-      "searchUrl": "https://www.kadima-zoran.muni.il/"
+      "scanned": 1506,
+      "count": 1,
+      "ms": 99032,
+      "warn": "",
+      "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER"
     },
     {
       "id": "muni-kiryat-ekron",
@@ -1679,12 +1755,27 @@
       "ok": true,
       "scanned": 39,
       "count": 0,
-      "ms": 5865,
+      "ms": 5154,
       "warn": "",
       "discovered": [
         "https://kiryat-ekron.muni.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D-%D7%95%D7%93%D7%A8%D7%95%D7%A9%D7%99%D7%9D/"
       ],
       "searchUrl": "https://www.kiryat-ekron.muni.il/"
+    },
+    {
+      "id": "muni-kadima-zoran",
+      "name": "מועצת קדימה-צורן",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 605,
+      "count": 0,
+      "ms": 11995,
+      "warn": "www.kadima-zoran.muni.il/tender-category/ — HTTP 404",
+      "discovered": [
+        "https://www.kadima-zoran.muni.il/tender/",
+        "https://www.kadima-zoran.muni.il/tender-category/%d7%9e%d7%9b%d7%a8%d7%96%d7%99-%d7%a8%d7%9b%d7%a9/"
+      ],
+      "searchUrl": "https://www.kadima-zoran.muni.il/"
     },
     {
       "id": "muni-beit-dagan",
@@ -1693,7 +1784,7 @@
       "ok": true,
       "scanned": 222,
       "count": 2,
-      "ms": 9879,
+      "ms": 11449,
       "warn": "",
       "discovered": [
         "https://www.beitdagan.muni.il/info/bids-jobs/contractor-centers/",
@@ -1708,7 +1799,7 @@
       "ok": true,
       "scanned": 163,
       "count": 0,
-      "ms": 24219,
+      "ms": 10001,
       "warn": "",
       "discovered": [
         "https://www.orakiva.muni.il/tenders/",
@@ -1718,133 +1809,6 @@
     }
   ],
   "tenders": [
-    {
-      "id": "e0b7a65a92c04449",
-      "title": "שירותי ייעוץ לאבטחת מידע וסייבר עבור כלל רשות המסים - שע\"ם, מכס ומס הכנסה",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000618536",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - שע\"מ (שרות עיבודים ממוכן)",
-      "tenderNumber": "2-2026",
-      "publishedAt": "2026-06-21",
-      "kind": "tender",
-      "deadlineAt": "2026-08-27",
-      "summary": "",
-      "topics": [
-        "infosec"
-      ],
-      "score": 17,
-      "matched": [
-        "אבטחת מידע",
-        "סייבר",
-        "אבטחת מידע וסייבר"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-24",
-      "status": "עודכן",
-      "deadlineFrom": ""
-    },
-    {
-      "id": "d06424de0bee5848",
-      "title": "מערכת AI לבדיקת רקע ממקורות דיגיטליים גלויים",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620021",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "המשרד לביטחון לאומי - שירות בתי הסוהר",
-      "tenderNumber": "24/2026",
-      "publishedAt": "2026-07-26",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-08-31",
-      "summary": "",
-      "topics": [
-        "ai"
-      ],
-      "score": 3,
-      "matched": [
-        "AI"
-      ],
-      "firstSeen": "2026-08-23",
-      "lastSeen": "2026-08-24",
-      "deadlineFrom": ""
-    },
-    {
-      "id": "f8cf739f0dcfad59",
-      "title": "מערכת ניהול נופשים #8618",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620281",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "המשרד לביטחון פנים - משטרת ישראל",
-      "tenderNumber": "",
-      "publishedAt": "2026-07-30",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-01",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 3,
-      "matched": [
-        "מערכת ניהול"
-      ],
-      "firstSeen": "2026-08-19",
-      "lastSeen": "2026-08-24",
-      "deadlineFrom": ""
-    },
-    {
-      "id": "02d9d1c0f6cb4f77",
-      "title": "מכרז פומבי מספר 4-2026 בנושא ייעוץ בטכנולוגיות ומתודולוגיות מיחשוב",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000619439",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - שע\"מ (שרות עיבודים ממוכן)",
-      "tenderNumber": "4-2026",
-      "publishedAt": "2026-07-12",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-02",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 4,
-      "matched": [
-        "מיחשוב"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-24",
-      "deadlineFrom": ""
-    },
-    {
-      "id": "58c61bf637ad45f5",
-      "title": "איתור אתגרי היומיום והפיכתם לפתרונות טכנולוגיים לכלל - בונים פתרונות, מניעים אימפקט: בינה מלאכותית בשירות האתג",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000619347",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "המטה הלאומי לבינה מלאכותית",
-      "tenderNumber": "",
-      "publishedAt": "2026-07-09",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-03",
-      "summary": "",
-      "topics": [
-        "ai"
-      ],
-      "score": 6,
-      "matched": [
-        "בינה מלאכותית"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-24",
-      "deadlineFrom": ""
-    },
     {
       "id": "61dccb15c37fff87",
       "title": "מכרז מסגרת פומבי להתקשרות בחוזה מסגרת לאספקה ואחזקת חומרה, תוכנה ורישוי בתחום התקשוב, עבור רשות שדות התעופה",
@@ -1869,217 +1833,6 @@
       "firstSeen": "2026-08-18",
       "lastSeen": "2026-08-24",
       "deadlineFrom": ""
-    },
-    {
-      "id": "c1d4fa23b9a45bfe",
-      "title": "מכרז לאספקת סורקים ומכונות להפקת מסמכים לרבות מתכלים, תחזוקה, הרחבות למכונות ואמצעים לבקרה וניהול הדפסות ומדפס",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000619183",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - מינהל הרכש הממשלתי",
-      "tenderNumber": "7-2026",
-      "publishedAt": "2026-07-06",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-07",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 3,
-      "matched": [
-        "סורקים"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-24",
-      "deadlineFrom": ""
-    },
-    {
-      "id": "5628239ebf031253",
-      "title": "עיר האימון העולמית לרובוטיקה ובינה מלאכותית פיזית #8628",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620401",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "המטה הלאומי לבינה מלאכותית",
-      "tenderNumber": "",
-      "publishedAt": "2026-08-03",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-08",
-      "summary": "",
-      "topics": [
-        "ai"
-      ],
-      "score": 6,
-      "matched": [
-        "בינה מלאכותית"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-24",
-      "deadlineFrom": ""
-    },
-    {
-      "id": "56ac46bd4c21bb4f",
-      "title": "מכרז מרכזי לאספקת שירותי תקשורת סלולריים (רט\"ן) וציוד קצה עבור משרדי הממשלה, יחידות הסמך וגופים נלווים - סל 1",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000584022",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - מינהל הרכש הממשלתי",
-      "tenderNumber": "01-2024",
-      "publishedAt": "2024-02-25",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-09",
-      "summary": "",
-      "topics": [
-        "telecom",
-        "equipment"
-      ],
-      "score": 20,
-      "matched": [
-        "שירותי תקשורת",
-        "תקשורת",
-        "סלולר",
-        "סלולרי",
-        "ציוד קצה"
-      ],
-      "firstSeen": "2026-08-23",
-      "lastSeen": "2026-08-24",
-      "deadlineChecked": true,
-      "deadlineFrom": "detail"
-    },
-    {
-      "id": "2de4a98e922e4ca9",
-      "title": "אספקת ציוד ושירותי תקשורת לוויינית עבור משרדי הממשלה ויחידות הסמך",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/653982",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - מינהל הרכש הממשלתי",
-      "tenderNumber": "8-2020",
-      "publishedAt": "2020-09-16",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-09",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 11,
-      "matched": [
-        "שירותי תקשורת",
-        "תקשורת",
-        "לווייני"
-      ],
-      "firstSeen": "2026-08-23",
-      "lastSeen": "2026-08-24",
-      "deadlineChecked": true,
-      "deadlineFrom": "detail"
-    },
-    {
-      "id": "5eb90ea0940f38e4",
-      "title": "מכרז לרכש ציוד לתקשורת לווינית כולל שירותי תמיכה ותחזוקה-שלב א'-שלב מיון מוקדם",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620749",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "המשרד לביטחון פנים - משטרת ישראל",
-      "tenderNumber": "121/2026",
-      "publishedAt": "2026-08-11",
-      "kind": "tender",
-      "deadlineAt": "2026-09-10",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 3,
-      "matched": [
-        "תקשורת"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-24",
-      "status": "עודכן",
-      "deadlineFrom": ""
-    },
-    {
-      "id": "0292c129b1d4a294",
-      "title": "רכישת מחשבים רזים ( ZERO CLIENT )",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000621166",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "הרשות להגנת הצרכן",
-      "tenderNumber": "1-2026",
-      "publishedAt": "2026-08-24",
-      "kind": "tender",
-      "status": "פורסם",
-      "deadlineAt": "2026-09-13",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 3,
-      "matched": [
-        "מחשבים"
-      ],
-      "firstSeen": "2026-08-24",
-      "lastSeen": "2026-08-24"
-    },
-    {
-      "id": "920ebeefb9f1e0ad",
-      "title": "מכרז מרכזי לרכש ואספקת מוצרים ושירותים בתחום אבטחת המידע וההגנה בסייבר",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000550897",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - מינהל הרכש הממשלתי",
-      "tenderNumber": "05-2022",
-      "publishedAt": "2022-04-07",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-14",
-      "summary": "",
-      "topics": [
-        "infosec"
-      ],
-      "score": 11,
-      "matched": [
-        "הגנה בסייבר",
-        "סייבר"
-      ],
-      "firstSeen": "2026-08-23",
-      "lastSeen": "2026-08-24",
-      "deadlineChecked": true,
-      "deadlineFrom": "detail"
-    },
-    {
-      "id": "44f553cca07f6eb0",
-      "title": "RFI לעניין קבלת מידע עבור עמותות העוסקות בתרומת מחשבים",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000555983",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - החשב הכללי",
-      "tenderNumber": "8/22",
-      "publishedAt": "2022-08-07",
-      "kind": "rfi",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-14",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 3,
-      "matched": [
-        "מחשבים"
-      ],
-      "firstSeen": "2026-08-23",
-      "lastSeen": "2026-08-24",
-      "deadlineChecked": true,
-      "deadlineFrom": "detail"
     },
     {
       "id": "88a649f6dda93301",
@@ -2107,439 +1860,6 @@
       "deadlineFrom": ""
     },
     {
-      "id": "ac8ec195c9af9113",
-      "title": "רישוי, יישום ותחזוקה לשירותי EMAIL SECURITY מבית CISCO",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620044",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד הבריאות",
-      "tenderNumber": "25-2026",
-      "publishedAt": "2026-07-26",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-15",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 5,
-      "matched": [
-        "Cisco"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-24",
-      "deadlineFrom": ""
-    },
-    {
-      "id": "5152865f7c9fd2f5",
-      "title": "\"פרויקט נקסוס\" - מכרז להקמה, הפעלה ואספקת שירותי מחשוב קוונטי מפלטפורמה לאומית",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620404",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - החשב הכללי",
-      "tenderNumber": "01-2026",
-      "publishedAt": "2026-08-04",
-      "deadlineAt": "2026-10-05",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 10,
-      "matched": [
-        "שירותי מחשוב",
-        "מחשוב"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-24",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineFrom": ""
-    },
-    {
-      "id": "3925967a0a6b83ac",
-      "title": "ייעוץ וליווי בתחומי טכנולוגיה מתקדמת עבור המטה הלאומי לבינה מלאכותית",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620931",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד ראש הממשלה",
-      "tenderNumber": "08-2026",
-      "publishedAt": "2026-08-16",
-      "deadlineAt": "2026-10-05",
-      "summary": "",
-      "topics": [
-        "ai"
-      ],
-      "score": 6,
-      "matched": [
-        "בינה מלאכותית"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-24",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineFrom": ""
-    },
-    {
-      "id": "a68d3d8d0703357b",
-      "title": "מחקר בנושא \"הערכת השפעת מדיניות איסור שימוש בטלפונים ניידים במערכת החינוך\"",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620971",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד החינוך",
-      "tenderNumber": "",
-      "publishedAt": "2026-08-17",
-      "deadlineAt": "2026-10-07",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 4,
-      "matched": [
-        "טלפונים ניידים"
-      ],
-      "firstSeen": "2026-08-17",
-      "lastSeen": "2026-08-20",
-      "kind": "tender",
-      "status": "פורסם"
-    },
-    {
-      "id": "923484c8498856de",
-      "title": "מכרז ממוכן מהיר לרכש טאבלטים מוקשחים לרכבי כיבוי",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000621157",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "המשרד לביטחון לאומי - נציבות כבאות והצלה",
-      "tenderNumber": "26/2026",
-      "publishedAt": "2026-08-24",
-      "kind": "tender",
-      "status": "פורסם",
-      "deadlineAt": "2026-10-08",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 3,
-      "matched": [
-        "טאבלטים"
-      ],
-      "firstSeen": "2026-08-24",
-      "lastSeen": "2026-08-24"
-    },
-    {
-      "id": "a1f7c06b15c3e9f1",
-      "title": "מיון מוקדם מכרז פומבי 49-2026 - שירותי תפעול, תחזוקה, פיתוח, מודרניזציה ומיגרציה לענן, בשיטת מיקור חוץ (OUTSOU",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620833",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד המשפטים",
-      "tenderNumber": "49-2026",
-      "publishedAt": "2026-08-12",
-      "kind": "tender",
-      "status": "פורסם",
-      "deadlineAt": "2026-10-29",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 4,
-      "matched": [
-        "מיקור חוץ"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-24",
-      "deadlineFrom": ""
-    },
-    {
-      "id": "851eecfdc0e56822",
-      "title": "מכרז לשירותי ליווי ומימוש תהליכי טרנספורמציה דיגיטלית עבור מערך הדיגיטל הלאומי",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000612578",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "מערך הדיגיטל הלאומי",
-      "tenderNumber": "6/2025",
-      "publishedAt": "2025-12-31",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2027-01-10",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 5,
-      "matched": [
-        "טרנספורמציה דיגיטלית"
-      ],
-      "firstSeen": "2026-08-18",
-      "lastSeen": "2026-08-24",
-      "deadlineFrom": ""
-    },
-    {
-      "id": "95f5b2616c7761f4",
-      "title": "רכישה, אספקה והתקנת ציוד תקשורת פסיבי למשרדי הממשלה",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/652601",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - מינהל הרכש הממשלתי",
-      "tenderNumber": "3-2020",
-      "publishedAt": "2020-08-06",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-08-30",
-      "summary": "",
-      "topics": [
-        "equipment",
-        "telecom"
-      ],
-      "score": 9,
-      "matched": [
-        "תקשורת",
-        "ציוד תקשורת"
-      ],
-      "firstSeen": "2026-08-24",
-      "lastSeen": "2026-08-24",
-      "deadlineChecked": true,
-      "deadlineFrom": "detail"
-    },
-    {
-      "id": "8a52cf446cd68dee",
-      "title": "מכרז מרכזי מס' 12-2023 לאספקת שירותי תקשורת קווית נייחת (מפ\"א) עבור משרדי הממשלה ויחידות הסמך",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000571040",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - מינהל הרכש הממשלתי",
-      "tenderNumber": "12-2023",
-      "publishedAt": "2023-06-15",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-06",
-      "summary": "",
-      "topics": [
-        "telecom"
-      ],
-      "score": 8,
-      "matched": [
-        "שירותי תקשורת",
-        "תקשורת"
-      ],
-      "firstSeen": "2026-08-24",
-      "lastSeen": "2026-08-24",
-      "deadlineChecked": true,
-      "deadlineFrom": "detail"
-    },
-    {
-      "id": "3d851f9e035e1104",
-      "title": "מכרז מרכזי מס' 10-2023 לרכש ואספקת שירותי CRM בענן",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000574868",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - מינהל הרכש הממשלתי",
-      "tenderNumber": "10-2023",
-      "publishedAt": "2023-09-07",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-10",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 5,
-      "matched": [
-        "CRM"
-      ],
-      "firstSeen": "2026-08-24",
-      "lastSeen": "2026-08-24",
-      "deadlineChecked": true,
-      "deadlineFrom": "detail"
-    },
-    {
-      "id": "973b55f206514bd2",
-      "title": "מכרז מרכזי 07-2023 לאספקת שירותים בתפוקות בעולמות הדיגיטל וטכנולוגיות המידע (דיגיטק)פרסום 5- AI/ML ודאטה",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000598168",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - מינהל הרכש הממשלתי",
-      "tenderNumber": "07-2023",
-      "publishedAt": "2025-01-21",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-10-14",
-      "summary": "",
-      "topics": [
-        "ai"
-      ],
-      "score": 5,
-      "matched": [
-        "AI",
-        "ML"
-      ],
-      "firstSeen": "2026-08-24",
-      "lastSeen": "2026-08-24",
-      "deadlineChecked": true,
-      "deadlineFrom": "detail"
-    },
-    {
-      "id": "41fbc917fdfac6c5",
-      "title": "מכרז מרכזי 11-2023 לאספקת מחשבים עבור משרדי הממשלה - הגשה נוספת",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000582602",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - מינהל הרכש הממשלתי",
-      "tenderNumber": "11-2023",
-      "publishedAt": "2024-01-22",
-      "kind": "tender",
-      "status": "חדש",
-      "deadlineAt": "2026-08-30",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 3,
-      "matched": [
-        "מחשבים"
-      ],
-      "firstSeen": "2026-08-24",
-      "lastSeen": "2026-08-24",
-      "deadlineChecked": true,
-      "deadlineFrom": "detail"
-    },
-    {
-      "id": "de15a06a9afb1370",
-      "title": "מכרז 02/2026 לשירותי אירוח פעילות הדרכה עבור משרד האוצר",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620191",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר",
-      "tenderNumber": "02/2026",
-      "publishedAt": "2026-07-27",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-10",
-      "summary": "",
-      "topics": [
-        "ai"
-      ],
-      "score": 0,
-      "matched": [],
-      "firstSeen": "2026-08-24",
-      "lastSeen": "2026-08-24",
-      "aiMatched": true,
-      "aiReviewer": "claude-in-session",
-      "aiReason": "מודלים לחיזוי — מידול חזוי ומדע נתונים"
-    },
-    {
-      "id": "37890a9aa2d44639",
-      "title": "מכרז 109/06.2026 להקמה והפעלה של מערך הדפסה ממחשב MAIN FRAME לרבות אספקת ציוד, תוכנה ושירותי תחזוקה",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000619435",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד החינוך",
-      "tenderNumber": "109/06",
-      "publishedAt": "2026-07-12",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-14",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 0,
-      "matched": [],
-      "firstSeen": "2026-08-24",
-      "lastSeen": "2026-08-24",
-      "aiMatched": true,
-      "aiReviewer": "claude-in-session",
-      "aiReason": "מערך הדפסה ממיינפריים כולל אספקת ציוד"
-    },
-    {
-      "id": "342bc5e398436287",
-      "title": "מכרז פומבי מס' 30-2026 לרישוי הטמעה ופיתוח כלי COMMBOX לרב ערוציות",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620370",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד הבריאות",
-      "tenderNumber": "30-2026",
-      "publishedAt": "2026-08-02",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-15",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 0,
-      "matched": [],
-      "firstSeen": "2026-08-24",
-      "lastSeen": "2026-08-24",
-      "aiMatched": true,
-      "aiReviewer": "claude-in-session",
-      "aiReason": "רישוי והטמעת COMMBOX — פלטפורמת תקשורת רב־ערוצית"
-    },
-    {
-      "id": "1784a41c517369e3",
-      "title": "תכנון יישום והטמעת HIPERSWAP במכונות האחסון של שע\"ם",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000619995",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - שע\"מ (שרות עיבודים ממוכן)",
-      "tenderNumber": "8-2026",
-      "publishedAt": "2026-07-22",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-02",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 0,
-      "matched": [],
-      "firstSeen": "2026-08-24",
-      "lastSeen": "2026-08-24",
-      "aiMatched": true,
-      "aiReviewer": "claude-in-session",
-      "aiReason": "הטמעת HIPERSWAP במערכות אחסון — תשתית IT"
-    },
-    {
-      "id": "bffdbbf727dd01e2",
-      "title": "מכרז 3-2026 שירות מנוהל NOC הכולל התמחויות משלימות בתחום המינפריים (MF)",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000619438",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד האוצר - שע\"מ (שרות עיבודים ממוכן)",
-      "tenderNumber": "3-2026",
-      "publishedAt": "2026-07-12",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-10-05",
-      "summary": "",
-      "topics": [
-        "it"
-      ],
-      "score": 0,
-      "matched": [],
-      "firstSeen": "2026-08-24",
-      "lastSeen": "2026-08-24",
-      "aiMatched": true,
-      "aiReviewer": "claude-in-session",
-      "aiReason": "שירות מנוהל NOC — תפעול מרכז בקרת רשת, ליבת התחום"
-    },
-    {
       "id": "500d41f92a4ed97f",
       "title": "קול קורא (מכרז פומבי) להתקשרות בחוזה לביצוע תוכניות הרצה (\"פיילוטים\") לפתרונות חדשניים במתקני רשות שדות התעופה",
       "url": "https://www.iaa.gov.il/tenders-and-contracts/tenders-collections/tenders/log_hoze_200007442/",
@@ -2563,31 +1883,6 @@
       "aiMatched": true,
       "aiReviewer": "claude-in-session",
       "aiReason": "קול קורא לפיילוטים טכנולוגיים — פתוח לפתרונות בתחומנו"
-    },
-    {
-      "id": "af73069741c7208d",
-      "title": "סקירות וחוות דעת משפטיות בתחום הבינה המלאכותית וטכנולוגיות מתחדשות בישראל ובעולם",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000621168",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "משרד ראש הממשלה",
-      "tenderNumber": "09-2026",
-      "publishedAt": "2026-08-24",
-      "kind": "tender",
-      "status": "פורסם",
-      "deadlineAt": "2026-10-12",
-      "summary": "",
-      "topics": [
-        "equipment"
-      ],
-      "score": 0,
-      "matched": [],
-      "firstSeen": "2026-08-24",
-      "lastSeen": "2026-08-24",
-      "aiMatched": true,
-      "aiReviewer": "claude-in-session",
-      "aiReason": "אספקה והתקנה של מערכות אבטחה טכנולוגיות"
     },
     {
       "id": "33a8a5d49e1619ca",
@@ -2638,33 +1933,6 @@
       "aiMatched": true,
       "aiReviewer": "external",
       "aiReason": "שולחנות בקרה וזיווד — ציוד לחדרי בקרה"
-    },
-    {
-      "id": "dc6a1da37a401652",
-      "title": "ביסוס יכולות במשק הישראלי בתחום מודלי הבסיס (FOUNDATION MODELS) #8627",
-      "url": "https://mr.gov.il/ilgstorefront/he/p/4000620412",
-      "source": "mr-gov",
-      "sourceName": "מנהל הרכש הממשלתי",
-      "category": "ממשלה",
-      "publisher": "המטה הלאומי לבינה מלאכותית",
-      "tenderNumber": "",
-      "publishedAt": "2026-08-03",
-      "kind": "tender",
-      "status": "עודכן",
-      "deadlineAt": "2026-09-08",
-      "summary": "",
-      "topics": [
-        "ai"
-      ],
-      "score": 0,
-      "matched": [],
-      "firstSeen": "2026-08-24",
-      "lastSeen": "2026-08-24",
-      "aiMatched": true,
-      "aiReviewer": "external",
-      "aiReason": "מודלי בסיס — בינה מלאכותית"
     }
-  ],
-  "aiReviewedAt": "2026-08-24T14:17:12.160Z",
-  "aiReviewer": "external"
+  ]
 }
