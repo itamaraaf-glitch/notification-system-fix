@@ -87,13 +87,15 @@
       "name": "רשות שדות התעופה",
       "category": "תשתיות",
       "kind": "html",
-      "enabled": true,
+      "enabled": false,
       "allTenders": true,
       "urls": [
         "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
       ],
       "searchUrl": "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx",
-      "home": "https://www.iaa.gov.il/"
+      "home": "https://www.iaa.gov.il/",
+      "disabled": true,
+      "_disabledReason": "לבקשת המשתמש — הוסר יחד עם מכרזי משרדי הממשלה"
     },
     {
       "id": "iec",
