@@ -967,3 +967,30 @@ test('תפריטים ומכרזי כוח אדם אינם מגיעים לרשימ
     assert.ok(passes(t), `"${t}" ממשיך לעבור`);
   }
 });
+
+// "מכרז חיצוני" ו"מכרז פנימי" הם המונח העירוני למשרה פנויה, לא לרכש. במועצה
+// אזורית דרום השרון חמישה מתוך שישה מועמדים היו כאלה — ספרן, מזכירה, פסיכולוג,
+// רכז וחשמלאי. הם מכרזים לכל דבר בשמם, ולכן מילות השלילה לא תפסו אותם: זהו סוג
+// פרסום, בדיוק כמו הודעת פטור.
+test('מכרז חיצוני/פנימי הוא משרה ולא רכש', () => {
+  assert.strictEqual(R.detectKind("מכרז חיצוני מס' 26/2026: ספרן.ית בחט\"ב", ''), 'job');
+  assert.strictEqual(R.detectKind("מכרז פנימי מס' 3/2026: רכז נוער", ''), 'job');
+  assert.strictEqual(R.detectKind('מכרז פומבי 4/2026 לאספקת ציוד תקשורת', ''), 'tender');
+  assert.ok(R.KIND_LABELS.job, 'לסוג יש תווית');
+  assert.ok((KW.excludedKinds || []).includes('job'), 'הסוג מוחרג בתצורה');
+});
+
+// מקור מוניציפלי הוא discover עם allTenders:false, אבל תווית ניווט אינה מכרז
+// גם במקור allTenders — שם נתיב מכרזי לבדו מספיק כדי לעבור את השער.
+test('תווית ניווט נדחית גם כשהנתיב מכרזי', () => {
+  const nav = 'מכרזי ספקים';
+  for (const allTenders of [false, true]) {
+    const rec = R.buildRecord({ title: nav, url: 'https://x.muni.il/bids/1', context: '' },
+      { id: 's', name: 'מ', allTenders, keepUndated: true }, KW, { near: true });
+    assert.strictEqual(rec, null, `נדחה גם עם allTenders=${allTenders}`);
+  }
+  // ומכרז אמיתי עם אותו נתיב נשאר
+  assert.ok(R.buildRecord(
+    { title: 'מכרז פומבי 4/2026 לאספקת ציוד תקשורת ומתגים', url: 'https://x.muni.il/bids/1', context: '' },
+    { id: 's', name: 'מ', allTenders: false, keepUndated: true }, KW, { near: true }));
+});
