@@ -69,25 +69,32 @@ jobs:
       # סקירת AI ל"כמעט התאמות" — רצה רק אם הוגדר סוד ANTHROPIC_API_KEY.
       # בלעדיו הצעדים מדלגים את עצמם והראדאר עובד בדיוק כמו קודם.
       #
-      # התנאי בודק את secrets ולא את env: ה-env של צעד אינו זמין ל-if של אותו
-      # צעד עצמו, ולכן התנאי הקודם (env.ANTHROPIC_API_KEY) לא היה יכול להתקיים
-      # גם אחרי הוספת הסוד — הצעד היה מדלג את עצמו לנצח.
+      # התנאי הקודם היה env.ANTHROPIC_API_KEY, כשהמשתנה מוגדר ב-env של אותו צעד
+      # עצמו — וה-env של צעד אינו זמין ל-if שלו. התנאי היה false תמיד, ולכן גם
+      # אחרי הוספת הסוד הצעד היה ממשיך לדלג על עצמו. גם secrets אינו זמין ב-if
+      # (GitHub דוחה את קובץ ה-workflow), ולכן צעד נפרד קורא את הסוד ומפרסם
+      # פלט שהצעדים הבאים נתלים בו.
       - name: מצב סקירת ה-AI
+        id: ai
         if: inputs.debug == '' && inputs.probe == ''
+        env:
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          if [ "${{ secrets.ANTHROPIC_API_KEY != '' }}" = "true" ]; then
+          if [ -n "$KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
             echo "🤖 הסוד ANTHROPIC_API_KEY מוגדר — סקירת ה-AI תרוץ" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "ℹ️ הסוד ANTHROPIC_API_KEY אינו מוגדר — סקירת ה-AI מדולגת, הראדאר עובד כרגיל." >> "$GITHUB_STEP_SUMMARY"
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "ℹ️ הסוד ANTHROPIC_API_KEY אינו מוגדר — סקירת ה-AI מדולגת, והראדאר עובד כרגיל." >> "$GITHUB_STEP_SUMMARY"
             echo "להפעלה: Settings → Secrets and variables → Actions → New repository secret, בשם ANTHROPIC_API_KEY." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: התקנת תלויות לסקירת AI
-        if: inputs.debug == '' && inputs.probe == '' && secrets.ANTHROPIC_API_KEY != ''
+        if: steps.ai.outputs.enabled == 'true'
         run: npm ci --omit=dev
 
       - name: סקירת AI למכרזים שכמעט נכנסו
-        if: inputs.debug == '' && inputs.probe == '' && secrets.ANTHROPIC_API_KEY != ''
+        if: steps.ai.outputs.enabled == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node .github/scripts/tenders-ai.js
