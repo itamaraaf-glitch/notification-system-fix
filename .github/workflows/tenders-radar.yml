@@ -25,6 +25,10 @@ on:
         description: 'ביקורת משפך: שם קטגוריה או מזהה מקור. מריץ את הסריקה האמיתית ומדווח כמה קישורים נפלו בכל שער. לא שומר ולא מדווח.'
         required: false
         default: ''
+      authorities:
+        description: 'חיפוש מפתח הרשויות המקומיות ב-data.gov.il (הקלד any). פוגע רק ב-data.gov.il, לא באתרי הרשויות.'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -50,6 +54,10 @@ jobs:
         run: node .github/scripts/tenders-fetch.js --debug="${{ inputs.debug }}" | tee -a "$GITHUB_STEP_SUMMARY"
 
       # מדידת נגישות: בקשה אחת לכל מקור, בלי סריקה, בלי שמירה ובלי דיווח
+      - name: מפתח הרשויות המקומיות
+        if: inputs.authorities != ''
+        run: node .github/scripts/tenders-fetch.js --authorities | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: ביקורת משפך
         if: inputs.audit != ''
         run: node .github/scripts/tenders-fetch.js --audit="${{ inputs.audit }}" | tee -a "$GITHUB_STEP_SUMMARY"
@@ -64,7 +72,7 @@ jobs:
           fi
 
       - name: סריקת מקורות המכרזים
-        if: inputs.debug == '' && inputs.probe == '' && inputs.audit == ''
+        if: inputs.debug == '' && inputs.probe == '' && inputs.audit == '' && inputs.authorities == ''
         env:
           TENDERS_ONLY_SOURCE: ${{ inputs.source }}
         run: |
@@ -84,7 +92,7 @@ jobs:
       # פלט שהצעדים הבאים נתלים בו.
       - name: מצב סקירת ה-AI
         id: ai
-        if: inputs.debug == '' && inputs.probe == '' && inputs.audit == ''
+        if: inputs.debug == '' && inputs.probe == '' && inputs.audit == '' && inputs.authorities == ''
         env:
           KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
@@ -108,11 +116,11 @@ jobs:
         run: node .github/scripts/tenders-ai.js
 
       - name: סיכום הריצה
-        if: inputs.debug == '' && inputs.probe == '' && inputs.audit == ''
+        if: inputs.debug == '' && inputs.probe == '' && inputs.audit == '' && inputs.authorities == ''
         run: node .github/scripts/tenders-report.js --summary >> "$GITHUB_STEP_SUMMARY"
 
       - name: שמירת התוצאות במאגר
-        if: inputs.debug == '' && inputs.probe == '' && inputs.audit == ''
+        if: inputs.debug == '' && inputs.probe == '' && inputs.audit == '' && inputs.authorities == ''
         run: |
           if git diff --quiet -- tenders/data; then
             echo "אין שינוי בנתוני המכרזים — אין מה לשמור"
@@ -132,7 +140,7 @@ jobs:
           exit 1
 
       - name: פתיחת Issue עם המכרזים החדשים
-        if: inputs.debug == '' && inputs.probe == '' && inputs.audit == ''
+        if: inputs.debug == '' && inputs.probe == '' && inputs.audit == '' && inputs.authorities == ''
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}

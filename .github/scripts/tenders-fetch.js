@@ -33,6 +33,11 @@ const PROBE_FILTER = (ARGS.find(a => a.startsWith('--probe=')) || '').split('=')
 // המלא: כמה קישורים נקצרו, כמה עברו כל שער, ובאיזה שלב נפל השאר. בלי זה אפשר
 // לאבחן מקור אחד בכל פעם, וזה לא מספיק כדי לדעת איפה 30 רשויות נופלות.
 const AUDIT_FILTER = (ARGS.find(a => a.startsWith('--audit=')) || '').split('=')[1] || '';
+// --authorities מחפש ב-data.gov.il את מפתח הרשויות המקומיות הרשמי ומדווח אילו
+// מערכי נתונים ושדות קיימים. עד עכשיו הכתובות של הרשויות היו ניחוש לפי דפוס
+// (muni.il / org.il), עם 3% הצלחה בסבב האחרון; מקור רשמי הוא הדרך להחליף ניחוש
+// במידע. פוגע רק ב-data.gov.il ולא באתרי הרשויות עצמם.
+const LIST_AUTHORITIES = ARGS.includes('--authorities');
 
 const TIMEOUT_MS = +(process.env.TENDERS_TIMEOUT_MS || 15000);
 const RETRIES = +(process.env.TENDERS_RETRIES || 1);
@@ -857,6 +862,7 @@ async function main() {
     process.exit(1);
   }
 
+  if (LIST_AUTHORITIES) { await listAuthorities(); return; }
   if (AUDIT_FILTER) { await auditSources(cfg, kw); return; }
   if (DEBUG_SOURCE) { await debugSource(cfg, kw); return; }
   if (PROBE) { await probeSources(cfg); return; }
@@ -1013,7 +1019,7 @@ async function main() {
     manualAuthorities: cfg.manualAuthorities || [],
     counts: { ...summarize(merged), dropped, droppedLabels: DROP_LABELS, near: nearFinal.length },
     nearMisses: nearFinal,
-    sources: status,
+    sources: withHealth(status, previous.sources),
     tenders: merged
   };
 
@@ -1049,6 +1055,75 @@ async function main() {
  * לא מפרסמות בתחום. הביקורת מריצה את המסלול האמיתי — אותם אדפטרים, אותו
  * buildRecord — וסופרת כל שלב בנפרד, עם דוגמאות.
  */
+/**
+ * היסטוריית בריאות למקור.
+ *
+ * HTTP 403 של היום נראה זהה ל-403 קבוע, וזה הבדל שמשנה הכול: מקור שחוסם תמיד
+ * צריך לעבור לרשימה הידנית, ומקור שעבד אתמול ונחסם היום הוא כמעט תמיד הגבלת
+ * קצב זמנית. נמדד בפועל (24/08/2026): אחרי כתריסר סריקות ידניות בשעה וחצי,
+ * 17 מתוך 31 הרשויות החזירו 403 — כולן החזירו אלפי קישורים ארבעים דקות קודם.
+ * בלי ההיסטוריה הזו הייתי מסיק שהן חוסמות סריקה ומוציא אותן מהסריקה לתמיד.
+ */
+function withHealth(status, prevSources) {
+  const prev = new Map((prevSources || []).map(s => [s.id, s]));
+  return status.map(s => {
+    const p = prev.get(s.id) || {};
+    if (s.ok) return { ...s, lastOkAt: today, failingSince: undefined };
+    return {
+      ...s,
+      lastOkAt: p.lastOkAt || '',
+      failingSince: p.failingSince || (p.lastOkAt ? today : p.failingSince || today),
+      // מקור שעבד לאחרונה ונכשל היום — סביר שזו הגבלה זמנית ולא חסימה קבועה
+      likelyTransient: !!(p.lastOkAt && daysBetween(p.lastOkAt, today) <= 3) || undefined
+    };
+  });
+}
+
+/**
+ * חיפוש מפתח הרשויות המקומיות הרשמי ב-data.gov.il.
+ *
+ * הכתובות של הרשויות ברשימה הידנית הן ניחוש לפי דפוס מקובל, ו-46 מהן לא נענו
+ * כלל. סבב ניחושים נוסף החזיר 3% הצלחה. מקור רשמי הוא הדרך להחליף ניחוש
+ * במידע — ולכן קודם כול בודקים מה בכלל קיים שם ובאילו שדות.
+ */
+async function listAuthorities() {
+  const api = 'https://data.gov.il/api/3/action';
+  const queries = ['רשויות מקומיות', 'מפתח הרשויות', 'אתרי רשויות'];
+  const seen = new Set();
+
+  for (const q of queries) {
+    console.log(`\n## חיפוש: "${q}"\n`);
+    let json;
+    try {
+      json = JSON.parse(await fetchText(`${api}/package_search?q=${encodeURIComponent(q)}&rows=8`));
+    } catch (e) { console.log('  ✖ החיפוש נכשל:', (e && e.message) || e); continue; }
+
+    for (const pkg of ((json.result || {}).results || [])) {
+      if (seen.has(pkg.id)) continue;
+      seen.add(pkg.id);
+      const resources = (pkg.resources || []).filter(r => r.datastore_active);
+      console.log(`- **${pkg.title}** (\`${pkg.name}\`) — ${resources.length} משאבים פעילים`);
+
+      for (const res of resources.slice(0, 2)) {
+        await sleep(POLITE_DELAY_MS);
+        try {
+          const raw = await fetchText(`${api}/datastore_search?resource_id=${encodeURIComponent(res.id)}&limit=3`);
+          const r = (JSON.parse(raw).result) || {};
+          const fields = (r.fields || []).map(f => f.id);
+          console.log(`  - משאב \`${res.id}\` (${r.total || 0} רשומות)`);
+          console.log(`    שדות: ${fields.join(' | ')}`);
+          // שדה שנראה כמו כתובת אתר הוא כל מה שמעניין כאן
+          const urlish = fields.filter(f => /url|site|אתר|כתובת|domain|web/i.test(f));
+          if (urlish.length) console.log(`    ← **שדות כתובת: ${urlish.join(', ')}**`);
+          for (const rec of (r.records || []).slice(0, 2)) {
+            console.log(`    דוגמה: ${JSON.stringify(rec).slice(0, 300)}`);
+          }
+        } catch (e) { console.log(`  - משאב ${res.id} — שגיאה: ${(e && e.message) || e}`); }
+      }
+    }
+  }
+}
+
 async function auditSources(cfg, kw) {
   const list = (cfg.sources || []).filter(s => s.enabled !== false)
     .filter(s => (s.category || '').includes(AUDIT_FILTER) || s.id === AUDIT_FILTER || s.id.startsWith(AUDIT_FILTER))
@@ -1701,7 +1776,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, dropReason, DROP_LABELS, looksLikeTender, isNavTitle, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
+  classify, dropReason, DROP_LABELS, looksLikeTender, isNavTitle, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, withHealth, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
   extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, publisherAllowed, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
