@@ -305,6 +305,22 @@ function dateAfterHint(context, hintRe) {
 const BINARY_URL_RE = /\.(pdf|docx?|xlsx?|pptx?|odt|zip|rar|7z)(\?|#|$)/i;
 
 const TENDER_NUM = /(?:מכרז|הליך|פנייה|פניה)[^\d\n]{0,25}(\d{1,4}\s*[\/\-]\s*\d{2,4})/;
+
+/**
+ * שנת הפרסום מתוך מספר המכרז.
+ *
+ * מספר מכרז ישראלי כמעט תמיד מכיל את השנה — "07/2024", "2/2015", "01/2023".
+ * זו העדות האחרונה לגיל כשאין מועד, אין תאריך פרסום ואין תאריך בנתיב הקובץ:
+ * הסריקה הראשונה עם keepUndated הכניסה לראדאר מכרז של שנקר מ-2015 בדיוק כך.
+ * מוחזר סוף השנה, כדי להיות נדיבים — מכרז שמספרו 2026 נשאר טרי כל השנה.
+ */
+function yearFromTenderNumber(num) {
+  for (const part of String(num || '').split(/[\/\-]/)) {
+    const y = +part.trim();
+    if (y >= 2000 && y <= new Date().getFullYear() + 1) return `${y}-12-31`;
+  }
+  return '';
+}
 function extractTenderNumber(text) {
   const m = text.match(TENDER_NUM);
   return m ? m[1].replace(/\s+/g, '') : '';
@@ -1487,6 +1503,10 @@ function buildRecord(item, source, kw, opts = {}) {
   const host = (() => { try { return new URL(item.url).host; } catch (_) { return source.id; } })();
   const id = hashId(source.id + '|' + (tenderNumber || normKey(item.title)) + '|' + host);
 
+  // סדר העדפה לתאריך הפרסום: מה שהדף אמר, ואם אין — נתיב הקובץ, ואם גם אין —
+  // השנה שבמספר המכרז. בלי החוליה האחרונה פרסום בלי שום תאריך נראה "טרי" לנצח.
+  const publishedAt = item.publishedAt || yearFromTenderNumber(tenderNumber);
+
   let deadlineAt = item.deadlineAt || '';
   // תאריך הגשה שכבר חלף בשנה שעברה הוא כמעט תמיד שגיאת חילוץ — עדיף לא להציג
   if (deadlineAt && daysBetween(today, deadlineAt) < -400) deadlineAt = '';
@@ -1501,7 +1521,7 @@ function buildRecord(item, source, kw, opts = {}) {
     category: source.category || '',
     publisher,
     tenderNumber,
-    publishedAt: item.publishedAt || '',
+    publishedAt,
     keepUndated: source.keepUndated ? true : undefined,
     kind,
     status,
@@ -1624,7 +1644,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, dropReason, DROP_LABELS, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, BINARY_URL_RE,
+  classify, dropReason, DROP_LABELS, looksLikeTender, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
   extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, publisherAllowed, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS

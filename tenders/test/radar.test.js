@@ -897,3 +897,27 @@ test('תאריך פרסום נגזר מנתיב הקובץ ומ"עדכון אח�
   assert.strictEqual(R.parseDateNear('תאריך עדכון אחרון: 14-07-2026'), '2026-07-14');
   assert.strictEqual(R.parseDateNear('2026-08-24'), '2026-08-24');
 });
+
+// הסריקה הראשונה עם keepUndated הכניסה לראדאר מכרז של שנקר מ-2015: אין לו
+// מועד, אין תאריך פרסום ואין תאריך בנתיב — אבל מספר המכרז הוא "2/2015".
+test('שנת הפרסום נגזרת ממספר המכרז כשאין שום תאריך אחר', () => {
+  assert.strictEqual(R.yearFromTenderNumber('2/2015'), '2015-12-31');
+  assert.strictEqual(R.yearFromTenderNumber('07/2024'), '2024-12-31');
+  assert.strictEqual(R.yearFromTenderNumber('5/26'), '', 'שתי ספרות אינן שנה חד-משמעית');
+  assert.strictEqual(R.yearFromTenderNumber(''), '');
+
+  const src = { id: 'shenkar', name: 'שנקר', allTenders: true, keepUndated: true,
+                category: 'מוסדות אקדמיים' };
+  const mk = title => R.buildRecord(
+    { title, url: 'https://shenkar.ac.il/tenders/x', context: '' }, src, KW);
+
+  const old = mk("מכרז פומבי מס' 2/2015 לאספקת מחשבים אישיים ומסכים");
+  assert.ok(old, 'הרשומה נבנית');
+  assert.strictEqual(old.publishedAt, '2015-12-31');
+  assert.strictEqual(R.dropReason(old), 'archived', 'מכרז מ-2015 אינו נכנס לראדאר');
+
+  // ומכרז מהשנה הנוכחית כן נכנס
+  const yr = new Date().getFullYear();
+  const now = mk(`מכרז פומבי מס' 3/${yr} לאספקת מחשבים אישיים ומסכים`);
+  assert.strictEqual(R.dropReason(now), '', `מכרז מ-${yr} נכנס`);
+});
