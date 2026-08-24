@@ -233,7 +233,9 @@ const NAV_TITLE_RE = new RegExp([
   'ועדות?\\s*בחינה',
   '^\\s*מכרזי\\s*ספקים',
   '^\\s*מכרזים\\s*(פעילים|קודמים|ארכיון)\\s*$',
-  '^\\s*מחלקת\\s'
+  '^\\s*מחלקת\\s',
+  '^\\s*ל?ארכיון\\s*מכרזים',
+  '^\\s*דיון\\s'
 ].join('|'));
 function isNavTitle(title) {
   return NAV_TITLE_RE.test(String(title || ''));
