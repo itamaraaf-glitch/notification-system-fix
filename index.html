@@ -2380,6 +2380,7 @@ body.logged-in #ai-fab{display:flex}
 <div class="mw" id="mdist"><div class="modal">
   <div class="mhdr"><h3 id="ditit">הפצה חדשה</h3><button class="mcls" onclick="closeM('mdist')">✕</button></div>
   <div id="dist-flow" style="margin-bottom:12px"></div>
+  <div id="dist-docs" style="margin-bottom:12px"></div>
   <div class="fg">
     <div class="g"><label>שם חברה</label><input type="text" id="dico" list="co-list" autocomplete="off"></div>
     <div class="g"><label>מס׳ פרויקט</label><input type="text" id="diproj"></div>
@@ -6728,6 +6729,49 @@ function advanceDistStage(id){
   const nx=distNextStage(d);
   if(!nx){showToast('🏁 כל השלבים הושלמו — ההפצה סגורה','info');return;}
   toggleDistStage(id,nx.k);
+}
+// ===== מסמכים נדרשים להפצה — לפי סוג המוצר וסטטוס הלקוח =====
+// כללים: קו תקשורת → BDI (בסיס); מחובר בבניין → ללא סרטוט; PtP → סרטוט + מחשבון;
+// צד ג׳ בזק → טופס בזק + תעודת תאגיד + פרוטוקול מורשה חתימה + חוזה. כל מוצר אחר → מחשבון + הצעת מחיר ספקים + חוזה.
+// לקוח קיים עם בדיקת BDI עד 6 חודשים → מדלגים גם על BDI וגם על טופס בזק.
+let _distDocState={sub:'',existing:false,bdi:false,checked:{}};
+function _distDocSet(k,v){ _distDocState[k]=v; if(k==='existing'&&!v)_distDocState.bdi=false; renderDistDocs(); }
+function _distDocSub(s){ _distDocState.sub=(_distDocState.sub===s?'':s); renderDistDocs(); }
+function _distDocToggle(key){ _distDocState.checked[key]=!_distDocState.checked[key]; renderDistDocs(); }
+function _distDocList(){
+  const product=(document.getElementById('diptype')||{}).value||'';
+  const {sub,existing,bdi}=_distDocState;
+  const skip=existing&&bdi; // דילוג על BDI + טופס בזק
+  const L=[];
+  if(product==='lines'){
+    if(!skip)L.push(['bdi','🔎 בדיקת BDI']);
+    if(sub==='ptp'){ L.push(['draw','📐 סרטוט קו (PtP)']); L.push(['calc','🧮 מחשבון']); }
+    else if(sub==='bezeq3'){ if(!skip)L.push(['bezeq','📄 טופס בזק']); L.push(['corp','🏛️ תעודת תאגיד']); L.push(['sign','✍️ פרוטוקול מורשה חתימה']); L.push(['contract','📝 חוזה']); }
+    // 'building' (מחובר בבניין): ללא סרטוט — רק BDI הבסיסי
+  } else if(product){ L.push(['calc','🧮 מחשבון']); L.push(['quote','💱 הצעת מחיר ספקים']); L.push(['contract','📝 חוזה']); }
+  return {product,L,skip};
+}
+function renderDistDocs(){
+  const el=document.getElementById('dist-docs'); if(!el)return;
+  const {product,L,skip}=_distDocList();
+  const isLines=product==='lines';
+  const subBtn=(k,lbl)=>`<button type="button" onclick="_distDocSub('${k}')" class="btn btns" style="font-size:10px;${_distDocState.sub===k?'border-color:#4cc9f0;color:#4cc9f0;background:rgba(76,201,240,.12)':''}">${lbl}</button>`;
+  const done=L.filter(([k])=>_distDocState.checked[k]).length;
+  const rows=L.map(([k,lbl])=>{ const on=!!_distDocState.checked[k];
+    return `<label style="display:flex;align-items:center;gap:8px;padding:6px 9px;border:1px solid ${on?'rgba(6,214,160,.35)':'var(--border)'};border-radius:8px;background:${on?'rgba(6,214,160,.08)':'rgba(255,255,255,.02)'};cursor:pointer;font-size:12px">
+      <input type="checkbox" ${on?'checked':''} onchange="_distDocToggle('${k}')" style="width:16px;height:16px;accent-color:#06d6a0;flex-shrink:0">
+      <span style="${on?'color:#06d6a0;text-decoration:line-through':''}">${lbl}</span></label>`;
+  }).join('');
+  el.innerHTML=`<div style="background:rgba(255,255,255,.03);border:1px solid rgba(76,201,240,.22);border-radius:12px;padding:12px 14px">
+    <div style="font-size:12px;font-weight:800;color:#4cc9f0;margin-bottom:9px">📋 מסמכים נדרשים${L.length?' <span style="color:var(--text3);font-weight:600">— '+done+'/'+L.length+' הושלמו</span>':''}</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:9px;font-size:11px">
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" ${_distDocState.existing?'checked':''} onchange="_distDocSet('existing',this.checked)" style="accent-color:#4cc9f0">לקוח קיים</label>
+      <label style="display:flex;align-items:center;gap:5px;cursor:${_distDocState.existing?'pointer':'default'};${_distDocState.existing?'':'opacity:.45'}"><input type="checkbox" ${_distDocState.bdi?'checked':''} ${_distDocState.existing?'':'disabled'} onchange="_distDocSet('bdi',this.checked)" style="accent-color:#4cc9f0">קיימת בדיקת BDI עד 6 חודשים</label>
+    </div>
+    ${isLines?`<div style="margin-bottom:9px"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">סוג קו התקשורת (כולל ספק נפח 20 מגה–1G):</div><div style="display:flex;gap:6px;flex-wrap:wrap">${subBtn('building','🏢 מחובר בבניין')}${subBtn('ptp','📡 PtP')}${subBtn('bezeq3','☎️ צד ג׳ בזק')}</div></div>`:''}
+    ${L.length?`<div style="display:flex;flex-direction:column;gap:6px">${rows}</div>`:`<div style="font-size:11px;color:var(--text3)">בחר סוג מוצר${isLines?' וסוג קו':' בשדה "סוג מוצר / ציוד"'} כדי לראות את המסמכים הנדרשים</div>`}
+    ${skip?'<div style="margin-top:9px;font-size:10.5px;color:#06d6a0;line-height:1.5">✓ לקוח קיים עם בדיקת BDI עד 6 חודשים — דילוג אוטומטי על בדיקת BDI ועל טופס בזק</div>':''}
+  </div>`;
 }
 // פגישה מתוך מכרז — שם המכרז ומספר הפרויקט מולאו מראש
 function schedMeetFromTender(id){
@@ -11964,6 +12008,9 @@ function openM(type,id){
     const d=isNew?{}:(D.dists.find(x=>x.id==id)||(D.archivedDists||[]).find(x=>x.id==id)||{});
     document.getElementById('dico').value=d.co||'';document.getElementById('diproj').value=d.no||'';document.getElementById('dicl').value=d.cl||'';document.getElementById('dicle').value=d.cle||'';document.getElementById('dih').value=d.hd||'';document.getElementById('dihp').value=d.hp||'';document.getElementById('diit').value=d.it||'';document.getElementById('diso').value=d.so||'';document.getElementById('diad').value=d.ad||'';document.getElementById('dida').value=d.da||'';document.getElementById('dipcat').value=d.pcat||'';document.getElementById('dilang').value=d.lang||'he';document.getElementById('ditgt').value=d.tgt||0;document.getElementById('diin').value=d.inc||0;document.getElementById('dieq').value=d.eq||0;document.getElementById('didt').value=d.dt||'';document.getElementById('dist2').value=d.st||'ממתין להפצה';document.getElementById('dity').value=d.ty||'short';document.getElementById('diptype').value=d.ptype||'';document.getElementById('dimi').value=d.mi||'';
     renderDistFlow(isNew?null:d);
+    _distDocState={sub:d.lineSub||'',existing:!!d.cliExisting,bdi:!!d.bdiRecent,checked:Object.assign({},d.docs||{})};
+    renderDistDocs();
+    const _dpt=document.getElementById('diptype'); if(_dpt&&!_dpt._docBound){ _dpt._docBound=1; _dpt.addEventListener('change',renderDistDocs); }
   }else if(type==='salary'){
     document.getElementById('sttit').textContent=isNew?'פרויקט לשכר':'עריכת פרויקט';
     const s=isNew?{}:(D.salary.find(x=>x.id==id)||(D.archivedSalary||[]).find(x=>x.id==id)||{});
@@ -12691,7 +12738,7 @@ function syncDistToSalary(dist){
   return updated>0;
 }
 function saveDist(){
-  const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,cle:document.getElementById('dicle').value.trim(),hd:document.getElementById('dih').value,hp:document.getElementById('dihp').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,da:document.getElementById('dida').value.trim(),pcat:document.getElementById('dipcat').value,lang:document.getElementById('dilang').value,tgt:+document.getElementById('ditgt').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,ptype:document.getElementById('diptype').value,mi:document.getElementById('dimi').value,files:_attPending['dist']||[]};
+  const row={co:document.getElementById('dico').value,no:document.getElementById('diproj').value,cl:document.getElementById('dicl').value,cle:document.getElementById('dicle').value.trim(),hd:document.getElementById('dih').value,hp:document.getElementById('dihp').value,it:document.getElementById('diit').value,so:document.getElementById('diso').value,ad:document.getElementById('diad').value,da:document.getElementById('dida').value.trim(),pcat:document.getElementById('dipcat').value,lang:document.getElementById('dilang').value,tgt:+document.getElementById('ditgt').value,inc:+document.getElementById('diin').value,eq:+document.getElementById('dieq').value,dt:document.getElementById('didt').value,st:document.getElementById('dist2').value,ty:document.getElementById('dity').value,ptype:document.getElementById('diptype').value,mi:document.getElementById('dimi').value,lineSub:_distDocState.sub,cliExisting:_distDocState.existing,bdiRecent:_distDocState.bdi,docs:_distDocState.checked,files:_attPending['dist']||[]};
   if(!row.co){alert('יש להזין שם חברה');return;}
   if(isNaN(row.tgt)||row.tgt<0||isNaN(row.inc)||row.inc<0||isNaN(row.eq)||row.eq<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}
   if(_saveArch('dist',row))return; // עריכת רשומת ארכיון — עדכון במקום
