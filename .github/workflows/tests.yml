@@ -1,0 +1,38 @@
+# בדיקות — רצות על כל PR ועל כל דחיפה ל-main.
+#
+# עד עכשיו הבדיקות רצו רק כחלק מריצת הראדאר היומית, כלומר אחרי שהקוד כבר
+# ב-main. מעכשיו PR מקבל חיווי אמיתי לפני המיזוג.
+#
+# אין כאן npm ci בכוונה: הסוכן והראדאר חסרי תלויות חיצוניות, והבדיקות
+# משתמשות ב-node:test המובנה בלבד. התלות היחידה בחבילה (@anthropic-ai/sdk)
+# נדרשת רק לסקירת ה-AI האופציונלית, שאינה נבדקת כאן. התקנה מיותרת רק מוסיפה
+# זמן ונקודת כשל ברשת.
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      # הקוד משתמש ב-fetch המובנה וב-node:test, ולכן נדרש Node 18 ומעלה.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: בדיקות — סוכן הרשת וראדאר המכרזים
+        run: npm test
