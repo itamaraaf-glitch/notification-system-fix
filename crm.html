@@ -6801,6 +6801,24 @@ const DIST_STAGES=[
 ];
 function distStageCount(d){return DIST_STAGES.filter(st=>(d.stages||{})[st.k]).length;}
 function distNextStage(d){return DIST_STAGES.find(st=>!(d.stages||{})[st.k])||null;}
+// סנכרון דו-כיווני בין סטטוס ההפצה לשלבי הצ׳קליסט.
+// מיפוי: ממתין להפצה = לפני התקנה · בהתקנה = ההתקנה הושלמה · הושלם = כל השלבים. "בעיה" — דגל ידני, לא מסונכרן.
+const _DIST_STAGE_KEYS=['open','survey','equip','sched','install','test','handover','done'];
+function _distSyncStatusFromStages(d){
+  if(d.st==='בעיה')return d.st; // דגל תקלה ידני — לא נדרס אוטומטית
+  const n=distStageCount(d);
+  d.st = n>=8?'הושלם' : n>=5?'בהתקנה' : 'ממתין להפצה'; // install הוא השלב ה-5
+  return d.st;
+}
+function _distSyncStagesFromStatus(d){
+  if(d.st==='בעיה')return; // לא נוגעים בשלבים
+  if(!d.stages)d.stages={};
+  const mark=upto=>{ for(let i=0;i<=upto;i++){ const k=_DIST_STAGE_KEYS[i]; if(!d.stages[k])d.stages[k]=nd(); } };
+  const clearFrom=from=>{ for(let i=from;i<_DIST_STAGE_KEYS.length;i++)delete d.stages[_DIST_STAGE_KEYS[i]]; };
+  if(d.st==='הושלם')mark(7);
+  else if(d.st==='בהתקנה'){ mark(4); clearFrom(5); }   // עד ההתקנה (כולל); ניקוי בדיקות/מסירה/סגירה
+  else if(d.st==='ממתין להפצה')clearFrom(4);            // ניקוי מההתקנה ואילך; שלבי ההכנה נשמרים
+}
 function renderDistFlow(d){
   const el=document.getElementById('dist-flow'); if(!el)return;
   if(!d){el.innerHTML='<div style="font-size:11px;color:var(--text3);background:rgba(255,255,255,.03);border:1px dashed var(--border);border-radius:10px;padding:10px 14px">🗺️ צ׳קליסט התקדמות ההפצה יופיע כאן לאחר שמירת ההפצה — כל שלב חייב בהשלמה כדי להתקדם לסגירה</div>';return;}
@@ -6828,19 +6846,22 @@ function toggleDistStage(id,k){
   const d=D.dists.find(x=>x.id==id); if(!d)return;
   if(!d.stages)d.stages={};
   const idx=DIST_STAGES.findIndex(st=>st.k===k);
+  let marked;
   if(d.stages[k]){
     if(DIST_STAGES.slice(idx+1).some(st=>d.stages[st.k])){showToast('⚠️ בטל קודם את השלבים שאחריו','warn');return;}
-    delete d.stages[k];
-    if(k==='done'&&d.st==='הושלם'){d.st='בהתקנה';const el=document.getElementById('dist2');if(el)el.value='בהתקנה';}
+    delete d.stages[k]; marked=false;
   }else{
     const missing=DIST_STAGES.slice(0,idx).filter(st=>!d.stages[st.k]);
     if(missing.length){showToast('⚠️ יש להשלים קודם: '+missing[0].l,'warn');return;}
-    d.stages[k]=nd();
-    if(k==='done'){d.st='הושלם';const el=document.getElementById('dist2');if(el)el.value='הושלם';showToast('🎉 ההפצה הושלמה! הסטטוס עודכן ל"הושלם"','ok');}
-    else showToast('✅ שלב "'+DIST_STAGES[idx].l+'" הושלם','ok');
+    d.stages[k]=nd(); marked=true;
   }
+  const prevSt=d.st;
+  _distSyncStatusFromStages(d); // השלבים → סטטוס
+  const el=document.getElementById('dist2'); if(el)el.value=d.st;
   dbUpdate('dists',id,{stages:d.stages,st:d.st});
   if(d._trackTok){try{_publishTrackAndMark(d);}catch(e){}}
+  if(d.st!==prevSt)showToast((d.st==='הושלם'?'🎉 ':'✅ ')+'שלב "'+DIST_STAGES[idx].l+'" '+(marked?'הושלם':'בוטל')+' — הסטטוס סונכרן ל"'+d.st+'"','ok');
+  else showToast('✅ שלב "'+DIST_STAGES[idx].l+'" '+(marked?'הושלם':'בוטל'),'ok');
   renderDistFlow(d); rAll();
 }
 // קידום שלב הפצה בלחיצה אחת מהטבלה — מסמן את השלב הבא שטרם הושלם
@@ -13316,6 +13337,8 @@ function saveDist(){
   const _oldStatus = EI ? ((D.dists.find(x=>x.id==EI)||{}).st ?? null) : null;
   let savedDist;
   if(EI){dbUpdate('dists',EI,row);savedDist=D.dists.find(x=>x.id==EI);}else{savedDist=dbInsert('dists',row);}
+  // סנכרון שלבים לפי הסטטוס — רק כשהמשתמש שינה את הסטטוס בטופס (כדי לא לדרוס שלבים שקודמו בגרף)
+  if(savedDist&&_wasEdit&&_oldStatus!==null&&row.st!==_oldStatus){ _distSyncStagesFromStatus(savedDist); dbUpdate('dists',savedDist.id,{stages:savedDist.stages}); }
   if(savedDist&&savedDist.st==='הושלם')syncDistToClient(savedDist);
   if(savedDist&&syncDistToSalary(savedDist))toast('🔗 מספר הפרויקט סונכרן לפרויקטי שכר','ok');
   closeM('mdist');rAll();
@@ -13347,7 +13370,8 @@ function advanceDistStatus(id){
   const d=(D.dists||[]).find(x=>x.id==id); if(!d)return;
   const flow={'ממתין להפצה':'בהתקנה','בהתקנה':'הושלם','בעיה':'בהתקנה','הושלם':'ממתין להפצה'};
   const next=flow[d.st]||'בהתקנה';
-  dbUpdate('dists',id,{st:next});
+  d.st=next; _distSyncStagesFromStatus(d); // הסטטוס → שלבים
+  dbUpdate('dists',id,{st:d.st,stages:d.stages});
   const nd2=D.dists.find(x=>x.id==id);
   if(next==='הושלם'&&nd2)syncDistToClient(nd2);
   rAll();
