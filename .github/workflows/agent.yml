@@ -1,0 +1,91 @@
+# סוכן רשת — הרצה ידנית של משימת מעקב (watch) מתוך agent/watches/.
+#
+# למה ידנית ולא מתוזמן: אין כרגע משימה מופעלת. משימה נכנסת לתזמון רק אחרי
+# שהמקורות שלה **נמדדו** — probe מדווח מי נענה ומי חוסם, ו-audit מראה איפה נופל
+# כל פריט. כתובת משוערת שלא נענתה אינה "אתר חוסם" אלא לרוב כתובת שגויה, ושתי
+# המסקנות נראות זהות בלוג; במאגר הזה הבלבול הזה כבר סיווג שש רשויות כחוסמות
+# כשהדומיין פשוט היה שגוי. הריצה כאן היא הדרך למדוד, כי לסביבת הפיתוח המקומית
+# אין גישת רשת החוצה.
+#
+# להוספת תזמון: מפעילים את המשימה (enabled: true) ומוסיפים כאן schedule.
+name: agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      watch:
+        description: 'מזהה המשימה מתוך agent/watches/ (למשל: tenders). ריק = הצגת הרשימה בלבד.'
+        required: false
+        default: ''
+      mode:
+        description: 'מה לעשות'
+        required: true
+        default: 'probe'
+        type: choice
+        options:
+          - probe    # מדידת נגישות: בקשה אחת לכל מקור. לא שומר ולא מדווח.
+          - audit    # ביקורת משפך: מריץ את הסריקה האמיתית ומדווח איפה נפל כל פריט. לא שומר.
+          - dry-run  # סריקה מלאה, הדפסה בלבד, בלי לכתוב לקבצים
+          - scan     # סריקה מלאה + שמירת התוצאות במאגר
+      source:
+        description: 'מקור בודד (מזהה מתוך המשימה). ריק = כל המקורות.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agent-${{ inputs.watch }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: בדיקות ליבת הסוכן
+        run: npm run test:agent
+
+      - name: המשימות המוגדרות
+        if: inputs.watch == ''
+        run: node agent/run.js --list | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: הרצת המשימה
+        if: inputs.watch != ''
+        env:
+          WATCH: ${{ inputs.watch }}
+          MODE: ${{ inputs.mode }}
+          SOURCE: ${{ inputs.source }}
+        run: |
+          args="--watch=$WATCH"
+          [ -n "$SOURCE" ] && args="$args --source=$SOURCE"
+          case "$MODE" in
+            probe)   args="$args --probe" ;;
+            audit)   args="$args --audit" ;;
+            dry-run) args="$args --dry-run" ;;
+          esac
+          node agent/run.js $args | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # נשמר רק במצב scan — probe, audit ו-dry-run אינם כותבים דבר מלכתחילה
+      - name: שמירת התוצאות במאגר
+        if: inputs.watch != '' && inputs.mode == 'scan'
+        run: |
+          if git diff --quiet -- agent/data; then
+            echo "אין שינוי בנתוני הסוכן — אין מה לשמור"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add agent/data
+          git commit -m "סוכן רשת: עדכון נתוני ${{ inputs.watch }} ($(date -u +%Y-%m-%d))"
+          for attempt in 1 2 3 4; do
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then exit 0; fi
+            echo "הדחיפה נכשלה — ניסיון $attempt"
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            sleep $((2 ** attempt))
+          done
+          echo "::error::דחיפת נתוני הסוכן נכשלה"
+          exit 1
