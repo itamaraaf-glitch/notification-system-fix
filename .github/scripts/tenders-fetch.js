@@ -862,7 +862,10 @@ async function main() {
     process.exit(1);
   }
 
-  if (LIST_AUTHORITIES) { await listAuthorities(); return; }
+  if (LIST_AUTHORITIES) {
+    if (process.argv.includes('--domains')) { await authorityDomains(); return; }
+    await listAuthorities(); return;
+  }
   if (AUDIT_FILTER) { await auditSources(cfg, kw); return; }
   if (DEBUG_SOURCE) { await debugSource(cfg, kw); return; }
   if (PROBE) { await probeSources(cfg); return; }
@@ -1086,6 +1089,46 @@ function withHealth(status, prevSources) {
  * כלל. סבב ניחושים נוסף החזיר 3% הצלחה. מקור רשמי הוא הדרך להחליף ניחוש
  * במידע — ולכן קודם כול בודקים מה בכלל קיים שם ובאילו שדות.
  */
+/**
+ * דומיינים רשמיים של רשויות, מתוך כתובות דוא"ל ב-data.gov.il.
+ *
+ * חיפוש ישיר של "מפתח הרשויות" ו"אתרי רשויות" ב-data.gov.il החזיר אפס — אין שם
+ * מערך נתונים של כתובות אתרי הרשויות. אבל מערך "פרוייקטורים - מלווי עולים
+ * ברשויות המקומיות" מכיל 166 כתובות דוא"ל רשמיות (nurab@eilat.muni.il), והדומיין
+ * בכתובת כזו **הוא** הדומיין של הרשות. זו העדות הרשמית שחיפשתי, בדרך עקיפה:
+ * במקום לנחש muni.il מול org.il, קוראים את התשובה.
+ */
+async function authorityDomains() {
+  const api = 'https://data.gov.il/api/3/action';
+  const RES = 'ad4534da-09db-41d7-94e2-b56ce1ec3dc3';
+  const raw = await fetchText(`${api}/datastore_search?resource_id=${RES}&limit=500`);
+  const records = ((JSON.parse(raw).result) || {}).records || [];
+
+  const byCity = new Map();
+  for (const rec of records) {
+    const city = String(rec.city || '').trim();
+    const mail = String(rec.additional_email || rec.email || '').trim();
+    const m = mail.match(/@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/);
+    if (!city || !m) continue;
+    const domain = m[1].toLowerCase();
+    // דומיין כללי אינו דומיין של רשות
+    if (/gmail|walla|hotmail|outlook|yahoo|012|013|bezeq/.test(domain)) continue;
+    if (!byCity.has(city)) byCity.set(city, new Set());
+    byCity.get(city).add(domain);
+  }
+
+  console.log(`\n## דומיינים רשמיים מתוך ${records.length} רשומות — ${byCity.size} רשויות\n`);
+  console.log('| רשות | דומיין רשמי |');
+  console.log('| --- | --- |');
+  for (const [city, set] of [...byCity].sort((a, b) => a[0].localeCompare(b[0], 'he'))) {
+    console.log(`| ${city} | ${[...set].join(', ')} |`);
+  }
+
+  console.log('\n<!--DOMAINS-JSON');
+  console.log(JSON.stringify([...byCity].map(([city, s]) => ({ city, domains: [...s] }))));
+  console.log('DOMAINS-JSON-->');
+}
+
 async function listAuthorities() {
   const api = 'https://data.gov.il/api/3/action';
   const queries = ['רשויות מקומיות', 'מפתח הרשויות', 'אתרי רשויות'];

@@ -26,7 +26,7 @@ on:
         required: false
         default: ''
       authorities:
-        description: 'חיפוש מפתח הרשויות המקומיות ב-data.gov.il (הקלד any). פוגע רק ב-data.gov.il, לא באתרי הרשויות.'
+        description: 'data.gov.il: הקלד domains כדי לחלץ דומיינים רשמיים של רשויות מכתובות דוא"ל, או any לסקירת מערכי נתונים. לא פוגע באתרי הרשויות.'
         required: false
         default: ''
 
@@ -56,7 +56,7 @@ jobs:
       # מדידת נגישות: בקשה אחת לכל מקור, בלי סריקה, בלי שמירה ובלי דיווח
       - name: מפתח הרשויות המקומיות
         if: inputs.authorities != ''
-        run: node .github/scripts/tenders-fetch.js --authorities | tee -a "$GITHUB_STEP_SUMMARY"
+        run: node .github/scripts/tenders-fetch.js --authorities ${{ inputs.authorities == 'domains' && '--domains' || '' }} | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: ביקורת משפך
         if: inputs.audit != ''
