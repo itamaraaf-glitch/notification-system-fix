@@ -103,6 +103,12 @@ function decodeEntities(s) {
 function safeCodePoint(n) {
   try { return String.fromCodePoint(n); } catch (_) { return ''; }
 }
+/**
+ * תווי בקרה שנשלפו מטקסט שמקורו ב-PDF. נצפה בפועל: כותרת מאשכול נגב מערבי
+ * שהכילה בייט NUL באמצע מילה ("הח\u0000ברות"), שנשמר כך ל-JSON ולממשק.
+ */
+const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
+
 function stripTags(html) {
   return decodeEntities(String(html).replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
 }
@@ -430,7 +436,7 @@ function harvestAnchors(html, baseUrl, opts) {
   ANCHOR_RE.lastIndex = 0;
   while ((m = ANCHOR_RE.exec(html)) !== null) {
     const href = decodeEntities(m[1] || m[2] || m[3] || '').trim();
-    const title = stripTags(m[4] || '');
+    const title = stripTags(m[4] || '').replace(CONTROL_CHARS, '').replace(/\s+/g, ' ').trim();
     if (!href || !title) continue;
     if (/^(javascript:|mailto:|tel:|#)/i.test(href)) continue;
     if (title.length < minLen || title.length > 300) continue;
@@ -459,10 +465,16 @@ function itemFromAnchor(a) {
     title: a.title,
     url: a.url,
     context: a.context,
-    publishedAt: dateAfterHint(a.context, PUBLISH_HINTS)
+    // הכותרת נבדקת לפני ההקשר: באתרי אשכולות ורשויות מועד ההגשה כתוב בתוך טקסט
+    // הקישור עצמו ("... | תאריך אחרון להגשה: 24/06/2025"), וזה מדויק יותר מההקשר,
+    // שבולע גם את שכניו. בלי זה מכרז שפג נכנס לראדאר כאילו אין לו מועד כלל.
+    publishedAt: dateAfterHint(a.title, PUBLISH_HINTS)
+      || dateAfterHint(a.context, PUBLISH_HINTS)
+      || dateAfterHint(a.title, UPDATED_HINTS)
       || dateAfterHint(a.context, UPDATED_HINTS)
       || dateFromUrl(a.url),
-    deadlineAt: dateAfterHint(a.context, DEADLINE_HINTS)
+    deadlineAt: dateAfterHint(a.title, DEADLINE_HINTS)
+      || dateAfterHint(a.context, DEADLINE_HINTS)
   };
 }
 const shortUrl = u => { try { const p = new URL(u); return p.host + p.pathname.slice(0, 40); } catch (_) { return String(u).slice(0, 50); } };
@@ -1751,11 +1763,18 @@ function buildRecord(item, source, kw, opts = {}) {
 
   // סדר העדפה לתאריך הפרסום: מה שהדף אמר, ואם אין — נתיב הקובץ, ואם גם אין —
   // השנה שבמספר המכרז. בלי החוליה האחרונה פרסום בלי שום תאריך נראה "טרי" לנצח.
-  const publishedAt = item.publishedAt || yearFromTenderNumber(tenderNumber);
+  const publishedFromItem = item.publishedAt || yearFromTenderNumber(tenderNumber);
 
   let deadlineAt = item.deadlineAt || '';
-  // תאריך הגשה שכבר חלף בשנה שעברה הוא כמעט תמיד שגיאת חילוץ — עדיף לא להציג
-  if (deadlineAt && daysBetween(today, deadlineAt) < -400) deadlineAt = '';
+  let publishedAt = publishedFromItem;
+  // תאריך הגשה שחלף לפני יותר מ-400 יום הוא כמעט תמיד שגיאת חילוץ, ולכן אינו
+  // מוצג. אבל הוא כן עדות לגיל הפרסום: מכרז שמישהו תיארך ל-2025 אינו "בלי
+  // מועד". בלי החוליה הזו מכרז שפג נכנס לראדאר דרך keepUndated, כאילו לא נמצא
+  // עליו תאריך כלל — כך נכנס מכרז של אשכול נגב מערבי שמועדו היה 24/06/2025.
+  if (deadlineAt && daysBetween(today, deadlineAt) < -400) {
+    if (!publishedAt) publishedAt = deadlineAt;
+    deadlineAt = '';
+  }
 
   return {
     id,

@@ -994,3 +994,34 @@ test('תווית ניווט נדחית גם כשהנתיב מכרזי', () => {
     { title: 'מכרז פומבי 4/2026 לאספקת ציוד תקשורת ומתגים', url: 'https://x.muni.il/bids/1', context: '' },
     { id: 's', name: 'מ', allTenders: false, keepUndated: true }, KW, { near: true }));
 });
+
+// באתרי אשכולות ורשויות מועד ההגשה כתוב בתוך טקסט הקישור עצמו. הסריקה
+// הראשונה עם אשכול נגב מערבי הכניסה לראדאר מכרז שמועדו 24/06/2025: המועד לא
+// נחלץ כי חיפשנו רק בהקשר, ואז keepUndated שמר אותו כאילו אין לו מועד כלל.
+test('מועד שבכותרת נחלץ, ומועד ישן מסווג את הפרסום כארכיון', () => {
+  const title = "מכרז פומבי משותף מס' 6/25 - שירותי ממונה הגנת הפרטיות (DPO) " +
+                "במיקור חוץ | תאריך אחרון להגשה: 24/06/2025";
+  assert.strictEqual(R.dateAfterHint(title, R.DEADLINE_HINTS), '2025-06-24');
+
+  const src = { id: 'c', name: 'אשכול', allTenders: false, keepUndated: true };
+  const old = R.buildRecord({ title, url: 'https://x.org.il/f.pdf', context: '',
+                              deadlineAt: '2025-06-24' }, src, KW);
+  assert.strictEqual(old.deadlineAt, '', 'מועד ישן מדי אינו מוצג');
+  assert.strictEqual(old.publishedAt, '2025-06-24', 'אבל הוא כן קובע את גיל הפרסום');
+  assert.strictEqual(R.dropReason(old), 'archived', 'ולכן הפרסום אינו נכנס לראדאר');
+
+  const open = R.buildRecord({ title: 'מכרז לאספקת ציוד תקשורת | תאריך אחרון להגשה: 30/09/2099',
+    url: 'https://x.org.il/a', context: '', deadlineAt: '2099-09-30' }, src, KW);
+  assert.strictEqual(open.deadlineAt, '2099-09-30');
+  assert.strictEqual(R.dropReason(open), '');
+});
+
+// טקסט שמקורו ב-PDF מביא איתו תווי בקרה. נצפה בפועל: כותרת מאשכול נגב מערבי
+// עם בייט NUL באמצע מילה, שנשמר כך ל-JSON ולממשק.
+test('תווי בקרה מטקסט PDF אינם נשמרים בכותרת', () => {
+  const nul = String.fromCharCode(0);
+  const html = `<a href="/f.pdf">מכרז לאספקת ציוד תקשורת לרשויות הח${nul}ברות בהן</a>`;
+  const [a] = R.harvestAnchors(html, 'https://x.org.il/bids');
+  assert.strictEqual(a.title, 'מכרז לאספקת ציוד תקשורת לרשויות החברות בהן');
+  assert.ok(!/[\u0000-\u001F]/.test(a.title), 'אין תווי בקרה');
+});
