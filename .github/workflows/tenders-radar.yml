@@ -56,7 +56,7 @@ jobs:
       # מדידת נגישות: בקשה אחת לכל מקור, בלי סריקה, בלי שמירה ובלי דיווח
       - name: מפתח הרשויות המקומיות
         if: inputs.authorities != ''
-        run: node .github/scripts/tenders-fetch.js --authorities ${{ inputs.authorities == 'domains' && '--domains' || '' }} | tee -a "$GITHUB_STEP_SUMMARY"
+        run: node .github/scripts/tenders-fetch.js --authorities ${{ inputs.authorities == 'domains' && '--domains' || '' }} ${{ inputs.authorities == 'deep' && '--deep' || '' }} | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: ביקורת משפך
         if: inputs.audit != ''

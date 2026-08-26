@@ -863,6 +863,7 @@ async function main() {
   }
 
   if (LIST_AUTHORITIES) {
+    if (process.argv.includes('--deep')) { await authorityDomainsDeep(); return; }
     if (process.argv.includes('--domains')) { await authorityDomains(); return; }
     await listAuthorities(); return;
   }
@@ -1098,6 +1099,62 @@ function withHealth(status, prevSources) {
  * בכתובת כזו **הוא** הדומיין של הרשות. זו העדות הרשמית שחיפשתי, בדרך עקיפה:
  * במקום לנחש muni.il מול org.il, קוראים את התשובה.
  */
+/**
+ * סריקה רחבה: אוסף כל דומיין רשותי שמופיע בכתובת דוא"ל כלשהי ב-data.gov.il.
+ *
+ * המערך של מלווי העולים נתן 43 רשויות. אבל כתובות דוא"ל רשמיות מפוזרות בעשרות
+ * מערכי נתונים — אנשי קשר, ממונים, רכזים — וכל אחת מהן מצביעה על דומיין אמיתי
+ * של רשות. הסריקה עוברת על כל שדה טקסט בכל משאב, שולפת כתובות, ומשאירה רק
+ * דומיינים שנראים כשל רשות ישראלית. הפלט הוא רשימת דומיינים מאומתים שאפשר
+ * להתאים מולה את 65 הכתובות המשוערות שלנו.
+ */
+async function authorityDomainsDeep() {
+  const api = 'https://data.gov.il/api/3/action';
+  const queries = ['רשויות מקומיות', 'עיריות', 'מועצות אזוריות', 'אנשי קשר רשויות', 'ממונים ברשויות'];
+  const EMAIL = /[A-Za-z0-9._%+-]+@([A-Za-z0-9.-]+\.(?:muni\.il|org\.il|co\.il|gov\.il|net\.il|ac\.il))/g;
+  const GENERIC = /gmail|walla|hotmail|outlook|yahoo|yandex|mail\.ru|012|013|bezeq|zahav|nana|012net/i;
+
+  const domains = new Map();  // domain -> how many times seen
+  const seenRes = new Set();
+  let resources = 0;
+
+  for (const q of queries) {
+    let pkgs = [];
+    try {
+      const j = JSON.parse(await fetchText(`${api}/package_search?q=${encodeURIComponent(q)}&rows=8`));
+      pkgs = ((j.result || {}).results) || [];
+    } catch (_) { continue; }
+
+    for (const pkg of pkgs) {
+      for (const res of (pkg.resources || []).filter(r => r.datastore_active).slice(0, 2)) {
+        if (seenRes.has(res.id)) continue;
+        seenRes.add(res.id);
+        await sleep(POLITE_DELAY_MS);
+        try {
+          const raw = await fetchText(`${api}/datastore_search?resource_id=${encodeURIComponent(res.id)}&limit=500`);
+          resources++;
+          let m;
+          EMAIL.lastIndex = 0;
+          while ((m = EMAIL.exec(raw)) !== null) {
+            const d = m[1].toLowerCase().replace(/^(mail|webmail|mx|smtp)\./, '');
+            if (GENERIC.test(d)) continue;
+            domains.set(d, (domains.get(d) || 0) + 1);
+          }
+        } catch (_) { /* משאב שלא נענה — ממשיכים */ }
+      }
+    }
+  }
+
+  const sorted = [...domains].sort((a, b) => b[1] - a[1]);
+  console.log(`\n## ${sorted.length} דומיינים מאומתים, מתוך ${resources} משאבים\n`);
+  console.log('| דומיין | מופעים |');
+  console.log('| --- | ---: |');
+  for (const [d, n] of sorted) console.log(`| ${d} | ${n} |`);
+  console.log('\n<!--DEEP-JSON');
+  console.log(JSON.stringify(sorted.map(([d]) => d)));
+  console.log('DEEP-JSON-->');
+}
+
 async function authorityDomains() {
   const api = 'https://data.gov.il/api/3/action';
   const RES = 'ad4534da-09db-41d7-94e2-b56ce1ec3dc3';
