@@ -784,6 +784,90 @@
       "tendersUrls": [
         "https://www.harish.muni.il/bids"
       ]
+    },
+    {
+      "id": "muni-mvhr",
+      "name": "גוף מוניציפלי — mvhr.org.il",
+      "category": "רשויות מקומיות",
+      "kind": "discover",
+      "enabled": true,
+      "allTenders": false,
+      "keepUndated": true,
+      "home": "https://www.mvhr.org.il/",
+      "tendersUrls": [
+        "https://www.mvhr.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
+      ],
+      "_note": "הדומיין הגיע מסריקת כתובות דוא\"ל רשמיות ב-data.gov.il ויש בו עמוד מכרזים פעיל, אבל כותרת הדף (\"מכרזים\"/\"ועדת מכרזים\") אינה מזהה את הגוף. השם ייקבע כשמכרז ממנו יגיע לראדאר; לא נרשם שם משוער."
+    },
+    {
+      "id": "muni-sdan",
+      "name": "גוף מוניציפלי — sdan.org.il",
+      "category": "רשויות מקומיות",
+      "kind": "discover",
+      "enabled": true,
+      "allTenders": false,
+      "keepUndated": true,
+      "home": "https://www.sdan.org.il/",
+      "tendersUrls": [
+        "https://www.sdan.org.il/bids/"
+      ],
+      "_note": "הדומיין הגיע מסריקת כתובות דוא\"ל רשמיות ב-data.gov.il ויש בו עמוד מכרזים פעיל, אבל כותרת הדף (\"מכרזים\"/\"ועדת מכרזים\") אינה מזהה את הגוף. השם ייקבע כשמכרז ממנו יגיע לראדאר; לא נרשם שם משוער."
+    },
+    {
+      "id": "cluster-west-negev",
+      "name": "אשכול רשויות נגב מערבי",
+      "category": "רשויות מקומיות",
+      "kind": "discover",
+      "enabled": true,
+      "allTenders": false,
+      "keepUndated": true,
+      "home": "https://www.westnegev.org.il/",
+      "tendersUrls": [
+        "https://www.westnegev.org.il/services"
+      ],
+      "_note": "אשכול רשויות — גוף רכש משותף לכמה רשויות"
+    },
+    {
+      "id": "cluster-east-galil",
+      "name": "אשכול גליל מזרחי",
+      "category": "רשויות מקומיות",
+      "kind": "discover",
+      "enabled": true,
+      "allTenders": false,
+      "keepUndated": true,
+      "home": "https://www.eastgalil.org.il/",
+      "tendersUrls": [
+        "https://www.eastgalil.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D"
+      ],
+      "_note": "אשכול רשויות — גוף רכש משותף לכמה רשויות"
+    },
+    {
+      "id": "cluster-hamifrats",
+      "name": "אשכול רשויות המפרץ",
+      "category": "רשויות מקומיות",
+      "kind": "discover",
+      "enabled": true,
+      "allTenders": false,
+      "keepUndated": true,
+      "home": "https://www.hamifrats.org.il/",
+      "tendersUrls": [
+        "https://www.hamifrats.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D"
+      ],
+      "_note": "אשכול רשויות — גוף רכש משותף לכמה רשויות"
+    },
+    {
+      "id": "cluster-hasharon",
+      "name": "אשכול רשויות השרון",
+      "category": "רשויות מקומיות",
+      "kind": "discover",
+      "enabled": true,
+      "allTenders": false,
+      "keepUndated": true,
+      "home": "https://www.esharon.co.il/",
+      "tendersUrls": [
+        "https://esharon.co.il/%d7%9e%d7%9b%d7%a8%d7%96%d7%99%d7%9d-%d7%a4%d7%a2%d7%99%d7%9c%d7%99%d7%9d/"
+      ],
+      "_note": "אשכול רשויות — גוף רכש משותף לכמה רשויות"
     }
   ],
   "_manualComment": "אגרגטורים ומאגרים מסחריים/מוסדיים — מוצגים בממשק כקישורי חיפוש ידני ואינם נסרקים אוטומטית (מטעמי תנאי שימוש).",

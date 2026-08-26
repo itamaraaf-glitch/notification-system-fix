@@ -12,6 +12,13 @@ const { decodeEntities, stripTags, normKey } = require('./text');
 const ANCHOR_RE = /<a\b[^>]*?href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))[^>]*>([\s\S]*?)<\/a>/gi;
 
 /**
+ * תווי בקרה שנשלפו מטקסט שמקורו ב-PDF. נצפה בפועל: כותרת מאשכול נגב מערבי
+ * שהכילה ביית NUL באמצע מילה, שנשמר כך ל-JSON ולממשק.
+ * הכלל הגיע מעבודת הראדאר ונשמר כאן, במקום שבו הקציר חי עכשיו.
+ */
+const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
+
+/**
  * קוצר קישורים מדף רשימה. מחזיר גם חלון הקשר סביב כל קישור, שממנו נחלצים
  * תאריכים ומטא-דאטה.
  *
@@ -27,7 +34,7 @@ function harvestAnchors(html, baseUrl, opts) {
   ANCHOR_RE.lastIndex = 0;
   while ((m = ANCHOR_RE.exec(html)) !== null) {
     const href = decodeEntities(m[1] || m[2] || m[3] || '').trim();
-    const title = stripTags(m[4] || '');
+    const title = stripTags(m[4] || '').replace(CONTROL_CHARS, '').replace(/\s+/g, ' ').trim();
     if (!href || !title) continue;
     if (/^(javascript:|mailto:|tel:|#)/i.test(href)) continue;
     if (title.length < minLen || title.length > 300) continue;
@@ -82,4 +89,4 @@ function harvestFeed(xml) {
   return out;
 }
 
-module.exports = { harvestAnchors, harvestFeed, pickTag, pickLink, ANCHOR_RE };
+module.exports = { harvestAnchors, harvestFeed, pickTag, pickLink, ANCHOR_RE, CONTROL_CHARS };

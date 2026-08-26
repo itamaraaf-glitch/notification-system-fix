@@ -188,10 +188,16 @@ function itemFromAnchor(a) {
     title: a.title,
     url: a.url,
     context: a.context,
-    publishedAt: dateAfterHint(a.context, PUBLISH_HINTS)
+    // הכותרת נבדקת לפני ההקשר: באתרי אשכולות ורשויות מועד ההגשה כתוב בתוך טקסט
+    // הקישור עצמו ("... | תאריך אחרון להגשה: 24/06/2025"), וזה מדויק יותר מההקשר,
+    // שבולע גם את שכניו. בלי זה מכרז שפג נכנס לראדאר כאילו אין לו מועד כלל.
+    publishedAt: dateAfterHint(a.title, PUBLISH_HINTS)
+      || dateAfterHint(a.context, PUBLISH_HINTS)
+      || dateAfterHint(a.title, UPDATED_HINTS)
       || dateAfterHint(a.context, UPDATED_HINTS)
       || dateFromUrl(a.url),
-    deadlineAt: dateAfterHint(a.context, DEADLINE_HINTS)
+    deadlineAt: dateAfterHint(a.title, DEADLINE_HINTS)
+      || dateAfterHint(a.context, DEADLINE_HINTS)
   };
 }
 
@@ -331,7 +337,6 @@ const jobsOnly = text => demotedOnly(text, TENDER_VOCAB);
 const findTenderLinks = (html, baseUrl) => findSectionLinks(html, baseUrl, TENDER_VOCAB);
 
 const RSS_ITEM_RE = /<(item|entry)\b[\s\S]*?<\/\1>/gi;
-
 async function adapterRss(source) {
   const items = [];
   const warnings = [];
@@ -511,6 +516,7 @@ async function main() {
   }
 
   if (LIST_AUTHORITIES) {
+    if (process.argv.includes('--deep')) { await authorityDomainsDeep(); return; }
     if (process.argv.includes('--domains')) { await authorityDomains(); return; }
     await listAuthorities(); return;
   }
@@ -746,6 +752,62 @@ function withHealth(status, prevSources) {
  * בכתובת כזו **הוא** הדומיין של הרשות. זו העדות הרשמית שחיפשתי, בדרך עקיפה:
  * במקום לנחש muni.il מול org.il, קוראים את התשובה.
  */
+/**
+ * סריקה רחבה: אוסף כל דומיין רשותי שמופיע בכתובת דוא"ל כלשהי ב-data.gov.il.
+ *
+ * המערך של מלווי העולים נתן 43 רשויות. אבל כתובות דוא"ל רשמיות מפוזרות בעשרות
+ * מערכי נתונים — אנשי קשר, ממונים, רכזים — וכל אחת מהן מצביעה על דומיין אמיתי
+ * של רשות. הסריקה עוברת על כל שדה טקסט בכל משאב, שולפת כתובות, ומשאירה רק
+ * דומיינים שנראים כשל רשות ישראלית. הפלט הוא רשימת דומיינים מאומתים שאפשר
+ * להתאים מולה את 65 הכתובות המשוערות שלנו.
+ */
+async function authorityDomainsDeep() {
+  const api = 'https://data.gov.il/api/3/action';
+  const queries = ['רשויות מקומיות', 'עיריות', 'מועצות אזוריות', 'אנשי קשר רשויות', 'ממונים ברשויות'];
+  const EMAIL = /[A-Za-z0-9._%+-]+@([A-Za-z0-9.-]+\.(?:muni\.il|org\.il|co\.il|gov\.il|net\.il|ac\.il))/g;
+  const GENERIC = /gmail|walla|hotmail|outlook|yahoo|yandex|mail\.ru|012|013|bezeq|zahav|nana|012net/i;
+
+  const domains = new Map();  // domain -> how many times seen
+  const seenRes = new Set();
+  let resources = 0;
+
+  for (const q of queries) {
+    let pkgs = [];
+    try {
+      const j = JSON.parse(await fetchText(`${api}/package_search?q=${encodeURIComponent(q)}&rows=8`));
+      pkgs = ((j.result || {}).results) || [];
+    } catch (_) { continue; }
+
+    for (const pkg of pkgs) {
+      for (const res of (pkg.resources || []).filter(r => r.datastore_active).slice(0, 2)) {
+        if (seenRes.has(res.id)) continue;
+        seenRes.add(res.id);
+        await sleep(POLITE_DELAY_MS);
+        try {
+          const raw = await fetchText(`${api}/datastore_search?resource_id=${encodeURIComponent(res.id)}&limit=500`);
+          resources++;
+          let m;
+          EMAIL.lastIndex = 0;
+          while ((m = EMAIL.exec(raw)) !== null) {
+            const d = m[1].toLowerCase().replace(/^(mail|webmail|mx|smtp)\./, '');
+            if (GENERIC.test(d)) continue;
+            domains.set(d, (domains.get(d) || 0) + 1);
+          }
+        } catch (_) { /* משאב שלא נענה — ממשיכים */ }
+      }
+    }
+  }
+
+  const sorted = [...domains].sort((a, b) => b[1] - a[1]);
+  console.log(`\n## ${sorted.length} דומיינים מאומתים, מתוך ${resources} משאבים\n`);
+  console.log('| דומיין | מופעים |');
+  console.log('| --- | ---: |');
+  for (const [d, n] of sorted) console.log(`| ${d} | ${n} |`);
+  console.log('\n<!--DEEP-JSON');
+  console.log(JSON.stringify(sorted.map(([d]) => d)));
+  console.log('DEEP-JSON-->');
+}
+
 async function authorityDomains() {
   const api = 'https://data.gov.il/api/3/action';
   const RES = 'ad4534da-09db-41d7-94e2-b56ce1ec3dc3';
@@ -883,6 +945,18 @@ async function auditSources(cfg, kw) {
   if (topicHits.size) console.log(`\nנושאים שנתפסו: ${[...topicHits].map(([k, v]) => `${k}=${v}`).join(', ')}`);
 }
 
+/**
+ * כותרת הדף, לזיהוי הגוף שמאחורי דומיין.
+ *
+ * סריקת data.gov.il מחזירה דומיינים, לא שמות. שישה דומיינים שנענו לא זוהו
+ * לרשות מסוימת, ובלי לדעת מי הגוף אי אפשר להוסיף אותו לתצורה בשם אמיתי —
+ * ולנחש שם זה בדיוק מה שהפסקנו לעשות.
+ */
+function pageTitle(html) {
+  const m = String(html || '').match(/<title[^>]*>([\s\S]{0,200}?)<\/title>/i);
+  return m ? stripTags(decodeEntities(m[1])).replace(/\s+/g, ' ').trim().slice(0, 90) : '';
+}
+
 async function probeSources(cfg) {
   const timeout = +(process.env.TENDERS_PROBE_TIMEOUT_MS || 20000);
   const parallel = +(process.env.TENDERS_PROBE_PARALLEL || 5);
@@ -935,6 +1009,7 @@ async function probeSources(cfg) {
       const n = harvestAnchors(h.body, landed).length;
       if (!n) { (out.hintTried = out.hintTried || []).push(hint + ' → ריק'); continue; }
       out.tendersUrl = hint; out.tendersAnchors = n; out.verdict = 'ok-hint';
+      out.title = pageTitle(h.body);
       out.ms = Date.now() - started;
       return out;
     }
@@ -953,6 +1028,7 @@ async function probeSources(cfg) {
       const t = await hit(links[0].url);
       if (!t.ok) { out.verdict = 'tenders-page-' + (t.status || t.error); return out; }
       out.tendersAnchors = harvestAnchors(t.body, links[0].url).length;
+      out.title = pageTitle(t.body) || pageTitle(r.body);
       out.verdict = out.tendersAnchors ? 'ok' : 'tenders-page-empty';
       return out;
     }
@@ -977,12 +1053,12 @@ async function probeSources(cfg) {
   for (const [cat, rows] of Object.entries(byCat)) {
     const good = rows.filter(r => OKV(r.verdict)).length;
     console.log(`\n### ${cat} — ${good}/${rows.length}\n`);
-    console.log('| מקור | תוצאה | קישורים | זמן |');
-    console.log('| --- | --- | --- | --- |');
+    console.log('| מקור | תוצאה | קישורים | כותרת הדף | זמן |');
+    console.log('| --- | --- | --- | --- | --- |');
     for (const r of rows.sort((a, b) => (OKV(a.verdict) ? 0 : 1) - (OKV(b.verdict) ? 0 : 1))) {
       const n = r.tendersAnchors != null ? r.tendersAnchors : (r.anchors != null ? r.anchors : '—');
       const mark = r.verdict === 'ok' ? '✅ נגיש' : r.verdict === 'ok-hint' ? '✅ נגיש (כתובת ידועה)' : '❌ ' + r.verdict;
-      console.log(`| ${r.name} (\`${r.id}\`) | ${mark} | ${n} | ${r.ms || 0}ms |`);
+      console.log(`| ${r.name} (\`${r.id}\`) | ${mark} | ${n} | ${(r.title || '—').replace(/\|/g, '/')} | ${r.ms || 0}ms |`);
     }
   }
   console.log('\n<!--PROBE-JSON\n' + JSON.stringify(results) + '\nPROBE-JSON-->');
@@ -1328,11 +1404,18 @@ function buildRecord(item, source, kw, opts = {}) {
 
   // סדר העדפה לתאריך הפרסום: מה שהדף אמר, ואם אין — נתיב הקובץ, ואם גם אין —
   // השנה שבמספר המכרז. בלי החוליה האחרונה פרסום בלי שום תאריך נראה "טרי" לנצח.
-  const publishedAt = item.publishedAt || yearFromTenderNumber(tenderNumber);
+  const publishedFromItem = item.publishedAt || yearFromTenderNumber(tenderNumber);
 
   let deadlineAt = item.deadlineAt || '';
-  // תאריך הגשה שכבר חלף בשנה שעברה הוא כמעט תמיד שגיאת חילוץ — עדיף לא להציג
-  if (deadlineAt && daysBetween(today, deadlineAt) < -400) deadlineAt = '';
+  let publishedAt = publishedFromItem;
+  // תאריך הגשה שחלף לפני יותר מ-400 יום הוא כמעט תמיד שגיאת חילוץ, ולכן אינו
+  // מוצג. אבל הוא כן עדות לגיל הפרסום: מכרז שמישהו תיארך ל-2025 אינו "בלי
+  // מועד". בלי החוליה הזו מכרז שפג נכנס לראדאר דרך keepUndated, כאילו לא נמצא
+  // עליו תאריך כלל — כך נכנס מכרז של אשכול נגב מערבי שמועדו היה 24/06/2025.
+  if (deadlineAt && daysBetween(today, deadlineAt) < -400) {
+    if (!publishedAt) publishedAt = deadlineAt;
+    deadlineAt = '';
+  }
 
   return {
     id,
@@ -1467,7 +1550,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, dropReason, DROP_LABELS, looksLikeTender, isNavTitle, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, withHealth, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
+  classify, dropReason, DROP_LABELS, looksLikeTender, isNavTitle, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, withHealth, pageTitle, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
   extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, publisherAllowed, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS

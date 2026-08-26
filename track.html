@@ -142,24 +142,33 @@
     return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear()+' '+t;
   }
 
+  // רשימת השלבים המוצגת: אם ההזמנה כוללת שלבים מפורטים (o.stages) — נשתמש בהם; אחרת בברירת-המחדל (4 שלבים)
+  function stageList(o){
+    if(o && o.stages && o.stages.length) return o.stages.map(function(s){return {l:(s&&s.l)||'', done:!!(s&&s.done)};});
+    var cur=(typeof o.stage==='number')?o.stage:1, done=!!(o&&o.done);
+    return STAGES.map(function(s,idx){ return {l:s, done: done||idx<cur}; });
+  }
   function progress(o){
-    var cur=(typeof o.stage==='number')?o.stage:1;
+    var list=stageList(o), n=list.length||1;
+    var dn=list.filter(function(s){return s.done;}).length;
     if(o.done) return {pct:100,clr:'var(--ok)'};
-    if(o.problem) return {pct:Math.max(20,Math.round(cur/STAGES.length*100)),clr:'var(--bad)'};
-    return {pct:Math.max(10,Math.min(90,Math.round(cur/STAGES.length*100))),clr:'var(--wait)'};
+    if(o.problem) return {pct:Math.max(20,Math.round(dn/n*100)),clr:'var(--bad)'};
+    return {pct:Math.max(8,Math.min(96,Math.round(dn/n*100))),clr:'var(--wait)'};
   }
   function cardHtml(o,i){
-    var cur=(typeof o.stage==='number')?o.stage:1;
     var done=!!o.done, problem=!!o.problem;
     var pg=progress(o);
-    var steps=STAGES.map(function(s,idx){
-      var isDone=done||idx<cur, isCur=(idx===cur&&!done);
+    var list=stageList(o);
+    // "אתם כאן" = השלב הראשון שטרם הושלם (או האחרון אם הכל הושלם)
+    var curIdx=list.findIndex(function(s){return !s.done;}); if(curIdx<0)curIdx=done?list.length-1:0;
+    var steps=list.map(function(s,idx){
+      var isDone=s.done, isCur=(idx===curIdx&&!done&&!isDone);
       var mark = problem&&isCur ? '⚠' : (isDone?'✓':(isCur?'●':''));
       var col = problem&&isCur ? 'var(--bad)' : (isDone?'var(--ok)':(isCur?'var(--wait)':'var(--line)'));
       var tc = isDone||isCur ? '' : 'color:var(--txt3)';
       return '<div class="step '+(isDone?'done':'')+(isCur?' cur':'')+'">'
         +'<div class="dot" style="background:'+col+';'+(!isDone&&!isCur?'color:var(--txt3);border:2px solid var(--line);background:#fff':'')+'">'+mark+'</div>'
-        +'<div class="lbl" style="'+tc+'">'+esc(s)+(isCur?'<span class="here">אתם כאן</span>':'')+'</div></div>';
+        +'<div class="lbl" style="'+tc+'">'+esc(s.l)+(isCur?'<span class="here">אתם כאן</span>':'')+'</div></div>';
     }).join('');
     var m=statusMsg(o);
     var ico=CAT_ICON[o.cat||'general']||'📦';

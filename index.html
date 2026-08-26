@@ -4066,6 +4066,7 @@ async function fbInit(){
       }finally{_fbApplying=false;}
       fbStatus('connected');
       _fbListening=true;
+      if(!_republishTracksDone){ _republishTracksDone=true; setTimeout(()=>{try{_republishAllTracks();}catch(e){}},1800); }
     },err=>{console.error('FB listen:',err.message||err);fbStatus('error');});
   }catch(e){console.error('fbInit:',e);fbStatus('error');}
 }
@@ -4225,6 +4226,15 @@ async function saveSimpleSync(){
   const code=(document.getElementById('fb-simple-code').value||'').trim()||'hot-crm';
   if(!url){showToast('⚠️ הזן כתובת Firebase Database URL','warn');return;}
   if(!url.startsWith('https://')){showToast('⚠️ הכתובת חייבת להתחיל ב-https://','warn');return;}
+  // טעות נפוצה: הדבקת כתובת דף הניהול (console.firebase.google.com) במקום כתובת הדאטאבייס
+  if(/console\.firebase\.google\.com|\/project\//i.test(url)){
+    showToast('⚠️ זו כתובת דף הניהול — לא כתובת הדאטאבייס. פתח Realtime Database והעתק את הכתובת שמסתיימת ב-firebaseio.com','warn');
+    return;
+  }
+  if(!/\.(firebaseio\.com|firebasedatabase\.app)(\/.*)?$/i.test(url)){
+    showToast('⚠️ הכתובת חייבת להסתיים ב-firebaseio.com (או firebasedatabase.app). העתק אותה ממסך Realtime Database','warn');
+    return;
+  }
   const proceed=async()=>{
     const cfg={mode:'simple',databaseURL:url,syncCode:code};
     localStorage.setItem(FB_CFG_KEY,JSON.stringify(cfg));
@@ -4272,6 +4282,7 @@ async function ssInit(dbUrl,syncCode){
     }
     fbStatus('connected');
     showToast('✅ מחובר לענן! סנכרון אוטומטי פעיל','ok');
+    setTimeout(()=>{try{_republishAllTracks();}catch(e){}},1500); // קישורי המעקב שכבר נשלחו — כעת חיים
     _ssTimer=setInterval(ssPoll,30000);
   }catch(e){
     console.error('ssInit:',e);
@@ -5467,6 +5478,20 @@ function rAll(){
   try{ updateNavBadges(); }catch(e){} // תגי היום (פגישות/משימות/התראות) — זול, תמיד מעודכן
   setTimeout(initDragScrolls, 120);
 }
+// רינדור מקובץ (batched) — מאחד קריאות rAll תכופות לרינדור אחד בפריים הבא, ומדלג כל עוד עורכים
+// תא (כדי לא להרוס את שדה-הקלט). זה מה שהופך עריכה רצופה (Tab בין תאים) ולחיצות סטטוס לחלקות.
+let _rallSched=false, _rallCbs=[], _cellEditTs=0;
+function _rallFlush(){
+  // עריכת תא פעילה או תא שנפתח ממש עכשיו (עריכה רצופה ב-Tab) — נדחה כדי לא לקטוע את המשתמש
+  const ae=document.activeElement;
+  const activeEdit=ae&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)&&ae.type!=='checkbox'&&ae.type!=='radio'&&ae.closest&&ae.closest('td');
+  if(activeEdit || (Date.now()-_cellEditTs<300)){ requestAnimationFrame(_rallFlush); return; }
+  _rallSched=false;
+  try{ rAll(); }catch(e){}
+  const cbs=_rallCbs; _rallCbs=[];
+  cbs.forEach(f=>{ try{ f(); }catch(e){} });
+}
+function rAllBatched(cb){ if(cb)_rallCbs.push(cb); if(_rallSched)return; _rallSched=true; requestAnimationFrame(_rallFlush); }
 
 function updateNavBadges(){
   try{
@@ -6263,6 +6288,12 @@ function rDash(){
     const when=dExp<0?`פג לפני ${Math.abs(dExp)} ימים`:dExp===0?'פג היום':`${dExp} ימים לחידוש`;
     pi.push({p,t:(s.cl||'לקוח')+(s.pj?' · '+s.pj:''),s:`חידוש חוזה ${s.ty==='equipment'?'ציוד':'שירות'} — ${when} (${fmtDate(exp)})`,ico:'🔄',nav:'salary'});
   });
+  // משימות פתוחות שהגיע זמנן — באיחור (אדום) ולהיום (כתום). תור-המשימות הדחוף בבית לא היה שלם בלעדיהן.
+  (D.tasks||[]).filter(x=>x&&x.st!=='הושלם'&&x.dt&&x.dt<=tPri).forEach(x=>{
+    const late=db(x.dt,tPri); // >0 = ימי איחור · 0 = היום
+    const meta=[x.time,x.cl,x.pr].filter(Boolean).join(' · ');
+    pi.push({p:late>0?'r':'o',t:x.t||'משימה',s:(late>0?`באיחור ${late} ימים`:'לביצוע היום')+(meta?' · '+meta:''),ico:'✅',nav:'tasks'});
+  });
   pi.sort((a,b)=>a.p==='r'?-1:b.p==='r'?1:0);
   document.getElementById('prilist').innerHTML=pi.length?pi.slice(0,8).map(i=>`<div onclick="nav('${i.nav}')" class="urg-row" style="border-right:2px solid ${i.p==='r'?'rgba(230,57,70,.55)':'rgba(244,162,97,.5)'}"><span style="font-size:13px;flex-shrink:0">${i.ico}</span><div style="flex:1;min-width:0"><div style="font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(i.t)}</div><div style="font-size:10.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(i.s)}</div></div>${pB(i.p)}</div>`).join(''):'<div style="font-size:11px;color:var(--teal);padding:6px 0">✅ אין פריטים קריטיים</div>';
   // 🔥 urgent list — date-driven alerts (crit first), clickable to client / alerts
@@ -6862,7 +6893,7 @@ function toggleDistStage(id,k){
   if(d._trackTok){try{_publishTrackAndMark(d);}catch(e){}}
   if(d.st!==prevSt)showToast((d.st==='הושלם'?'🎉 ':'✅ ')+'שלב "'+DIST_STAGES[idx].l+'" '+(marked?'הושלם':'בוטל')+' — הסטטוס סונכרן ל"'+d.st+'"','ok');
   else showToast('✅ שלב "'+DIST_STAGES[idx].l+'" '+(marked?'הושלם':'בוטל'),'ok');
-  renderDistFlow(d); rAll();
+  renderDistFlow(d); rAllBatched();
 }
 // קידום שלב הפצה בלחיצה אחת מהטבלה — מסמן את השלב הבא שטרם הושלם
 function advanceDistStage(id){
@@ -9169,6 +9200,8 @@ function renderQuickActions(){
   const todayMtgs=D.meetings.filter(m=>m.dt===nd()).length;
   const pendingSal=D.salary.filter(s=>s.st!=='סגור'&&(s.pv||0)>0).length;
   const activeTenders=D.tenders.filter(t=>t.submitted!=='כן').length;
+  const dueTasks=(D.tasks||[]).filter(t=>t.st!=='הושלם'&&t.dt&&t.dt<=nd()).length;
+  const openTasksN=(D.tasks||[]).filter(t=>t.st!=='הושלם').length;
   el.innerHTML=`
     <div onclick="openAiAssistant()" class="qa-item" style="background:linear-gradient(135deg,rgba(167,139,250,.16),rgba(76,201,240,.10));border:1px solid rgba(167,139,250,.35)">
       <span style="font-size:16px">🤖</span>
@@ -9185,6 +9218,10 @@ function renderQuickActions(){
     <div onclick="openClientModal(null)" class="qa-item" style="background:rgba(200,169,110,.08);border:1px solid rgba(200,169,110,.2)">
       <span style="font-size:16px">🏢</span>
       <div style="flex:1"><div style="font-size:11px;font-weight:700;color:var(--gold)">לקוח חדש</div><div style="font-size:11px;color:var(--text3)">${D.clients.length} לקוחות</div></div>
+    </div>
+    <div onclick="openM('task',null)" class="qa-item" style="background:${dueTasks?'rgba(230,57,70,.08)':'rgba(6,214,160,.06)'};border:1px solid ${dueTasks?'rgba(230,57,70,.22)':'rgba(6,214,160,.18)'}">
+      <span style="font-size:16px">✅</span>
+      <div style="flex:1"><div style="font-size:11px;font-weight:700;color:${dueTasks?'var(--red2)':'#06d6a0'}">משימה חדשה</div><div style="font-size:11px;color:var(--text3)">${dueTasks?dueTasks+' לביצוע היום/באיחור':openTasksN+' פתוחות'}</div></div>
     </div>
     ${activeTenders?`<div onclick="nav('tenders')" class="qa-item" style="background:rgba(244,162,97,.08);border:1px solid rgba(244,162,97,.2)">
       <span style="font-size:16px">📋</span>
@@ -9994,11 +10031,25 @@ function _b64urlEncode(str){
   const b64=btoa(unescape(encodeURIComponent(str)));
   return b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
+// תוויות שלבים ידידותיות ללקוח (מיפוי משלבי הצ׳קליסט הפנימיים) — לקישור המעקב
+const _CLIENT_STAGE_LABEL={open:'הזמנה נקלטה',survey:'סקר ותיאום',equip:'הזמנת ציוד',sched:'תיאום מועד התקנה',install:'בהתקנה',test:'בדיקות והרצה',handover:'מסירה ללקוח',done:'הושלם'};
+// רשימת השלבים המפורטת ללקוח: כל שלב עם תווית ידידותית ודגל הושלם/לא.
+// נגזר מ-d.stages; לפרויקטים ישנים ללא צ׳קליסט — נופל חזרה לכמות המרומזת מהסטטוס
+// (הושלם=הכל · בהתקנה=עד ההתקנה), כדי שגם הזמנות ותיקות יציגו התקדמות נכונה.
+function _distClientStages(d){
+  const s=d.stages||{};
+  const actualDone=DIST_STAGES.filter(st=>s[st.k]).length;
+  const implied = d.st==='הושלם'?DIST_STAGES.length : d.st==='בהתקנה'?5 : 0;
+  const n=Math.max(actualDone, implied);
+  return DIST_STAGES.map((st,i)=>({l:_CLIENT_STAGE_LABEL[st.k]||st.l, done:i<n}));
+}
 function _distTrackPayload(d){
   const st=d.st||'ממתין להפצה';
   // מזהה-הזמנה ייחודי — כדי שכל פרויקט יהיה כרטיס נפרד אצל הלקוח, גם ללא מס' פרויקט
   // וגם אם שני פרויקטים חולקים מספר. נגזר ממזהה ההפצה, ואם אין — מהרכב שדות יציב.
   const oid = String(d.id || ('n|'+(d.no||'')+'|'+(d.co||'')+'|'+(d.cl||''))).slice(0,80);
+  const clientStages=_distClientStages(d);
+  const stagesDoneN=clientStages.filter(x=>x.done).length;
   return {
     v:1,
     oid,
@@ -10011,6 +10062,9 @@ function _distTrackPayload(d){
     label:_distProductLabel(d,'he'),
     st,
     stage:(st in DIST_FLOW_IDX)?DIST_FLOW_IDX[st]:1,
+    // שלבים מפורטים ללקוח — מוצג בעמוד המעקב אם קיים (קישורים ישנים נופלים חזרה ל-4 השלבים)
+    stages:clientStages,
+    sdone:stagesDoneN,
     done:st==='הושלם',
     problem:st==='בעיה',
     ts:Date.now()
@@ -10058,6 +10112,18 @@ async function _publishTrackAndMark(d){
   const res=await _publishTrack(d);
   if(res==='ok'){ d._cliSyncSt=d.st; d._cliSyncAt=Date.now(); saveAll(); if(currentSec==='dists')rDists(); }
   return res;
+}
+// לאחר חיבור ענן — הפיכת כל קישורי המעקב הקיימים ל"חיים": פרסום מחדש של כל ההפצות שכבר שותפו
+// (יש להן טוקן), כדי שהקישורים שכבר נשלחו ללקוחות יתחילו להתעדכן לבד בלי לשלוח שוב.
+let _republishTracksDone=false;
+async function _republishAllTracks(){
+  if(!_trackDbBase())return 0;
+  const withTok=(D.dists||[]).filter(d=>d&&d._trackTok);
+  if(!withTok.length)return 0;
+  let ok=0;
+  for(const d of withTok){ try{ if((await _publishTrack(d))==='ok')ok++; }catch(e){} }
+  if(ok){ try{showToast('🔗 '+ok+' קישורי מעקב קיימים כעת מתעדכנים לבד ללקוחות','ok');}catch(e){} }
+  return ok;
 }
 function _distTrackURL(d){
   const enc=_b64urlEncode(JSON.stringify(_distTrackPayload(d)));
@@ -10135,7 +10201,9 @@ function _trackSharePopup(url, d){
     : `<div style="display:flex;align-items:center;gap:6px;justify-content:center;background:rgba(244,162,97,.1);border:1px solid rgba(244,162,97,.35);border-radius:9px;padding:6px 10px;margin-bottom:10px"><span style="font-size:12px">📸</span><span style="font-size:11px;font-weight:800;color:#f4a261">תמונת-מצב — שלח שוב בכל שינוי</span></div>`;
   const liveDesc=_isLive
     ? 'הלקוח סורק את ה-QR או פותח את הקישור — ורואה את השלב <b style="color:var(--teal)">העדכני</b>. הקישור מתעדכן לבד בכל שינוי סטטוס — אין צורך לשלוח שוב. נשמרים רק פרטים לא-רגישים.'
-    : 'הלקוח רואה את השלב הנוכחי, מקודד בתוך הקישור. <b style="color:#f4a261">לעדכון סטטוס יש לשלוח קישור חדש.</b> (להפעלת עדכון-אוטומטי — הגדר סנכרון ענן).';
+    : 'הלקוח רואה את השלב הנוכחי, מקודד בתוך הקישור. <b style="color:#f4a261">לעדכון סטטוס יש לשלוח קישור חדש.</b>';
+  // כפתור הפעלה בלחיצה אחת — כשהקישור עדיין תמונת-מצב (אין ענן): מוביל ישירות להגדרת הסנכרון
+  const enableLiveBtn=_isLive?'':`<button onclick="_enableLiveLink()" class="btn btns" style="width:100%;font-size:11.5px;border-color:#06d6a0;color:#06d6a0;margin-bottom:9px;font-weight:800">🔗 הפעל קישור מתעדכן לבד</button>`;
   const el=document.createElement('div');
   el.id='track-share-popup';
   el.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.72);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px';
@@ -10145,6 +10213,7 @@ function _trackSharePopup(url, d){
       <button onclick="document.getElementById('track-share-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
     ${liveChip}
+    ${enableLiveBtn}
     <div style="text-align:center;margin-bottom:12px"><img src="${qr}" alt="QR" style="width:170px;height:170px;border-radius:10px;background:#fff;padding:6px"></div>
     <div style="font-size:10.5px;color:var(--text3);margin-bottom:5px">${liveDesc}</div>
     <div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:9px;border:1px solid rgba(6,214,160,.28);background:rgba(6,214,160,.06);margin-bottom:9px">
@@ -10155,9 +10224,9 @@ function _trackSharePopup(url, d){
     <input id="track-share-url" type="hidden" value="${esc(url)}">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
       <span style="font-size:10px;color:var(--text3)">✍️ הודעה אישית ללקוח (לא חובה)</span>
-      <button id="track-ai-btn" onclick="_trackAiDraft()" class="btn btns" style="font-size:10px;border-color:#a78bfa;color:#a78bfa;padding:2px 9px">✨ נסח עם AI</button>
+      <button id="track-ai-btn" onclick="_trackAiDraft()" class="btn btns" title="כתוב טיוטה ולחץ — ה-AI ישפר את הניסוח (או השאר ריק לניסוח אוטומטי)" style="font-size:10px;border-color:#a78bfa;color:#a78bfa;padding:2px 9px">✨ שפר ניסוח</button>
     </div>
-    <textarea id="track-custom-msg" placeholder="תופיע מעל הקישור בוואטסאפ/מייל — או לחץ ✨ לניסוח אוטומטי" style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);font-family:inherit;font-size:11.5px;direction:rtl;margin-bottom:10px;resize:vertical;min-height:44px"></textarea>
+    <textarea id="track-custom-msg" placeholder="כתוב מה שתרצה ולחץ ✨ לשיפור הניסוח — או השאר ריק לניסוח אוטומטי" style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);font-family:inherit;font-size:11.5px;direction:rtl;margin-bottom:10px;resize:vertical;min-height:44px"></textarea>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btnp" onclick="_trackCopy()" title="מעתיק את ההודעה עם הקישור (כולל ההערה החופשית אם נכתבה)" style="font-size:12px">📋 העתק הודעה</button>
       <button class="btn btns" onclick="_trackWaSend()" title="${_cliPhone?'שליחה ישירה ל-'+esc(_cliPhone):'בחירת נמען'}" style="border-color:#25d366;color:#25d366;font-size:12px">${waLabel}</button>
@@ -10166,6 +10235,13 @@ function _trackSharePopup(url, d){
   </div>`;
   el.addEventListener('click',()=>el.remove());
   document.body.appendChild(el);
+}
+// הפעלת "קישור מתעדכן לבד" בלחיצה אחת — פותח את הגדרת סנכרון הענן; לאחר החיבור כל הקישורים הקיימים
+// יהפכו חיים אוטומטית (_republishAllTracks) והקישור הנוכחי גם יתעדכן לבד.
+function _enableLiveLink(){
+  try{ const p=document.getElementById('track-share-popup'); if(p)p.remove(); }catch(e){}
+  try{ showToast('☁️ חבר סנכרון ענן — ואז כל קישורי המעקב יתעדכנו לבד ללקוחות','info'); }catch(e){}
+  try{ openSyncModal(); }catch(e){}
 }
 function _trackCopy(){
   const url=(window._trackShareCtx&&window._trackShareCtx.url)||((document.getElementById('track-share-url')||{}).value)||'';
@@ -10186,12 +10262,22 @@ async function _trackAiDraft(){
   const ta=document.getElementById('track-custom-msg'); if(!ta)return;
   if(!_aiKey()){ showToast('✨ לניסוח עם AI — חבר תחילה מנוע AI (🤖)','warn'); return; }
   const btn=document.getElementById('track-ai-btn'); const orig=btn?btn.textContent:''; if(btn){btn.textContent='✨ מנסח…';btn.disabled=true;}
-  const sys=(typeof _AI_CLIENT_VOICE!=='undefined'?_AI_CLIENT_VOICE+'\n\n':'')+'משימה: הודעת עדכון קצרה (משפט עד שניים) שתלווה קישור מעקב אחר הזמנה. אל תכלול את הקישור עצמו — הוא יתווסף בנפרד.';
+  const draft=String(ta.value||'').trim();
+  const voice=(typeof _AI_CLIENT_VOICE!=='undefined'?_AI_CLIENT_VOICE+'\n\n':'');
   const details='לקוח: '+(c.cl||'—')+'\nהזמנה/שירות: '+(c.no||c.co||'—')+'\nסטטוס נוכחי: '+(c.st||'—')+(c.stMsg?' — '+c.stMsg:'');
+  let sys, userMsg;
+  if(draft){
+    // שיפור ניסוח למה שהמשתמש כתב — שומר על המסר, הכוונה והעובדות, ורק משפר ניסוח/בהירות/טון
+    sys=voice+'משימה: שפר את ניסוח ההודעה שכתב המשתמש ללקוח. שמור בדיוק על המסר, הכוונה והעובדות — רק שפר ניסוח, בהירות, נימוס וטון חם ומקצועי, ותקן שגיאות. אל תוסיף מידע חדש ואל תמציא פרטים. אל תכלול את קישור המעקב — הוא יתווסף בנפרד. החזר רק את ההודעה המשופרת, בלי הסברים ובלי מרכאות.';
+    userMsg='שפר את ניסוח ההודעה הזו ללקוח:\n"'+draft+'"\n\n(הקשר בלבד — אל תמציא מעבר לזה: '+details+')';
+  }else{
+    sys=voice+'משימה: הודעת עדכון קצרה (משפט עד שניים) שתלווה קישור מעקב אחר הזמנה. אל תכלול את הקישור עצמו — הוא יתווסף בנפרד.';
+    userMsg='נסח הודעת עדכון קצרה ללקוח לפי הפרטים:\n'+details;
+  }
   try{
-    const out=await _aiLLM([{role:'user',content:'נסח הודעת עדכון קצרה ללקוח לפי הפרטים:\n'+details}],sys);
+    const out=await _aiLLM([{role:'user',content:userMsg}],sys);
     ta.value=String(out||'').trim();
-    showToast('✨ נוסחה הודעה — ניתן לערוך ולשלוח','ok');
+    showToast(draft?'✨ הניסוח שופר — ניתן לערוך ולשלוח':'✨ נוסחה הודעה — ניתן לערוך ולשלוח','ok');
   }catch(e){ showToast('⚠️ ניסוח נכשל: '+String(e&&e.message||e).slice(0,70),'warn'); }
   finally{ if(btn){btn.textContent=orig;btn.disabled=false;} }
 }
@@ -11017,7 +11103,7 @@ const _AI_PROVIDERS={
     link:'https://console.anthropic.com/settings/keys',linkLabel:'console.anthropic.com',
     note:'⚠️ מנוי Claude (Pro/Max) אינו כולל API — צריך חשבון API נפרד עם חיוב לפי שימוש.'},
   gemini:{label:'Gemini (Google · חינם)',keyPre:'',ph:'מפתח Google AI (מ-AI Studio)',model:'gemini-2.0-flash',free:true,
-    models:['gemini-2.0-flash','gemini-2.5-flash','gemini-2.5-flash-lite','gemini-flash-latest'],
+    models:['gemini-2.0-flash','gemini-2.5-flash','gemini-2.5-flash-lite'],
     link:'https://aistudio.google.com/app/apikey',linkLabel:'aistudio.google.com',
     note:'🎁 ל-Google Gemini יש שכבה חינמית, ללא חיוב וללא כרטיס אשראי. ב-AI Studio לחץ "Create API key" והעתק את המפתח במלואו (אייקון ההעתקה 📋). המפתח יכול להתחיל ב-AIza או ב-AQ. — שניהם תקינים.'}
 };
@@ -11349,7 +11435,7 @@ async function _aiLLM(messages,systemOverride){
   const chosen=_aiModel();
   // שרשרת מודלים: אם המודל שנבחר עמוס/נכשל (למשל 503 "high demand", או "חשיבה" שאוכלת את הפלט),
   // עוברים אוטומטית למודל חלופי — כדי שתמיד תתקבל תשובה אם המפתח תקין. כל מודל מנסה שוב לבד על עומס זמני.
-  const chain=[...new Set([chosen,'gemini-2.0-flash','gemini-2.5-flash','gemini-flash-latest'])];
+  const chain=[...new Set([chosen,'gemini-2.5-flash-lite','gemini-2.0-flash','gemini-2.5-flash'])];
   let firstErr=null;
   for(let i=0;i<chain.length;i++){
     const m=chain[i];
@@ -11362,8 +11448,17 @@ async function _aiLLM(messages,systemOverride){
 }
 // חילוץ הודעת השגיאה האמיתית מגוף התשובה (Anthropic: error.message · Google: error.message)
 async function _aiErrDetail(r){ try{ const j=await r.json(); const m=(j&&j.error&&j.error.message)||''; return m?(' · '+String(m).slice(0,160)):''; }catch(e){ return ''; } }
+// fetch עם timeout — כדי שבקשת AI שנתקעת (רשת/מודל איטי) לא תישאר "תקועה" לנצח אלא תיכשל בהודעה ברורה
+async function _aiFetch(url,opts,ms){
+  if(typeof AbortController==='undefined') return fetch(url,opts);
+  const ctl=new AbortController();
+  const t=setTimeout(()=>ctl.abort(),ms||22000);
+  try{ return await fetch(url,Object.assign({},opts,{signal:ctl.signal})); }
+  catch(e){ if(e&&(e.name==='AbortError'||/abort/i.test(String(e.message||e)))) throw new Error('הבקשה ל-AI נתקעה ולא הגיבה בזמן — נסה מודל gemini-2.0-flash, או בדוק חיבור אינטרנט'); throw e; }
+  finally{ clearTimeout(t); }
+}
 async function _aiCallAnthropic(key,system,msgs,modelOverride){
-  const r=await fetch('https://api.anthropic.com/v1/messages',{
+  const r=await _aiFetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:modelOverride||_aiModel(),max_tokens:4096,system,messages:msgs})
@@ -11391,19 +11486,70 @@ function _aiGeminiExtract(j){
   if(fr==='MAX_TOKENS')txt+='\n\n…(התשובה ארוכה ונקטעה — כתוב "המשך" לקבלת ההמשך)';
   return {txt};
 }
-async function _aiCallGemini(key,system,msgs,modelOverride){
+// שליפת רשימת המודלים הזמינים בפועל למפתח הזה (Google מסירה/מגבילה מודלים לפי מפתח/תאריך —
+// לכן במקום לסמוך על שמות מקובעים שמתיישנים, שולפים את הרשימה החיה ובוחרים מודל עובד).
+async function _aiGeminiListModels(key){
+  const r=await _aiFetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200',
+    {method:'GET',headers:{'x-goog-api-key':key}});
+  if(!r.ok) throw new Error(_aiErrMsg(r.status)+(await _aiErrDetail(r)));
+  const j=await r.json();
+  return ((j&&j.models)||[])
+    .filter(m=>((m&&m.supportedGenerationMethods)||[]).indexOf('generateContent')>=0)
+    .map(m=>String((m&&m.name)||'').replace(/^models\//,''))
+    .filter(n=>/gemini/i.test(n));
+}
+// בחירת מודל "עובד" מתוך רשימה חיה: מעדיף flash-lite (מהיר, מכסה חינם נדיבה), אחרת flash, אחרת הראשון.
+// מסנן מודלים לא-מתאימים לצ'אט (preview/ניסיוני/תמונה/קול/embedding וכו') ומעדיף גרסה גבוהה.
+function _aiPickGeminiModel(list){
+  const arr=(list||[]).filter(Boolean);
+  if(!arr.length) return null;
+  const bad=/preview|-exp|experimental|vision|image|imagen|tts|audio|native-audio|embedding|embed|aqa|learnlm|live|dialog|thinking/i;
+  const pool=arr.filter(n=>!bad.test(n)); const use=pool.length?pool:arr;
+  const ver=n=>{ const m=String(n).match(/gemini-(\d+(?:\.\d+)?)/); return m?parseFloat(m[1]):0; };
+  const pick=re=>use.filter(n=>re.test(n)).sort((a,b)=>ver(b)-ver(a))[0];
+  return pick(/flash-lite/i) || pick(/flash/i) || pick(/gemini/i) || use[0];
+}
+// כפתור UI: "טען מודלים זמינים" — מציג את המודלים החיים של המפתח כצ'יפים לבחירה, ובוחר אוטומטית מודל מומלץ
+async function _aiRefreshModels(){
+  const box=document.getElementById('ai-models-live');
+  let k=((document.getElementById('ai-key-inp')||{}).value||'').replace(/\s+/g,'').replace(/^["']+|["']+$/g,'')||_aiKey();
+  if(!k){ if(box)box.innerHTML='<span style="color:#f4a261">הזן מפתח קודם</span>'; return; }
+  if(box)box.innerHTML='<span style="color:var(--text3)">🔄 טוען מודלים זמינים…</span>';
+  try{
+    const list=await _aiGeminiListModels(k);
+    if(!list.length){ if(box)box.innerHTML='<span style="color:#f4a261">לא נמצאו מודלים למפתח זה</span>'; return; }
+    const best=_aiPickGeminiModel(list);
+    if(best) _aiPickModel(best);
+    const shown=[...new Set([best,...list])].filter(Boolean).slice(0,12);
+    if(box)box.innerHTML='<div style="color:var(--teal);margin-bottom:4px">✅ מודלים זמינים למפתח (נבחר: <b>'+esc(best||'')+'</b>):</div>'
+      +'<div style="display:flex;gap:5px;flex-wrap:wrap">'+shown.map(mm=>`<button onclick="_aiPickModel('${esc(mm)}')" style="font-size:9.5px;background:${mm===best?'rgba(45,212,191,.15)':'rgba(255,255,255,.05)'};border:1px solid ${mm===best?'var(--teal)':'var(--border)'};border-radius:12px;padding:2px 8px;color:var(--text2);cursor:pointer;direction:ltr">${esc(mm)}</button>`).join('')+'</div>';
+  }catch(e){ if(box)box.innerHTML='<span style="color:#e76f51">❌ '+esc(String(e&&e.message||e))+'</span>'; }
+}
+async function _aiCallGemini(key,system,msgs,modelOverride,_noHeal){
   const model=modelOverride||_aiModel();
   const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent';
   const contents=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:String(m.content||'')}]}));
   // המפתח נשלח ב-header (x-goog-api-key) — השיטה הרשמית, תואמת גם לפורמט החדש (AQ.) וגם לישן (AIza)
   const TRANSIENT=[429,500,502,503,504]; // עומס זמני בצד גוגל ("high demand" = 503) — שווה ניסיון חוזר
-  const rawPost=gc=>fetch(url,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},
+  const rawPost=gc=>_aiFetch(url,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},
     body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,generationConfig:gc})});
   // ניסיון חוזר עם השהיה גוברת על עומס זמני — כדי ש"המודל עמוס" לא ייכשל מיד
   const post=async gc=>{ let r; for(let i=0;i<3;i++){ r=await rawPost(gc); if(r.ok||!TRANSIENT.includes(r.status))return r; if(i<2)await new Promise(res=>setTimeout(res,[600,1500][i])); } return r; };
   // ניסיון ראשון: רגיל, תקציב-פלט גדול (בלי דגלי-חשיבה — לא לשבור מודלים ישנים כמו 2.0/1.5)
   let r=await post({maxOutputTokens:8192,temperature:0.7});
-  if(!r.ok) throw new Error(_aiErrMsg(r.status)+(await _aiErrDetail(r)));
+  if(!r.ok){
+    // 404 = המודל הוסר/לא זמין למפתח (גוגל מסירה שמות מקובעים עם הזמן). ריפוי-עצמי: שלוף מודלים
+    // חיים למפתח, בחר מודל עובד, קבע אותו ל-localStorage ונסה שוב פעם אחת — כך "מודל שהתיישן" לא שובר את ה-AI.
+    if(r.status===404 && !_noHeal){
+      let alt=null;
+      try{ alt=_aiPickGeminiModel(await _aiGeminiListModels(key)); }catch(e){}
+      if(alt && alt!==model){
+        try{ localStorage.setItem(_AI_MODEL_LS,alt); }catch(e){}
+        return await _aiCallGemini(key,system,msgs,alt,true);
+      }
+    }
+    throw new Error(_aiErrMsg(r.status)+(await _aiErrDetail(r)));
+  }
   let o=_aiGeminiExtract(await r.json());
   if(o.txt) return o.txt;
   // מודל 2.5 שהוציא את כל תקציב-הפלט על "חשיבה" והחזיר טקסט ריק — כבה חשיבה ונסה שוב (השורש של "מתחבר אבל לא עובד")
@@ -11973,7 +12119,8 @@ function openAiAssistant(){
             <div style="font-size:10px;color:#f4a261;margin-bottom:7px;line-height:1.45">⚠️ במצב זה תמצית מנתוני המערכת (ללא טלפונים/אימיילים/הערות) נשלחת ל${esc(cfg.label)} כדי לענות. המפתח נשמר רק בדפדפן שלך.</div>
             <input id="ai-key-inp" type="password" placeholder="${esc(cfg.ph)}" autocomplete="off" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-family:inherit;font-size:12px;outline:none;margin-bottom:6px;direction:ltr;text-align:left">
             <input id="ai-model-inp" placeholder="${esc(cfg.model)}" value="${esc(cfg.model)}" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:11px;outline:none;margin-bottom:6px;direction:ltr;text-align:left">
-            <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px"><span style="font-size:9.5px;color:var(--text3);align-self:center">מודלים:</span>${(cfg.models||[]).map(mm=>`<button onclick="_aiPickModel('${mm}')" style="font-size:9.5px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:2px 8px;color:var(--text2);cursor:pointer;direction:ltr">${esc(mm)}</button>`).join('')}</div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;align-items:center"><span style="font-size:9.5px;color:var(--text3)">מודלים:</span>${(cfg.models||[]).map(mm=>`<button onclick="_aiPickModel('${mm}')" style="font-size:9.5px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:2px 8px;color:var(--text2);cursor:pointer;direction:ltr">${esc(mm)}</button>`).join('')}${_aiProvider()==='gemini'?`<button onclick="_aiRefreshModels()" title="שולף מהמפתח שלך את המודלים הזמינים בפועל ובוחר מומלץ" style="font-size:9.5px;background:rgba(45,212,191,.1);border:1px solid var(--teal);border-radius:12px;padding:2px 8px;color:var(--teal);cursor:pointer">🔄 מודלים זמינים למפתח</button>`:''}</div>
+            <div id="ai-models-live" style="font-size:9.5px;line-height:1.5;margin-bottom:9px"></div>
             <div style="display:flex;gap:6px">
               <button class="btn btnp" onclick="_aiConnect()" style="flex:1;background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:800;font-size:11.5px">שמור וחבר</button>
               <button class="btn btns" onclick="_aiTestConn()" style="font-size:11px;border-color:#a78bfa;color:#a78bfa;white-space:nowrap">🧪 בדוק חיבור</button>
@@ -13122,7 +13269,7 @@ function advanceDealStatus(id){
   dbUpdate('deals',id,{st:next});
   const d2=D.deals.find(x=>x.id==id);
   if(next==='נסגר'&&d2){ syncDealToClient(d2); syncDealToSalary(d2); syncDealToDist(d2); saveAll(); }
-  rAll();
+  rAllBatched();
   showToast('💼 סטטוס העסקה עודכן ל"'+next+'"'+(next==='נסגר'?' — סונכרן ללקוח 🎉':''),'ok');
 }
 // ═══ עריכה מהירה בשורה — כל שדה בכל טבלה נערך במקום, בלי להיכנס לשורה ═══
@@ -13135,20 +13282,37 @@ function _commitCell(table,id,field,nv){
   else if(table==='dists'){ const d2=(D.dists||[]).find(x=>x.id===id);
     // אם ההפצה משותפת בקישור מעקב — מפרסמים מחדש בשקט כדי שהלקוח יראה תמיד עדכני
     if(d2&&d2._trackTok){ try{_publishTrackAndMark(d2);}catch(e){} } }
-  showToast('✓ עודכן — כל המסכים סונכרנו','ok'); rAll();
-  // אם חלון פירוט (הפצות/עסקאות) פתוח — מרעננים אותו כדי שישקף את השינוי
-  if(table==='dists'&&window._distDetailGroup&&document.getElementById('dist-detail-ov')){ try{showDistGroupDetail(window._distDetailGroup);}catch(e){} }
-  if(table==='deals'&&window._dealDetailGroup&&document.getElementById('deal-detail-ov')){ try{showDealGroupDetail(window._dealDetailGroup);}catch(e){} }
-  // משוב ויזואלי: אחרי הרינדור מהבהבים בירוק את התא שנשמר (מאותר לפי ה-data-attributes) — בפופאפ אם פתוח
-  try{ const idSel=(window.CSS&&CSS.escape)?CSS.escape(id):id;
-    const scope=_detailOv()||document;
-    const c=scope.querySelector('.ec[data-ectab="'+table+'"][data-ecid="'+idSel+'"][data-ecfield="'+field+'"]');
-    if(c){ c.classList.remove('ec-flash'); void c.offsetWidth; c.classList.add('ec-flash'); setTimeout(()=>c.classList.remove('ec-flash'),1000); }
-  }catch(e){}
+  showToast('✓ עודכן — כל המסכים סונכרנו','ok');
+  // רינדור מקובץ: עריכה רצופה (Tab) לא בונה מחדש את הטבלה בכל תא — רק פעם אחת כשמפסיקים
+  rAllBatched(()=>{
+    // אם חלון פירוט (הפצות/עסקאות) פתוח — מרעננים אותו כדי שישקף את השינוי
+    if(table==='dists'&&window._distDetailGroup&&document.getElementById('dist-detail-ov')){ try{showDistGroupDetail(window._distDetailGroup);}catch(e){} }
+    if(table==='deals'&&window._dealDetailGroup&&document.getElementById('deal-detail-ov')){ try{showDealGroupDetail(window._dealDetailGroup);}catch(e){} }
+    // משוב ויזואלי: אחרי הרינדור מהבהבים בירוק את התא שנשמר (מאותר לפי ה-data-attributes) — בפופאפ אם פתוח
+    try{ const idSel=(window.CSS&&CSS.escape)?CSS.escape(id):id;
+      const scope=_detailOv()||document;
+      const c=scope.querySelector('.ec[data-ectab="'+table+'"][data-ecid="'+idSel+'"][data-ecfield="'+field+'"]');
+      if(c){ c.classList.remove('ec-flash'); void c.offsetWidth; c.classList.add('ec-flash'); setTimeout(()=>c.classList.remove('ec-flash'),1000); }
+    }catch(e){}
+  });
 }
 // אפשרויות ברירת-מחדל לשדות-בחירה בעריכה-בשורה (לפי שם השדה), כשלא הועברו opts
 const _CELL_SELECTS={ pr:[['גבוהה','גבוהה'],['בינונית','בינונית'],['נמוכה','נמוכה']],
   mtype:[['פגישה','🤝 פגישה'],['שיחת טלפון','📞 שיחת טלפון'],['זום','🖥 זום'],['Teams','🟦 Teams'],['אחר','📌 אחר']] };
+// שחזור תא בודד במקום — מחליף את שדה-הקלט חזרה ל-span עריכה, בלי לבנות מחדש את כל הטבלה.
+// זה מה שמאפשר עריכה רצופה (Tab) חלקה: כל תא משוחזר מיד, והרינדור המלא (לסיכומים) נדחה לסוף.
+function _restoreCell(ctl,table,id,field,kind,nv){
+  let inner;
+  if(kind==='num')inner=fmt(nv);
+  else if(kind==='pct')inner=Math.round((+nv||0)*100)+'%';
+  else if(kind==='date')inner=nv?fmtDate(nv):'–';
+  else inner=esc(String(nv==null?'':nv))||'–';
+  const html=(table==='deals'?_editSpan(id,field,inner,kind):_cellSpan(table,id,field,inner,kind));
+  const tmp=document.createElement('template'); tmp.innerHTML=html.trim();
+  const span=tmp.content.firstChild;
+  if(span&&ctl.parentNode)ctl.parentNode.replaceChild(span,ctl);
+  return span;
+}
 // עורך תא כללי לכל טבלה: kind = 'num' | 'pct' | 'text' | 'date' | 'select'
 function editCell(table,id,field,el,kind,opts){
   if(!el||el._editing)return; el._editing=true;
@@ -13172,30 +13336,36 @@ function editCell(table,id,field,el,kind,opts){
   ctl.style.cssText='background:rgba(76,201,240,.12);border:1px solid #4cc9f0;border-radius:6px;padding:2px 6px;color:var(--text);font-family:inherit;font-size:12px;outline:none;'
     +(numish?'width:80px;direction:ltr;text-align:left':'min-width:90px;max-width:170px;direction:rtl;text-align:right');
   const parent=el.parentNode; parent.replaceChild(ctl,el); ctl.focus(); if(ctl.select)ctl.select();
+  _cellEditTs=Date.now(); // סימון שעורכים תא כרגע — משהה רינדור מקובץ עד שמפסיקים
   let done=false;
   const commit=save=>{ if(done)return; done=true;
+    let nv=cur, changed=false;
     if(save){
-      let nv, changed;
       if(kind==='num'){ nv=Math.max(0,_aiNum(ctl.value)); changed=(nv!==cur); }
       else if(kind==='pct'){ nv=Math.max(0,_aiNum(ctl.value))/100; changed=(Math.round(nv*100)!==cur); }
       else { nv=(kind==='select'?ctl.value:ctl.value.trim()); changed=(String(nv)!==String(cur)); }
-      if(changed){ _commitCell(table,id,field,nv); return; }
     }
-    rAll(); // אין שינוי / בוטל — רינדור מחדש משחזר את התא
+    // שחזור התא במקום מיד (בלי בניית טבלה) — כדי שלא יישאר שדה-קלט תלוי בזמן עריכה רצופה
+    const shown = (kind==='pct') ? (changed?nv:(+rec[field]||0)) : (changed?nv:rec[field]);
+    let restored; try{ restored=_restoreCell(ctl,table,id,field,kind,shown); }catch(e){ rAllBatched(); }
+    if(changed){
+      // הבהוב ירוק מיידי לאישור (בלי להמתין לרינדור המקובץ)
+      if(restored){ try{ restored.classList.remove('ec-flash'); void restored.offsetWidth; restored.classList.add('ec-flash'); setTimeout(()=>{try{restored.classList.remove('ec-flash');}catch(e){}},1000); }catch(e){} }
+      _commitCell(table,id,field,nv); // שמירת נתונים + רינדור מקובץ לסיכומים/מסכים
+    }
   };
   ctl.addEventListener('keydown',e=>{
     if(e.key==='Enter'){e.preventDefault();commit(true);}
     else if(e.key==='Escape'){e.preventDefault();commit(false);}
     else if(e.key==='Tab'){ e.preventDefault();
-      const inPopup=!!(ctl.closest&&(ctl.closest('#dist-detail-ov')||ctl.closest('#deal-detail-ov'))); // עריכה בתוך חלון הפירוט — נשאר בו
-      commit(true); // שומר + מרנדר, ואז פותח את התא הבא בשורה (כמו אקסל)
+      // ניווט לתא הבא/הקודם באותה שורה לפי ה-DOM החי (הרינדור מקובץ ונדחה) — כמו אקסל
+      const td=ctl.closest('td'), dir=e.shiftKey?-1:1;
+      commit(true);
       try{
-        const scope=inPopup?(_detailOv()||document):document;
-        const sel='.ec[data-ecid="'+((window.CSS&&CSS.escape)?CSS.escape(id):id)+'"]';
-        const spans=[...scope.querySelectorAll(sel)];
-        const i=spans.findIndex(s=>s.getAttribute('data-ecfield')===field&&s.getAttribute('data-ectab')===table);
-        const nxt=i>=0?spans[i+(e.shiftKey?-1:1)]:null;
-        if(nxt)editCell(nxt.getAttribute('data-ectab'),nxt.getAttribute('data-ecid'),nxt.getAttribute('data-ecfield'),nxt,nxt.getAttribute('data-eckind'));
+        let sib=td&&(dir>0?td.nextElementSibling:td.previousElementSibling);
+        while(sib){ const sp=sib.querySelector&&sib.querySelector('.ec');
+          if(sp){ editCell(sp.getAttribute('data-ectab'),sp.getAttribute('data-ecid'),sp.getAttribute('data-ecfield'),sp,sp.getAttribute('data-eckind')); break; }
+          sib=dir>0?sib.nextElementSibling:sib.previousElementSibling; }
       }catch(err){}
     }
   });
@@ -13374,7 +13544,7 @@ function advanceDistStatus(id){
   dbUpdate('dists',id,{st:d.st,stages:d.stages});
   const nd2=D.dists.find(x=>x.id==id);
   if(next==='הושלם'&&nd2)syncDistToClient(nd2);
-  rAll();
+  rAllBatched();
   showToast('📦 סטטוס ההפצה עודכן ל"'+next+'"','ok');
   const hasClient=!!(nd2&&(String(nd2.cle||'').trim()||String(nd2.cl||'').trim()));
   // אם כבר שותף — הקישור הקיים מתעדכן לבד (פרסום מחדש); אחרת תזכורת לשלוח קישור ראשון
@@ -13407,6 +13577,7 @@ function collectSalaryBalance(id){
     if(newPv<=0){ patch.st='סגור'; if(!s.cstart)patch.cstart=nd(); } // נגבה במלואו — נסגר
     else if(s.st!=='בתהליך'){ patch.st='חלקי'; }                     // גבייה חלקית — מסומן 'חלקי'
     dbUpdate('salary',id,patch);
+    if(newPv<=0)_sweepDoneSalary(); // נסגר במלואו — מעבר מיידי לארכיון (שירות/ציוד) כדי שייראה בארכיון מיד
     rAll();
     showToast(newPv<=0?('✅ נגבה '+fmt(pay)+' — הפרויקט נסגר'):('💰 נרשמה גבייה '+fmt(pay)+' · נותרה יתרה '+fmt(newPv)),'ok');
   });
@@ -13419,11 +13590,11 @@ function advanceSalaryStatus(id){
   if(st==='בתהליך'){
     if(+s.pv>0){ collectSalaryBalance(id); return; }   // סגירה עם גביית יתרה (מאשר וסוגר נכון)
     const patch={st:'סגור'}; if(!s.cstart)patch.cstart=nd();
-    dbUpdate('salary',id,patch); rAll(); showToast('✅ פרויקט השכר נסגר','ok'); return;
+    dbUpdate('salary',id,patch); _sweepDoneSalary(); rAllBatched(); showToast('✅ פרויקט השכר נסגר — הועבר לארכיון','ok'); return;
   }
-  if(st==='סגור'){ dbUpdate('salary',id,{st:'פתוח'}); rAll(); showToast('↩ הפרויקט נפתח מחדש','ok'); return; }
+  if(st==='סגור'){ dbUpdate('salary',id,{st:'פתוח'}); rAllBatched(); showToast('↩ הפרויקט נפתח מחדש','ok'); return; }
   // פתוח / חלקי / אחר → בתהליך
-  dbUpdate('salary',id,{st:'בתהליך'}); rAll(); showToast('💰 סטטוס עודכן ל"בתהליך"','ok');
+  dbUpdate('salary',id,{st:'בתהליך'}); rAllBatched(); showToast('💰 סטטוס עודכן ל"בתהליך"','ok');
 }
 function saveSal(){
   const row={pj:document.getElementById('spj').value,cl:document.getElementById('scl').value,qt:+document.getElementById('sqt').value,tr:+document.getElementById('str').value,cl2:+document.getElementById('scl2').value,pv:+document.getElementById('spv').value,st:document.getElementById('sst').value,ty:document.getElementById('sty').value,no:document.getElementById('sno').value,term:+document.getElementById('sterm').value||0,cstart:document.getElementById('sstart').value||'',ecd:document.getElementById('secd').value||'',files:_attPending['salary']||[]};
@@ -13433,6 +13604,7 @@ function saveSal(){
   if(isNaN(row.qt)||row.qt<0||isNaN(row.tr)||row.tr<0||isNaN(row.cl2)||row.cl2<0||isNaN(row.pv)||row.pv<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}
   if(_saveArch('salary',row))return; // עריכת רשומת ארכיון — עדכון במקום
   if(EI){dbUpdate('salary',EI,row);}else{dbInsert('salary',row);}
+  _sweepDoneSalary(); // אם נשמר כ"סגור" (שירות/ציוד) — מעבר מיידי לארכיון כדי שייראה מיד
   closeM('msalary');rAll();
 }
 function saveMeet(){
