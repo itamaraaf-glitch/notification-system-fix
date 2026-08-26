@@ -10008,11 +10008,25 @@ function _b64urlEncode(str){
   const b64=btoa(unescape(encodeURIComponent(str)));
   return b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
+// תוויות שלבים ידידותיות ללקוח (מיפוי משלבי הצ׳קליסט הפנימיים) — לקישור המעקב
+const _CLIENT_STAGE_LABEL={open:'הזמנה נקלטה',survey:'סקר ותיאום',equip:'הזמנת ציוד',sched:'תיאום מועד התקנה',install:'בהתקנה',test:'בדיקות והרצה',handover:'מסירה ללקוח',done:'הושלם'};
+// רשימת השלבים המפורטת ללקוח: כל שלב עם תווית ידידותית ודגל הושלם/לא.
+// נגזר מ-d.stages; לפרויקטים ישנים ללא צ׳קליסט — נופל חזרה לכמות המרומזת מהסטטוס
+// (הושלם=הכל · בהתקנה=עד ההתקנה), כדי שגם הזמנות ותיקות יציגו התקדמות נכונה.
+function _distClientStages(d){
+  const s=d.stages||{};
+  const actualDone=DIST_STAGES.filter(st=>s[st.k]).length;
+  const implied = d.st==='הושלם'?DIST_STAGES.length : d.st==='בהתקנה'?5 : 0;
+  const n=Math.max(actualDone, implied);
+  return DIST_STAGES.map((st,i)=>({l:_CLIENT_STAGE_LABEL[st.k]||st.l, done:i<n}));
+}
 function _distTrackPayload(d){
   const st=d.st||'ממתין להפצה';
   // מזהה-הזמנה ייחודי — כדי שכל פרויקט יהיה כרטיס נפרד אצל הלקוח, גם ללא מס' פרויקט
   // וגם אם שני פרויקטים חולקים מספר. נגזר ממזהה ההפצה, ואם אין — מהרכב שדות יציב.
   const oid = String(d.id || ('n|'+(d.no||'')+'|'+(d.co||'')+'|'+(d.cl||''))).slice(0,80);
+  const clientStages=_distClientStages(d);
+  const stagesDoneN=clientStages.filter(x=>x.done).length;
   return {
     v:1,
     oid,
@@ -10025,6 +10039,9 @@ function _distTrackPayload(d){
     label:_distProductLabel(d,'he'),
     st,
     stage:(st in DIST_FLOW_IDX)?DIST_FLOW_IDX[st]:1,
+    // שלבים מפורטים ללקוח — מוצג בעמוד המעקב אם קיים (קישורים ישנים נופלים חזרה ל-4 השלבים)
+    stages:clientStages,
+    sdone:stagesDoneN,
     done:st==='הושלם',
     problem:st==='בעיה',
     ts:Date.now()
@@ -13444,6 +13461,7 @@ function collectSalaryBalance(id){
     if(newPv<=0){ patch.st='סגור'; if(!s.cstart)patch.cstart=nd(); } // נגבה במלואו — נסגר
     else if(s.st!=='בתהליך'){ patch.st='חלקי'; }                     // גבייה חלקית — מסומן 'חלקי'
     dbUpdate('salary',id,patch);
+    if(newPv<=0)_sweepDoneSalary(); // נסגר במלואו — מעבר מיידי לארכיון (שירות/ציוד) כדי שייראה בארכיון מיד
     rAll();
     showToast(newPv<=0?('✅ נגבה '+fmt(pay)+' — הפרויקט נסגר'):('💰 נרשמה גבייה '+fmt(pay)+' · נותרה יתרה '+fmt(newPv)),'ok');
   });
@@ -13456,7 +13474,7 @@ function advanceSalaryStatus(id){
   if(st==='בתהליך'){
     if(+s.pv>0){ collectSalaryBalance(id); return; }   // סגירה עם גביית יתרה (מאשר וסוגר נכון)
     const patch={st:'סגור'}; if(!s.cstart)patch.cstart=nd();
-    dbUpdate('salary',id,patch); rAllBatched(); showToast('✅ פרויקט השכר נסגר','ok'); return;
+    dbUpdate('salary',id,patch); _sweepDoneSalary(); rAllBatched(); showToast('✅ פרויקט השכר נסגר — הועבר לארכיון','ok'); return;
   }
   if(st==='סגור'){ dbUpdate('salary',id,{st:'פתוח'}); rAllBatched(); showToast('↩ הפרויקט נפתח מחדש','ok'); return; }
   // פתוח / חלקי / אחר → בתהליך
@@ -13470,6 +13488,7 @@ function saveSal(){
   if(isNaN(row.qt)||row.qt<0||isNaN(row.tr)||row.tr<0||isNaN(row.cl2)||row.cl2<0||isNaN(row.pv)||row.pv<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}
   if(_saveArch('salary',row))return; // עריכת רשומת ארכיון — עדכון במקום
   if(EI){dbUpdate('salary',EI,row);}else{dbInsert('salary',row);}
+  _sweepDoneSalary(); // אם נשמר כ"סגור" (שירות/ציוד) — מעבר מיידי לארכיון כדי שייראה מיד
   closeM('msalary');rAll();
 }
 function saveMeet(){
