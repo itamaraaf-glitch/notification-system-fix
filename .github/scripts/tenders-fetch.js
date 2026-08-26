@@ -1292,6 +1292,18 @@ async function auditSources(cfg, kw) {
   if (topicHits.size) console.log(`\nנושאים שנתפסו: ${[...topicHits].map(([k, v]) => `${k}=${v}`).join(', ')}`);
 }
 
+/**
+ * כותרת הדף, לזיהוי הגוף שמאחורי דומיין.
+ *
+ * סריקת data.gov.il מחזירה דומיינים, לא שמות. שישה דומיינים שנענו לא זוהו
+ * לרשות מסוימת, ובלי לדעת מי הגוף אי אפשר להוסיף אותו לתצורה בשם אמיתי —
+ * ולנחש שם זה בדיוק מה שהפסקנו לעשות.
+ */
+function pageTitle(html) {
+  const m = String(html || '').match(/<title[^>]*>([\s\S]{0,200}?)<\/title>/i);
+  return m ? stripTags(decodeEntities(m[1])).replace(/\s+/g, ' ').trim().slice(0, 90) : '';
+}
+
 async function probeSources(cfg) {
   const timeout = +(process.env.TENDERS_PROBE_TIMEOUT_MS || 20000);
   const parallel = +(process.env.TENDERS_PROBE_PARALLEL || 5);
@@ -1344,6 +1356,7 @@ async function probeSources(cfg) {
       const n = harvestAnchors(h.body, landed).length;
       if (!n) { (out.hintTried = out.hintTried || []).push(hint + ' → ריק'); continue; }
       out.tendersUrl = hint; out.tendersAnchors = n; out.verdict = 'ok-hint';
+      out.title = pageTitle(h.body);
       out.ms = Date.now() - started;
       return out;
     }
@@ -1362,6 +1375,7 @@ async function probeSources(cfg) {
       const t = await hit(links[0].url);
       if (!t.ok) { out.verdict = 'tenders-page-' + (t.status || t.error); return out; }
       out.tendersAnchors = harvestAnchors(t.body, links[0].url).length;
+      out.title = pageTitle(t.body) || pageTitle(r.body);
       out.verdict = out.tendersAnchors ? 'ok' : 'tenders-page-empty';
       return out;
     }
@@ -1386,12 +1400,12 @@ async function probeSources(cfg) {
   for (const [cat, rows] of Object.entries(byCat)) {
     const good = rows.filter(r => OKV(r.verdict)).length;
     console.log(`\n### ${cat} — ${good}/${rows.length}\n`);
-    console.log('| מקור | תוצאה | קישורים | זמן |');
-    console.log('| --- | --- | --- | --- |');
+    console.log('| מקור | תוצאה | קישורים | כותרת הדף | זמן |');
+    console.log('| --- | --- | --- | --- | --- |');
     for (const r of rows.sort((a, b) => (OKV(a.verdict) ? 0 : 1) - (OKV(b.verdict) ? 0 : 1))) {
       const n = r.tendersAnchors != null ? r.tendersAnchors : (r.anchors != null ? r.anchors : '—');
       const mark = r.verdict === 'ok' ? '✅ נגיש' : r.verdict === 'ok-hint' ? '✅ נגיש (כתובת ידועה)' : '❌ ' + r.verdict;
-      console.log(`| ${r.name} (\`${r.id}\`) | ${mark} | ${n} | ${r.ms || 0}ms |`);
+      console.log(`| ${r.name} (\`${r.id}\`) | ${mark} | ${n} | ${(r.title || '—').replace(/\|/g, '/')} | ${r.ms || 0}ms |`);
     }
   }
   console.log('\n<!--PROBE-JSON\n' + JSON.stringify(results) + '\nPROBE-JSON-->');
@@ -1876,7 +1890,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, dropReason, DROP_LABELS, looksLikeTender, isNavTitle, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, withHealth, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
+  classify, dropReason, DROP_LABELS, looksLikeTender, isNavTitle, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, withHealth, pageTitle, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
   extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, publisherAllowed, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
