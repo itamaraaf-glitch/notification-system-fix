@@ -4226,6 +4226,15 @@ async function saveSimpleSync(){
   const code=(document.getElementById('fb-simple-code').value||'').trim()||'hot-crm';
   if(!url){showToast('⚠️ הזן כתובת Firebase Database URL','warn');return;}
   if(!url.startsWith('https://')){showToast('⚠️ הכתובת חייבת להתחיל ב-https://','warn');return;}
+  // טעות נפוצה: הדבקת כתובת דף הניהול (console.firebase.google.com) במקום כתובת הדאטאבייס
+  if(/console\.firebase\.google\.com|\/project\//i.test(url)){
+    showToast('⚠️ זו כתובת דף הניהול — לא כתובת הדאטאבייס. פתח Realtime Database והעתק את הכתובת שמסתיימת ב-firebaseio.com','warn');
+    return;
+  }
+  if(!/\.(firebaseio\.com|firebasedatabase\.app)(\/.*)?$/i.test(url)){
+    showToast('⚠️ הכתובת חייבת להסתיים ב-firebaseio.com (או firebasedatabase.app). העתק אותה ממסך Realtime Database','warn');
+    return;
+  }
   const proceed=async()=>{
     const cfg={mode:'simple',databaseURL:url,syncCode:code};
     localStorage.setItem(FB_CFG_KEY,JSON.stringify(cfg));
