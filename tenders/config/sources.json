@@ -786,26 +786,32 @@
       ]
     },
     {
-      "id": "try3-14",
-      "name": "גוף אזורי (mvhr)",
+      "id": "muni-mvhr",
+      "name": "גוף מוניציפלי — mvhr.org.il",
       "category": "רשויות מקומיות",
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
       "keepUndated": true,
       "home": "https://www.mvhr.org.il/",
-      "_temp": "רשומה זמנית — דומיין מסריקת data.gov.il"
+      "tendersUrls": [
+        "https://www.mvhr.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
+      ],
+      "_note": "הדומיין הגיע מסריקת כתובות דוא\"ל רשמיות ב-data.gov.il ויש בו עמוד מכרזים פעיל, אבל כותרת הדף (\"מכרזים\"/\"ועדת מכרזים\") אינה מזהה את הגוף. השם ייקבע כשמכרז ממנו יגיע לראדאר; לא נרשם שם משוער."
     },
     {
-      "id": "try3-15",
-      "name": "גוף אזורי (sdan)",
+      "id": "muni-sdan",
+      "name": "גוף מוניציפלי — sdan.org.il",
       "category": "רשויות מקומיות",
       "kind": "discover",
       "enabled": true,
       "allTenders": false,
       "keepUndated": true,
       "home": "https://www.sdan.org.il/",
-      "_temp": "רשומה זמנית — דומיין מסריקת data.gov.il"
+      "tendersUrls": [
+        "https://www.sdan.org.il/bids/"
+      ],
+      "_note": "הדומיין הגיע מסריקת כתובות דוא\"ל רשמיות ב-data.gov.il ויש בו עמוד מכרזים פעיל, אבל כותרת הדף (\"מכרזים\"/\"ועדת מכרזים\") אינה מזהה את הגוף. השם ייקבע כשמכרז ממנו יגיע לראדאר; לא נרשם שם משוער."
     },
     {
       "id": "cluster-west-negev",
