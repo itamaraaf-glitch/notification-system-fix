@@ -794,11 +794,6 @@
       "allTenders": false,
       "keepUndated": true,
       "home": "https://www.mvhr.org.il/",
-      "tendersUrls": [
-        "https://www.mvhr.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D",
-        "https://www.mvhr.org.il/tenders",
-        "https://www.mvhr.org.il/bids"
-      ],
       "_temp": "רשומה זמנית — דומיין מסריקת data.gov.il"
     },
     {
@@ -810,16 +805,11 @@
       "allTenders": false,
       "keepUndated": true,
       "home": "https://www.sdan.org.il/",
-      "tendersUrls": [
-        "https://www.sdan.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D",
-        "https://www.sdan.org.il/tenders",
-        "https://www.sdan.org.il/bids"
-      ],
       "_temp": "רשומה זמנית — דומיין מסריקת data.gov.il"
     },
     {
-      "id": "try3-16",
-      "name": "גוף אזורי (westnegev)",
+      "id": "cluster-west-negev",
+      "name": "אשכול רשויות נגב מערבי",
       "category": "רשויות מקומיות",
       "kind": "discover",
       "enabled": true,
@@ -827,15 +817,13 @@
       "keepUndated": true,
       "home": "https://www.westnegev.org.il/",
       "tendersUrls": [
-        "https://www.westnegev.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D",
-        "https://www.westnegev.org.il/tenders",
-        "https://www.westnegev.org.il/bids"
+        "https://www.westnegev.org.il/services"
       ],
-      "_temp": "רשומה זמנית — דומיין מסריקת data.gov.il"
+      "_note": "אשכול רשויות — גוף רכש משותף לכמה רשויות"
     },
     {
-      "id": "try3-18",
-      "name": "גוף אזורי (eastgalil)",
+      "id": "cluster-east-galil",
+      "name": "אשכול גליל מזרחי",
       "category": "רשויות מקומיות",
       "kind": "discover",
       "enabled": true,
@@ -843,15 +831,13 @@
       "keepUndated": true,
       "home": "https://www.eastgalil.org.il/",
       "tendersUrls": [
-        "https://www.eastgalil.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D",
-        "https://www.eastgalil.org.il/tenders",
-        "https://www.eastgalil.org.il/bids"
+        "https://www.eastgalil.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D"
       ],
-      "_temp": "רשומה זמנית — דומיין מסריקת data.gov.il"
+      "_note": "אשכול רשויות — גוף רכש משותף לכמה רשויות"
     },
     {
-      "id": "try3-21",
-      "name": "גוף אזורי (hamifrats)",
+      "id": "cluster-hamifrats",
+      "name": "אשכול רשויות המפרץ",
       "category": "רשויות מקומיות",
       "kind": "discover",
       "enabled": true,
@@ -859,15 +845,13 @@
       "keepUndated": true,
       "home": "https://www.hamifrats.org.il/",
       "tendersUrls": [
-        "https://www.hamifrats.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D",
-        "https://www.hamifrats.org.il/tenders",
-        "https://www.hamifrats.org.il/bids"
+        "https://www.hamifrats.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D"
       ],
-      "_temp": "רשומה זמנית — דומיין מסריקת data.gov.il"
+      "_note": "אשכול רשויות — גוף רכש משותף לכמה רשויות"
     },
     {
-      "id": "try3-22",
-      "name": "גוף אזורי (esharon)",
+      "id": "cluster-hasharon",
+      "name": "אשכול רשויות השרון",
       "category": "רשויות מקומיות",
       "kind": "discover",
       "enabled": true,
@@ -875,11 +859,9 @@
       "keepUndated": true,
       "home": "https://www.esharon.co.il/",
       "tendersUrls": [
-        "https://www.esharon.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D",
-        "https://www.esharon.co.il/tenders",
-        "https://www.esharon.co.il/bids"
+        "https://esharon.co.il/%d7%9e%d7%9b%d7%a8%d7%96%d7%99%d7%9d-%d7%a4%d7%a2%d7%99%d7%9c%d7%99%d7%9d/"
       ],
-      "_temp": "רשומה זמנית — דומיין מסריקת data.gov.il"
+      "_note": "אשכול רשויות — גוף רכש משותף לכמה רשויות"
     }
   ],
   "_manualComment": "אגרגטורים ומאגרים מסחריים/מוסדיים — מוצגים בממשק כקישורי חיפוש ידני ואינם נסרקים אוטומטית (מטעמי תנאי שימוש).",
