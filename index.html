@@ -10522,7 +10522,7 @@ const _AI_PROVIDERS={
     link:'https://console.anthropic.com/settings/keys',linkLabel:'console.anthropic.com',
     note:'⚠️ מנוי Claude (Pro/Max) אינו כולל API — צריך חשבון API נפרד עם חיוב לפי שימוש.'},
   gemini:{label:'Gemini (Google · חינם)',keyPre:'',ph:'מפתח Google AI (מ-AI Studio)',model:'gemini-2.0-flash',free:true,
-    models:['gemini-2.0-flash','gemini-2.5-flash','gemini-2.5-flash-lite','gemini-flash-latest'],
+    models:['gemini-2.0-flash','gemini-2.5-flash','gemini-2.5-flash-lite'],
     link:'https://aistudio.google.com/app/apikey',linkLabel:'aistudio.google.com',
     note:'🎁 ל-Google Gemini יש שכבה חינמית, ללא חיוב וללא כרטיס אשראי. ב-AI Studio לחץ "Create API key" והעתק את המפתח במלואו (אייקון ההעתקה 📋). המפתח יכול להתחיל ב-AIza או ב-AQ. — שניהם תקינים.'}
 };
@@ -10867,8 +10867,17 @@ async function _aiLLM(messages,systemOverride){
 }
 // חילוץ הודעת השגיאה האמיתית מגוף התשובה (Anthropic: error.message · Google: error.message)
 async function _aiErrDetail(r){ try{ const j=await r.json(); const m=(j&&j.error&&j.error.message)||''; return m?(' · '+String(m).slice(0,160)):''; }catch(e){ return ''; } }
+// fetch עם timeout — כדי שבקשת AI שנתקעת (רשת/מודל איטי) לא תישאר "תקועה" לנצח אלא תיכשל בהודעה ברורה
+async function _aiFetch(url,opts,ms){
+  if(typeof AbortController==='undefined') return fetch(url,opts);
+  const ctl=new AbortController();
+  const t=setTimeout(()=>ctl.abort(),ms||22000);
+  try{ return await fetch(url,Object.assign({},opts,{signal:ctl.signal})); }
+  catch(e){ if(e&&(e.name==='AbortError'||/abort/i.test(String(e.message||e)))) throw new Error('הבקשה ל-AI נתקעה ולא הגיבה בזמן — נסה מודל gemini-2.0-flash, או בדוק חיבור אינטרנט'); throw e; }
+  finally{ clearTimeout(t); }
+}
 async function _aiCallAnthropic(key,system,msgs,modelOverride){
-  const r=await fetch('https://api.anthropic.com/v1/messages',{
+  const r=await _aiFetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:modelOverride||_aiModel(),max_tokens:4096,system,messages:msgs})
@@ -10902,7 +10911,7 @@ async function _aiCallGemini(key,system,msgs,modelOverride){
   const contents=msgs.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:String(m.content||'')}]}));
   // המפתח נשלח ב-header (x-goog-api-key) — השיטה הרשמית, תואמת גם לפורמט החדש (AQ.) וגם לישן (AIza)
   const TRANSIENT=[429,500,502,503,504]; // עומס זמני בצד גוגל ("high demand" = 503) — שווה ניסיון חוזר
-  const rawPost=gc=>fetch(url,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},
+  const rawPost=gc=>_aiFetch(url,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},
     body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,generationConfig:gc})});
   // ניסיון חוזר עם השהיה גוברת על עומס זמני — כדי ש"המודל עמוס" לא ייכשל מיד
   const post=async gc=>{ let r; for(let i=0;i<3;i++){ r=await rawPost(gc); if(r.ok||!TRANSIENT.includes(r.status))return r; if(i<2)await new Promise(res=>setTimeout(res,[600,1500][i])); } return r; };
