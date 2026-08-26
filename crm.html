@@ -6288,6 +6288,12 @@ function rDash(){
     const when=dExp<0?`פג לפני ${Math.abs(dExp)} ימים`:dExp===0?'פג היום':`${dExp} ימים לחידוש`;
     pi.push({p,t:(s.cl||'לקוח')+(s.pj?' · '+s.pj:''),s:`חידוש חוזה ${s.ty==='equipment'?'ציוד':'שירות'} — ${when} (${fmtDate(exp)})`,ico:'🔄',nav:'salary'});
   });
+  // משימות פתוחות שהגיע זמנן — באיחור (אדום) ולהיום (כתום). תור-המשימות הדחוף בבית לא היה שלם בלעדיהן.
+  (D.tasks||[]).filter(x=>x&&x.st!=='הושלם'&&x.dt&&x.dt<=tPri).forEach(x=>{
+    const late=db(x.dt,tPri); // >0 = ימי איחור · 0 = היום
+    const meta=[x.time,x.cl,x.pr].filter(Boolean).join(' · ');
+    pi.push({p:late>0?'r':'o',t:x.t||'משימה',s:(late>0?`באיחור ${late} ימים`:'לביצוע היום')+(meta?' · '+meta:''),ico:'✅',nav:'tasks'});
+  });
   pi.sort((a,b)=>a.p==='r'?-1:b.p==='r'?1:0);
   document.getElementById('prilist').innerHTML=pi.length?pi.slice(0,8).map(i=>`<div onclick="nav('${i.nav}')" class="urg-row" style="border-right:2px solid ${i.p==='r'?'rgba(230,57,70,.55)':'rgba(244,162,97,.5)'}"><span style="font-size:13px;flex-shrink:0">${i.ico}</span><div style="flex:1;min-width:0"><div style="font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(i.t)}</div><div style="font-size:10.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(i.s)}</div></div>${pB(i.p)}</div>`).join(''):'<div style="font-size:11px;color:var(--teal);padding:6px 0">✅ אין פריטים קריטיים</div>';
   // 🔥 urgent list — date-driven alerts (crit first), clickable to client / alerts
@@ -9194,6 +9200,8 @@ function renderQuickActions(){
   const todayMtgs=D.meetings.filter(m=>m.dt===nd()).length;
   const pendingSal=D.salary.filter(s=>s.st!=='סגור'&&(s.pv||0)>0).length;
   const activeTenders=D.tenders.filter(t=>t.submitted!=='כן').length;
+  const dueTasks=(D.tasks||[]).filter(t=>t.st!=='הושלם'&&t.dt&&t.dt<=nd()).length;
+  const openTasksN=(D.tasks||[]).filter(t=>t.st!=='הושלם').length;
   el.innerHTML=`
     <div onclick="openAiAssistant()" class="qa-item" style="background:linear-gradient(135deg,rgba(167,139,250,.16),rgba(76,201,240,.10));border:1px solid rgba(167,139,250,.35)">
       <span style="font-size:16px">🤖</span>
@@ -9210,6 +9218,10 @@ function renderQuickActions(){
     <div onclick="openClientModal(null)" class="qa-item" style="background:rgba(200,169,110,.08);border:1px solid rgba(200,169,110,.2)">
       <span style="font-size:16px">🏢</span>
       <div style="flex:1"><div style="font-size:11px;font-weight:700;color:var(--gold)">לקוח חדש</div><div style="font-size:11px;color:var(--text3)">${D.clients.length} לקוחות</div></div>
+    </div>
+    <div onclick="openM('task',null)" class="qa-item" style="background:${dueTasks?'rgba(230,57,70,.08)':'rgba(6,214,160,.06)'};border:1px solid ${dueTasks?'rgba(230,57,70,.22)':'rgba(6,214,160,.18)'}">
+      <span style="font-size:16px">✅</span>
+      <div style="flex:1"><div style="font-size:11px;font-weight:700;color:${dueTasks?'var(--red2)':'#06d6a0'}">משימה חדשה</div><div style="font-size:11px;color:var(--text3)">${dueTasks?dueTasks+' לביצוע היום/באיחור':openTasksN+' פתוחות'}</div></div>
     </div>
     ${activeTenders?`<div onclick="nav('tenders')" class="qa-item" style="background:rgba(244,162,97,.08);border:1px solid rgba(244,162,97,.2)">
       <span style="font-size:16px">📋</span>
