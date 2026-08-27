@@ -10071,6 +10071,8 @@ function _distTrackPayload(d){
     sdone:stagesDoneN,
     done:st==='הושלם',
     problem:st==='בעיה',
+    // הודעה אישית חופשית ללקוח — מתפרסמת לתוך הקישור החי; עדכון ההודעה מתעדכן באותו קישור, ללא שליחה מחדש
+    msg:String(d.trackMsg||'').slice(0,1000),
     ts:Date.now()
   };
 }
@@ -10167,8 +10169,24 @@ function promptTrackShare(dist){
 function _trackMarkSynced(){
   const c=window._trackShareCtx||{}; if(!c.id)return;
   const d=D.dists.find(x=>x.id==c.id); if(!d)return;
+  _trackPersistMsg(d);                         // שמירת המלל החופשי לתוך הרשומה (כדי שיישמר בקישור החי)
   d._cliSyncSt=c.st||d.st; d._cliSyncAt=Date.now();
   saveAll(); if(currentSec==='dists')rDists();
+}
+// שמירת המלל החופשי מהחלון לתוך רשומת ההפצה (בלי פרסום) — כדי שיתפרסם בפרסום הבא
+function _trackPersistMsg(d){ if(!d)return; const m=_trackCustomMsg(); if((d.trackMsg||'')!==m){ d.trackMsg=m; } }
+// עדכון ההודעה האישית בתוך הקישור החי — ללא שליחה מחדש. הלקוח רואה את ההודעה החדשה באותו קישור.
+async function _trackUpdateMsg(){
+  const c=window._trackShareCtx||{};
+  const d=c.id?D.dists.find(x=>x.id==c.id):null;
+  if(!d){ toast('💾 שמור את ההפצה תחילה — ואז אפשר לעדכן את ההודעה בקישור','warn'); return; }
+  _trackPersistMsg(d); saveAll();
+  const isLive=!!(_trackDbBase()&&d._trackTok);
+  if(!isLive){ toast('נשמר. הפעל "🔗 קישור מתעדכן לבד" כדי שהלקוח יראה את ההודעה ללא שליחה חוזרת','info'); return; }
+  const btn=document.getElementById('track-upd-btn'); const o=btn?btn.textContent:''; if(btn){btn.textContent='🔄 מעדכן…';btn.disabled=true;}
+  const res=await _publishTrackAndMark(d);
+  if(btn){btn.textContent=o;btn.disabled=false;}
+  toast(res==='ok'?'✅ ההודעה עודכנה בקישור — הלקוח יראה אותה מיד, ללא צורך לשלוח שוב':'⚠️ נשמר מקומית; העדכון לענן לא הצליח כרגע — יתעדכן בשינוי הבא','ok');
 }
 // שיתוף מהיר של קישור-מעקב ישירות משורת ההפצה בטבלה (ללא פתיחת חלון העריכה)
 function trackDistById(id){
@@ -10184,7 +10202,7 @@ function _distClientStatusLine(st){
 }
 function _trackSharePopup(url, d){
   const old=document.getElementById('track-share-popup'); if(old)old.remove();
-  window._trackShareCtx={url,cl:d.cl||'',no:d.no||'',co:d.co||'',cle:(d.cle||'').trim(),id:d.id||null,st:d.st||''};
+  window._trackShareCtx={url,cl:d.cl||'',no:d.no||'',co:d.co||'',cle:(d.cle||'').trim(),id:d.id||null,st:d.st||'',trackMsg:d.trackMsg||''};
   const qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data='+encodeURIComponent(url);
   const _stMsg=_distClientStatusLine(d.st);
   // כותרת ידידותית במקום כתובת המערכת: שם ההפצה/שירות + מספר הפרויקט (למשל "קו תקשורת · פרויקט 123")
@@ -10230,7 +10248,8 @@ function _trackSharePopup(url, d){
       <span style="font-size:10px;color:var(--text3)">✍️ הודעה אישית ללקוח (לא חובה)</span>
       <button id="track-ai-btn" onclick="_trackAiDraft()" class="btn btns" title="כתוב טיוטה ולחץ — ה-AI ישפר את הניסוח (או השאר ריק לניסוח אוטומטי)" style="font-size:10px;border-color:#a78bfa;color:#a78bfa;padding:2px 9px">✨ שפר ניסוח</button>
     </div>
-    <textarea id="track-custom-msg" placeholder="כתוב מה שתרצה ולחץ ✨ לשיפור הניסוח — או השאר ריק לניסוח אוטומטי" style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);font-family:inherit;font-size:11.5px;direction:rtl;margin-bottom:10px;resize:vertical;min-height:44px"></textarea>
+    <textarea id="track-custom-msg" placeholder="כתוב מה שתרצה ולחץ ✨ לשיפור הניסוח — או השאר ריק לניסוח אוטומטי" style="width:100%;box-sizing:border-box;padding:8px 10px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);font-family:inherit;font-size:11.5px;direction:rtl;margin-bottom:8px;resize:vertical;min-height:44px">${esc(d.trackMsg||'')}</textarea>
+    <button id="track-upd-btn" onclick="_trackUpdateMsg()" class="btn btns" title="שומר את ההודעה לתוך הקישור החי — הלקוח יראה אותה מיד באותו קישור, בלי לשלוח שוב" style="width:100%;font-size:11px;border-color:#06d6a0;color:#06d6a0;margin-bottom:10px;font-weight:800">🔄 עדכן את ההודעה בקישור (ללא שליחה מחדש)</button>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btnp" onclick="_trackCopy()" title="מעתיק את ההודעה עם הקישור (כולל ההערה החופשית אם נכתבה)" style="font-size:12px">📋 העתק הודעה</button>
       <button class="btn btns" onclick="_trackWaSend()" title="${_cliPhone?'שליחה ישירה ל-'+esc(_cliPhone):'בחירת נמען'}" style="border-color:#25d366;color:#25d366;font-size:12px">${waLabel}</button>
