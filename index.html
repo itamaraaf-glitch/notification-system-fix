@@ -13305,8 +13305,14 @@ function _commitCell(table,id,field,nv){
     // אם ההפצה משותפת בקישור מעקב — מפרסמים מחדש בשקט כדי שהלקוח יראה תמיד עדכני
     if(d2&&d2._trackTok){ try{_publishTrackAndMark(d2);}catch(e){} } }
   else if(table==='salary'){ const s2=(D.salary||[]).find(x=>x.id===id);
-    // סגירת פרויקט שכר מהשורה — קובע תאריך תחילת חוזה אם חסר (כמו במודל/קידום סטטוס); נשאר פעיל עד סגירת החודש
-    if(field==='st'&&nv==='סגור'&&s2&&!s2.cstart){ try{dbUpdate('salary',id,{cstart:nd()});}catch(e){} } }
+    if(s2){
+      // סגירת פרויקט שכר מהשורה — קובע תאריך תחילת חוזה אם חסר (כמו במודל/קידום סטטוס); נשאר פעיל עד סגירת החודש
+      if(field==='st'&&nv==='סגור'&&!s2.cstart){ try{dbUpdate('salary',id,{cstart:nd()});}catch(e){} }
+      // קשר בין העמודות: יתרה = יעד − נגבה. עריכת נגבה/יעד בשורה מעדכנת את היתרה; עריכת יתרה מעדכנת את הנגבה —
+      // כדי שהשלושה יישארו תואמים (מונע שורות לא-עקביות כמו יעד=נגבה=יתרה). זהה לחישוב במודל.
+      else if(field==='cl2'||field==='tr'){ const npv=Math.max(0,(+s2.tr||0)-(+s2.cl2||0)); if(npv!==(+s2.pv||0)){ try{dbUpdate('salary',id,{pv:npv});}catch(e){} } }
+      else if(field==='pv'){ const ncl2=Math.max(0,(+s2.tr||0)-(+s2.pv||0)); if(ncl2!==(+s2.cl2||0)){ try{dbUpdate('salary',id,{cl2:ncl2});}catch(e){} } }
+    } }
   showToast('✓ עודכן — כל המסכים סונכרנו','ok');
   // רינדור מקובץ: עריכה רצופה (Tab) לא בונה מחדש את הטבלה בכל תא — רק פעם אחת כשמפסיקים
   rAllBatched(()=>{
