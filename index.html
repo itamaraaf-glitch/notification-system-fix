@@ -5056,9 +5056,8 @@ function _finishLoad(){
   syncAllDealsToDists();
   syncAllDealsToSalary();
   runMonthlyCycle();
-  // שכר שהושלם ("תקין"/סגור) → ארכיון בכל טעינה, גם אם המחזור החודשי כבר רץ החודש
-  const _sweptSal=_sweepDoneSalary();
-  if(_sweptSal){ saveAll(); setTimeout(()=>{try{showToast('📦 '+_sweptSal+' פרויקטי שכר שהושלמו הועברו לארכיון (שכר ← 📦 ארכיון)','ok');}catch(e){}},2200); }
+  // פרויקטי שכר שהושלמו נשארים פעילים (מסומנים "סגור") עד סגירת החודש — לא מטאטאים לארכיון בכל טעינה.
+  // הארכוב מתבצע רק בלחיצת "סגירת החודש" (confirmMonthClose→runMonthlyCycle) או במעבר חודש טבעי, כמו עסקאות.
   // הפצות שהושלמו ("תקין") מחודשים קודמים → ארכיון בכל טעינה
   const _sweptDist=_sweepDoneDists();
   if(_sweptDist){ saveAll(); setTimeout(()=>{try{showToast('📦 '+_sweptDist+' הפצות שהושלמו מחודשים קודמים הועברו לארכיון (הפצות ← 📦 ארכיון)','ok');}catch(e){}},2600); }
@@ -13577,9 +13576,9 @@ function collectSalaryBalance(id){
     if(newPv<=0){ patch.st='סגור'; if(!s.cstart)patch.cstart=nd(); } // נגבה במלואו — נסגר
     else if(s.st!=='בתהליך'){ patch.st='חלקי'; }                     // גבייה חלקית — מסומן 'חלקי'
     dbUpdate('salary',id,patch);
-    if(newPv<=0)_sweepDoneSalary(); // נסגר במלואו — מעבר מיידי לארכיון (שירות/ציוד) כדי שייראה בארכיון מיד
+    // נסגר במלואו — נשאר פעיל ומסומן "סגור"; יעבור לארכיון רק בסגירת החודש (לא מיד)
     rAll();
-    showToast(newPv<=0?('✅ נגבה '+fmt(pay)+' — הפרויקט נסגר'):('💰 נרשמה גבייה '+fmt(pay)+' · נותרה יתרה '+fmt(newPv)),'ok');
+    showToast(newPv<=0?('✅ נגבה '+fmt(pay)+' — הפרויקט נסגר (יעבור לארכיון בסגירת החודש)'):('💰 נרשמה גבייה '+fmt(pay)+' · נותרה יתרה '+fmt(newPv)),'ok');
   });
 }
 // קידום סטטוס שכר בלחיצה: פתוח/חלקי → בתהליך → (סגור) → פתוח מחדש.
@@ -13590,7 +13589,7 @@ function advanceSalaryStatus(id){
   if(st==='בתהליך'){
     if(+s.pv>0){ collectSalaryBalance(id); return; }   // סגירה עם גביית יתרה (מאשר וסוגר נכון)
     const patch={st:'סגור'}; if(!s.cstart)patch.cstart=nd();
-    dbUpdate('salary',id,patch); _sweepDoneSalary(); rAllBatched(); showToast('✅ פרויקט השכר נסגר — הועבר לארכיון','ok'); return;
+    dbUpdate('salary',id,patch); rAllBatched(); showToast('✅ פרויקט השכר נסגר — יעבור לארכיון בסגירת החודש','ok'); return;
   }
   if(st==='סגור'){ dbUpdate('salary',id,{st:'פתוח'}); rAllBatched(); showToast('↩ הפרויקט נפתח מחדש','ok'); return; }
   // פתוח / חלקי / אחר → בתהליך
@@ -13604,7 +13603,7 @@ function saveSal(){
   if(isNaN(row.qt)||row.qt<0||isNaN(row.tr)||row.tr<0||isNaN(row.cl2)||row.cl2<0||isNaN(row.pv)||row.pv<0){alert('ערכים כספיים לא יכולים להיות שליליים');return;}
   if(_saveArch('salary',row))return; // עריכת רשומת ארכיון — עדכון במקום
   if(EI){dbUpdate('salary',EI,row);}else{dbInsert('salary',row);}
-  _sweepDoneSalary(); // אם נשמר כ"סגור" (שירות/ציוד) — מעבר מיידי לארכיון כדי שייראה מיד
+  // נשמר כ"סגור" (שירות/ציוד) — נשאר פעיל ומסומן "סגור"; יעבור לארכיון רק בסגירת החודש
   closeM('msalary');rAll();
 }
 function saveMeet(){
