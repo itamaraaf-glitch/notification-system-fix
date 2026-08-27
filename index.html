@@ -1431,6 +1431,12 @@ body.logged-in #ai-fab{display:flex}
 .rdr-panel[open]>summary::after{transform:rotate(180deg)}
 .rdr-panel h4{font-size:13px;font-weight:700;margin-bottom:9px;display:flex;align-items:center;gap:7px}
 .rdr-mlinks{display:flex;flex-wrap:wrap;gap:7px}
+.rdr-filter{width:100%;box-sizing:border-box;margin:0 0 11px;padding:9px 13px;font:inherit;font-size:12px;
+  border-radius:10px;border:1px solid var(--border2);background:rgba(10,15,30,.6);color:var(--text);
+  transition:border-color .16s}
+.rdr-filter:focus{outline:none;border-color:var(--gold)}
+.rdr-filter::placeholder{color:var(--text3)}
+.rdr-nores{font-size:11.5px;color:var(--text3);padding:10px 2px}
 .rdr-mlink{font-size:11px;padding:6px 11px;border-radius:9px;background:rgba(10,15,30,.6);text-decoration:none;
   border:1px solid var(--border2);color:var(--text2);transition:transform .16s var(--expo),border-color .16s,color .16s}
 .rdr-mlink:hover{transform:translateY(-2px);border-color:var(--gold);color:var(--gold2)}
@@ -7299,6 +7305,34 @@ function _radarRestore(id){
   showToast('↩ המכרז שוחזר','ok');
   _radarRender();
 }
+/* סינון פאנל הבדיקה הידנית.
+   158 גופים הם יותר מדי לגלילה. ההשוואה מנרמלת גרשיים ומקפים, כי "מ.א." מול
+   "מא" ו"קרית" מול "קריית" הם אותו חיפוש מבחינת מי שמקליד. */
+function _radarAuthNorm(s){
+  return String(s||'').replace(/["'\u05f3\u05f4.\-\u2013\u2014]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
+}
+/* קיצורים שמקלידים בפועל. הפאנל כותב "מועצה אזורית X" במלואו, ומי שמחפש
+   מקליד "מ.א." — בלי ההרחבה הזו החיפוש הנפוץ ביותר בפאנל מחזיר אפס. */
+function _radarAuthExpand(n){
+  return n.replace(/(^|\s)מא(\s|$)/g,'$1מועצה אזורית$2')
+          .replace(/(^|\s)ממ(\s|$)/g,'$1מועצה מקומית$2');
+}
+function _radarAuthFilter(q){
+  const box=document.getElementById('rdrAuthList'); if(!box) return;
+  const needle=_radarAuthExpand(_radarAuthNorm(q));
+  const items=box.querySelectorAll('.rdr-mlink');
+  let shown=0;
+  items.forEach(el=>{
+    const hit=!needle||_radarAuthNorm(el.dataset.n).includes(needle);
+    el.style.display=hit?'':'none';
+    if(hit) shown++;
+  });
+  const none=document.getElementById('rdrAuthNone');
+  if(none) none.style.display=shown?'none':'';
+  const cnt=document.getElementById('rdrAuthCount');
+  if(cnt) cnt.textContent=needle?`— ${shown} מתוך ${items.length} גופים`:`— ${items.length} גופים`;
+}
+
 function _radarRestoreAll(){
   const n=Object.keys(_radarDeleted).length;
   if(!n)return;
@@ -7501,10 +7535,14 @@ function _radarRender(){
   const auths=(_radar.manualAuthorities||[]).map(a=>{const u=safeUrl(a.url);
     // הקישור מוביל לעמוד המכרזים של הרשות ולא לדף הבית — האתרים חוסמים סריקה
     // ולכן אין בידינו את הנתיב, וחיפוש מתוחם לדומיין נוחת עליו בלחיצה אחת
-    return u?`<a class="rdr-mlink" href="${esc(_tendersSearchUrl(u))}" target="_blank" rel="noopener noreferrer" title="חיפוש עמוד המכרזים באתר ${esc(a.name)}">${esc(a.name)}<small>מכרזים ↗</small></a>`:''}).join('');
-  const authPanel=auths?`<details class="rdr-panel"><summary>🏛️ רשויות ומוסדות – בדיקה ידנית <span style="font-size:10.5px;font-weight:400;color:var(--text3)">— ${(_radar.manualAuthorities||[]).length} גופים</span></summary>
+    // שם הרשות והסיבה נשמרים על האלמנט לצורך הסינון: 158 גופים הם יותר מדי
+    // לגלילה, וחיפוש לפי שם או לפי סיבה ("חוסם סריקה") מגיע לשורה בשנייה
+    return u?`<a class="rdr-mlink" data-n="${esc(a.name+' '+(a.note||''))}" href="${esc(_tendersSearchUrl(u))}" target="_blank" rel="noopener noreferrer" title="${esc(a.note||('חיפוש עמוד המכרזים באתר '+a.name))}">${esc(a.name)}<small>מכרזים ↗</small></a>`:''}).join('');
+  const authPanel=auths?`<details class="rdr-panel"><summary>🏛️ רשויות ומוסדות – בדיקה ידנית <span id="rdrAuthCount" style="font-size:10.5px;font-weight:400;color:var(--text3)">— ${(_radar.manualAuthorities||[]).length} גופים</span></summary>
     <p style="font-size:11px;color:var(--text2);margin:12px 0 10px;line-height:1.7">הרשויות המקומיות והמוסדות האקדמיים האלה נמדדו ולא ניתן לסרוק אותם אוטומטית — חוסמים סריקה, אינם נענים מכתובת שרת, או שעמוד המכרזים שלהם אינו נגיש מדף הבית. הקישורים פותחים את עמוד המכרזים שלהם לבדיקה ידנית מהירה.</p>
-    <div class="rdr-mlinks">${auths}</div></details>`:'';
+    <input class="rdr-filter" type="search" id="rdrAuthQ" placeholder="חיפוש רשות או מוסד — לפי שם, או לפי סיבה (למשל: חוסם סריקה)" oninput="_radarAuthFilter(this.value)" autocomplete="off">
+    <div class="rdr-mlinks" id="rdrAuthList">${auths}</div>
+    <div class="rdr-nores" id="rdrAuthNone" style="display:none">לא נמצאה רשות שתואמת את החיפוש.</div></details>`:'';
 
   const mls=(_radar.manualLinks||[]).map(l=>{const u=safeUrl(l.url);
     return u?`<a class="rdr-mlink" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(l.name)}${l.note?`<small>${esc(l.note)}</small>`:''}</a>`:''}).join('');

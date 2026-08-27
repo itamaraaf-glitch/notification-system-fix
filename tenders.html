@@ -173,6 +173,11 @@ tbody tr:last-child td{border-bottom:none}
 .empty p{font-size:12.5px;line-height:1.75;max-width:540px;margin:0 auto}
 .empty code{background:rgba(10,15,30,.8);border:1px solid var(--border2);border-radius:5px;padding:2px 6px;font-size:11.5px;color:var(--gold2)}
 .mlinks{display:flex;flex-wrap:wrap;gap:8px}
+    .filter{width:100%;box-sizing:border-box;margin:0 0 11px;padding:9px 13px;font:inherit;font-size:12px;
+      border-radius:10px;border:1px solid var(--border2);background:rgba(10,15,30,.6);color:var(--text);transition:border-color .16s}
+    .filter:focus{outline:none;border-color:var(--gold)}
+    .filter::placeholder{color:var(--text3)}
+    .nores{font-size:11.5px;color:var(--text3);padding:10px 2px}
 .mlink{
   font-size:11.5px;padding:7px 12px;border-radius:9px;background:rgba(10,15,30,.6);
   border:1px solid var(--border2);color:var(--text2);transition:transform .16s var(--expo),border-color .16s,color .16s;
@@ -290,7 +295,9 @@ footer{text-align:center;font-size:10.5px;color:var(--text3);margin-top:26px;lin
       סריקה (403), אינם נענים מכתובת שרת, או שעמוד המכרזים שלהם אינו נגיש מדף הבית. הקישורים
       כאן פותחים את עמוד המכרזים שלהם בלחיצה אחת, לבדיקה ידנית מהירה.
     </p>
+    <input class="filter" type="search" id="authq" placeholder="חיפוש רשות או מוסד — לפי שם, או לפי סיבה (למשל: חוסם סריקה)" oninput="authFilter(this.value)" autocomplete="off">
     <div class="mlinks" id="authlinks"></div>
+    <div class="nores" id="authnone" style="display:none">לא נמצאה רשות שתואמת את החיפוש.</div>
   </details>
 
   <div class="panel" id="manualpanel" style="display:none">
@@ -849,9 +856,36 @@ function renderAuthorities(){
     // אין לנו את הנתיב המדויק (האתרים חוסמים סריקה), וחיפוש מתוחם לדומיין הוא
     // הדרך היציבה ביותר לנחות על עמוד המכרזים בלחיצה אחת.
     return `<a class="mlink" href="${esc(tendersSearchUrl(u))}" target="_blank" rel="noopener noreferrer"
-       title="חיפוש עמוד המכרזים באתר ${esc(a.name)}">${esc(a.name)}
+       data-n="${esc(a.name + ' ' + (a.note || ''))}"
+       title="${esc(a.note || ('חיפוש עמוד המכרזים באתר ' + a.name))}">${esc(a.name)}
        <small>מכרזים ↗ · <span onclick="event.preventDefault();event.stopPropagation();window.open('${esc(u)}','_blank','noopener')" style="text-decoration:underline;cursor:pointer">דף הבית</span></small></a>`;
   }).join('');
+}
+
+/* סינון פאנל הבדיקה הידנית.
+   158 גופים הם יותר מדי לגלילה. ההשוואה מנרמלת גרשיים, נקודות ומקפים, כי
+   "מ.א." מול "מא" ו"קרית" מול "קריית" הם אותו חיפוש מבחינת מי שמקליד. */
+function authNorm(s){
+  return String(s || '').replace(/["'\u05f3\u05f4.\-\u2013\u2014]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+/* קיצורים שמקלידים בפועל. הפאנל כותב "מועצה אזורית X" במלואו, ומי שמחפש
+   מקליד "מ.א." — בלי ההרחבה הזו החיפוש הנפוץ ביותר בפאנל מחזיר אפס. */
+function authExpand(n){
+  return n.replace(/(^|\s)מא(\s|$)/g, '$1מועצה אזורית$2')
+          .replace(/(^|\s)ממ(\s|$)/g, '$1מועצה מקומית$2');
+}
+function authFilter(q){
+  const box = $('authlinks'); if(!box) return;
+  const needle = authExpand(authNorm(q));
+  const items = box.querySelectorAll('.mlink');
+  let shown = 0;
+  items.forEach(el => {
+    const hit = !needle || authNorm(el.dataset.n).includes(needle);
+    el.style.display = hit ? '' : 'none';
+    if(hit) shown++;
+  });
+  $('authnone').style.display = shown ? 'none' : '';
+  $('authcount').textContent = needle ? `— ${shown} מתוך ${items.length} גופים` : `— ${items.length} גופים`;
 }
 
 function renderManual(){
