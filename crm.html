@@ -4976,7 +4976,9 @@ function _finishLoad(){
   syncAllDealsToSalary();
   runMonthlyCycle();
   // פרויקטי שכר שהושלמו נשארים פעילים (מסומנים "סגור") עד סגירת החודש — לא מטאטאים לארכיון בכל טעינה.
-  // הארכוב מתבצע רק בלחיצת "סגירת החודש" (confirmMonthClose→runMonthlyCycle) או במעבר חודש טבעי, כמו עסקאות.
+  // הארכוב מתבצע רק בלחיצת "סגירת החודש" (confirmMonthClose→runMonthlyCycle). החודש הנוכחי בארכיון נשאר ריק.
+  const _restSal=_restoreCurrentMonthSalary();
+  if(_restSal){ saveAll(); setTimeout(()=>{try{showToast('↩ '+_restSal+' פרויקטי שכר של החודש הנוכחי הוחזרו לרשימה הפעילה — יעברו לארכיון רק בסגירת החודש','ok');}catch(e){}},2200); }
   // הפצות שהושלמו ("תקין") מחודשים קודמים → ארכיון בכל טעינה
   const _sweptDist=_sweepDoneDists();
   if(_sweptDist){ saveAll(); setTimeout(()=>{try{showToast('📦 '+_sweptDist+' הפצות שהושלמו מחודשים קודמים הועברו לארכיון (הפצות ← 📦 ארכיון)','ok');}catch(e){}},2600); }
@@ -10045,6 +10047,23 @@ function _sweepDoneSalary(){
   ids.forEach(id=>{D._deletedIds.salary[String(id)]=Date.now();});
   return done.length;
 }
+// שחזור פרויקטי שכר שאורכבו לפני סגירת-חודש סופית (באג הטאטוא-המיידי הישן): כל רשומה שקובצה תחת
+// החודש הנוכחי ואינה מסומנת _finalClose (לא עברה "סגירת החודש") חוזרת לרשימה הפעילה — כך שהחודש
+// הנוכחי בארכיון נשאר ריק עד שסוגרים אותו ידנית. רץ בכל טעינה, בטוח (מדלג על פיצולי-יתרה ידניים).
+function _restoreCurrentMonthSalary(){
+  const cur=nd().substring(0,7);
+  const arch=D.archivedSalary||[];
+  const groupM=s=>{ const cm=((s&&s.cstart)||'').substring(0,7); return /^\d{4}-\d{2}$/.test(cm)?cm:((s&&s._archivedAt)||''); };
+  const back=arch.filter(s=>groupM(s)===cur && !s._finalClose && !s._splitFrom);
+  if(!back.length)return 0;
+  if(!D.salary)D.salary=[];
+  const ids=new Set(back.map(s=>s.id));
+  back.forEach(s=>{ const c={...s}; delete c._archivedAt; D.salary.push(c); });
+  D.archivedSalary=arch.filter(s=>!ids.has(s.id));
+  // ניקוי ה-tombstone כדי שהסנכרון לא ימחק שוב את מה ששוחזר
+  if(D._deletedIds&&D._deletedIds.salary) ids.forEach(id=>{ delete D._deletedIds.salary[String(id)]; });
+  return back.length;
+}
 // טאטוא הפצות שהושלמו מחודשים קודמים: הפצה בסטטוס 'הושלם' ("תקין") עם תאריך הפצה בחודש קודם
 // עוברת לארכיון בכל טעינה — ללא תלות במחזור החודשי. הפצות שהושלמו החודש נשארות פעילות עד סגירת החודש.
 function _sweepDoneDists(){
@@ -10122,8 +10141,10 @@ function runMonthlyCycle(force,includeCurrent){
     },1650);
   }
   // ארכוב פרויקטי שכר (לשכר אין תאריך-חודש):
-  //  • הושלם (סטטוס 'סגור' = "תקין", או נגבה במלואו) → הרשומה כולה לארכיון — גם במחזור האוטומטי (חודש התחלף)
-  //    וגם בסגירה ידנית, בדיוק כמו עסקאות שנסגרו.
+  //  • הושלם (סטטוס 'סגור' = "תקין", או נגבה במלואו):
+  //     – בסגירה ידנית (סופית) → כל הרשומה לארכיון, מסומנת _finalClose.
+  //     – במחזור האוטומטי → רק פרויקטים של חודשים שעברו (חודש-קבוצה < החודש הנוכחי); פרויקטי החודש הנוכחי
+  //       נשארים פעילים עד סגירת החודש הסופית (הדרישה: החודש הנוכחי ריק בארכיון עד שסוגרים אותו ידנית).
   //  • חלקי (נגבה חלק + יש יתרה לגבייה) → פיצול רק בסגירה ידנית: החלק שנגבה לארכיון, היתרה נשארת פעילה עם כל הפרטים.
   //  • לא נגבה כלום → נשאר פעיל כמות שהוא.
   {
@@ -10131,11 +10152,13 @@ function runMonthlyCycle(force,includeCurrent){
     const toArch=[], remain=[], doneIds=[];
     (D.salary||[]).forEach(s=>{
       const collected=+s.cl2||0, balance=+s.pv||0;
-      if(_salaryDone(s)){                                  // הושלם — כל הרשומה לארכיון (אוטומטי + ידני)
-        toArch.push({...s,_archivedAt:_salaryArchMonth(s)});
-        doneIds.push(s.id);
+      if(_salaryDone(s)){                                  // הושלם
+        if(includeCurrent || _salaryArchMonth(s)<cur){     // ידני = הכול · אוטומטי = רק חודשים שעברו
+          toArch.push({...s,_archivedAt:_salaryArchMonth(s),_finalClose:cur});
+          doneIds.push(s.id);
+        } else { remain.push(s); }                         // הושלם החודש, מחזור אוטומטי → נשאר פעיל עד סגירה ידנית
       } else if(includeCurrent&&collected>0&&balance>0){   // חלקי — פיצול רק בסגירה ידנית
-        toArch.push({...s,id:genId(),tr:collected,cl2:collected,pv:0,st:'סגור',_archivedAt:_salaryArchMonth(s),_splitFrom:s.id,_mts:Date.now()});
+        toArch.push({...s,id:genId(),tr:collected,cl2:collected,pv:0,st:'סגור',_archivedAt:_salaryArchMonth(s),_splitFrom:s.id,_finalClose:cur,_mts:Date.now()});
         remain.push({...s,tr:balance,cl2:0,pv:balance,st:'פתוח',_mts:Date.now()}); // יתרה לגבייה — כל הפרטים נשמרים
       } else {                                             // לא נגבה כלום / חלקי במחזור אוטומטי — נשאר
         remain.push(s);
