@@ -7946,13 +7946,16 @@ function rDistSum(){
 function rSalary(){
   updatePriChipCounts('sec-salary',D.salary,'sal');
   // סיכומים אוטומטיים לפרויקטי שכר — שירות וציוד בנפרד, מחושבים מכל הטבלה
-  const _salTile=(lbl,val,clr,bg)=>`<div class="stat-mini" style="background:${bg};border:1px solid ${clr}33"><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${lbl}</div><div style="font-size:18px;font-weight:900;color:${clr}">${val}</div></div>`;
-  const _salGroup=(title,accent,allItems)=>{
+  const _salTile=(lbl,val,clr,bg,sub)=>`<div class="stat-mini" style="background:${bg};border:1px solid ${clr}33"><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px">${lbl}</div><div style="font-size:18px;font-weight:900;color:${clr}">${val}</div>${sub?`<div style="font-size:9.5px;color:var(--text3);margin-top:1px">${sub}</div>`:''}</div>`;
+  if(!D.goals)D.goals={deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000};
+  const _salGroup=(title,accent,allItems,goalKey,defGoal)=>{
     // מפרידים פרויקטים שנדחו לחודש עתידי (ecd) — הסיכום מציג רק את הרלוונטי לחודש הנוכחי
     const items=allItems.filter(i=>!_salDeferred(i)), deferred=allItems.filter(_salDeferred);
     const tt=items.reduce((s,i)=>s+(+i.tr||0),0),tc=items.reduce((s,i)=>s+(+i.cl2||0),0);
     const tp=items.reduce((s,i)=>s+Math.max(0,(+i.tr||0)-(+i.cl2||0)),0);
-    const pct=tt?Math.round(tc/tt*100):0;
+    // עמידה ביעד = נסגר (סיכום סגירה) חלקי יעד השירות/הציוד שהוגדר למעלה — מסונכרן עם שורת היעד, לא מול סכום היעדים של הפרויקטים
+    const goal=(+D.goals[goalKey]||defGoal);
+    const pct=goal?Math.round(tc/goal*100):0;
     const pcol=pct>=100?'var(--teal)':pct>=50?'#f4a261':'#e63946';
     const dTt=deferred.reduce((s,i)=>s+(+i.tr||0),0), dTp=deferred.reduce((s,i)=>s+Math.max(0,(+i.tr||0)-(+i.cl2||0)),0);
     const defLine=deferred.length?`<div style="margin-top:6px;font-size:10.5px;color:#f4a261;display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span>⏭️ נדחו לחודשים הבאים:</span><b>${deferred.length}</b><span>פרויקטים · יעד</span><b>${fmt(dTt)}</b>${dTp?`<span>· יתרה</span><b>${fmt(dTp)}</b>`:''}<span style="color:var(--text3)">(מחוץ לסיכום החודש)</span></div>`:'';
@@ -7962,7 +7965,7 @@ function rSalary(){
         ${_salTile('🎯 סיכום יעד',fmt(tt),accent,'rgba(255,255,255,.03)')}
         ${_salTile('✅ סיכום סגירה',fmt(tc),'var(--teal)','rgba(6,214,160,.07)')}
         ${_salTile('⏳ סיכום יתרה',fmt(tp),'#e63946','rgba(230,57,70,.06)')}
-        ${_salTile('📈 עמידה ביעד',pct+'%',pcol,'rgba(255,255,255,.03)')}
+        ${_salTile('📈 עמידה ביעד',pct+'%',pcol,'rgba(255,255,255,.03)','מתוך יעד '+fmt(goal))}
       </div>
       ${defLine}
     </div>`;
@@ -7971,8 +7974,8 @@ function rSalary(){
   const gt=document.getElementById('sal-goal-top');
   if(gt)gt.innerHTML=salGoalBanner()
     +`<div style="background:linear-gradient(135deg,rgba(16,21,37,.95),rgba(10,14,28,.98));border:1px solid rgba(6,214,160,.2);border-radius:12px;padding:12px 18px 14px;margin-bottom:16px">`
-    +_salGroup('🔧 שירות — סיכום אוטומטי','var(--teal)',_svc).replace('margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)','')
-    +_salGroup('📦 ציוד (OTC) — סיכום אוטומטי (בנפרד מהשירות)','#4cc9f0',_eq)
+    +_salGroup('🔧 שירות — סיכום אוטומטי','var(--teal)',_svc,'sal',15000).replace('margin-top:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)','')
+    +_salGroup('📦 ציוד (OTC) — סיכום אוטומטי (בנפרד מהשירות)','#4cc9f0',_eq,'salEq',30000)
     +`</div>`;
   ['service','equipment'].forEach(ty=>{
     const tbId=ty==='service'?'svctb':'eqtb',ftId=ty==='service'?'svcft':'eqft';
