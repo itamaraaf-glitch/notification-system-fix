@@ -7987,7 +7987,7 @@ function rSalary(){
       if(_exp){const _d=db(nd(),_exp);const _c=_d<0?'#e63946':_d<=90?'#f4a261':'var(--teal)';_expChip=`<div style="font-size:9px;font-weight:700;color:${_c};margin-top:2px;white-space:nowrap" title="חוזה ${s.term} חודשים · התחלה ${fmtDate(s.cstart)}">🔄 חוזה עד ${fmtDate(_exp)}${_d<0?' · פג!':_d<=90?` · ${_d}י`:''}</div>`;}
       let _ecdChip='';
       if(s.ecd){const _def=_salDeferred(s);_ecdChip=`<div style="font-size:9px;font-weight:700;color:${_def?'#f4a261':'var(--text3)'};margin-top:2px;white-space:nowrap" title="צפי סגירה${_def?' — מחוץ לסיכום החודש':''}">⏭️ צפי ${fmtDate(s.ecd)}${_def?' · נדחה':''}</div>`;}
-      return`<tr class="${pC(p)}" data-pri="${p}"${_salDeferred(s)?' style="opacity:.62" title="נדחה לחודש עתידי — מחוץ לסיכום החודש"':''}><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td><span onclick="event.stopPropagation();advanceSalaryStatus('${s.id}')" title="לחץ לקידום הסטטוס (פתוח → בתהליך → סגור)" style="cursor:pointer">${sB(s.st)}</span></td><td>${_cellSpan('salary',s.id,'qt',(s.qt||1),'num')}</td><td style="font-size:10px">${_cellSpan('salary',s.id,'pj',esc(s.pj||'—'))}${_expChip}${_ecdChip}</td><td style="font-weight:600">${_cellSpan('salary',s.id,'cl',esc(s.cl||'—'))}</td><td class="nb">${_cellSpan('salary',s.id,'tr',fmt(s.tr),'num')}</td><td class="ng">${_cellSpan('salary',s.id,'cl2',fmt(s.cl2),'num')}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'}">${(+s.pv>0)?`<span onclick="event.stopPropagation();collectSalaryBalance('${s.id}')" title="לחץ לרישום גבייה — מלאה או חלקית" style="cursor:pointer;text-decoration:underline dotted">${fmt(s.pv)} ✓</span>`:fmt(s.pv)}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${_cellSpan('salary',s.id,'no',esc(s.no||'–'))}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
+      return`<tr class="${pC(p)}" data-pri="${p}"${_salDeferred(s)?' style="opacity:.62" title="נדחה לחודש עתידי — מחוץ לסיכום החודש"':''}><td class="cb-td"><input type="checkbox" class="cb-item-${sk}" ${chk} onchange="toggleSel('${sk}','${s.id}')"></td><td>${pB(p)}</td><td>${_cellSpan('salary',s.id,'st',sB(s.st),'select')}</td><td>${_cellSpan('salary',s.id,'qt',(s.qt||1),'num')}</td><td style="font-size:10px">${_cellSpan('salary',s.id,'pj',esc(s.pj||'—'))}${_expChip}${_ecdChip}</td><td style="font-weight:600">${_cellSpan('salary',s.id,'cl',esc(s.cl||'—'))}</td><td class="nb">${_cellSpan('salary',s.id,'tr',fmt(s.tr),'num')}</td><td class="ng">${_cellSpan('salary',s.id,'cl2',fmt(s.cl2),'num')}</td><td style="color:${(s.pv||0)>0?'#e63946':'var(--teal)'};white-space:nowrap">${_cellSpan('salary',s.id,'pv',fmt(s.pv),'num')}${(+s.pv>0)?` <span onclick="event.stopPropagation();collectSalaryBalance('${s.id}')" title="רישום גבייה — מלאה או חלקית" style="cursor:pointer" aria-label="גבייה">✓</span>`:''}</td><td><div class="pw"><div class="pb"><div class="pf" style="width:${Math.min(pct,100)}%;background:${pc}"></div></div><span style="font-size:10px;font-weight:600;color:${pc}">${pct}%</span></div></td><td style="font-size:10px">${_cellSpan('salary',s.id,'no',esc(s.no||'–'))}</td><td style="white-space:nowrap">${(s.files&&s.files.length)?`<button class="btn btns" onclick="rowFilesMenu('salary','${s.id}',event)" title="${s.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${s.files.length>1?s.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('salary','${s.id}')">✏️</button> <button class="btn btns btnd" onclick="dbDelete('salary','${s.id}')">🗑</button></td></tr>`;
     }).join('')||emptyRow(12,'💰',"אין פרויקטים","openM('salary',null)");
     // הסיכום בתחתית מתייחס רק לפרויקטים הרלוונטיים לחודש; פרויקטים שנדחו לחודש עתידי (ecd) מופרדים
     const curItems=items.filter(i=>!_salDeferred(i)), defItems=items.filter(_salDeferred);
@@ -13304,6 +13304,9 @@ function _commitCell(table,id,field,nv){
   else if(table==='dists'){ const d2=(D.dists||[]).find(x=>x.id===id);
     // אם ההפצה משותפת בקישור מעקב — מפרסמים מחדש בשקט כדי שהלקוח יראה תמיד עדכני
     if(d2&&d2._trackTok){ try{_publishTrackAndMark(d2);}catch(e){} } }
+  else if(table==='salary'){ const s2=(D.salary||[]).find(x=>x.id===id);
+    // סגירת פרויקט שכר מהשורה — קובע תאריך תחילת חוזה אם חסר (כמו במודל/קידום סטטוס); נשאר פעיל עד סגירת החודש
+    if(field==='st'&&nv==='סגור'&&s2&&!s2.cstart){ try{dbUpdate('salary',id,{cstart:nd()});}catch(e){} } }
   showToast('✓ עודכן — כל המסכים סונכרנו','ok');
   // רינדור מקובץ: עריכה רצופה (Tab) לא בונה מחדש את הטבלה בכל תא — רק פעם אחת כשמפסיקים
   rAllBatched(()=>{
@@ -13318,14 +13321,16 @@ function _commitCell(table,id,field,nv){
     }catch(e){}
   });
 }
-// אפשרויות ברירת-מחדל לשדות-בחירה בעריכה-בשורה (לפי שם השדה), כשלא הועברו opts
+// אפשרויות ברירת-מחדל לשדות-בחירה בעריכה-בשורה. מפתח לפי 'טבלה.שדה' (ספציפי) או שם-שדה (כללי).
 const _CELL_SELECTS={ pr:[['גבוהה','גבוהה'],['בינונית','בינונית'],['נמוכה','נמוכה']],
-  mtype:[['פגישה','🤝 פגישה'],['שיחת טלפון','📞 שיחת טלפון'],['זום','🖥 זום'],['Teams','🟦 Teams'],['אחר','📌 אחר']] };
+  mtype:[['פגישה','🤝 פגישה'],['שיחת טלפון','📞 שיחת טלפון'],['זום','🖥 זום'],['Teams','🟦 Teams'],['אחר','📌 אחר']],
+  'salary.st':[['פתוח','פתוח'],['בתהליך','בתהליך'],['חלקי','חלקי'],['סגור','סגור']] };
 // שחזור תא בודד במקום — מחליף את שדה-הקלט חזרה ל-span עריכה, בלי לבנות מחדש את כל הטבלה.
 // זה מה שמאפשר עריכה רצופה (Tab) חלקה: כל תא משוחזר מיד, והרינדור המלא (לסיכומים) נדחה לסוף.
 function _restoreCell(ctl,table,id,field,kind,nv){
   let inner;
-  if(kind==='num')inner=fmt(nv);
+  if(table==='salary'&&field==='st')inner=sB(nv);        // סטטוס שכר — שחזור עם תג-צבע (badge) ולא טקסט גולמי
+  else if(kind==='num')inner=fmt(nv);
   else if(kind==='pct')inner=Math.round((+nv||0)*100)+'%';
   else if(kind==='date')inner=nv?fmtDate(nv):'–';
   else inner=esc(String(nv==null?'':nv))||'–';
@@ -13340,7 +13345,7 @@ function editCell(table,id,field,el,kind,opts){
   if(!el||el._editing)return; el._editing=true;
   const rec=(D[table]||[]).find(x=>x.id===id); if(!rec){el._editing=false;return;}
   kind=kind||'text';
-  if(kind==='select'&&(!opts||!opts.length)) opts=_CELL_SELECTS[field]||[];
+  if(kind==='select'&&(!opts||!opts.length)) opts=_CELL_SELECTS[table+'.'+field]||_CELL_SELECTS[field]||[];
   const cur = kind==='num' ? (+rec[field]||0)
             : kind==='pct' ? Math.round((+rec[field]||0)*100)
             : String(rec[field]==null?'':rec[field]);
