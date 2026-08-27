@@ -178,6 +178,7 @@
       +'<div class="pbar"><div class="track"><div class="fill" style="width:'+pg.pct+'%;background:'+pg.clr+'"></div></div><span class="pct">'+pg.pct+'%</span></div>'
       +'<div class="flow">'+steps+'</div>'
       +'<div class="msg" style="color:'+m.clr+';background:'+m.bg+'">'+esc(m.txt)+'</div>'
+      +(o.msg?'<div class="pmsg" style="margin:0 15px 10px;padding:10px 12px;border-radius:10px;background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.32);color:var(--txt);font-size:13.5px;line-height:1.55;white-space:pre-wrap;text-align:right"><div style="font-size:10px;font-weight:800;color:var(--ok);margin-bottom:3px">💬 הודעה מאיתנו</div>'+esc(o.msg)+'</div>':'')
       +'<div class="details">'
         +(o.co?'<div class="det">חברה<b>'+esc(o.co)+'</b></div>':'')
         +(o.cl?'<div class="det">לקוח<b>'+esc(o.cl)+'</b></div>':'')
