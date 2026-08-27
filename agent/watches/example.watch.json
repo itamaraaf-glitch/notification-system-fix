@@ -1,0 +1,123 @@
+{
+  "id": "example",
+  "name": "תבנית משימה — העתיקו אותי",
+  "description": "כל השדות שמשימה יכולה להגדיר, עם הסבר לכל אחד. אין כאן מקורות אמיתיים.",
+  "enabled": false,
+
+  "_howTo": [
+    "1. העתיקו את הקובץ הזה ל-agent/watches/<id>.watch.json ושנו את id ואת name.",
+    "2. כתבו טקסונומיה — או כאן בתוך `taxonomy`, או בקובץ נפרד ותנו כאן את הנתיב.",
+    "3. הוסיפו מקורות. **מדדו אותם לפני שתפעילו אותם**: `--probe` שולח בקשה אחת",
+    "   לכל מקור ומדווח מי נענה. כתובת משוערת שלא נענתה אינה 'אתר חוסם' — היא",
+    "   לרוב פשוט כתובת שגויה, ושתי המסקנות נראות זהות בלוג. במאגר הזה בדיוק",
+    "   הבלבול הזה סיווג שש רשויות כ'חוסמות' כשהדומיין היה שגוי.",
+    "4. הריצו `--dry-run` ואז `--audit` כדי לראות איפה נופל כל פריט, ורק אחר כך",
+    "   הפעילו (`enabled: true`) והוסיפו לתזמון."
+  ],
+
+  "_taxonomyComment": "טקסונומיה = נושאים, מונחים ומשקלים. נושא נכנס לרשומה אם הניקוד שלו, בניכוי מילות השלילה, מגיע ל-minScore. משקל גבוה = מונח ספציפי יותר.",
+  "taxonomy": {
+    "minScore": 3,
+    "topics": {
+      "example-topic": {
+        "label": "נושא לדוגמה",
+        "terms": [["מונח ספציפי", 5], ["מונח רחב", 2]],
+        "acronyms": [["API", 4]]
+      }
+    },
+    "_negativeComment": "מונחי שלילה מקזזים את הניקוד של כל נושא. זה המקום לביטויים שיוצרים התאמות שווא — למשל מונח שמופיע בתפריט הניווט של כל עמוד באתר.",
+    "negative": [["ביטוי שיוצר התאמת שווא", 6]]
+  },
+
+  "_gateComment": "השער שואל 'האם זה בכלל מהסוג שחיפשנו', לפני שאלת הנושא. משימת חדשות לא צריכה שער (phrases ריק) — הטקסונומיה לבדה מסננת. משימת מכרזים כן: בלי השער כל קישור באתר נכנס.",
+  "gate": {
+    "phrases": [],
+    "navBlock": "^\\s*ועדת\\s|לחצו\\s*כאן",
+    "minTitleLen": 10
+  },
+
+  "_discoveryComment": "רלוונטי רק למקורות מסוג discover — כשנכנסים לדף הבית ומחפשים בעצמנו את עמוד הרשימה. שדה ריק = הכלל מנוטרל.",
+  "discovery": {
+    "text": "(הודעות|פרסומים)",
+    "url": "(news|press|publications)",
+    "path": "\\/(news|press)(\\/|$|\\?)",
+    "exact": "^\\s*הודעות\\s*$",
+    "active": "(אחרונות|חדשות)",
+    "archive": "(ארכיון|archive)",
+    "demote": null,
+    "demoteUnless": null,
+    "sectionParent": null
+  },
+
+  "_datesComment": "ביטויי רמז שאחריהם מחפשים תאריך. נסרקות כל ההיקרויות ומועדף תאריך שטרם חלף — חלון ההקשר של פריט אחד בולע לעיתים את שכניו.",
+  "dates": {
+    "deadlineHints": "(מועד\\s*אחרון|להגשה\\s*עד)",
+    "publishHints": "(תאריך\\s*פרסום|פורסם\\s*ב)",
+    "updatedHints": "(עודכן\\s*ב|עדכון\\s*אחרון)",
+    "serialPattern": null
+  },
+
+  "_retentionComment": "keepUndated=false מוחק כל פריט בלי תאריך. זה נכון למקור שתמיד מפרסם תאריך, ומוחק מגזר שלם כשמפעילים אותו על אתרים שבהם התאריך יושב בתוך קובץ.",
+  "retention": {
+    "keepUndated": true,
+    "keepDays": 45,
+    "maxAgeDays": 365,
+    "deadlineGraceDays": 14
+  },
+
+  "limits": {
+    "maxPerSource": 60,
+    "parallel": 4,
+    "politeDelayMs": 900,
+    "timeoutMs": 15000,
+    "retries": 1
+  },
+
+  "_sourcesComment": "kind: html (כתובת רשימה ידועה) | discover (מוצא בעצמו את עמוד הרשימה מדף הבית) | rss | json. allItems=true מדלג על השער — לדף שכולו פריטים מהסוג הנכון.",
+  "sources": [
+    {
+      "id": "example-html",
+      "name": "מקור עם כתובת רשימה ידועה",
+      "category": "לדוגמה",
+      "kind": "html",
+      "enabled": false,
+      "urls": ["https://example.org/publications"]
+    },
+    {
+      "id": "example-discover",
+      "name": "מקור שהסוכן מאתר בו את עמוד הרשימה בעצמו",
+      "kind": "discover",
+      "enabled": false,
+      "home": "https://example.org/",
+      "_hintComment": "רמז לכתובת ידועה. מנוסה לפני דף הבית ובלי ניסיון חוזר; אם לא נענה — הגילוי האוטומטי ממשיך כרגיל, כך ששינוי כתובת אינו מפיל את המקור.",
+      "hintUrls": ["https://press.example.org/"],
+      "maxPages": 2
+    },
+    {
+      "id": "example-rss",
+      "name": "פיד",
+      "kind": "rss",
+      "enabled": false,
+      "urls": ["https://example.org/feed.xml"]
+    },
+    {
+      "id": "example-json",
+      "name": "API שמחזיר JSON",
+      "kind": "json",
+      "enabled": false,
+      "urls": ["https://example.org/api/items"],
+      "json": {
+        "records": "result.records",
+        "title": "Name",
+        "url": "Link",
+        "context": ["Description", "Publisher"],
+        "publisher": "Publisher"
+      }
+    }
+  ],
+
+  "output": {
+    "data": "agent/data/example.json",
+    "status": "agent/data/example.status.json"
+  }
+}

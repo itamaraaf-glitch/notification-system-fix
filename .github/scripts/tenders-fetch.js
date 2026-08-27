@@ -14,6 +14,17 @@
 const fs = require('fs');
 const path = require('path');
 
+// ליבת סוכן הרשת. הקוד הזה ישב כאן בעבר; הוא הועבר ל-agent/core כדי שמשימות
+// סריקה נוספות יוכלו להשתמש בו בלי להעתיק אותו, והראדאר נשאר הצרכן הראשי שלו.
+// אין כאן שינוי התנהגות — בדיקות הראדאר הן ההוכחה.
+const { ymd, daysBetween, sleep, decodeEntities, stripTags, normKey, hashId } = require('../../agent/core/text');
+const { classify, termRegex } = require('../../agent/core/match');
+const { parseDateNear, dateFromUrl, dateAfterHint: dateAfterHintCore, yearFromSerial, BINARY_URL_RE } = require('../../agent/core/dates');
+const { registrableDomain, sameSite, isSiteRoot, lastPathSegment, sameUrl, sectionParent, shortUrl } = require('../../agent/core/urls');
+const { harvestAnchors, pickTag, pickLink } = require('../../agent/core/harvest');
+const { createClient, withDeadline } = require('../../agent/core/net');
+const { findSectionLinks, compileVocab, demotedOnly } = require('../../agent/core/discover');
+
 const ROOT = path.resolve(__dirname, '..', '..');
 const CFG_DIR = path.join(ROOT, 'tenders', 'config');
 const DATA_DIR = path.join(ROOT, 'tenders', 'data');
@@ -67,150 +78,7 @@ function sourceBudget(source) {
   const urls = Math.max(1, (source.urls || []).length + (source.tendersUrls || []).length);
   return Math.min(300000, 60000 + 20000 * urls);
 }
-/** מריץ הבטחה עם תקרת זמן. חריגה נזרקת כשגיאה רגילה ומדווחת ככשל של המקור. */
-function withDeadline(promise, ms, message) {
-  let timer;
-  const guard = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), ms); });
-  return Promise.race([promise, guard]).finally(() => clearTimeout(timer));
-}
-
-/* ───────────────────────── עזרי תאריך ומחרוזת ───────────────────────── */
-
-function ymd(d) {
-  const p = n => String(n).padStart(2, '0');
-  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
-}
-function daysBetween(fromYmd, toYmd) {
-  const a = Date.parse(fromYmd + 'T00:00:00Z'), b = Date.parse(toYmd + 'T00:00:00Z');
-  if (isNaN(a) || isNaN(b)) return null;
-  return Math.round((b - a) / 86400000);
-}
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-const ENTITIES = {
-  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ',
-  ndash: '–', mdash: '—', hellip: '…', laquo: '«', raquo: '»', shy: ''
-};
-function decodeEntities(s) {
-  return String(s)
-    .replace(/&#x([0-9a-f]+);/gi, (_, h) => safeCodePoint(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, d) => safeCodePoint(parseInt(d, 10)))
-    .replace(/&([a-z]+);/gi, (m, name) => {
-      const v = ENTITIES[name.toLowerCase()];
-      return v === undefined ? m : v;
-    });
-}
-function safeCodePoint(n) {
-  try { return String.fromCodePoint(n); } catch (_) { return ''; }
-}
-/**
- * תווי בקרה שנשלפו מטקסט שמקורו ב-PDF. נצפה בפועל: כותרת מאשכול נגב מערבי
- * שהכילה בייט NUL באמצע מילה ("הח\u0000ברות"), שנשמר כך ל-JSON ולממשק.
- */
-const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
-
-function stripTags(html) {
-  return decodeEntities(String(html).replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
-}
-/** מפתח נרמול להשוואת כפילויות — מסיר ניקוד, סימני פיסוק וגרשיים */
-function normKey(s) {
-  return String(s)
-    .replace(/[\u0591-\u05C7]/g, '')
-    .replace(/["'׳״`]/g, '')
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .trim()
-    .toLowerCase();
-}
-function hashId(s) {
-  // FNV-1a 64 ביט (מיוצג כ-hex) — יציב בין ריצות, בלי תלות ב-crypto
-  let h1 = 0x811c9dc5, h2 = 0x01000193;
-  for (let i = 0; i < s.length; i++) {
-    const c = s.charCodeAt(i);
-    h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
-    h2 = Math.imul(h2 ^ (c + i), 0x85ebca6b) >>> 0;
-  }
-  return (h1.toString(16).padStart(8, '0') + h2.toString(16).padStart(8, '0'));
-}
-
-/* ───────────────────────── התאמת מילות מפתח ───────────────────────── */
-
-const RX_CACHE = new Map();
-
-/**
- * מונח עברי/כללי: מתיר תחיליות (ו/ה/ב/ל/מ/ש/כ/ד) וסיומות נטייה קצרות.
- *
- * ראשי תיבות בעברית נכתבים עם גרשיים לפני האות האחרונה (נתב"ג, רש"ת, ח"ח), והגרשיים
- * אינם אות ולכן נחשבו סוף מילה — כך המונח "נתב" נתפס בתוך "נתב\"ג" (נמל התעופה בן גוריון)
- * וסימן 32 מכרזי זכיינות בשדה התעופה כ"ציוד תקשורת". לכן נדחית התאמה שאחריה גרשיים ואות.
- */
-const ACRONYM_TAIL = '(?![׳״\'"]\\p{L})';
-function termRegex(term) {
-  const key = 't:' + term;
-  if (RX_CACHE.has(key)) return RX_CACHE.get(key);
-  const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[\s\u2010-\u2015-]+/g, '[\\s\\-]+');
-  const rx = new RegExp('(?:^|[^\\p{L}\\p{N}])[והבלמשכד]{0,2}' + esc + ACRONYM_TAIL + '\\p{L}{0,3}(?:$|[^\\p{L}\\p{N}])', 'iu');
-  RX_CACHE.set(key, rx);
-  return rx;
-}
-/** ראשי תיבות: מילה שלמה. אם המונח כולו אותיות גדולות/ספרות — התאמה רגישה לאותיות */
-function acronymRegex(term) {
-  const key = 'a:' + term;
-  if (RX_CACHE.has(key)) return RX_CACHE.get(key);
-  const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[\s\u2010-\u2015-]+/g, '[\\s\\-]+');
-  const caseSensitive = /^[A-Z0-9\s-]+$/.test(term);
-  const rx = new RegExp('(?:^|[^\\p{L}\\p{N}])' + esc + '(?:$|[^\\p{L}\\p{N}])', caseSensitive ? 'u' : 'iu');
-  RX_CACHE.set(key, rx);
-  return rx;
-}
-
-/**
- * מסווג טקסט לנושאים ומחזיר ניקוד.
- * @returns {{topics:string[], score:number, matched:string[], byTopic:Object, blocked:boolean}}
- */
-function classify(text, kw) {
-  const byTopic = {};
-  const matched = [];
-  let total = 0;
-
-  for (const [topicId, topic] of Object.entries(kw.topics)) {
-    let score = 0;
-    for (const [term, weight] of (topic.terms || [])) {
-      if (termRegex(term).test(text)) { score += weight; matched.push(term); }
-    }
-    for (const [term, weight] of (topic.acronyms || [])) {
-      if (acronymRegex(term).test(text)) { score += weight; matched.push(term); }
-    }
-    if (score > 0) byTopic[topicId] = score;
-    total += score;
-  }
-
-  let penalty = 0;
-  const negHits = [];
-  for (const [term, weight] of (kw.negative || [])) {
-    if (termRegex(term).test(text)) { penalty += weight; negHits.push(term); }
-  }
-
-  // מונחי השלילה אינם משויכים לנושא מסוים, ולכן הם מקזזים את הניקוד של כל נושא.
-  // כך "מכרז לשירותי קלינאי תקשורת" אינו נכנס לנושא תקשורת, אף שהמונח "תקשורת" מופיע בו.
-  const min = kw.minScore || 3;
-  const topics = Object.entries(byTopic)
-    .filter(([, s]) => s - penalty >= min)
-    .sort((a, b) => b[1] - a[1])
-    .map(([id]) => id);
-
-  return {
-    topics,
-    score: Math.max(0, total - penalty),
-    rawScore: total,
-    penalty,
-    matched: [...new Set(matched)].slice(0, 12),
-    negative: negHits,
-    // חסום = מונחי השלילה גוברים על החיוביים. בלי הדרישה שיהיה קיזוז בפועל,
-    // טקסט בלי שום התאמה (0 מול 0) נחשב "חסום" — מה שהסתיר מכרזים שאין להם
-    // התאמה כלל, בדיוק אלה שסקירת ה-AI אמורה לשפוט.
-    blocked: penalty > 0 && penalty >= total
-  };
-}
+/* ───────────────────────── שערי המכרז ───────────────────────── */
 
 /**
  * כותרת שהיא תווית ניווט ולא מכרז.
@@ -278,29 +146,6 @@ function looksLikeTenderUrl(url, linkPattern) {
 
 /* ───────────────────────── חילוץ תאריכים ומספרי מכרז ───────────────────────── */
 
-const DATE_ISO = /(\d{4})-(\d{1,2})-(\d{1,2})/;
-// המפריד כולל מקף: אתרי רשויות כותבים "תאריך עדכון אחרון: 14-07-2026". הבדיקה
-// של ISO קודמת תמיד, אחרת "2026-08-24" היה נקרא כ-24/08/2026 הפוך.
-const DATE_DMY = /(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/;
-
-function parseDateNear(text) {
-  const iso = text.match(DATE_ISO);
-  if (iso) return normalizeParts(+iso[1], +iso[2], +iso[3]);
-  const dmy = text.match(DATE_DMY);
-  if (dmy) {
-    let y = +dmy[3];
-    if (y < 100) y += 2000;
-    return normalizeParts(y, +dmy[2], +dmy[1]);
-  }
-  return '';
-}
-function normalizeParts(y, m, d) {
-  if (!y || !m || !d || m < 1 || m > 12 || d < 1 || d > 31) return '';
-  if (y < 2000 || y > 2100) return '';
-  const p = n => String(n).padStart(2, '0');
-  return `${y}-${p(m)}-${p(d)}`;
-}
-
 const DEADLINE_HINTS = /(מועד\s*אחרון|תאריך\s*אחרון|להגשה\s*עד|מועד\s*ההגשה|מועד\s*הגשה|תום\s*המועד|נעילת|סגירת\s*המכרז|הגשה\s*עד)/;
 const PUBLISH_HINTS = /(תאריך\s*פרסום|פורסם\s*ב|מועד\s*פרסום|תאריך\s*הפרסום)/;
 // "תאריך עדכון אחרון" אינו תאריך פרסום, אבל הוא העדות הטובה ביותר שיש בדפי
@@ -308,53 +153,8 @@ const PUBLISH_HINTS = /(תאריך\s*פרסום|פורסם\s*ב|מועד\s*פר�
 // שנשר כ"בלי מועד ובלי סטטוס" בעוד שבכותרת שלו כתוב "עדכון אחרון: 14-07-2026".
 const UPDATED_HINTS = /(תאריך\s*עדכון\s*אחרון|עדכון\s*אחרון|עודכן\s*ב)/;
 
-/**
- * תאריך מתוך נתיב הכתובת.
- *
- * ברשויות רבות קישור המכרז מוביל ישירות ל-PDF תחת נתיב שמכיל שנה וחודש —
- * /wp-content/uploads/2026/02/... — כי הן רצות על וורדפרס. זה תאריך העלאת
- * הקובץ, וזו לרוב האינדיקציה היחידה לגיל הפרסום כשדף הרשימה לא נותן תאריך.
- * מוחזר אמצע החודש, כי היום אינו ידוע.
- */
-const URL_YM_RE = /\/(20\d{2})\/(0[1-9]|1[0-2])\//;
-function dateFromUrl(url) {
-  const m = String(url || '').match(URL_YM_RE);
-  return m ? `${m[1]}-${m[2]}-15` : '';
-}
-
-/**
- * מחפש תאריך שמופיע אחרי ביטוי רמז, בתוך חלון טקסט.
- *
- * בדף רשימה של רשות מקומית מופיעים עשרות מכרזים זה אחר זה, וחלון ההקשר של
- * קישור אחד בולע גם את שכניו. אבחון על אתר מ.א. לכיש הראה את התוצאה: ההקשר
- * הכיל גם "המועד המעודכן להגשה עד 13.6.2024" של מכרז ישן וגם "להגשה עד
- * 25/08/2026" של מכרז פתוח, והבדיקה על ההיקרות הראשונה בלבד החזירה את הישן.
- * לכן עוברים על כל ההיקרויות ומעדיפים מועד שטרם חלף; אם אין כזה, מוחזר
- * הראשון שנמצא, כדי שהסינון יוכל לזהות אותו כמכרז שנסגר.
- */
-function dateAfterHint(context, hintRe) {
-  const text = String(context || '');
-  const re = new RegExp(hintRe.source, hintRe.flags.includes('g') ? hintRe.flags : hintRe.flags + 'g');
-  let first = '';
-  let m;
-  while ((m = re.exec(text)) !== null) {
-    re.lastIndex = m.index + m[0].length;
-    const d = parseDateNear(text.slice(m.index, m.index + 140));
-    if (!d) continue;
-    if (!first) first = d;
-    if (daysBetween(today, d) >= 0) return d;
-  }
-  return first;
-}
-
-/**
- * קישור לקובץ ולא לעמוד. ברשויות מקומיות רוב קישורי המכרזים מובילים ישירות
- * ל-PDF, ו"קריאת" PDF כטקסט מחזירה בייטים דחוסים — לא טקסט. אבחון על מ.א.
- * לכיש הראה בדיוק את זה: 209,567 תווים שמתוכם שני תאריכים, שניהם מטא-דאטה של
- * הקובץ. לכן קישור כזה אינו נשלח להעשרת מועדים: הבקשה לעולם לא תניב מועד,
- * והיא גוזלת מהתקציב עמוד HTML שכן היה מניב.
- */
-const BINARY_URL_RE = /\.(pdf|docx?|xlsx?|pptx?|odt|zip|rar|7z)(\?|#|$)/i;
+/** חילוץ תאריך אחרי ביטוי רמז, מקובע ל"היום" של הריצה הזו */
+const dateAfterHint = (context, hintRe) => dateAfterHintCore(context, hintRe, today);
 
 const TENDER_NUM = /(?:מכרז|הליך|פנייה|פניה)[^\d\n]{0,25}(\d{1,4}\s*[\/\-]\s*\d{2,4})/;
 
@@ -366,13 +166,7 @@ const TENDER_NUM = /(?:מכרז|הליך|פנייה|פניה)[^\d\n]{0,25}(\d{1,
  * הסריקה הראשונה עם keepUndated הכניסה לראדאר מכרז של שנקר מ-2015 בדיוק כך.
  * מוחזר סוף השנה, כדי להיות נדיבים — מכרז שמספרו 2026 נשאר טרי כל השנה.
  */
-function yearFromTenderNumber(num) {
-  for (const part of String(num || '').split(/[\/\-]/)) {
-    const y = +part.trim();
-    if (y >= 2000 && y <= new Date().getFullYear() + 1) return `${y}-12-31`;
-  }
-  return '';
-}
+const yearFromTenderNumber = yearFromSerial;
 function extractTenderNumber(text) {
   const m = text.match(TENDER_NUM);
   return m ? m[1].replace(/\s+/g, '') : '';
@@ -380,85 +174,14 @@ function extractTenderNumber(text) {
 
 /* ───────────────────────── שכבת רשת ───────────────────────── */
 
+// לקוח ההבאה של הראדאר. המימוש יושב ב-agent/core/net.js ומשותף לכל משימות
+// הסוכן; כאן רק נקבעות תקרת הזמן ומספר הניסיונות של הראדאר עצמו.
+const HTTP = createClient({ timeoutMs: TIMEOUT_MS, retries: RETRIES, userAgent: UA });
+const fetchText = HTTP.fetchText;
 /** הכתובת הסופית של כל הבאה, אחרי הפניות — נדרשת לבניית קישורים יחסיים נכונה */
-const LAST_FINAL_URL = new Map();
-function finalUrlOf(url) { return LAST_FINAL_URL.get(url) || url; }
-
-async function fetchText(url, { retries = RETRIES } = {}) {
-  let lastErr;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
-    try {
-      const res = await fetch(url, {
-        signal: ctl.signal,
-        redirect: 'follow',
-        headers: {
-          'User-Agent': UA,
-          'Accept': 'text/html,application/xhtml+xml,application/xml,application/json;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'he-IL,he;q=0.9,en;q=0.8'
-        }
-      });
-      if (!res.ok) {
-        const err = new Error('HTTP ' + res.status);
-        // שגיאת 4xx היא קבועה (חסימה/דף שאינו קיים) — ניסיון חוזר רק מבזבז זמן.
-        // בסריקה של עשרות רשויות, ניסיונות חוזרים על כתובות מתות הופכים את הריצה לארוכה מאוד.
-        if (res.status >= 400 && res.status < 500 && res.status !== 429) err.permanent = true;
-        throw err;
-      }
-      const body = await res.text();
-      // הכתובת הסופית אחרי הפניות חשובה: www.braude.ac.il מפנה ל-w3.braude.ac.il,
-      // ובלי הכתובת הסופית קישורים יחסיים נבנים מול הדומיין הלא נכון והמסנן
-      // "אותו אתר" פוסל את עמוד המכרזים האמיתי.
-      LAST_FINAL_URL.set(url, res.url || url);
-      return body;
-    } catch (e) {
-      lastErr = e;
-      if (e.permanent) break;
-      if (attempt < retries) await sleep(1500 * (attempt + 1));
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-  throw lastErr;
-}
+const finalUrlOf = HTTP.finalUrlOf;
 
 /* ───────────────────────── מתאמים (adapters) ───────────────────────── */
-
-const ANCHOR_RE = /<a\b[^>]*?href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))[^>]*>([\s\S]*?)<\/a>/gi;
-
-/** קוצר קישורים מדף רשימה. מחזיר גם חלון הקשר סביב כל קישור לצורך חילוץ תאריכים. */
-function harvestAnchors(html, baseUrl, opts) {
-  const minLen = (opts && opts.minLen != null) ? opts.minLen : 10;
-  const out = [];
-  const seen = new Set();
-  let m;
-  ANCHOR_RE.lastIndex = 0;
-  while ((m = ANCHOR_RE.exec(html)) !== null) {
-    const href = decodeEntities(m[1] || m[2] || m[3] || '').trim();
-    const title = stripTags(m[4] || '').replace(CONTROL_CHARS, '').replace(/\s+/g, ' ').trim();
-    if (!href || !title) continue;
-    if (/^(javascript:|mailto:|tel:|#)/i.test(href)) continue;
-    if (title.length < minLen || title.length > 300) continue;
-
-    let abs;
-    try { abs = new URL(href, baseUrl).toString(); } catch (_) { continue; }
-    if (!/^https?:/i.test(abs)) continue;
-
-    const dedupe = normKey(title) + '|' + abs;
-    if (seen.has(dedupe)) continue;
-    seen.add(dedupe);
-
-    // חלון הקשר: מעט לפני הקישור והרבה אחריו (תאריכים מופיעים בהמשך השורה/הכרטיס).
-    // החלון נמדד ב-HTML גולמי ואחר כך מנוקה מתגיות — בדפים עם מארקאפ עתיר מחלקות ותכונות
-    // חלון קטן "נאכל" כולו על ידי התגיות, והתאריכים שבתאים הבאים של השורה נופלים מחוצה לו.
-    const start = Math.max(0, m.index - 300);
-    const context = stripTags(html.slice(start, m.index + m[0].length + 3000)).slice(0, 900);
-
-    out.push({ title, url: abs, context });
-  }
-  return out;
-}
 
 function itemFromAnchor(a) {
   return {
@@ -477,7 +200,6 @@ function itemFromAnchor(a) {
       || dateAfterHint(a.context, DEADLINE_HINTS)
   };
 }
-const shortUrl = u => { try { const p = new URL(u); return p.host + p.pathname.slice(0, 40); } catch (_) { return String(u).slice(0, 50); } };
 
 /**
  * קציר קישורים מדף רשימה אחד או יותר.
@@ -566,56 +288,7 @@ async function adapterDiscover(source) {
   return items;
 }
 
-/**
- * האם שתי כתובות שייכות לאותו אתר. ההשוואה היא על הדומיין הרשום ולא על ה-host
- * המלא, כי עמוד המכרזים יושב פעמים רבות בתת־דומיין נפרד (tenders.huji.ac.il,
- * w3.braude.ac.il), וגם www מול לא-www הוא אותו אתר.
- */
-function registrableDomain(host) {
-  const parts = String(host || '').toLowerCase().split('.').filter(Boolean);
-  // סיומות ישראליות דו־שלביות (co.il, ac.il, muni.il, org.il, gov.il) דורשות שלוש רמות
-  const twoLevel = parts.length >= 3 && /^(co|ac|muni|org|gov|net|k12|idf|muni)$/.test(parts[parts.length - 2]);
-  return parts.slice(twoLevel ? -3 : -2).join('.');
-}
-function sameSite(a, b) {
-  return registrableDomain(new URL(a).host) === registrableDomain(new URL(b).host);
-}
-/**
- * כתובת עמוד המדור שמעל הכתובת הנתונה, כשהשם של המדור הוא מכרזי. למשל
- * /על-המרכז/דרושים-ומכרזים/דרושים-במכללה/ → /על-המרכז/דרושים-ומכרזים/
- */
-function tenderSectionParent(u) {
-  try {
-    const url = new URL(u);
-    const parts = decodeURIComponent(url.pathname).split('/').filter(Boolean);
-    if (parts.length < 2) return '';
-    const parent = parts[parts.length - 2];
-    if (!/(מכרז|מיכרז|michraz|tender)/i.test(parent)) return '';
-    return url.origin + '/' + parts.slice(0, -1).map(encodeURIComponent).join('/') + '/';
-  } catch (_) { return ''; }
-}
-
-/** האם הכתובת היא שורש האתר — דף הבית לעולם אינו עמוד רשימת המכרזים */
-function isSiteRoot(u) {
-  try { return new URL(u).pathname.replace(/\/+$/, '') === ''; } catch (_) { return false; }
-}
-/** הקטע האחרון בנתיב, מפוענח — שם העמוד עצמו, בלי הנתיב שמעליו */
-function lastPathSegment(u) {
-  try {
-    const parts = decodeURIComponent(new URL(u).pathname).split('/').filter(Boolean);
-    return parts.length ? parts[parts.length - 1] : '';
-  } catch (_) { return ''; }
-}
-/** אותה כתובת, בהתעלם מעוגן ומקו נטוי מסיים */
-function sameUrl(a, b) {
-  const norm = u => {
-    try {
-      const p = new URL(u);
-      return p.origin + p.pathname.replace(/\/+$/, '') + p.search;
-    } catch (_) { return String(u); }
-  };
-  return norm(a) === norm(b);
-}
+/* ───────────────────────── אוצר המילים של גילוי עמוד המכרזים ───────────────────────── */
 
 /**
  * עמוד "תוצאות מכרזים" / "ארכיון מכרזים" הוא עמוד מכרזים לכל דבר מבחינת הגילוי,
@@ -632,70 +305,38 @@ const TENDER_PATH_RE = /\/(bids?|michrazim|mihrazim|tenders?|michraz|tender)(\/|
 // "דרושים במכללה" — עמוד משרות. קישור שמדבר על משרות ולא על מכרז מקבל ניקוד שלילי,
 // אבל עמוד משולב ("מכרזים ודרושים") נשאר, כי ברשויות רבות זה אותו עמוד.
 const JOBS_LINK_RE = /(דרושים|משרות|קריירה|כוח\s*אדם|jobs?|careers?|vacanc)/i;
+const TENDER_WORD_RE = /(מכרז|מיכרז|michraz|tender)/i;
+
+/**
+ * אוצר המילים שהופך את הגילוי הגנרי של הסוכן לגילוי עמוד מכרזים. הכללים עצמם
+ * (מה מנצח מה, ומה סדר הניסיון) יושבים ב-agent/core/discover.js ומשותפים לכל
+ * המשימות; כאן רק המילים.
+ */
+const TENDER_VOCAB = compileVocab({
+  text: /(מכרז|מיכרז|michraz|tenders?)/i,
+  url: TENDER_URL_RE,
+  path: TENDER_PATH_RE,
+  exact: /^\s*מכרזים\s*$/,
+  active: ACTIVE_LINK_RE,
+  archive: ARCHIVE_LINK_RE,
+  demote: JOBS_LINK_RE,
+  demoteUnless: TENDER_WORD_RE,
+  sectionParent: TENDER_WORD_RE
+});
+
+/**
+ * כתובת עמוד המדור שמעל הכתובת הנתונה, כשהשם של המדור הוא מכרזי. למשל
+ * /על-המרכז/דרושים-ומכרזים/דרושים-במכללה/ → /על-המרכז/דרושים-ומכרזים/
+ */
+const tenderSectionParent = u => sectionParent(u, TENDER_WORD_RE);
+
 /** מדבר על משרות ולא על מכרז. עמוד משולב ("מכרזים ודרושים") אינו נחשב כזה. */
-function jobsOnly(text) {
-  const t = String(text || '');
-  return JOBS_LINK_RE.test(t) && !/(מכרז|מיכרז|michraz|tender)/i.test(t);
-}
+const jobsOnly = text => demotedOnly(text, TENDER_VOCAB);
 
 /** מאתר בדף הבית קישורים שנראים כמובילים לעמוד המכרזים, מהמדויק לפחות מדויק */
-function findTenderLinks(html, baseUrl) {
-  const TEXT_RE = /(מכרז|מיכרז|michraz|tenders?)/i;
-  const scored = [];
-  const seen = new Set();
-  for (const a of harvestAnchors(html, baseUrl, { minLen: 3 })) {
-    const byText = TEXT_RE.test(a.title);
-    const byUrl = looksLikeTenderUrl(a.url);
-    if (!byText && !byUrl) continue;
-    // לא יורדים לעמוד של מכרז בודד — מחפשים את עמוד הרשימה
-    if (/\.(pdf|docx?|xlsx?|zip)$/i.test(a.url)) continue;
-    // נשארים באותו אתר, אבל תת־דומיין נחשב אותו אתר: עמוד המכרזים של הטכניון,
-    // האוניברסיטה העברית ומכללת בראודה יושב על tenders./w3. ולא על www.
-    try { if (!sameSite(a.url, baseUrl)) continue; } catch (_) { continue; }
-    if (seen.has(a.url)) continue;
-    seen.add(a.url);
-    // קישור שחוזר לעמוד הנוכחי, או לשורש האתר, אינו עמוד המכרזים. באתר
-    // אוניברסיטת תל אביב קישור התפריט "מכרזים" מצביע על "/" בעוד שדף הבית עצמו
-    // מוגש מ-"/he", ולכן השוואה לעמוד הנוכחי לבדה לא תפסה את זה.
-    if (sameUrl(a.url, baseUrl) || isSiteRoot(a.url)) continue;
-    // "מכרזים" כטקסט הקישור הוא האינדיקציה החזקה ביותר לעמוד רשימה
-    const haystack = a.title + ' ' + decodeURIComponent(a.url);
-    const score = (/^\s*מכרזים\s*$/.test(a.title) ? 100 : 0) + (byText ? 10 : 0) + (byUrl ? 5 : 0)
-      + (ACTIVE_LINK_RE.test(haystack) ? 40 : 0)
-      + (TENDER_PATH_RE.test(a.url) ? 60 : 0)
-      - (ARCHIVE_LINK_RE.test(haystack) ? 150 : 0)
-      - (jobsOnly(a.title) || jobsOnly(lastPathSegment(a.url)) ? 150 : 0)
-      - Math.min(20, a.title.length / 5);
-    scored.push({ url: a.url, title: a.title, score });
-  }
-  // עמוד מכרזים יושב לעיתים בתוך מדור שהשם שלו הוא המכרזי ("דרושים-ומכרזים"),
-  // בעוד שהעמוד עצמו הוא דרושים. במקרה כזה מוסיפים את עמוד המדור עצמו כמועמד —
-  // שם בדרך כלל יושבת הרשימה המשולבת. נמדד באתר הדסה האקדמית ירושלים.
-  for (const cand of scored.slice()) {
-    const parent = tenderSectionParent(cand.url);
-    if (parent && !seen.has(parent) && !sameUrl(parent, baseUrl) && !isSiteRoot(parent)) {
-      seen.add(parent);
-      scored.push({ url: parent, title: '(מדור מכרזים)', score: 30 });
-    }
-  }
-
-  // הדירוג הוא סדר הניסיון, לא סינון: עמוד חי נבדק ראשון, ועמוד ארכיון או
-  // דרושים נשאר בסוף התור. באתר הדסה האקדמית סינון מוחלט הפך את המקור לכושל
-  // כשהמועמד המועדף החזיר 404 — עדיף לנסות את הבא בתור מאשר לאבד את המקור.
-  return scored.sort((x, y) => y.score - x.score);
-}
+const findTenderLinks = (html, baseUrl) => findSectionLinks(html, baseUrl, TENDER_VOCAB);
 
 const RSS_ITEM_RE = /<(item|entry)\b[\s\S]*?<\/\1>/gi;
-function pickTag(xml, tag) {
-  const m = xml.match(new RegExp('<' + tag + '\\b[^>]*>([\\s\\S]*?)<\\/' + tag + '>', 'i'));
-  return m ? stripTags(m[1]) : '';
-}
-function pickLink(xml) {
-  const href = xml.match(/<link\b[^>]*href\s*=\s*"([^"]+)"/i);
-  if (href) return decodeEntities(href[1]);
-  return pickTag(xml, 'link');
-}
-
 async function adapterRss(source) {
   const items = [];
   const warnings = [];

@@ -102,6 +102,25 @@ manager.cleanup_orphaned_notifications()
 - **תיעוד מלא**: [`tenders/README.md`](tenders/README.md)
 - **כוונון**: מילות מפתח ומקורות ב-[`tenders/config/`](tenders/config/)
 
+## 🕸️ סוכן רשת
+
+הליבה שסורקת אתרים, מגלה בעצמה עמודי רשימה, מתאימה מונחים בעברית ומנהלת
+היסטוריה — כמסגרת שאפשר להפנות לכל נושא, לא רק למכרזים. **משימת מעקב חדשה היא
+קובץ JSON, לא קוד.**
+
+הליבה הופקה מראדאר המכרזים והראדאר צורך אותה משם, כך שיש מימוש אחד ולא שניים;
+115 בדיקות הראדאר רצות מול הקוד המשותף ותופסות כל שינוי שישבור אותו.
+
+```bash
+node agent/run.js --list                 # אילו משימות מוגדרות
+node agent/run.js --watch=<id> --probe   # מי נענה ומי חוסם. לא שומר.
+node agent/run.js --watch=<id> --audit   # איפה נפל כל פריט. לא שומר.
+```
+
+- **תיעוד מלא**: [`agent/README.md`](agent/README.md)
+- **תבנית להעתקה**: [`agent/watches/example.watch.json`](agent/watches/example.watch.json) — כל שדה עם הסבר
+- **הרצה מ-Actions**: לשונית **Actions** → `agent` → **Run workflow**
+
 ## 📞 תמיכה
 
 לשאלות ותמיכה: itamar@hotbusiness.com
