@@ -3219,27 +3219,30 @@ function doLogout(){
 // Login card entrance is now a single pure-CSS fade-in (.lcard animation) —
 // no GSAP/CDN dependency, so the card appears once and never flashes.
 
-// Security: keep login fields empty — defeat browser/password-manager autofill
+// Security: clear any autofilled/restored login fields on a fresh screen — but STOP the moment
+// the user touches the form, so we never wipe what they typed right before they press "כניסה"
+// (the delayed/pageshow wipes used to empty a field mid-flow → "נא למלא..." even with filled fields).
 (function clearLoginFields(){
+  let touched=false; const timers=[];
+  function stop(){ touched=true; while(timers.length)clearTimeout(timers.pop()); }
   function wipe(){
+    if(touched) return;
     const u=document.getElementById('lu'), p=document.getElementById('lp');
     if(!u||!p) return;
-    // only clear while the login screen is showing (never wipe mid-typing inside the app)
     const login=document.getElementById('login');
     const active=document.activeElement;
     if(login && login.style.display!=='none'){
-      if(active!==u) u.value='';   // don't wipe a field the user is typing in
+      if(active!==u) u.value='';
       if(active!==p) p.value='';
     }
   }
-  function run(){
-    wipe();
-    // autofill can land 0–600ms after load, so wipe a few times
-    [120,300,600,1000].forEach(ms=>setTimeout(wipe,ms));
-  }
+  function run(){ if(touched)return; wipe(); [150,400].forEach(ms=>timers.push(setTimeout(wipe,ms))); }
+  // כל אינטראקציה עם טופס ההתחברות (מיקוד/הקלדה/לחיצה) עוצרת את הניקוי לתמיד — כדי לא למחוק קלט ולשבור כניסה
+  ['focusin','keydown','pointerdown','input'].forEach(ev=>{
+    document.addEventListener(ev,e=>{ const l=document.getElementById('login'); if(l&&l.contains(e.target))stop(); },true);
+  });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);
   else run();
-  // also clear whenever the tab regains focus on the login screen
   window.addEventListener('pageshow',run);
 })();
 
