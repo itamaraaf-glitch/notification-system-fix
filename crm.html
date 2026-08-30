@@ -4678,6 +4678,35 @@ async function _requestPersistentStorage(){
   }catch(e){}
   return false;
 }
+// ===== הגנה על האחסון: הסיבה ל"כל כמה ימים המערכת ריקה" =====
+// דפדפן שלא קיבל אישור "אחסון קבוע" רשאי למחוק את כל נתוני האתר (localStorage + IndexedDB יחד):
+// ספארי/אייפון מוחק אוטומטית אחרי 7 ימים ללא כניסה לאתר, וכרום מוחק בלחץ-אחסון. לכן ביקשנו הרשאה
+// רק כשהוגדרה טביעת אצבע — ומשתמש בלי טביעת אצבע נשאר חשוף. עכשיו מבקשים תמיד, ומתריעים אם נדחה.
+const _PERSIST_WARN_LS='cem_persist_warn';
+async function _storagePersisted(){
+  try{ if(navigator.storage&&navigator.storage.persisted) return await navigator.storage.persisted(); }catch(e){}
+  return null; // הדפדפן לא תומך בבדיקה (למשל ספארי) — לא ידוע
+}
+async function _guardStorage(){
+  const ok=await _requestPersistentStorage();
+  if(ok)return true;
+  // לא הוגן אישור — מתריעים פעם ביום, עם הסבר ופעולה (הוספה למסך הבית / חיבור ענן = שחזור אוטומטי)
+  try{
+    const today=nd();
+    if(localStorage.getItem(_PERSIST_WARN_LS)===today)return false;
+    localStorage.setItem(_PERSIST_WARN_LS,today);
+  }catch(e){}
+  const hasCloud=!!(function(){try{return localStorage.getItem(FB_CFG_KEY);}catch(e){return null;}})();
+  setTimeout(()=>{ try{
+    showToastWithAction(
+      hasCloud?'🛡️ הדפדפן עלול למחוק את הנתונים המקומיים — הענן מגבה אותך. מומלץ להוסיף למסך הבית'
+             :'⚠️ הדפדפן עלול למחוק את כל הנתונים אחרי כמה ימים — חבר סנכרון ענן כדי שלא יאבדו!',
+      hasCloud?'הסבר':'☁️ חבר ענן',
+      ()=>{ if(hasCloud){ alert('שמירה על הנתונים\n\nדפדפנים מוחקים נתוני אתרים שלא קיבלו אישור "אחסון קבוע":\n• אייפון/ספארי — אחרי 7 ימים ללא כניסה לאתר\n• כרום/אנדרואיד — כשנגמר מקום במכשיר\n\nמה עושים:\n1. הוסף את המערכת למסך הבית (שיתוף ← "הוסף למסך הבית") — זה מבטל את המחיקה האוטומטית.\n2. הסנכרון לענן כבר מחובר — גם אם המכשיר יימחק, הנתונים יחזרו אוטומטית בכניסה הבאה.'); }
+             else{ try{openSyncModal();}catch(e){} } });
+  }catch(e){} },3500);
+  return false;
+}
 async function bioSupported(){
   try{return !!(window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());}
   catch(e){return false;}
@@ -5090,7 +5119,7 @@ function _finishLoad(){
   rAll();
   showLoginHealth();
   if(typeof _initFileStorage==='function')setTimeout(_initFileStorage,60); // טעינת קבצים מ-IDB + מיגרציה + שחרור מקום
-  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); renderNotifyPanel(); renderSecurityPanel(); if(_bioLocal())_requestPersistentStorage(); const nc=notifyCfg(); if(nc.on&&('Notification' in window)&&Notification.permission==='granted'){_registerPeriodicDigest();_pushSubscribe();_notifyTick();} setTimeout(maybeAskNotifyPermission,2000); setTimeout(checkCloudLock,4500); }catch(e){} }, 2500);
+  setTimeout(()=>{ try{ if(typeof idbBackup==='function')idbBackup(); if(typeof maybeDailyBackupFile==='function')maybeDailyBackupFile(); if(typeof maybeDailyIdbBackup==='function')maybeDailyIdbBackup(); checkBackupAge(); fbInit(); initBroadcast(); checkUrlSyncImport(); renderNotifyPanel(); renderSecurityPanel(); _guardStorage(); const nc=notifyCfg(); if(nc.on&&('Notification' in window)&&Notification.permission==='granted'){_registerPeriodicDigest();_pushSubscribe();_notifyTick();} setTimeout(maybeAskNotifyPermission,2000); setTimeout(checkCloudLock,4500); }catch(e){} }, 2500);
   setTimeout(()=>{ try{ checkEmptyAndRecovery(); }catch(e){} }, 4000);
 }
 function loadAll(){
@@ -5136,15 +5165,17 @@ function loadAll(){
                   if(typeof _reconcileFiles==='function')_reconcileFiles(); // החזרת בייטי הקבצים (הגיבוי קל)
                   showToast('✅ נתונים שוחזרו בהצלחה מהגיבוי האוטומטי','ok');
                 });
-              }else{seedData();}
-            }else{seedData();}
-          }catch(e2){seedData();}
+              }else if(!_hasCloudCfg()){seedData();}
+            }else if(!_hasCloudCfg()){seedData();}
+          }catch(e2){if(!_hasCloudCfg())seedData();}
         },800);
       }else if(!allEmpty&&!localStorage.getItem(LS_KEY+'_init')){
         localStorage.setItem(LS_KEY+'_init','1');
       }
     }else{
-      // localStorage missing — try IDB backup before seeding demo data
+      // localStorage missing — ייתכן שהדפדפן מחק את נתוני האתר. סדר השחזור: גיבוי IDB → ענן → דמו.
+      // חשוב: כשמוגדר סנכרון ענן לא זורעים נתוני דמו, אלא ממתינים למשיכה מהענן (fbInit/ssInit),
+      // כדי שמחיקה של הדפדפן לא תיראה כמו "מערכת ריקה" ולא תזהם את הענן בנתוני דמו.
       setTimeout(async()=>{
         try{
           const list=await idbList();
@@ -5154,8 +5185,11 @@ function loadAll(){
             D.goals=Object.assign({},_GOAL_DEFAULTS,D.goals||{});
             showToast('✅ הנתונים שוחזרו מגיבוי אוטומטי!','ok');
             saveAll();
+          }else if(_hasCloudCfg()){
+            try{localStorage.setItem(LS_KEY+'_init','1');}catch(e3){}
+            showToast('☁️ מאחזר את הנתונים מהענן…','ok');
           }else{seedData();}
-        }catch(e2){console.error('IDB check on empty localStorage:',e2);seedData();}
+        }catch(e2){console.error('IDB check on empty localStorage:',e2);if(!_hasCloudCfg())seedData();}
         _finishLoad();
       },300);
       return;
@@ -5267,6 +5301,8 @@ function nextDealNum(){
   return (nums.length?Math.max(...nums):0)+1;
 }
 // a complete empty dataset template so restores never drop a section
+// האם מוגדר סנכרון ענן במכשיר הזה — קובע אם "ריק" הוא מצב זמני (ממתין למשיכה) או באמת ריק
+function _hasCloudCfg(){ try{ const c=localStorage.getItem(FB_CFG_KEY); if(!c)return false; const o=JSON.parse(c); return !!(o&&o.databaseURL); }catch(e){ return false; } }
 function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],tasks:[],inbox:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000},contractTerms:{},_deletedIds:{}};}
 // noSave=true משמש בפעולות בכמות (ייבוא) — הכנסה בלי saveAll לכל שורה; הקורא שומר פעם אחת בסוף.
 function dbInsert(table,row,noSave){row.id=genId();row._mts=Date.now();D[table].push(row);if(!noSave)saveAll();return row;}
@@ -15300,7 +15336,30 @@ async function checkEmptyAndRecovery(){
     if(totalNow>0)return;
     const [list,dailyList]=await Promise.all([idbList(),idbDailyList()]);
     const hasAny=(list&&list.length)||(dailyList&&dailyList.length);
-    if(!hasAny)return;
+    // ריק לגמרי וגם בלי גיבויים מקומיים = הדפדפן מחק את כל נתוני האתר. אם מוגדר ענן — מושכים משם;
+    // אם לא — מציעים לחבר ענן/לייבא גיבוי, במקום להשאיר מסך ריק בלי הסבר.
+    if(!hasAny){
+      const dash0=document.getElementById('sec-dashboard');
+      if(!dash0||document.getElementById('emergency-recovery-bar'))return;
+      const cloud=_hasCloudCfg();
+      if(cloud){ try{ if(_ssUrl||_fbRef)fbForcePull(); else fbInit(); }catch(e){} }
+      const eb0=document.createElement('div');
+      eb0.id='emergency-recovery-bar';
+      eb0.style.cssText='background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(239,68,68,.05));border:2px solid rgba(239,68,68,.45);border-radius:14px;padding:16px 20px;margin:0 0 16px;direction:rtl;';
+      eb0.innerHTML=`<div style="font-size:15px;font-weight:800;color:#f87171;margin-bottom:6px">🚨 המערכת ריקה — הדפדפן מחק את נתוני האתר</div>`
+        +`<div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">`
+        +(cloud?'מוגדר סנכרון ענן — מושך את הנתונים חזרה עכשיו. אם לא חזרו תוך כמה שניות, לחץ "משוך מהענן".'
+               :'לא הוגדר סנכרון ענן, ולכן אין מאיפה לשחזר אוטומטית. חבר ענן עכשיו כדי שזה לא יקרה שוב, או ייבא קובץ גיבוי.')
+        +'<br><b style="color:#fbbf24">כדי למנוע הישנות: הוסף את המערכת למסך הבית וחבר סנכרון ענן.</b></div>'
+        +`<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">`
+        +(cloud?`<button class="btn" onclick="fbForcePull()" style="background:rgba(6,214,160,.16);border-color:#06d6a0;color:#06d6a0;font-size:12px;padding:8px 18px;font-weight:700">☁️ משוך מהענן</button>`
+               :`<button class="btn" onclick="openSyncModal()" style="background:rgba(6,214,160,.16);border-color:#06d6a0;color:#06d6a0;font-size:12px;padding:8px 18px;font-weight:700">☁️ חבר סנכרון ענן</button>`)
+        +`<button class="btn" onclick="nav('settings')" style="font-size:12px;padding:8px 16px;color:#60a5fa;border-color:rgba(96,165,250,.4)">📥 ייבא קובץ גיבוי</button>`
+        +`</div>`;
+      dash0.insertAdjacentElement('afterbegin',eb0);
+      showToast(cloud?'☁️ המערכת ריקה — מושך את הנתונים מהענן':'🚨 המערכת ריקה — חבר סנכרון ענן לשחזור','warn');
+      return;
+    }
     // Find best rolling backup
     let bestSnap=null,bestCount=0;
     (list||[]).forEach(s=>{
