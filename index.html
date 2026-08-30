@@ -2046,6 +2046,12 @@ body.logged-in #ai-fab{display:flex}
 <!-- EXPORT -->
 <div class="sec" id="sec-export">
   <div class="shdr"><div class="stit">📥 ייצוא וגיבוי</div></div>
+  <!-- 🛡️ הגנת אחסון + התקנת המערכת — מונע את "המערכת ריקה" (מחיקת נתוני האתר ע"י הדפדפן) -->
+  <div class="tw" style="margin-bottom:18px;padding:16px 18px;border-top:3px solid #06d6a0">
+    <div style="font-size:13px;font-weight:800;color:var(--teal);margin-bottom:4px">🛡️ הגנת אחסון — התקנת המערכת</div>
+    <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:12px">דפדפן מוחק נתוני אתרים שלא הותקנו: <b>ספארי/אייפון — אחרי 7 ימים ללא כניסה</b>, כרום — כשנגמר מקום. התקנת המערכת כאפליקציה מבטלת את זה לגמרי.</div>
+    <div id="storage-row" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"></div>
+  </div>
   <div style="font-size:11px;font-weight:800;color:rgba(200,169,110,.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding:0 2px">📤 ייצוא נתונים</div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px">
     <div class="tw" style="cursor:pointer;border-top:3px solid #4cc9f0" onclick="exportExcel('deals')"><div class="exp-tile"><div class="exp-tile-ico" style="background:rgba(76,201,240,.1)">💼</div><div class="exp-tile-ttl">עסקאות</div><div class="exp-tile-sub" id="exp-deals-count">0 רשומות</div><div class="exp-tile-btn" style="background:#1d6f42;color:#fff">📥 ייצוא CSV</div></div></div>
@@ -4692,8 +4698,7 @@ function renderSecurityPanel(){
   }
   p.innerHTML=`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%">${totpRow}</div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">${bioRow}</div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">${cloudRow}</div>
-    <div id="storage-row" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)"></div>`;
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;width:100%;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)">${cloudRow}</div>`;
   renderStorageRow();
 }
 // ── שורת "הגנת אחסון": מציגה אם הדפדפן רשאי למחוק את הנתונים, ומאפשרת התקנה על המחשב/הטלפון ──
@@ -4705,17 +4710,36 @@ try{
 }catch(e){}
 function _isStandalone(){ try{ return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true; }catch(e){ return false; } }
 async function renderStorageRow(){
-  const el=document.getElementById('storage-row'); if(!el)return;
+  const el=document.getElementById('storage-row');
   const persisted=await _storagePersisted();
   const standalone=_isStandalone()||_installed;
-  if(persisted===true||standalone){
-    el.innerHTML=`<span style="font-size:12px;color:var(--teal);font-weight:800">🛡️ הגנת אחסון: פעילה</span>
-      <span style="font-size:11px;color:var(--text2)">${standalone?'המערכת מותקנת — ':''}הדפדפן לא ימחק את הנתונים${standalone?'':' (אחסון קבוע אושר)'} ✅</span>`;
-    return;
+  const safe=(persisted===true||standalone);
+  if(el){
+    el.innerHTML=safe
+      ?`<span style="font-size:12px;color:var(--teal);font-weight:800">🛡️ הגנת אחסון: פעילה</span>
+        <span style="font-size:11px;color:var(--text2)">${standalone?'המערכת מותקנת — ':''}הדפדפן לא ימחק את הנתונים${standalone?'':' (אחסון קבוע אושר)'} ✅</span>`
+      :`<span style="font-size:12px;color:#f4a261;font-weight:800">⚠️ הגנת אחסון: לא מאובטחת</span>
+        <span style="font-size:11px;color:var(--text2)">הדפדפן עלול למחוק את כל הנתונים (ספארי — אחרי 7 ימים · כרום — בלחץ אחסון). התקן את המערכת כדי למנוע זאת.</span>
+        <button class="btn btnp" onclick="installApp()" style="font-size:11px">⬇️ התקן על המחשב / הטלפון</button>`;
   }
-  el.innerHTML=`<span style="font-size:12px;color:#f4a261;font-weight:800">⚠️ הגנת אחסון: לא מאובטחת</span>
-    <span style="font-size:11px;color:var(--text2)">הדפדפן עלול למחוק את כל הנתונים (ספארי — אחרי 7 ימים · כרום — בלחץ אחסון). התקן את המערכת כדי למנוע זאת.</span>
-    <button class="btn btnp" onclick="installApp()" style="font-size:11px">⬇️ התקן על המחשב / הטלפון</button>`;
+  _renderInstallBanner(safe);
+}
+// באנר בלוח הבקרה כשהאחסון אינו מוגן — כדי שהתיקון ל"מערכת ריקה" לא יהיה חבוי במסך הייצוא
+function _renderInstallBanner(safe){
+  const host=document.getElementById('dash-welcome'); if(!host)return;
+  const old=document.getElementById('install-banner');
+  if(safe){ if(old)old.remove(); return; }
+  if(old)return;
+  const el=document.createElement('div');
+  el.id='install-banner';
+  el.style.cssText='background:linear-gradient(135deg,rgba(244,162,97,.14),rgba(244,162,97,.04));border:1px solid rgba(244,162,97,.45);border-radius:14px;padding:13px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;direction:rtl';
+  el.innerHTML=`<span style="font-size:19px">🛡️</span>
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:12.5px;font-weight:800;color:#f4a261">התקן את המערכת — כדי שהנתונים לא יימחקו</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.5">הדפדפן מוחק נתונים של אתר שלא הותקן (ספארי — אחרי 7 ימים ללא כניסה). התקנה בלחיצה אחת פותרת את זה לצמיתות.</div>
+    </div>
+    <button class="btn btnp" onclick="installApp()" style="font-size:11.5px;white-space:nowrap">⬇️ התקן עכשיו</button>`;
+  host.insertAdjacentElement('afterend',el);
 }
 // התקנת המערכת כאפליקציה. בכרום/אדג' יש חלון התקנה מובנה; בשאר הדפדפנים מציגים הוראות מדויקות.
 async function installApp(){
@@ -6309,7 +6333,7 @@ function rDash(){
     qsRow('📋 מכרזים פעילים',''+D.tenders.filter(t=>t.submitted!=='כן').length,'#f4a261','tenders')+
     qsRow('📋 הוגשו',''+D.tenders.filter(t=>t.submitted==='כן').length,'var(--teal)','tenders');
   // כל סקשן עצמאי — כשל בחישוב של אחד (על נתון חריג) לא ימחק את השאר (במיוחד את העוזר החכם)
-  [renderUpcomingMeetings,renderQuickActions,renderAiSpotlight,renderDashRevChart,renderDashPipeline,renderDashProducts,renderDashCashflow]
+  [renderUpcomingMeetings,renderQuickActions,renderAiSpotlight,renderDashRevChart,renderDashPipeline,renderDashProducts,renderDashCashflow,renderStorageRow]
     .forEach(fn=>{ try{ fn(); }catch(e){ console.error('rDash section failed:',fn.name,e); } });
 }
 // תזרים הפצות בדשבורד — אותה הפרדה חודשית של מסך ההפצות, נגישה כבר מהבית.
