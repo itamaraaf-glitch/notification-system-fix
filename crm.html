@@ -1360,6 +1360,17 @@ body.logged-in #ai-fab{display:flex}
 @media(min-width:1024px){
   #hero-h1-line1,#hero-h1-line2{font-size:3rem}
 }
+/* מסכים נמוכים (חלון רחב אך נמוך · זום גבוה · מובייל עם דפדפן): מכווצים כותרת ומרווחים ומעגנים למעלה,
+   כדי שכרטיס ההתחברות וכפתור "כניסה למערכת" תמיד ייראו בלי צורך לגלול. */
+@media(max-height:860px){
+  #login{gap:14px;padding-top:20px;padding-bottom:24px}
+  #hero-h1-line1,#hero-h1-line2{font-size:clamp(1.4rem,4.2vh,2.2rem) !important}
+}
+@media(max-height:720px){
+  #login{justify-content:flex-start;gap:12px;padding-top:16px}
+  #hero-heading{display:none}          /* מסתירים כותרת דקורטיבית — פנוי מקום כדי שכפתור הכניסה תמיד ייראה */
+  #lithos-nav{position:static}
+}
 /* גרף מכרז במובייל: התחנות נשברות לשורות במקום גלילה אופקית (שבורה ב-RTL בספארי) */
 @media(max-width:768px){
   .tflow-steps{flex-wrap:wrap;justify-content:center;row-gap:12px;column-gap:10px;overflow:visible !important}
