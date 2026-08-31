@@ -6709,7 +6709,7 @@ function rDealsArchive(){
     const tv=deals.reduce((s,d)=>s+(d.v||0),0),td=deals.reduce((s,d)=>s+(d.di||0),0),to=deals.reduce((s,d)=>s+(d.otc||0),0);
     const rows=deals.map(d=>{
       const ib=d.inf&&d.inf.includes('הוט')?`<span class="badge bb">HOT</span>`:d.inf==='365'?`<span class="badge bgr">365</span>`:`<span class="badge bgr">${esc(d.inf||'–')}</span>`;
-      return`<tr><td style="font-size:10px;color:var(--text2)">${fmtDate(d.date)}</td><td style="color:var(--text2)">${esc(d.num||'–')}</td><td style="font-weight:600">${esc(d.co||'')}</td><td>${ib}</td><td style="font-size:10px">${esc(d.srv||'')}</td><td class="nb">${fmt(d.v)}</td><td class="ng">${fmt(d.di)}</td><td class="ng">${fmt(d.otc)}</td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${esc(d.no||'–')}</td><td style="white-space:nowrap"><button class="btn btns" onclick="editArchRow('deal','${d.id}')" title="ערוך רשומת ארכיון">✏️</button> <button class="btn btns btnd" onclick="deleteArchRow('deal','${d.id}')" title="מחק מהארכיון">🗑</button></td></tr>`;
+      return`<tr><td style="font-size:10px;color:var(--text2)">${fmtDate(d.date)}</td><td style="color:var(--text2)">${esc(d.num||'–')}</td><td style="font-weight:600">${esc(d.co||'')}</td><td>${ib}</td><td style="font-size:10px">${esc(d.srv||'')}</td><td class="nb">${fmt(d.v)}</td><td class="ng">${fmt(d.di)}</td><td class="ng">${fmt(d.otc)}</td><td>${sB(d.st)}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${esc(d.no||'–')}</td><td style="white-space:nowrap"><button class="btn btns" onclick="restoreArchRow('deal','${d.id}')" title="החזר לרשימה השוטפת — לפרויקט שטרם הסתיים" style="border-color:#06d6a0;color:#06d6a0">↩ לשוטף</button> <button class="btn btns" onclick="editArchRow('deal','${d.id}')" title="ערוך רשומת ארכיון">✏️</button> <button class="btn btns btnd" onclick="deleteArchRow('deal','${d.id}')" title="מחק מהארכיון">🗑</button></td></tr>`;
     }).join('');
     return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${deals.length} עסקאות | שווי: ${fmt(tv)} | הפצות: ${fmt(td)} | OTC: ${fmt(to)}</span></div><div class="tscroll"><table><thead><tr><th>תאריך</th><th>#</th><th>חברה</th><th>תשתית</th><th>שירות</th><th>שווי</th><th>הפצות</th><th>OTC</th><th>סטטוס</th><th>הערות</th><th>פעולות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join('');
@@ -7141,7 +7141,7 @@ function rTendersArchive(){
     const ta=items.reduce((s,t)=>s+(t.amount||0),0),ts=items.filter(t=>t.submitted==='כן').length;
     const rows=items.map(t=>{
       const sb=t.submitted==='כן'?'<span class="badge bg">הוגשה ✓</span>':t.submitted==='בתהליך'?'<span class="badge by">בתהליך</span>':'<span class="badge br">לא</span>';
-      return`<tr><td style="font-size:10px;color:var(--text2)">${fmtDate(t.pub)}</td><td style="font-weight:600">${esc(t.name||'')}</td><td style="font-size:10px">${esc(t.proj||'–')}</td><td>${sb}</td><td style="font-size:10px;color:#e63946;font-weight:600">${fmtDate(t.deadline)}</td><td style="font-size:10px">${esc(t.handler||'–')}</td><td class="nb">${fmt(t.amount)}</td><td>${t.qty||1}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${esc(t.notes||'–')}</td><td style="white-space:nowrap"><button class="btn btns" onclick="editArchRow('tender','${t.id}')" title="ערוך רשומת ארכיון">✏️</button> <button class="btn btns btnd" onclick="deleteArchRow('tender','${t.id}')" title="מחק מהארכיון">🗑</button></td></tr>`;
+      return`<tr><td style="font-size:10px;color:var(--text2)">${fmtDate(t.pub)}</td><td style="font-weight:600">${esc(t.name||'')}</td><td style="font-size:10px">${esc(t.proj||'–')}</td><td>${sb}</td><td style="font-size:10px;color:#e63946;font-weight:600">${fmtDate(t.deadline)}</td><td style="font-size:10px">${esc(t.handler||'–')}</td><td class="nb">${fmt(t.amount)}</td><td>${t.qty||1}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${esc(t.notes||'–')}</td><td style="white-space:nowrap"><button class="btn btns" onclick="restoreArchRow('tender','${t.id}')" title="החזר לרשימה השוטפת — לפרויקט שטרם הסתיים" style="border-color:#06d6a0;color:#06d6a0">↩ לשוטף</button> <button class="btn btns" onclick="editArchRow('tender','${t.id}')" title="ערוך רשומת ארכיון">✏️</button> <button class="btn btns btnd" onclick="deleteArchRow('tender','${t.id}')" title="מחק מהארכיון">🗑</button></td></tr>`;
     }).join('');
     return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${items.length} מכרזים | הוגשו: ${ts} | שווי: ${fmt(ta)}</span></div><div class="tscroll"><table><thead><tr><th>פרסום</th><th>שם מכרז</th><th>מס׳ פרויקט</th><th>הוגשה?</th><th>הגשה</th><th>מטפל</th><th>סכום ₪</th><th>כמות</th><th>הערות</th><th>פעולות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join('');
@@ -7164,7 +7164,7 @@ function rDistsArchive(){
     const name=(MONTH_HE[parseInt(mo)-1]||mo)+' '+y;
     const ti=items.reduce((s,d)=>s+(d.inc||0),0),te=items.reduce((s,d)=>s+(d.eq||0),0);
     const rows=items.map(d=>{
-      return`<tr><td style="font-size:10px">${esc(d.hd||'–')}</td><td style="font-size:10px;color:#4cc9f0">${esc(d.no||'–')}</td><td style="font-weight:600">${esc(d.co||'')}</td><td style="font-size:10px">${esc(d.so||'–')}</td><td class="ng">${fmt(d.inc)}</td><td class="nb">${fmt(d.eq)}</td><td>${sB(d.st)}</td><td style="font-size:10px">${fmtDate(d.dt)}</td><td style="font-size:10px">${d.ty==='long'?'ארוך':'קצר'}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${esc(d.notes||'–')}</td><td style="white-space:nowrap"><button class="btn btns" onclick="editArchRow('dist','${d.id}')" title="ערוך רשומת ארכיון">✏️</button> <button class="btn btns btnd" onclick="deleteArchRow('dist','${d.id}')" title="מחק מהארכיון">🗑</button></td></tr>`;
+      return`<tr><td style="font-size:10px">${esc(d.hd||'–')}</td><td style="font-size:10px;color:#4cc9f0">${esc(d.no||'–')}</td><td style="font-weight:600">${esc(d.co||'')}</td><td style="font-size:10px">${esc(d.so||'–')}</td><td class="ng">${fmt(d.inc)}</td><td class="nb">${fmt(d.eq)}</td><td>${sB(d.st)}</td><td style="font-size:10px">${fmtDate(d.dt)}</td><td style="font-size:10px">${d.ty==='long'?'ארוך':'קצר'}</td><td style="font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">${esc(d.notes||'–')}</td><td style="white-space:nowrap"><button class="btn btns" onclick="restoreArchRow('dist','${d.id}')" title="החזר לרשימה השוטפת — לפרויקט שטרם הסתיים" style="border-color:#06d6a0;color:#06d6a0">↩ לשוטף</button> <button class="btn btns" onclick="editArchRow('dist','${d.id}')" title="ערוך רשומת ארכיון">✏️</button> <button class="btn btns btnd" onclick="deleteArchRow('dist','${d.id}')" title="מחק מהארכיון">🗑</button></td></tr>`;
     }).join('');
     return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${items.length} הפצות | הכנסה: ${fmt(ti)} | ציוד: ${fmt(te)}</span></div><div class="tscroll"><table><thead><tr><th>מטפל</th><th>מס׳ פרויקט</th><th>חברה</th><th>פתרון</th><th>הכנסה</th><th>ציוד</th><th>סטטוס</th><th>תאריך</th><th>סוג</th><th>הערות</th><th>פעולות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join('');
@@ -7190,7 +7190,7 @@ function rMeetingsArchive(){
     const rows=items.map((m,i)=>{
       const sb=m.hl==='כן'?'<span class="badge bg">כן ✓</span>':m.hl==='מבוטל'?'<span class="badge br">מבוטל</span>':'<span class="badge by">לא</span>';
       const ico=typeIcoArch[m.mtype||'פגישה']||'🤝';
-      return`<tr><td>${i+1}</td><td style="font-size:10px">${fmtDate(m.dt)}</td><td style="font-size:10px;color:var(--gold)">${esc(m.time||'–')}</td><td style="font-size:12px">${ico}</td><td style="font-weight:600">${esc(m.cl||'')}</td><td style="font-size:10px">${esc(m.nu||'–')}</td><td>${sb}</td><td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis">${esc(m.no||'–')}</td><td style="white-space:nowrap"><button class="btn btns" onclick="editArchRow('meeting','${m.id}')" title="ערוך רשומת ארכיון">✏️</button> <button class="btn btns btnd" onclick="deleteArchRow('meeting','${m.id}')" title="מחק מהארכיון">🗑</button></td></tr>`;
+      return`<tr><td>${i+1}</td><td style="font-size:10px">${fmtDate(m.dt)}</td><td style="font-size:10px;color:var(--gold)">${esc(m.time||'–')}</td><td style="font-size:12px">${ico}</td><td style="font-weight:600">${esc(m.cl||'')}</td><td style="font-size:10px">${esc(m.nu||'–')}</td><td>${sb}</td><td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis">${esc(m.no||'–')}</td><td style="white-space:nowrap"><button class="btn btns" onclick="restoreArchRow('meeting','${m.id}')" title="החזר לרשימה השוטפת — לפרויקט שטרם הסתיים" style="border-color:#06d6a0;color:#06d6a0">↩ לשוטף</button> <button class="btn btns" onclick="editArchRow('meeting','${m.id}')" title="ערוך רשומת ארכיון">✏️</button> <button class="btn btns btnd" onclick="deleteArchRow('meeting','${m.id}')" title="מחק מהארכיון">🗑</button></td></tr>`;
     }).join('');
     return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${items.length} פגישות | התקיימו: ${held} | יעד: 15</span></div><div class="tscroll"><table><thead><tr><th>#</th><th>תאריך</th><th>שעה</th><th>סוג</th><th>שם לקוח</th><th>מס׳ פגישה</th><th>התקיימה?</th><th>הערות</th><th>פעולות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join('');
@@ -7669,7 +7669,7 @@ function rSalaryArchive(){
     const tv=items.reduce((s,i)=>s+(i.tr||0),0),tc=items.reduce((s,i)=>s+(i.cl2||0),0);
     const rows=items.map(s=>{
       const pct=s.tr?Math.round(((s.cl2||0)/s.tr)*100):0;
-      return`<tr><td>${sB(s.st)}</td><td style="font-size:10px">${esc(s.pj||'–')}</td><td style="font-weight:600">${esc(s.cl||'')}</td><td>${s.ty==='service'?'שירות':'ציוד'}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="font-size:10px">${pct}%</td><td style="font-size:10px">${esc(s.no||'–')}</td><td style="white-space:nowrap"><button class="btn btns" onclick="editArchRow('salary','${s.id}')" title="ערוך רשומת ארכיון">✏️</button> <button class="btn btns btnd" onclick="deleteArchRow('salary','${s.id}')" title="מחק מהארכיון">🗑</button></td></tr>`;
+      return`<tr><td>${sB(s.st)}</td><td style="font-size:10px">${esc(s.pj||'–')}</td><td style="font-weight:600">${esc(s.cl||'')}</td><td>${s.ty==='service'?'שירות':'ציוד'}</td><td class="nb">${fmt(s.tr)}</td><td class="ng">${fmt(s.cl2)}</td><td style="font-size:10px">${pct}%</td><td style="font-size:10px">${esc(s.no||'–')}</td><td style="white-space:nowrap"><button class="btn btns" onclick="restoreArchRow('salary','${s.id}')" title="החזר לרשימה השוטפת — לפרויקט שטרם הסתיים" style="border-color:#06d6a0;color:#06d6a0">↩ לשוטף</button> <button class="btn btns" onclick="editArchRow('salary','${s.id}')" title="ערוך רשומת ארכיון">✏️</button> <button class="btn btns btnd" onclick="deleteArchRow('salary','${s.id}')" title="מחק מהארכיון">🗑</button></td></tr>`;
     }).join('');
     return`<div class="tw" style="margin-bottom:12px"><div class="thdr" style="background:var(--s3)">📦 ${name} <span style="color:var(--text2);font-weight:400;font-size:11px">– ${items.length} פרויקטים | יעד: ${fmt(tv)} | נסגר: ${fmt(tc)}</span></div><div class="tscroll"><table><thead><tr><th>סטטוס</th><th>מס׳ פרויקט</th><th>לקוח</th><th>סוג</th><th>יעד</th><th>נסגר</th><th>%</th><th>הערות</th><th>פעולות</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join('');
@@ -12253,6 +12253,39 @@ function _saveArch(type,row){
   closeM(_ARCH_MODAL[type]); _archRender(type); rAll();
   showToast('✅ הרשומה בארכיון עודכנה','ok');
   return true;
+}
+// ===== החזרה מהארכיון לרשימה השוטפת =====
+// נועד לפרויקטים שנסגרו/אורכבו בטעות אך למעשה עדיין בעבודה: מחזיר את הרשומה לטבלה הפעילה,
+// פותח מחדש את הסטטוס ומנקה את סימון-המחיקה כדי שהסנכרון לא ימחק אותה שוב במכשיר השני.
+const _ACTIVE_COL={deal:'deals',tender:'tenders',dist:'dists',salary:'salary',meeting:'meetings'};
+function _reopenArchStatus(type,it){
+  if(type==='salary'){
+    if(it.st==='סגור')it.st='בתהליך';
+    if((+it.pv||0)<=0){ const bal=Math.max(0,(+it.tr||0)-(+it.cl2||0)); if(bal>0)it.pv=bal; }
+  }else if(type==='dist'){ if(it.st==='הושלם')it.st='בהתקנה'; }
+  else if(type==='deal'){ if(it.st==='נסגר')it.st='ממתין לתשובה'; }
+}
+function restoreArchRow(type,id){
+  const col=_ARCH_COL[type], acol=_ACTIVE_COL[type]; if(!col||!acol)return;
+  const arr=D[col]||[];
+  const i=arr.findIndex(x=>x.id==id); if(i<0)return;
+  const src=arr[i];
+  const label=esc(src.co||src.cl||src.name||src.pj||'הרשומה');
+  confirmAct('להחזיר את '+label+' לרשימה השוטפת?\nהסטטוס ייפתח מחדש והרשומה תחזור לעבודה השוטפת.',()=>{
+    pushUndo('החזרה מהארכיון ('+type+')');
+    const it={...src};
+    delete it._archivedAt; delete it._finalClose; delete it._splitFrom;
+    _reopenArchStatus(type,it);
+    it._mts=Date.now();
+    D[col]=arr.filter(x=>x.id!=id);
+    if(!Array.isArray(D[acol]))D[acol]=[];
+    if(!D[acol].some(x=>String(x.id)===String(id)))D[acol].push(it);
+    // ניקוי tombstone — אחרת הסנכרון "יזכור" שהרשומה נמחקה ויסיר אותה שוב
+    if(D._deletedIds){ if(D._deletedIds[acol])delete D._deletedIds[acol][String(id)];
+                       if(D._deletedIds[col])delete D._deletedIds[col][String(id)]; }
+    saveAll(); _archRender(type); rAll();
+    showToast('↩ הרשומה הוחזרה לרשימה השוטפת','ok');
+  },'↩ החזר לשוטף');
 }
 function deleteArchRow(type,id){
   const col=_ARCH_COL[type]; if(!col)return;
