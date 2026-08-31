@@ -136,6 +136,49 @@ This project uses feature branches with merge commits. The designated branch for
 3. Push to the assigned branch
 4. Do NOT create a PR unless explicitly asked
 
+## AI-Powered Notification System
+
+**Enhanced Notification Management** (`notification_system_ai.py`, `ai_notification_analyzer.py`):
+
+The AI module adds Claude-powered analysis to notifications:
+
+- `AINotificationAnalyzer` — Classifies notifications by urgency (0-1 score), category (urgent/action_required/informational/etc.), detects spam
+- `AISmartNotificationManager` — Extends base manager with AI filtering, high-priority views, category-based grouping
+- Supports batch analysis and graceful degradation if API fails
+- Optional (enable_ai=True/False); base system works without it
+
+**Usage Example:**
+```python
+from notification_system_ai import AISmartNotificationManager
+
+manager = AISmartNotificationManager(db_path="notif.db", enable_ai=True)
+manager.register_entity("deals", "deal_123")
+
+notif_id, analysis = manager.add_notification_with_ai_analysis(
+    title="New deal",
+    message="High-value opportunity for Client X",
+    severity="HIGH",
+    entity_type="deals",
+    entity_id="deal_123"
+)
+
+# Get only critical notifications
+high_priority = manager.get_high_priority_notifications(severity_threshold=0.7)
+
+# Group by AI-determined category
+by_category = manager.get_notifications_by_category()
+
+# Separate signal from noise
+important, spam = manager.filter_noise()
+```
+
+**Testing AI Components:**
+```bash
+python -m pytest test_ai_notification_system.py
+```
+
+Tests use mocks to avoid API calls. Mocking `anthropic.Anthropic` patches Claude calls.
+
 ## Development Notes
 
 **Adding a New Watch:**
@@ -152,3 +195,10 @@ This project uses feature branches with merge commits. The designated branch for
 - The 115 tests catch regressions across all core modules
 - Document any new rule in `agent/README.md` (why + where found)
 - Update related tests if the rule changes
+
+**Working with AI Notifications:**
+- AI analysis is optional; disable with `enable_ai=False` for cost/latency savings
+- Analyzer gracefully falls back to neutral scoring on API errors
+- Each notification can be analyzed independently or in batches
+- Batch analysis reuses Claude calls efficiently
+- Model used: claude-opus-4-1-20250805 (most capable for analysis)
