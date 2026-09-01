@@ -12909,6 +12909,35 @@ function _eqSaveCalc(){
   showToast('💾 החישוב נשמר בכרטיס הלקוח '+esc(name),'ok');
   _eqRenderDeals();
 }
+// שמירת המחשבון לתוכנית העבודה — טיוטה בלבד. לא נוגע בכרטיס הלקוח/הפצות/שכר,
+// ומאפשר לחזור למחשבון בדיוק כפי שהיה, לשנות ולשמור שוב עד שמחליטים לסגור עסקה.
+function _eqSaveToPlan(){
+  const name=_eqClientName();
+  if(!name){ showToast('⚠️ הזן שם לקוח כדי לשמור לתוכנית העבודה','warn'); const e=document.getElementById('eq-client'); if(e)e.focus(); return; }
+  const set=_eqDealSet();
+  if(!set.length){ showToast('⚠️ אין נתונים לשמירה — מלא עלויות','warn'); return; }
+  const t=_eqTotals(set);
+  const label=set.map(d=>d.name).join(' + ');
+  const payload={deals:set.map(d=>({name:d.name,v:d.v})),client:name,
+    cost:t.cost,customer:Math.round(t.customer),monthly:t.monthly+t.svc,
+    revenue:Math.round(t.rev),profit:Math.round(t.rev-t.cost),
+    pmi:t.rev?Math.round((1-t.cost/t.rev)*1000)/10:0,ts:Date.now()};
+  const ctx=window._eqCtx||{};
+  let cl=ctx.clientId!=null?(D.clients||[]).find(x=>x.id==ctx.clientId):null;
+  let p=cl&&Array.isArray(cl.potential)?cl.potential[ctx.potIdx]:null;
+  if(p){                                        // עדכון הטיוטה הקיימת — בלי ליצור כפילות
+    p.product=label; p.estimatedValue=payload.customer; p.eqCalc=payload;
+  }else{
+    cl=_eqEnsureClient(name);
+    if(!Array.isArray(cl.potential))cl.potential=[];
+    cl.potential.push({product:label,productType:'ציוד',estimatedValue:payload.customer,
+      priority:'בינונית',status:'בתהליך',targetDate:'',notes:'טיוטת מחשבון ציוד',eqCalc:payload});
+    window._eqCtx={clientId:cl.id,potIdx:cl.potential.length-1};
+  }
+  cl._mts=Date.now(); dbUpdate('clients',cl.id,cl); saveAll();
+  if(currentSec==='workplan')rWorkPlan();
+  showToast('📋 נשמר לתוכנית העבודה — אפשר לחזור ולערוך בכל עת','ok');
+}
 // סגירת עסקה — יצירת הרשומות בשלושת הנושאים, כל נושא מקבל רק את השדות הרלוונטיים לו
 function _eqCloseDeal(){
   const name=_eqClientName();
@@ -13056,8 +13085,17 @@ function _eqExport(){
     showToast('📥 קובץ האקסל של עסקת הציוד הורד','ok');
   }catch(e){ showToast('⚠️ שגיאה בייצוא','warn'); }
 }
-function openEquipCalc(){
+function openEquipCalc(clientId,potIdx){
   const old=document.getElementById('eq-popup'); if(old)old.remove();
+  // טעינת טיוטה שמורה מתוכנית העבודה (אם נפתח משורה) — כולל כל העסקאות והלקוח
+  let draft=null;
+  if(clientId!=null){
+    const c=(D.clients||[]).find(x=>x.id==clientId);
+    const p=c&&Array.isArray(c.potential)?c.potential[potIdx]:null;
+    if(p&&p.eqCalc)draft=p.eqCalc;
+    window._eqCtx={clientId:clientId,potIdx:potIdx};
+  }else window._eqCtx={};
+  _eqDeals=draft&&Array.isArray(draft.deals)?draft.deals.map(d=>({name:d.name,v:{...d.v}})):[];
   const num=(id,lbl,val,hint)=>`<div>
       <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">${lbl}${hint?` <span style="font-weight:400;opacity:.8">${hint}</span>`:''}</label>
       <input id="${id}" type="number" inputmode="numeric" value="${val}" oninput="_eqRender()" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none;direction:ltr;text-align:left"></div>`;
@@ -13107,9 +13145,10 @@ function openEquipCalc(){
       </div>
       <div id="eq-deals"></div>
     </div>
-    <button class="btn btnp" onclick="_eqCloseDeal()" style="width:100%;font-size:12.5px;background:#06d6a0;border-color:#06d6a0;color:#0a0e1c;font-weight:900;margin-top:11px">✅ סגור עסקה — סנכרן ללקוח · הפצה · שכר</button>
+    <button class="btn btnp" onclick="_eqSaveToPlan()" style="width:100%;font-size:12.5px;background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:900;margin-top:11px" title="שומר כטיוטה בתוכנית העבודה — בלי לעדכן לקוח/הפצה/שכר">📋 שמור לתוכנית העבודה (טיוטה)</button>
+    <button class="btn btnp" onclick="_eqCloseDeal()" style="width:100%;font-size:12.5px;background:#06d6a0;border-color:#06d6a0;color:#0a0e1c;font-weight:900;margin-top:8px">✅ סגור עסקה — סנכרן ללקוח · הפצה · שכר</button>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-      <button class="btn btnp" onclick="_eqSaveCalc()" style="font-size:12px;background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:800">💾 שמור חישוב</button>
+      <button class="btn btns" onclick="_eqSaveCalc()" style="font-size:12px">💾 שמור בכרטיס הלקוח</button>
       <button class="btn btnp" onclick="_eqExport()" style="font-size:12px;background:#1d6f42;border-color:#1d6f42;color:#fff;font-weight:800">📥 ייצוא Excel</button>
       <button class="btn btnp" onclick="_eqCopy()" style="font-size:12px;background:#4cc9f0;border-color:#4cc9f0;color:#0a0e1c;font-weight:800">📋 העתק סיכום</button>
       <button class="btn btns" onclick="document.getElementById('eq-popup').remove()" style="font-size:12px">סגור חלון</button>
@@ -13117,8 +13156,12 @@ function openEquipCalc(){
   </div>`;
   el.addEventListener('click',()=>el.remove());
   document.body.appendChild(el);
+  if(draft){
+    const ci=document.getElementById('eq-client'); if(ci)ci.value=draft.client||'';
+    if(_eqDeals.length)_eqLoadDeal(_eqDeals.length-1);   // הטופס נטען עם העסקה האחרונה לעריכה מיידית
+  }
   _eqRender(); _eqRenderDeals();
-  const f=document.getElementById('eq-cost'); if(f)f.focus();
+  const f=document.getElementById(draft?'eq-client':'eq-cost'); if(f)f.focus();
 }
 // ===== 🧮 מחשבון החזר השקעה בתשתית — תכנון כלכלי לעסקה לפני שסוגרים =====
 // מחשב: רווח חודשי נטו, השקעה נטו, זמן החזר (חודשים), רווח כולל לתקופת ההתקשרות ו-ROI%,
@@ -13417,7 +13460,7 @@ function rWorkPlan(){
       <td style="text-align:center;color:var(--text3)">${isThisM?'<span class="badge bb" style="font-size:8px;padding:1px 6px">🎯</span>':'↳'}<span style="display:none">${esc(p.clientName||'')}</span></td>
       <td style="white-space:nowrap;font-size:11px">${esc(p.productType||'–')}</td>
       <td style="font-weight:600">${esc(p.product||'–')}</td>
-      <td class="nb">${p.estimatedValue?fmt(+p.estimatedValue):'–'}${p.roi&&p.roi.payback?`<div style="font-size:9px;font-weight:700;color:${p.roi.payback<=(p.roi.months||0)?'var(--teal)':'#e63946'};margin-top:2px;white-space:nowrap" title="החזר השקעה ${p.roi.payback} חודשים · ROI ${p.roi.roiPct}%">🧮 החזר ${p.roi.payback}ח'</div>`:''}</td>
+      <td class="nb">${p.estimatedValue?fmt(+p.estimatedValue):'–'}${p.roi&&p.roi.payback?`<div style="font-size:9px;font-weight:700;color:${p.roi.payback<=(p.roi.months||0)?'var(--teal)':'#e63946'};margin-top:2px;white-space:nowrap" title="החזר השקעה ${p.roi.payback} חודשים · ROI ${p.roi.roiPct}%">🧮 החזר ${p.roi.payback}ח'</div>`:''}${p.eqCalc?`<div style="font-size:9px;font-weight:700;color:#4cc9f0;margin-top:2px;white-space:nowrap" title="מחשבון ציוד שמור · עלות ${fmt(p.eqCalc.cost)} · רווח ${fmt(p.eqCalc.profit)} · PMI ${p.eqCalc.pmi}%">🖥️ ציוד · PMI ${p.eqCalc.pmi}%</div>`:''}</td>
       <td><select style="font-size:10px;padding:2px 4px;border-radius:6px;min-width:70px" onchange="updatePotentialPriority('${p.clientId}',${p.potIdx},this.value)">${priOpts(p.priority)}</select></td>
       <td style="font-size:10px;white-space:nowrap">${fmtDate(p.targetDate)}</td>
       <td>${dH}</td>
@@ -13427,6 +13470,7 @@ function rWorkPlan(){
       <td style="white-space:nowrap">
         ${(()=>{const ph=(D.clients.find(x=>x.id==p.clientId)||{}).phone;return ph?`<button class="btn btns" onclick="callClient('${p.clientId}')" title="חייג ${esc(ph)}" style="border-color:#4cc9f0;color:#4cc9f0">📞</button><button class="btn btns" onclick="waClient('${p.clientId}')" title="וואטסאפ ${esc(ph)}" style="border-color:#25D366;color:#25D366">💬</button> `:'';})()}
         <button class="btn btns" onclick="openRoiCalc('${p.clientId}',${p.potIdx})" title="מחשבון החזר השקעה" style="border-color:#a78bfa;color:#a78bfa">🧮</button>
+        <button class="btn btns" onclick="openEquipCalc('${p.clientId}',${p.potIdx})" title="${p.eqCalc?'פתח את מחשבון הציוד השמור':'מחשבון OTC ציוד'}" style="border-color:#4cc9f0;color:#4cc9f0">🖥️${p.eqCalc?'✓':''}</button>
         <button class="btn btns" onclick="openClientModal('${p.clientId}')" title="ערוך כרטיס לקוח">✏️</button>
         <button class="btn btns btnd" onclick="removePotential('${p.clientId}',${p.potIdx})" title="מחק">🗑</button>
       </td>
