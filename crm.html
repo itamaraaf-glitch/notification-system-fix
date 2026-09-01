@@ -12236,6 +12236,45 @@ function _eqCopy(){
   const t=_eqSummaryText(); const done=()=>showToast('📋 סיכום עסקת הציוד הועתק','ok');
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done).catch(done); else done();
 }
+// ייצוא Excel של עסקת הציוד — קלט, תוצאות ולוח תשלומים חודשי מלא (נפתח ישירות באקסל, עברית תקינה)
+function _eqExport(){
+  const v=_eqRead(), r=_eqCalc(v);
+  const rows=[];
+  const sec=t=>rows.push(['',''],[t,'']);
+  const row=(k,val)=>rows.push([k,val]);
+  rows.push(['מחשבון OTC ציוד — '+fmtDate(nd()),'']);
+  sec('💸 עלויות לספק');
+  row('עלות ציוד',+v.cost||0); row('עלות רישוי / אחריות',+v.lic||0);
+  row('עלות התקנה / משלוח',+v.inst||0); row('עלות שירות ותמיכה',+v.supp||0);
+  row('סקר אתר',v.survey?EQ_SURVEY_COST:0); row('סה"כ עלות לספק',r.cost);
+  sec('📐 תנאי העסקה');
+  row('אחוז העמסה',Math.round(r.markup*1000)/10+'%'); row('פריסת תשלום',r.pays);
+  row('תקופת הסכם שירות (חודשים)',r.agMonths); row('מאשר העסקה',v.approver||'');
+  row('ויתור על שירות',v.waived?'כן':'לא');
+  row('ריבית שנתית',Math.round(EQ_ANNUAL_RATE*100)+'%');
+  row('ריבית חודשית אפקטיבית',(Math.round(EQ_MRATE*1e6)/1e4)+'%');
+  sec('📊 תוצאות');
+  row('מחיר ללקוח (כולל העמסה)',Math.round(r.customerTotal));
+  row('תשלום חודשי OTC',r.monthlyOtcR); row('מספר תשלומי OTC',r.pays);
+  row('דמ"ש חודשי',r.svcFee); row('חודשי דמ"ש',r.agMonths);
+  row('הכנסת OTC מהוונת',Math.round(r.pvOtc)); row('הכנסת דמ"ש מהוונת',Math.round(r.pvSvc));
+  row('סה"כ הכנסה מהוונת',Math.round(r.revenuePV)); row('רווח גולמי',Math.round(r.grossProfit));
+  row('PMI',Math.round(r.pmi*1000)/10+'%');
+  row('ROI (חודשים עד כיסוי העלות)',r.roiMonths==null?'לא מוחזר':Math.round(r.roiMonths*100)/100);
+  row('סטטוס אישור',r.errs.length?'לא מאושר להפצה':'מאושר');
+  r.errs.forEach((e,i)=>row('סיבה '+(i+1),e));
+  sec('📅 לוח תשלומים חודשי');
+  rows.push(['חודש','תשלום OTC','דמ"ש','סה"כ לחודש','מצטבר','יתרת עלות']);
+  let cum=0; const n=Math.max(r.pays,r.agMonths);
+  for(let m=1;m<=n;m++){
+    const o=m<=r.pays?r.monthlyOtcR:0, s=m<=r.agMonths?r.svcFee:0;
+    cum+=o+s;
+    rows.push([m,o,s,o+s,Math.round(cum),Math.round(Math.max(0,r.cost-cum))]);
+  }
+  try{ dlCSV('מחשבון_ציוד_OTC',toCSV(['פריט','ערך','','','',''],rows));
+    showToast('📥 קובץ האקסל של עסקת הציוד הורד','ok');
+  }catch(e){ showToast('⚠️ שגיאה בייצוא','warn'); }
+}
 function openEquipCalc(){
   const old=document.getElementById('eq-popup'); if(old)old.remove();
   const num=(id,lbl,val,hint)=>`<div>
@@ -12271,8 +12310,9 @@ function openEquipCalc(){
     </div>
     <div id="eq-out"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px">
+      <button class="btn btnp" onclick="_eqExport()" style="font-size:12px;background:#1d6f42;border-color:#1d6f42;color:#fff;font-weight:800">📥 ייצוא Excel</button>
       <button class="btn btnp" onclick="_eqCopy()" style="font-size:12px;background:#4cc9f0;border-color:#4cc9f0;color:#0a0e1c;font-weight:800">📋 העתק סיכום</button>
-      <button class="btn btns" onclick="document.getElementById('eq-popup').remove()" style="font-size:12px">סגור</button>
+      <button class="btn btns" onclick="document.getElementById('eq-popup').remove()" style="font-size:12px;grid-column:1/-1">סגור</button>
     </div>
   </div>`;
   el.addEventListener('click',()=>el.remove());
@@ -12386,7 +12426,8 @@ function openRoiCalc(clientId,potIdx){
     <div id="roi-out" style="margin:12px 0 10px"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button class="btn btnp" onclick="_roiSave()" style="font-size:12px;background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:800">💾 שמור למוצר</button>
-      <button class="btn btns" onclick="_roiCopy()" style="font-size:12px">📋 העתק סיכום</button>
+      <button class="btn btnp" onclick="_roiExport()" style="font-size:12px;background:#1d6f42;border-color:#1d6f42;color:#fff;font-weight:800">📥 ייצוא Excel</button>
+      <button class="btn btns" onclick="_roiCopy()" style="font-size:12px;grid-column:1/-1">📋 העתק סיכום</button>
     </div>
   </div>`;
   el.addEventListener('click',()=>el.remove());
@@ -12408,6 +12449,39 @@ function _roiSummaryText(){
     +`תקופה: ${v.months} חודשים · החזר השקעה: ${pb}\n`
     +`⚖️ הכנסה מצטברת ${fmt(r.netUnit)}${q}×${v.months} = ${fmt(r.cumIncome)} מול הוצאה חד-פעמית ${fmt(r.netInv)} → כיסוי ${Math.round(r.coverPct)}% (${r.shortfall>0?'חסרים '+fmt(r.shortfall):'עודף '+fmt(-r.shortfall)})\n`
     +`רווח כולל: ${fmt(r.totalProfit)} · ROI: ${isFinite(r.roiPct)?Math.round(r.roiPct)+'%':'—'}\n${r.verdict}`;
+}
+// ייצוא Excel של תוכנית החזר ההשקעה — קלט, תוצאות ופירוט חודשי עד נקודת האיזון
+function _roiExport(){
+  const v=_roiRead(), r=_roiCalc(v);
+  const rows=[]; const sec=t=>rows.push(['',''],[t,'']); const row=(k,val)=>rows.push([k,val]);
+  rows.push(['מחשבון החזר השקעה בתשתית — '+fmtDate(nd()),'']);
+  sec('📥 נתוני קלט');
+  row('עלות התשתית / ההשקעה',+v.inv||0);
+  row('תשלום חד-פעמי מהלקוח',+v.upfront||0);
+  row('כמות (קווים / יחידות)',r.qty);
+  row('הכנסה חודשית לקו',+v.rev||0);
+  row('עלות חודשית שוטפת לקו',+v.cost||0);
+  row('תקופת התקשרות (חודשים)',r.months);
+  sec('📊 תוצאות');
+  row('רווח חודשי נטו לקו',r.netUnit);
+  row('רווח חודשי נטו כולל',r.net);
+  row('השקעה נטו',r.netInv);
+  row('הכנסה מצטברת לתקופה',r.cumIncome);
+  row('כיסוי ההשקעה',Math.round(r.coverPct)+'%');
+  row(r.shortfall>0?'חסר לכיסוי ההשקעה':'עודף מעל ההשקעה',Math.abs(r.shortfall));
+  row('החזר השקעה (חודשים)',isFinite(r.payback)?Math.round(r.payback*10)/10:'לא מוחזר');
+  row('רווח לכל התקופה',r.totalProfit);
+  row('ROI',isFinite(r.roiPct)?Math.round(r.roiPct)+'%':'—');
+  row('חוות דעת',r.verdict);
+  if(r.months){
+    sec('📅 פירוט חודשי');
+    rows.push(['חודש','רווח חודשי','מצטבר','יתרת השקעה']);
+    let cum=0;
+    for(let m=1;m<=r.months;m++){ cum+=r.net; rows.push([m,r.net,cum,Math.round(Math.max(0,r.netInv-cum))]); }
+  }
+  try{ dlCSV('החזר_השקעה_תשתית',toCSV(['פריט','ערך','',''],rows));
+    showToast('📥 קובץ האקסל של החזר ההשקעה הורד','ok');
+  }catch(e){ showToast('⚠️ שגיאה בייצוא','warn'); }
 }
 function _roiCopy(){
   const t=_roiSummaryText();
