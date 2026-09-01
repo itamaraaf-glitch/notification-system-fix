@@ -2378,6 +2378,7 @@ body.logged-in #ai-fab{display:flex}
     </div>
   </div>
   <div class="krow" id="wpkrow"></div>
+  <div id="wp-plan"></div>
   <div class="tw">
     <div class="thdr" style="border-right:3px solid #a78bfa">🎯 פיפליין מוצרים <span id="wp-thdr-info" style="font-weight:400;font-size:11px;color:var(--text2)"></span></div>
     <div class="tscroll"><table><thead><tr>
@@ -12682,6 +12683,70 @@ function removePotential(clientId,idx){
   showToast('🗑 מוצר נמחק','ok');
 }
 
+// ===== 📊 תחזית משוקללת + תוכנית פעולה לתכנון עסקאות =====
+// כל שלב בפיפליין מקבל הסתברות סגירה; התחזית המשוקללת מראה מה באמת צפוי להיסגר,
+// מול יעד העסקאות החודשי — ומתרגמת את הפער לצעדים קונקרטיים.
+const POT_PROB={'ליד חדש':0.10,'בתהליך':0.30,'הצעה נשלחה':0.50,'ממתין לאישור':0.75,'נסגר':1};
+function _wpPlanData(all){
+  const cur=nd().substring(0,7);
+  const open=all.filter(p=>p.status!=='נסגר');
+  const pipeline=open.reduce((s,p)=>s+(+p.estimatedValue||0),0);
+  const weighted=open.reduce((s,p)=>s+(+p.estimatedValue||0)*(POT_PROB[p.status]??0.2),0);
+  const won=all.filter(p=>p.status==='נסגר').reduce((s,p)=>s+(+p.estimatedValue||0),0);
+  const goal=+((D.goals||{}).deals)||15000;
+  const gap=Math.max(0,goal-won);
+  const avg=open.length?pipeline/open.length:0;
+  const needed=avg>0?Math.ceil(gap/avg):0;
+  const byStage=POT_STATUSES.filter(s=>s!=='נסגר').map(st=>{
+    const items=open.filter(p=>p.status===st);
+    return {st,n:items.length,val:items.reduce((s,p)=>s+(+p.estimatedValue||0),0),prob:POT_PROB[st]||0};
+  });
+  // צעדים קונקרטיים — לפי מה שבאמת תקוע
+  const acts=[];
+  const late=open.filter(p=>{const c=contactLight(p);return c&&c.lvl===3;});
+  if(late.length)acts.push({ico:'📞',clr:'#e63946',t:`${late.length} מוצרים ללא יצירת קשר בזמן`,s:late.slice(0,3).map(p=>p.clientName).join(' · ')});
+  const dueM=open.filter(p=>(p.targetDate||'').substring(0,7)===cur);
+  if(dueM.length)acts.push({ico:'🎯',clr:'#f4a261',t:`${dueM.length} מוצרים ביעד סגירה החודש`,s:fmt(dueM.reduce((s,p)=>s+(+p.estimatedValue||0),0))+' שווי · דחוף לקדם'});
+  const noVal=open.filter(p=>!+p.estimatedValue);
+  if(noVal.length)acts.push({ico:'🧮',clr:'#a78bfa',t:`${noVal.length} מוצרים ללא שווי משוער`,s:'הרץ מחשבון החזר השקעה כדי לתמחר ולתעדף'});
+  const stuck=open.filter(p=>p.status==='הצעה נשלחה'||p.status==='ממתין לאישור');
+  if(stuck.length)acts.push({ico:'⏳',clr:'#4cc9f0',t:`${stuck.length} הצעות ממתינות לתשובה`,s:fmt(stuck.reduce((s,p)=>s+(+p.estimatedValue||0),0))+' — הכי קרוב לסגירה, שווה מעקב'});
+  return {open,pipeline,weighted,won,goal,gap,avg,needed,byStage,acts};
+}
+function renderWorkPlanPlan(all){
+  const el=document.getElementById('wp-plan'); if(!el)return;
+  if(!all.length){el.innerHTML='';return;}
+  const d=_wpPlanData(all);
+  const pct=d.goal?Math.min(100,Math.round(d.weighted/d.goal*100)):0;
+  const col=pct>=100?'var(--teal)':pct>=60?'#f4a261':'#e63946';
+  const bar=d.byStage.map(s=>{
+    const w=d.pipeline?Math.max(3,Math.round(s.val/d.pipeline*100)):0;
+    const c={'ליד חדש':'#64748b','בתהליך':'#4cc9f0','הצעה נשלחה':'#a78bfa','ממתין לאישור':'#f4a261'}[s.st]||'#64748b';
+    return s.n?`<div title="${esc(s.st)}: ${s.n} מוצרים · ${fmt(s.val)} · סיכוי ${Math.round(s.prob*100)}%" style="flex:${w};background:${c};height:100%"></div>`:'';
+  }).join('');
+  const legend=d.byStage.filter(s=>s.n).map(s=>{
+    const c={'ליד חדש':'#64748b','בתהליך':'#4cc9f0','הצעה נשלחה':'#a78bfa','ממתין לאישור':'#f4a261'}[s.st]||'#64748b';
+    return `<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text2);white-space:nowrap"><span style="width:8px;height:8px;border-radius:2px;background:${c}"></span>${esc(s.st)} <b>${s.n}</b> · ${fmt(s.val)} <span style="color:var(--text3)">(${Math.round(s.prob*100)}%)</span></span>`;
+  }).join('');
+  const tile=(lbl,val,clr,sub)=>`<div class="stat-mini" style="background:rgba(255,255,255,.03);border:1px solid ${clr}33"><div style="font-size:10px;color:var(--text3);font-weight:700">${lbl}</div><div style="font-size:17px;font-weight:900;color:${clr}">${val}</div>${sub?`<div style="font-size:9.5px;color:var(--text3);margin-top:1px">${sub}</div>`:''}</div>`;
+  el.innerHTML=`<div class="tw" style="padding:14px 16px;margin-bottom:14px;border-top:3px solid #a78bfa">
+    <div style="font-size:12.5px;font-weight:800;color:#a78bfa;margin-bottom:9px">📊 תוכנית עבודה — תחזית משוקללת מול יעד</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:8px;margin-bottom:11px">
+      ${tile('שווי פיפליין',fmt(d.pipeline),'#a78bfa',d.open.length+' מוצרים פתוחים')}
+      ${tile('תחזית משוקללת',fmt(d.weighted),col,'לפי סיכויי הסגירה')}
+      ${tile('נסגר החודש',fmt(d.won),'var(--teal)','מתוך יעד '+fmt(d.goal))}
+      ${tile('פער ליעד',d.gap?fmt(d.gap):'הושג ✅',d.gap?'#e63946':'var(--teal)',d.gap&&d.needed?('~'+d.needed+' עסקאות בגודל ממוצע'):'')}
+    </div>
+    <div style="height:12px;background:rgba(255,255,255,.06);border-radius:20px;overflow:hidden;display:flex;margin-bottom:6px">${bar||'<div style="flex:1"></div>'}</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:${d.acts.length?'11px':'0'}">${legend}</div>
+    ${d.acts.length?`<div style="border-top:1px solid rgba(255,255,255,.07);padding-top:10px">
+      <div style="font-size:10.5px;font-weight:800;color:var(--text3);letter-spacing:.5px;margin-bottom:6px">⚡ הצעדים הבאים</div>
+      <div style="display:grid;gap:6px">${d.acts.map(a=>`<div style="display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.03);border-right:2px solid ${a.clr};border-radius:8px;padding:6px 10px">
+        <span style="font-size:13px">${a.ico}</span>
+        <div style="min-width:0"><div style="font-size:11.5px;font-weight:700;color:${a.clr}">${esc(a.t)}</div>
+        <div style="font-size:10.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.s)}</div></div></div>`).join('')}</div></div>`:''}
+  </div>`;
+}
 // ===== 🧮 מחשבון החזר השקעה בתשתית — תכנון כלכלי לעסקה לפני שסוגרים =====
 // מחשב: רווח חודשי נטו, השקעה נטו, זמן החזר (חודשים), רווח כולל לתקופת ההתקשרות ו-ROI%,
 // ומציג חוות-דעת ברורה (משתלם / גבולי / לא מחזיר בתקופה) עם ציר-זמן ויזואלי.
@@ -12813,6 +12878,8 @@ function rWorkPlan(){
     (c.potential||[]).forEach((p,idx)=>{all.push({...p,clientName:c.name,clientId:c.id,potIdx:idx});});
   });
   const rawTotal=all.length; // כמה מוצרים קיימים לפני סינון — כדי להבחין בין "אין בכלל" ל"אין תואמים לסינון"
+  // תוכנית העבודה מחושבת על כל הפיפליין (לפני הסינון) — כדי שהתחזית מול היעד תישאר יציבה
+  try{ renderWorkPlanPlan(all); }catch(e){ console.error('wp plan:',e); }
   if(priF)all=all.filter(p=>p.priority===priF);
   if(stF)all=all.filter(p=>p.status===stF);
   const priO={'גבוהה':0,'בינונית':1,'נמוכה':2};
