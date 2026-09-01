@@ -12260,6 +12260,92 @@ function _eqRenderDeals(){
       </div>
     </div>`;
 }
+// ===== שמירת החישוב וסגירת העסקה =====
+// השמירה נשמרת על כרטיס הלקוח (נוסע עם הסנכרון הקיים). "סגור עסקה" מפזר את המידע
+// לשלושת הנושאים — ובכל נושא נשמר רק מה שרלוונטי לו.
+function _eqDealSet(){                       // העסקאות לסגירה: הרשימה, ואם ריקה — העסקה שבטופס
+  if(_eqDeals.length)return _eqDeals.map(d=>({name:d.name,v:d.v,r:_eqCalc(d.v)}));
+  const v=_eqRead(); const r=_eqCalc(v);
+  if(!r.cost)return [];
+  const nm=((document.getElementById('eq-name')||{}).value||'').trim()||'עסקת ציוד';
+  return [{name:nm,v,r}];
+}
+function _eqClientName(){ return ((document.getElementById('eq-client')||{}).value||'').trim(); }
+function _eqTotals(set){
+  return set.reduce((a,d)=>({cost:a.cost+d.r.cost,customer:a.customer+d.r.customerTotal,
+    monthly:a.monthly+d.r.monthlyOtcR,svc:a.svc+d.r.svcFee,rev:a.rev+d.r.revenuePV,
+    agMonths:Math.max(a.agMonths,d.r.agMonths)}),{cost:0,customer:0,monthly:0,svc:0,rev:0,agMonths:0});
+}
+function _eqEnsureClient(name){
+  let c=findClientByName(name);
+  if(c)return c;
+  c={name:name,contact:'',phone:'',email:'',address:'',status:'לקוח פעיל',genNotes:'',potential:[],syncedDeals:[]};
+  Object.keys(ITEM_CFG).forEach(t=>{c[t]=[];});
+  dbInsert('clients',c);
+  return findClientByName(name)||c;
+}
+function _eqSaveCalc(){
+  const name=_eqClientName();
+  if(!name){ showToast('⚠️ הזן שם לקוח כדי לשמור את החישוב','warn'); const e=document.getElementById('eq-client'); if(e)e.focus(); return; }
+  const set=_eqDealSet();
+  if(!set.length){ showToast('⚠️ אין נתונים לשמירה — מלא עלויות','warn'); return; }
+  const c=_eqEnsureClient(name);
+  const t=_eqTotals(set);
+  if(!Array.isArray(c.eqCalcs))c.eqCalcs=[];
+  c.eqCalcs.push({id:genId(),ts:Date.now(),date:nd(),
+    deals:set.map(d=>({name:d.name,v:d.v})),
+    cost:t.cost,customer:Math.round(t.customer),monthly:t.monthly+t.svc,
+    revenue:Math.round(t.rev),profit:Math.round(t.rev-t.cost),
+    pmi:t.rev?Math.round((1-t.cost/t.rev)*1000)/10:0});
+  c._mts=Date.now();
+  dbUpdate('clients',c.id,c);
+  showToast('💾 החישוב נשמר בכרטיס הלקוח '+esc(name),'ok');
+  _eqRenderDeals();
+}
+// סגירת עסקה — יצירת הרשומות בשלושת הנושאים, כל נושא מקבל רק את השדות הרלוונטיים לו
+function _eqCloseDeal(){
+  const name=_eqClientName();
+  if(!name){ showToast('⚠️ הזן שם לקוח לפני סגירת העסקה','warn'); const e=document.getElementById('eq-client'); if(e)e.focus(); return; }
+  const set=_eqDealSet();
+  if(!set.length){ showToast('⚠️ אין נתונים — מלא עלויות','warn'); return; }
+  const bad=set.filter(d=>d.r.errs.length);
+  const t=_eqTotals(set);
+  const label=set.map(d=>d.name).join(' + ');
+  const ask='לסגור את העסקה עבור '+name+'?\n\n'
+    +'סה"כ ללקוח: '+fmt(Math.round(t.customer))+' · חיוב חודשי: '+fmt(t.monthly+t.svc)+'\n\n'
+    +'ייווצרו אוטומטית:\n• כרטיס לקוח — הציוד והאחריות\n• הפצה/פרויקט — לביצוע ההתקנה\n• פרויקט שכר (ציוד) — לגבייה'
+    +(bad.length?('\n\n⚠️ '+bad.length+' עסקאות אינן עומדות בכללי האישור'):'');
+  confirmAct(ask,()=>{
+    const cid=genId();                                   // מזהה משותף לשלוש הרשומות
+    const expiry=t.agMonths?addMonths(nd(),t.agMonths):'';
+    // 1) כרטיס לקוח — מה שיש ללקוח ומתי פג. בלי סכומי עלות/רווח פנימיים.
+    const c=_eqEnsureClient(name);
+    if(!Array.isArray(c.extra))c.extra=[];
+    set.forEach(d=>c.extra.push({name:d.name,vendor:'ציוד',expiry:expiry,
+      monthly:d.r.svcFee,notes:'נסגר '+fmtDate(nd())+' · '+fmt(Math.round(d.r.customerTotal))+' ב-'+d.r.pays+' תשלומים'}));
+    c._eqClosed=(c._eqClosed||[]).concat([cid]); c._mts=Date.now();
+    dbUpdate('clients',c.id,c);
+    // 2) הפצה / פרויקט — מה שצריך לבצע בשטח. בלי נתוני רווחיות.
+    dbInsert('dists',{co:name,no:'',cl:'',hd:'',hp:'',it:'',so:label,ad:'',
+      inc:t.svc, eq:Math.round(t.customer), dt:nd(), st:'ממתין להפצה', ty:'long',
+      notes:'נוצר ממחשבון ציוד · '+set.length+' פריטים', _eqCalcId:cid});
+    // 3) שכר (ציוד) — הכסף לגבייה. בלי פרטי ציוד.
+    dbInsert('salary',{pj:'', cl:name, qt:set.length, tr:Math.round(t.customer), cl2:0,
+      pv:Math.round(t.customer), st:'פתוח', ty:'equipment', range:'long',
+      no:'ציוד · '+label, cstart:nd(), term:t.agMonths, _eqCalcId:cid});
+    // שמירת החישוב עצמו על כרטיס הלקוח לתיעוד
+    if(!Array.isArray(c.eqCalcs))c.eqCalcs=[];
+    c.eqCalcs.push({id:cid,ts:Date.now(),date:nd(),closed:true,
+      deals:set.map(d=>({name:d.name,v:d.v})),
+      cost:t.cost,customer:Math.round(t.customer),monthly:t.monthly+t.svc,
+      revenue:Math.round(t.rev),profit:Math.round(t.rev-t.cost),
+      pmi:t.rev?Math.round((1-t.cost/t.rev)*1000)/10:0});
+    dbUpdate('clients',c.id,c);
+    saveAll(); rAll();
+    const el=document.getElementById('eq-popup'); if(el)el.remove();
+    showToast('✅ העסקה נסגרה — נוצרו כרטיס לקוח, הפצה ופרויקט שכר','ok');
+  },'✅ סגור עסקה');
+}
 function _eqRead(){
   const g=id=>_aiNum((document.getElementById(id)||{}).value||0);
   const s=id=>(document.getElementById(id)||{}).value||'';
@@ -12380,9 +12466,15 @@ function openEquipCalc(){
       <button onclick="document.getElementById('eq-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
     <div style="font-size:10px;color:var(--text3);margin-bottom:11px">עסקת ציוד בלבד · פריסת תשלומים בריבית ${Math.round(EQ_ANNUAL_RATE*100)}% שנתית · בקרת אחוז העמסה ופריסה לפי מאשר העסקה</div>
-    <div style="margin-bottom:9px">
-      <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">🏷️ שם העסקה <span style="font-weight:400;opacity:.8">(לריכוז מספר עסקאות)</span></label>
-      <input id="eq-name" placeholder="למשל: פיירוול ראשי" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none;direction:rtl;text-align:right">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px">
+      <div>
+        <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">🏢 שם הלקוח <span style="font-weight:400;opacity:.8">(לשמירה וסגירה)</span></label>
+        <input id="eq-client" list="co-list" placeholder="שם הלקוח" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none;direction:rtl;text-align:right">
+      </div>
+      <div>
+        <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">🏷️ שם העסקה <span style="font-weight:400;opacity:.8">(לריכוז)</span></label>
+        <input id="eq-name" placeholder="למשל: פיירוול ראשי" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none;direction:rtl;text-align:right">
+      </div>
     </div>
     <div style="font-size:10px;font-weight:800;color:#f4a261;letter-spacing:.5px;margin-bottom:6px">💸 עלויות לספק</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px">
@@ -12408,10 +12500,12 @@ function openEquipCalc(){
       </div>
       <div id="eq-deals"></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px">
+    <button class="btn btnp" onclick="_eqCloseDeal()" style="width:100%;font-size:12.5px;background:#06d6a0;border-color:#06d6a0;color:#0a0e1c;font-weight:900;margin-top:11px">✅ סגור עסקה — סנכרן ללקוח · הפצה · שכר</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <button class="btn btnp" onclick="_eqSaveCalc()" style="font-size:12px;background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:800">💾 שמור חישוב</button>
       <button class="btn btnp" onclick="_eqExport()" style="font-size:12px;background:#1d6f42;border-color:#1d6f42;color:#fff;font-weight:800">📥 ייצוא Excel</button>
       <button class="btn btnp" onclick="_eqCopy()" style="font-size:12px;background:#4cc9f0;border-color:#4cc9f0;color:#0a0e1c;font-weight:800">📋 העתק סיכום</button>
-      <button class="btn btns" onclick="document.getElementById('eq-popup').remove()" style="font-size:12px;grid-column:1/-1">סגור</button>
+      <button class="btn btns" onclick="document.getElementById('eq-popup').remove()" style="font-size:12px">סגור חלון</button>
     </div>
   </div>`;
   el.addEventListener('click',()=>el.remove());
