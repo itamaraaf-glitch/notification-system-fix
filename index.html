@@ -2746,6 +2746,7 @@ body.logged-in #ai-fab{display:flex}
   </div>
   <div id="client-sections"></div>
   <div id="client-deals-section"></div>
+  <div id="client-calcs-section"></div>
   <div id="client-projects-section"></div>
   <div id="client-contracts-section"></div>
   <div id="client-meetings-section"></div>
@@ -9017,6 +9018,64 @@ function getClientAlerts(){
 }
 
 // ===== תיעוד פרויקטים בכרטיס הלקוח (מהפצות, כולל ארכיון) =====
+// חישובי מחשבון הציוד ששמורים על כרטיס הלקוח — תיעוד התמחור שהוביל לעסקה, עם פתיחה חוזרת
+function renderClientCalcs(id){
+  const sec=document.getElementById('client-calcs-section');
+  if(!sec)return;
+  if(!id){sec.style.display='none';sec.innerHTML='';return;}
+  const c=D.clients.find(x=>x.id==id);
+  const eqs=(c&&Array.isArray(c.eqCalcs))?c.eqCalcs.map(k=>({...k,_kind:'eq'})):[];
+  const rois=(c&&Array.isArray(c.roiCalcs))?c.roiCalcs.map(k=>({...k,_kind:'roi',
+    customer:k.cumIncome,profit:k.totalProfit,pmi:k.roiPct})):[];
+  const all=[...eqs,...rois].sort((a,b)=>(b.ts||0)-(a.ts||0));
+  if(!all.length){sec.style.display='none';sec.innerHTML='';return;}
+  sec.style.display='';
+  const rows=all.map(k=>{
+    const names=k._kind==='roi'?(k.label||'תשתית'):((k.deals||[]).map(d=>d.name).join(' + ')||'עסקת ציוד');
+    const ico=k._kind==='roi'?'🧮':'🖥️';
+    const chip=k.closed?'<span style="font-size:9px;font-weight:800;color:var(--teal);background:rgba(6,214,160,.14);border-radius:10px;padding:1px 7px">נסגר</span>'
+                       :'<span style="font-size:9px;font-weight:800;color:#a78bfa;background:rgba(167,139,250,.14);border-radius:10px;padding:1px 7px">טיוטה</span>';
+    return `<div class="cmod-row" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07)">
+      <span style="font-size:11px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(names)}">${ico} ${esc(names)}</span>
+      ${chip}
+      <span style="font-size:10px;color:var(--text3);white-space:nowrap">${fmtDate(k.date||'')}</span>
+      <span style="font-size:10.5px;color:#4cc9f0;white-space:nowrap" title="מחיר ללקוח">${fmt(k.customer)}</span>
+      <span style="font-size:10.5px;color:${(+k.profit||0)>0?'var(--teal)':'#e63946'};white-space:nowrap" title="רווח גולמי">${fmt(k.profit)}</span>
+      <span style="font-size:10px;color:var(--text2);white-space:nowrap" title="${k._kind==='roi'?'ROI':'PMI'}">${k._kind==='roi'?'ROI':'PMI'} ${k.pmi}%</span>
+      <button class="btn btns" onclick="_openCalcFromClient('${c.id}','${k.id}','${k._kind}')" title="פתח מחדש במחשבון" style="border-color:#4cc9f0;color:#4cc9f0;font-size:10px;padding:2px 8px">${ico} פתח</button>
+    </div>`;
+  }).join('');
+  sec.innerHTML=`<div style="margin-top:14px">
+    <div style="font-size:11.5px;font-weight:800;color:#4cc9f0;margin-bottom:6px">🧮 חישובים שמורים <span style="font-weight:400;color:var(--text3);font-size:10px">(${all.length})</span></div>
+    ${rows}</div>`;
+}
+// פתיחת חישוב שמור מכרטיס הלקוח לתוך מחשבון הציוד
+function _openCalcFromClient(clientId,calcId,kind){
+  const c=(D.clients||[]).find(x=>x.id==clientId); if(!c)return;
+  if(kind==='roi'){
+    const k=(c.roiCalcs||[]).find(x=>x.id==calcId); if(!k){ showToast('⚠️ החישוב לא נמצא','warn'); return; }
+    try{ closeM('mclient'); }catch(e){}
+    setTimeout(()=>{
+      openRoiCalc();
+      const set=(id,val)=>{const e=document.getElementById(id); if(e)e.value=val;};
+      set('roi-client',k.client||c.name||''); set('roi-upfront',k.upfront||'');
+      set('roi-rev',k.rev||''); set('roi-cost',k.cost||''); set('roi-months',k.months||'');
+      _roiSites=Array.isArray(k.sites)?k.sites.map(s=>({name:s.name||'',cost:+s.cost||0,qty:+s.qty||1})):[];
+      if(!_roiSites.length){ set('roi-inv',k.inv||''); set('roi-qty',k.qty||1); }
+      _roiRenderSites(); _roiSyncTotals();
+    },220);
+    return;
+  }
+  const k=(c.eqCalcs||[]).find(x=>x.id==calcId); if(!k){ showToast('⚠️ החישוב לא נמצא','warn'); return; }
+  try{ closeM('mclient'); }catch(e){}
+  setTimeout(()=>{
+    openEquipCalc();
+    const ci=document.getElementById('eq-client'); if(ci)ci.value=k.client||c.name||'';
+    _eqDeals=(k.deals||[]).map(d=>({name:d.name,v:{...d.v}}));
+    if(_eqDeals.length)_eqLoadDeal(_eqDeals.length-1);
+    _eqRenderDeals(); _eqRender();
+  },220);
+}
 function renderClientProjects(id){
   const sec=document.getElementById('client-projects-section');
   if(!sec)return;
@@ -9544,6 +9603,7 @@ function openClientModal(id){
   populatePotentialProducts(c.potential||[]);
   attachLoad('client',id?c:null);
   renderClientDeals(id);
+  renderClientCalcs(id);
   renderClientProjects(id);
   renderClientContracts(id);
   renderClientMeetings(id);
@@ -13309,6 +13369,10 @@ function openRoiCalc(clientId,potIdx){
       <button onclick="document.getElementById('roi-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
     <div style="font-size:10.5px;color:var(--text3);margin-bottom:12px">${p?('עבור: <b style="color:var(--text2)">'+esc(p.product||p.productType||'מוצר')+'</b>'):'תכנון עסקה — בדוק כדאיות לפני שסוגרים'}</div>
+    <div style="margin-bottom:9px">
+      <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">🏢 שם הלקוח <span style="font-weight:400;opacity:.8">(לשמירה וסגירה)</span></label>
+      <input id="roi-client" list="co-list" placeholder="שם הלקוח" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none;direction:rtl;text-align:right">
+    </div>
     <div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.25);border-radius:10px;padding:9px 11px;margin-bottom:9px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <span style="font-size:10.5px;font-weight:800;color:#a78bfa">📍 אתרים — עלות תשתית לכל אתר</span>
@@ -13324,10 +13388,13 @@ function openRoiCalc(clientId,potIdx){
     ${f('roi-cost','📉 עלות חודשית שוטפת','','לקו אחד (ספק, תחזוקה)')}
     ${f('roi-months','📅 תקופת התקשרות','','בחודשים')}
     <div id="roi-out" style="margin:12px 0 10px"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button class="btn btnp" onclick="_roiSave()" style="font-size:12px;background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:800">💾 שמור למוצר</button>
+    <button class="btn btnp" onclick="_roiSaveToPlan()" style="width:100%;font-size:12.5px;background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:900;margin-top:4px" title="שומר כטיוטה בתוכנית העבודה — בלי לעדכן לקוח/הפצה/שכר">📋 שמור לתוכנית העבודה (טיוטה)</button>
+    <button class="btn btnp" onclick="_roiCloseDeal()" style="width:100%;font-size:12.5px;background:#06d6a0;border-color:#06d6a0;color:#0a0e1c;font-weight:900;margin-top:8px">✅ סגור עסקה — סנכרן ללקוח · הפצה · שכר</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <button class="btn btns" onclick="_roiSaveToClient()" style="font-size:12px">💾 שמור בכרטיס הלקוח</button>
       <button class="btn btnp" onclick="_roiExport()" style="font-size:12px;background:#1d6f42;border-color:#1d6f42;color:#fff;font-weight:800">📥 ייצוא Excel</button>
-      <button class="btn btns" onclick="_roiCopy()" style="font-size:12px;grid-column:1/-1">📋 העתק סיכום</button>
+      <button class="btn btns" onclick="_roiSave()" style="font-size:12px">💾 שמור למוצר</button>
+      <button class="btn btns" onclick="_roiCopy()" style="font-size:12px">📋 העתק סיכום</button>
     </div>
   </div>`;
   el.addEventListener('click',()=>el.remove());
@@ -13336,6 +13403,9 @@ function openRoiCalc(clientId,potIdx){
     const v=[pre.inv,pre.upfront,pre.qty,pre.rev,pre.cost,pre.months][i];
     const inp=document.getElementById(id); if(inp&&v)inp.value=v;
   });
+  { const ci=document.getElementById('roi-client');
+    if(ci){ const cl=clientId!=null?(D.clients||[]).find(x=>x.id==clientId):null;
+      ci.value=saved.client||(cl&&cl.name)||''; } }
   _roiSites=Array.isArray(saved.sites)?saved.sites.map(s=>({name:s.name||'',cost:+s.cost||0,qty:+s.qty||1})):[];
   _roiRenderSites(); _roiSyncTotals();
   _roiRender();
@@ -13394,6 +13464,91 @@ function _roiExport(){
   try{ dlCSV('החזר_השקעה_תשתית',toCSV(['פריט','ערך','',''],rows));
     showToast('📥 קובץ האקסל של החזר ההשקעה הורד','ok');
   }catch(e){ showToast('⚠️ שגיאה בייצוא','warn'); }
+}
+// ===== החזר השקעה: לקוח · טיוטה לתוכנית העבודה · סגירת עסקה =====
+function _roiClientName(){ return ((document.getElementById('roi-client')||{}).value||'').trim(); }
+function _roiPayload(){
+  const v=_roiRead(), r=_roiCalc(v);
+  return {...v, sites:_roiSites.map(s=>({name:s.name,cost:+s.cost||0,qty:+s.qty||1})),
+    client:_roiClientName(), netMonthly:r.net, netInv:r.netInv, cumIncome:r.cumIncome,
+    coverPct:Math.round(r.coverPct), payback:isFinite(r.payback)?Math.ceil(r.payback):null,
+    totalProfit:r.totalProfit, roiPct:isFinite(r.roiPct)?Math.round(r.roiPct):null, ts:Date.now()};
+}
+function _roiLabel(){
+  if(_roiSites.length)return _roiSites.map((s,i)=>s.name||('אתר '+(i+1))).join(' + ');
+  return 'תשתית' + (_roiCalc(_roiRead()).qty>1?(' · '+_roiCalc(_roiRead()).qty+' קווים'):'');
+}
+// שמירה לתוכנית העבודה — טיוטה בלבד, בלי לגעת בלקוח/הפצות/שכר
+function _roiSaveToPlan(){
+  const name=_roiClientName();
+  if(!name){ showToast('⚠️ הזן שם לקוח כדי לשמור לתוכנית העבודה','warn'); const e=document.getElementById('roi-client'); if(e)e.focus(); return; }
+  const r=_roiCalc(_roiRead());
+  if(!r.netInv&&!r.net){ showToast('⚠️ אין נתונים לשמירה','warn'); return; }
+  const payload=_roiPayload(), label=_roiLabel();
+  const ctx=window._roiCtx||{};
+  let cl=ctx.clientId!=null?(D.clients||[]).find(x=>x.id==ctx.clientId):null;
+  let p=cl&&Array.isArray(cl.potential)?cl.potential[ctx.potIdx]:null;
+  if(p){ p.product=label; p.estimatedValue=Math.max(0,Math.round(r.totalProfit)); p.roi=payload; }
+  else{
+    cl=_eqEnsureClient(name);
+    if(!Array.isArray(cl.potential))cl.potential=[];
+    cl.potential.push({product:label,productType:'תשתית',estimatedValue:Math.max(0,Math.round(r.totalProfit)),
+      priority:'בינונית',status:'בתהליך',targetDate:'',notes:'טיוטת מחשבון החזר השקעה',roi:payload});
+    window._roiCtx={clientId:cl.id,potIdx:cl.potential.length-1};
+  }
+  cl._mts=Date.now(); dbUpdate('clients',cl.id,cl); saveAll();
+  if(currentSec==='workplan')rWorkPlan();
+  showToast('📋 נשמר לתוכנית העבודה — אפשר לחזור ולערוך בכל עת','ok');
+}
+// שמירת החישוב בכרטיס הלקוח (תיעוד)
+function _roiSaveToClient(){
+  const name=_roiClientName();
+  if(!name){ showToast('⚠️ הזן שם לקוח כדי לשמור','warn'); const e=document.getElementById('roi-client'); if(e)e.focus(); return; }
+  const c=_eqEnsureClient(name);
+  if(!Array.isArray(c.roiCalcs))c.roiCalcs=[];
+  c.roiCalcs.push({id:genId(),date:nd(),label:_roiLabel(),...(_roiPayload())});
+  c._mts=Date.now(); dbUpdate('clients',c.id,c); saveAll();
+  showToast('💾 החישוב נשמר בכרטיס הלקוח '+esc(name),'ok');
+}
+// סגירת עסקת תשתית — כל נושא מקבל רק את מה שרלוונטי לו
+function _roiCloseDeal(){
+  const name=_roiClientName();
+  if(!name){ showToast('⚠️ הזן שם לקוח לפני סגירת העסקה','warn'); const e=document.getElementById('roi-client'); if(e)e.focus(); return; }
+  const v=_roiRead(), r=_roiCalc(v);
+  if(!r.netInv&&!r.net){ showToast('⚠️ אין נתונים — מלא השקעה והכנסה','warn'); return; }
+  const label=_roiLabel();
+  const ask='לסגור את עסקת התשתית עבור '+name+'?\n\n'
+    +'השקעה נטו: '+fmt(r.netInv)+' · הכנסה חודשית: '+fmt(r.net)+' · תקופה: '+r.months+' חודשים\n'
+    +(r.shortfall>0?('⚠️ ההשקעה לא מוחזרת בתקופה — חסרים '+fmt(r.shortfall)):('✅ עודף '+fmt(-r.shortfall)))
+    +'\n\nייווצרו אוטומטית:\n• כרטיס לקוח — הקווים והתפוגה\n• הפצה/פרויקט — לכל אתר\n• פרויקט שכר (שירות) — לגבייה';
+  confirmAct(ask,()=>{
+    const cid=genId();
+    const expiry=r.months?addMonths(nd(),r.months):'';
+    const sites=_roiSites.length?_roiSites:[{name:label,cost:r.netInv,qty:r.qty}];
+    // 1) כרטיס לקוח — הקווים שיש ללקוח ומתי פגים. ללא עלויות/רווח פנימיים.
+    const c=_eqEnsureClient(name);
+    if(!Array.isArray(c.lines))c.lines=[];
+    sites.forEach((s,i)=>c.lines.push({lineType:'צד ג׳',speed:'',ip:'',expiry:expiry,
+      monthly:Math.max(0,+s.qty||1)*(+v.rev||0),
+      notes:(s.name||('אתר '+(i+1)))+' · '+Math.max(0,+s.qty||1)+' קווים · נסגר '+fmtDate(nd())}));
+    c._roiClosed=(c._roiClosed||[]).concat([cid]); c._mts=Date.now();
+    dbUpdate('clients',c.id,c);
+    // 2) הפצה/פרויקט — אחת לכל אתר, לביצוע בשטח. ללא נתוני רווחיות.
+    sites.forEach((s,i)=>dbInsert('dists',{co:name,no:'',cl:'',hd:'',hp:'',it:'',
+      so:(s.name||('אתר '+(i+1))), ad:(s.name||''),
+      inc:Math.max(0,+s.qty||1)*(+v.rev||0), eq:0, dt:nd(), st:'ממתין להפצה', ty:'long',
+      notes:'תשתית · '+Math.max(0,+s.qty||1)+' קווים', _roiCalcId:cid}));
+    // 3) שכר (שירות) — ההכנסה לגבייה לאורך התקופה. ללא פרטי אתרים.
+    dbInsert('salary',{pj:'', cl:name, qt:r.qty, tr:Math.round(r.cumIncome), cl2:0,
+      pv:Math.round(r.cumIncome), st:'פתוח', ty:'service', range:'long',
+      no:'תשתית · '+label, cstart:nd(), term:r.months, _roiCalcId:cid});
+    if(!Array.isArray(c.roiCalcs))c.roiCalcs=[];
+    c.roiCalcs.push({id:cid,date:nd(),label:label,closed:true,...(_roiPayload())});
+    dbUpdate('clients',c.id,c);
+    saveAll(); rAll();
+    const el=document.getElementById('roi-popup'); if(el)el.remove();
+    showToast('✅ עסקת התשתית נסגרה — נוצרו כרטיס לקוח, '+sites.length+' הפצות ופרויקט שכר','ok');
+  },'✅ סגור עסקה');
 }
 function _roiCopy(){
   const t=_roiSummaryText();
