@@ -12349,6 +12349,55 @@ function _roiBreakEvenDate(payback){
   const d=now(); d.setMonth(d.getMonth()+Math.ceil(payback));
   return d.toISOString().slice(0,10);
 }
+// ===== אתרים: פירוק עלות התשתית לפי אתר =====
+// כל אתר תורם עלות תשתית וכמות קווים; הסכומים מצטברים לסה"כ שממנו מתבצע כל החישוב,
+// כך שמתקבלת תמונה מלאה על ההשקעה ועל ההכנסה בפריסה רב-אתרית.
+let _roiSites=[];
+function _roiSitesTotals(){
+  return _roiSites.reduce((a,s)=>({cost:a.cost+(+s.cost||0),qty:a.qty+(Math.max(0,+s.qty||0))}),{cost:0,qty:0});
+}
+function _roiAddSite(){ _roiSites.push({name:'',cost:0,qty:1}); _roiRenderSites(); _roiSyncTotals(); }
+function _roiDelSite(i){ _roiSites.splice(i,1); _roiRenderSites(); _roiSyncTotals(); }
+function _roiSiteSet(i,field,val){
+  if(!_roiSites[i])return;
+  _roiSites[i][field]= field==='name'?String(val||''):_aiNum(val);
+  _roiSyncTotals();
+}
+// סכימת האתרים → ממלאת את שדות ההשקעה והכמות (הם הופכים לנגזרים כשיש אתרים)
+function _roiSyncTotals(){
+  const t=_roiSitesTotals();
+  const inv=document.getElementById('roi-inv'), qty=document.getElementById('roi-qty');
+  const on=_roiSites.length>0;
+  if(inv){ inv.readOnly=on; inv.style.opacity=on?'.75':''; if(on)inv.value=t.cost; }
+  if(qty){ qty.readOnly=on; qty.style.opacity=on?'.75':''; if(on)qty.value=t.qty; }
+  const note=document.getElementById('roi-derived-note');
+  if(note)note.style.display=on?'':'none';
+  // עדכון שורת הסיכום בלבד (בלי לבנות מחדש את השדות — כדי לא לאבד מיקוד תוך כדי הקלדה)
+  const foot=document.getElementById('roi-sites-foot');
+  if(foot)foot.innerHTML=`<span style="color:var(--text2)">סה"כ ${_roiSites.length} אתרים</span>`
+    +`<span style="color:#a78bfa">${fmt(t.cost)} · ${t.qty} קווים</span>`;
+  _roiRender();
+}
+function _roiRenderSites(){
+  const box=document.getElementById('roi-sites'); if(!box)return;
+  const t=_roiSitesTotals();
+  const inp=(i,f,v,ph,w)=>`<input value="${esc(String(v==null?'':v))}" placeholder="${ph}" ${f==='name'?'':'type="number" inputmode="numeric"'}
+      oninput="_roiSiteSet(${i},'${f}',this.value)"
+      style="width:${w};box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:7px;padding:5px 8px;color:var(--text);font-family:inherit;font-size:11.5px;outline:none;${f==='name'?'direction:rtl;text-align:right':'direction:ltr;text-align:left'}">`;
+  box.innerHTML=(_roiSites.length?`
+    <div style="display:grid;grid-template-columns:1fr 92px 62px 28px;gap:5px;font-size:9.5px;color:var(--text3);font-weight:700;margin-bottom:3px">
+      <span>שם האתר</span><span>עלות תשתית ₪</span><span>קווים</span><span></span></div>
+    ${_roiSites.map((s,i)=>`<div style="display:grid;grid-template-columns:1fr 92px 62px 28px;gap:5px;margin-bottom:4px;align-items:center">
+      ${inp(i,'name',s.name,'אתר '+(i+1),'100%')}
+      ${inp(i,'cost',s.cost,'0','100%')}
+      ${inp(i,'qty',s.qty,'1','100%')}
+      <button onclick="_roiDelSite(${i})" title="הסר אתר" style="background:none;border:none;color:#e63946;font-size:13px;cursor:pointer;padding:2px">🗑</button>
+    </div>`).join('')}
+    <div id="roi-sites-foot" style="display:flex;justify-content:space-between;font-size:11px;font-weight:800;border-top:1px solid rgba(255,255,255,.1);padding-top:5px;margin-top:2px">
+      <span style="color:var(--text2)">סה"כ ${_roiSites.length} אתרים</span>
+      <span style="color:#a78bfa">${fmt(t.cost)} · ${t.qty} קווים</span></div>`
+    :'<div style="font-size:10.5px;color:var(--text3);padding:2px 0">לא הוגדרו אתרים — ההשקעה והכמות מוזנות ידנית למטה</div>');
+}
 function _roiRead(){
   const g=id=>_aiNum((document.getElementById(id)||{}).value||0);
   return {inv:g('roi-inv'),upfront:g('roi-upfront'),rev:g('roi-rev'),cost:g('roi-cost'),months:g('roi-months'),qty:g('roi-qty')||1};
@@ -12418,6 +12467,14 @@ function openRoiCalc(clientId,potIdx){
       <button onclick="document.getElementById('roi-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
     <div style="font-size:10.5px;color:var(--text3);margin-bottom:12px">${p?('עבור: <b style="color:var(--text2)">'+esc(p.product||p.productType||'מוצר')+'</b>'):'תכנון עסקה — בדוק כדאיות לפני שסוגרים'}</div>
+    <div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.25);border-radius:10px;padding:9px 11px;margin-bottom:9px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:10.5px;font-weight:800;color:#a78bfa">📍 אתרים — עלות תשתית לכל אתר</span>
+        <button onclick="_roiAddSite()" class="btn btns" style="font-size:10px;padding:2px 9px;border-color:#a78bfa;color:#a78bfa">+ אתר</button>
+      </div>
+      <div id="roi-sites"></div>
+    </div>
+    <div id="roi-derived-note" style="display:none;font-size:9.5px;color:#a78bfa;margin-bottom:4px">↓ מחושב אוטומטית מסכום האתרים</div>
     ${f('roi-inv','💰 עלות התשתית / ההשקעה','','(סה"כ — ציוד, התקנה, חיווט)')}
     ${f('roi-upfront','🧾 תשלום חד-פעמי מהלקוח','','(השתתפות הלקוח בהקמה)')}
     ${f('roi-qty','🔢 כמות (קווים / יחידות)','','מכפיל את הסכומים החודשיים')}
@@ -12437,6 +12494,8 @@ function openRoiCalc(clientId,potIdx){
     const v=[pre.inv,pre.upfront,pre.qty,pre.rev,pre.cost,pre.months][i];
     const inp=document.getElementById(id); if(inp&&v)inp.value=v;
   });
+  _roiSites=Array.isArray(saved.sites)?saved.sites.map(s=>({name:s.name||'',cost:+s.cost||0,qty:+s.qty||1})):[];
+  _roiRenderSites(); _roiSyncTotals();
   _roiRender();
   const first=document.getElementById('roi-inv'); if(first)first.focus();
 }
@@ -12444,7 +12503,10 @@ function _roiSummaryText(){
   const v=_roiRead(), r=_roiCalc(v);
   const pb=isFinite(r.payback)?Math.ceil(r.payback)+' חודשים':'לא מוחזר';
   const q=r.qty>1?` × ${r.qty} יח'`:'';
-  return `🧮 החזר השקעה בתשתית\nהשקעה: ${fmt(v.inv)} · השתתפות לקוח: ${fmt(v.upfront)} → השקעה נטו ${fmt(r.netInv)}\n`
+  const st=_roiSitesTotals();
+  return `🧮 החזר השקעה בתשתית\n`
+    +(_roiSites.length?`📍 ${_roiSites.length} אתרים: ${_roiSites.map((s,i)=>(s.name||('אתר '+(i+1)))+' '+fmt(+s.cost||0)).join(' · ')} → סה"כ ${fmt(st.cost)} · ${st.qty} קווים\n`:'')
+    +`השקעה: ${fmt(v.inv)} · השתתפות לקוח: ${fmt(v.upfront)} → השקעה נטו ${fmt(r.netInv)}\n`
     +`${r.qty>1?'כמות: '+r.qty+" יח'\n":''}`
     +`הכנסה חודשית: ${fmt(v.rev)} · עלות חודשית: ${fmt(v.cost)}${q} → רווח נטו ${fmt(r.net)}/חודש\n`
     +`תקופה: ${v.months} חודשים · החזר השקעה: ${pb}\n`
@@ -12456,6 +12518,13 @@ function _roiExport(){
   const v=_roiRead(), r=_roiCalc(v);
   const rows=[]; const sec=t=>rows.push(['',''],[t,'']); const row=(k,val)=>rows.push([k,val]);
   rows.push(['מחשבון החזר השקעה בתשתית — '+fmtDate(nd()),'']);
+  if(_roiSites.length){
+    sec('📍 אתרים');
+    rows.push(['שם האתר','עלות תשתית','קווים','הכנסה חודשית מהאתר']);
+    _roiSites.forEach((s,i)=>rows.push([s.name||('אתר '+(i+1)),+s.cost||0,Math.max(0,+s.qty||0),Math.max(0,+s.qty||0)*r.netUnit]));
+    const t=_roiSitesTotals();
+    rows.push(['סה"כ '+_roiSites.length+' אתרים',t.cost,t.qty,t.qty*r.netUnit]);
+  }
   sec('📥 נתוני קלט');
   row('עלות התשתית / ההשקעה',+v.inv||0);
   row('תשלום חד-פעמי מהלקוח',+v.upfront||0);
@@ -12497,7 +12566,8 @@ function _roiSave(){
   const cl=(D.clients||[]).find(x=>x.id==c.clientId);
   const p=cl&&Array.isArray(cl.potential)?cl.potential[c.potIdx]:null;
   if(!p){ showToast('⚠️ המוצר לא נמצא','warn'); return; }
-  p.roi={...v,payback:isFinite(r.payback)?Math.ceil(r.payback):null,totalProfit:r.totalProfit,
+  p.roi={...v,sites:_roiSites.map(s=>({name:s.name,cost:+s.cost||0,qty:+s.qty||1})),
+         payback:isFinite(r.payback)?Math.ceil(r.payback):null,totalProfit:r.totalProfit,
          roiPct:isFinite(r.roiPct)?Math.round(r.roiPct):null,ts:Date.now()};
   if(!+p.estimatedValue&&r.totalProfit>0)p.estimatedValue=Math.round(r.totalProfit);
   cl._mts=Date.now(); saveAll(); rWorkPlan();
