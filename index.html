@@ -2287,6 +2287,7 @@ body.logged-in #ai-fab{display:flex}
         <option value="נסגר">נסגר</option>
       </select>
       <button class="btn" onclick="nav('clients')" style="background:rgba(200,169,110,.12);color:var(--gold);border-color:rgba(200,169,110,.3)" title="עבור לכרטיסי לקוח להוספת מוצרים">🏢 לקוחות</button>
+      <button class="btn" onclick="openRoiCalc()" title="מחשבון החזר השקעה בתשתית" style="background:rgba(167,139,250,.12);color:#a78bfa;border-color:rgba(167,139,250,.35)">🧮 החזר השקעה</button>
       <button class="btn btn-excel" onclick="exportExcel('workplan')">📥 Excel</button>
     </div>
   </div>
@@ -12074,6 +12075,128 @@ function removePotential(clientId,idx){
   showToast('🗑 מוצר נמחק','ok');
 }
 
+// ===== 🧮 מחשבון החזר השקעה בתשתית — תכנון כלכלי לעסקה לפני שסוגרים =====
+// מחשב: רווח חודשי נטו, השקעה נטו, זמן החזר (חודשים), רווח כולל לתקופת ההתקשרות ו-ROI%,
+// ומציג חוות-דעת ברורה (משתלם / גבולי / לא מחזיר בתקופה) עם ציר-זמן ויזואלי.
+function _roiCalc(v){
+  const inv=+v.inv||0, upfront=+v.upfront||0, rev=+v.rev||0, cost=+v.cost||0, months=Math.max(0,+v.months||0);
+  const net=rev-cost;                          // רווח חודשי נטו
+  const netInv=Math.max(0,inv-upfront);        // השקעה נטו אחרי התשלום החד-פעמי
+  const payback=net>0?(netInv/net):Infinity;   // חודשים עד החזר ההשקעה
+  const totalProfit=net*months-netInv;         // רווח כולל לאורך ההתקשרות
+  const roiPct=netInv>0?(totalProfit/netInv*100):(totalProfit>0?Infinity:0);
+  let verdict,vc;
+  if(net<=0){verdict='אין רווח חודשי — לא משתלם';vc='#e63946';}
+  else if(!months){verdict='הזן תקופת התקשרות';vc='var(--text3)';}
+  else if(payback>months){verdict='ההשקעה לא מוחזרת בתקופת ההתקשרות';vc='#e63946';}
+  else if(payback<=months/2){verdict='משתלם מאוד — מחזיר בחצי הראשון';vc='var(--teal)';}
+  else {verdict='משתלם — מחזיר בתוך התקופה';vc='#f4a261';}
+  return {net,netInv,payback,totalProfit,roiPct,months,verdict,vc};
+}
+function _roiBreakEvenDate(payback){
+  if(!isFinite(payback)||payback<=0)return '';
+  const d=now(); d.setMonth(d.getMonth()+Math.ceil(payback));
+  return d.toISOString().slice(0,10);
+}
+function _roiRead(){
+  const g=id=>_aiNum((document.getElementById(id)||{}).value||0);
+  return {inv:g('roi-inv'),upfront:g('roi-upfront'),rev:g('roi-rev'),cost:g('roi-cost'),months:g('roi-months')};
+}
+function _roiRender(){
+  const box=document.getElementById('roi-out'); if(!box)return;
+  const v=_roiRead(), r=_roiCalc(v);
+  const pbTxt=isFinite(r.payback)?(r.payback<1?'פחות מחודש':Math.ceil(r.payback)+' חודשים'):'לעולם לא';
+  const roiTxt=isFinite(r.roiPct)?Math.round(r.roiPct)+'%':(r.totalProfit>0?'∞ (ללא השקעה)':'0%');
+  const be=_roiBreakEvenDate(r.payback);
+  const pct=(r.months&&isFinite(r.payback))?Math.min(100,Math.round(r.payback/r.months*100)):100;
+  const tile=(lbl,val,clr)=>`<div class="stat-mini" style="background:rgba(255,255,255,.03);border:1px solid ${clr}33"><div style="font-size:10px;color:var(--text3);font-weight:700">${lbl}</div><div style="font-size:16px;font-weight:900;color:${clr}">${val}</div></div>`;
+  box.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:10px">
+      ${tile('רווח חודשי נטו',fmt(r.net),r.net>0?'var(--teal)':'#e63946')}
+      ${tile('השקעה נטו',fmt(r.netInv),'#f4a261')}
+      ${tile('החזר השקעה',pbTxt,isFinite(r.payback)&&r.months&&r.payback<=r.months?'var(--teal)':'#e63946')}
+      ${tile('רווח לכל התקופה',fmt(r.totalProfit),r.totalProfit>0?'var(--teal)':'#e63946')}
+      ${tile('ROI',roiTxt,r.totalProfit>0?'var(--teal)':'#e63946')}
+    </div>
+    <div style="height:10px;background:rgba(255,255,255,.07);border-radius:20px;overflow:hidden;margin-bottom:5px">
+      <div style="width:${pct}%;height:100%;background:${r.vc};border-radius:20px;transition:width .3s"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:9px">
+      <span>תחילת ההתקשרות</span>${r.months?`<span>${r.months} חודשים</span>`:''}
+    </div>
+    <div style="font-size:12.5px;font-weight:800;color:${r.vc};margin-bottom:4px">${esc(r.verdict)}</div>
+    ${be&&r.months&&isFinite(r.payback)&&r.payback<=r.months?`<div style="font-size:11px;color:var(--text2)">נקודת איזון משוערת: <b>${fmtDate(be)}</b> · מכאן ואילך ${fmt(r.net)} רווח נקי בחודש</div>`:''}`;
+}
+// פתיחת המחשבון. עם clientId+potIdx — נטען מהמוצר הפוטנציאלי, והתוצאה נשמרת אליו בחזרה.
+function openRoiCalc(clientId,potIdx){
+  const old=document.getElementById('roi-popup'); if(old)old.remove();
+  let p=null;
+  if(clientId!=null){ const c=(D.clients||[]).find(x=>x.id==clientId); if(c&&Array.isArray(c.potential))p=c.potential[potIdx]||null; }
+  const saved=(p&&p.roi)||{};
+  const pre={inv:saved.inv||0, upfront:saved.upfront||0, rev:saved.rev||0, cost:saved.cost||0,
+             months:saved.months||((p&&+p.termMonths)||24)};
+  if(!saved.rev&&p&&+p.estimatedValue)pre.rev=0; // שווי משוער אינו בהכרח חודשי — לא מנחשים
+  window._roiCtx={clientId:clientId??null,potIdx:potIdx??null};
+  const f=(id,lbl,val,hint)=>`<div style="margin-bottom:8px">
+      <label style="display:block;font-size:10.5px;color:var(--text3);font-weight:700;margin-bottom:3px">${lbl}${hint?` <span style="font-weight:400;color:var(--text3);opacity:.8">${hint}</span>`:''}</label>
+      <input id="${id}" type="number" inputmode="numeric" value="${val||''}" oninput="_roiRender()"
+        style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none;direction:ltr;text-align:left"></div>`;
+  const el=document.createElement('div');
+  el.id='roi-popup';
+  el.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.75);z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px;overflow-y:auto';
+  el.innerHTML=`<div style="background:linear-gradient(135deg,#101525,#0a0e1c);border:1px solid rgba(167,139,250,.3);border-radius:16px;max-width:430px;width:100%;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:cardIn .25s ease;max-height:92vh;overflow-y:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div style="font-size:15px;font-weight:900;color:#a78bfa">🧮 מחשבון החזר השקעה בתשתית</div>
+      <button onclick="document.getElementById('roi-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="font-size:10.5px;color:var(--text3);margin-bottom:12px">${p?('עבור: <b style="color:var(--text2)">'+esc(p.product||p.productType||'מוצר')+'</b>'):'תכנון עסקה — בדוק כדאיות לפני שסוגרים'}</div>
+    ${f('roi-inv','💰 עלות התשתית / ההשקעה','','(ציוד, התקנה, חיווט)')}
+    ${f('roi-upfront','🧾 תשלום חד-פעמי מהלקוח','','(השתתפות הלקוח בהקמה)')}
+    ${f('roi-rev','📈 הכנסה חודשית מהלקוח','','₪ לחודש')}
+    ${f('roi-cost','📉 עלות חודשית שוטפת','','(ספק, תחזוקה)')}
+    ${f('roi-months','📅 תקופת התקשרות','','בחודשים')}
+    <div id="roi-out" style="margin:12px 0 10px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btnp" onclick="_roiSave()" style="font-size:12px;background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:800">💾 שמור למוצר</button>
+      <button class="btn btns" onclick="_roiCopy()" style="font-size:12px">📋 העתק סיכום</button>
+    </div>
+  </div>`;
+  el.addEventListener('click',()=>el.remove());
+  document.body.appendChild(el);
+  ['roi-inv','roi-upfront','roi-rev','roi-cost','roi-months'].forEach((id,i)=>{
+    const v=[pre.inv,pre.upfront,pre.rev,pre.cost,pre.months][i];
+    const inp=document.getElementById(id); if(inp&&v)inp.value=v;
+  });
+  _roiRender();
+  const first=document.getElementById('roi-inv'); if(first)first.focus();
+}
+function _roiSummaryText(){
+  const v=_roiRead(), r=_roiCalc(v);
+  const pb=isFinite(r.payback)?Math.ceil(r.payback)+' חודשים':'לא מוחזר';
+  return `🧮 החזר השקעה בתשתית\nהשקעה: ${fmt(v.inv)} · השתתפות לקוח: ${fmt(v.upfront)} → השקעה נטו ${fmt(r.netInv)}\n`
+    +`הכנסה חודשית: ${fmt(v.rev)} · עלות חודשית: ${fmt(v.cost)} → רווח נטו ${fmt(r.net)}/חודש\n`
+    +`תקופה: ${v.months} חודשים · החזר השקעה: ${pb}\nרווח כולל: ${fmt(r.totalProfit)} · ROI: ${isFinite(r.roiPct)?Math.round(r.roiPct)+'%':'—'}\n${r.verdict}`;
+}
+function _roiCopy(){
+  const t=_roiSummaryText();
+  const done=()=>showToast('📋 סיכום החזר ההשקעה הועתק','ok');
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done).catch(done);
+  else done();
+}
+function _roiSave(){
+  const c=window._roiCtx||{};
+  const v=_roiRead(), r=_roiCalc(v);
+  if(c.clientId==null){ _roiCopy(); return; }
+  const cl=(D.clients||[]).find(x=>x.id==c.clientId);
+  const p=cl&&Array.isArray(cl.potential)?cl.potential[c.potIdx]:null;
+  if(!p){ showToast('⚠️ המוצר לא נמצא','warn'); return; }
+  p.roi={...v,payback:isFinite(r.payback)?Math.ceil(r.payback):null,totalProfit:r.totalProfit,
+         roiPct:isFinite(r.roiPct)?Math.round(r.roiPct):null,ts:Date.now()};
+  if(!+p.estimatedValue&&r.totalProfit>0)p.estimatedValue=Math.round(r.totalProfit);
+  cl._mts=Date.now(); saveAll(); rWorkPlan();
+  const el=document.getElementById('roi-popup'); if(el)el.remove();
+  showToast('💾 תוכנית הכדאיות נשמרה למוצר','ok');
+}
 function rWorkPlan(){
   const priF=(document.getElementById('wp-pri-filter')||{}).value||'';
   const stF=(document.getElementById('wp-status-filter')||{}).value||'';
@@ -12116,7 +12239,7 @@ function rWorkPlan(){
       <td style="text-align:center;color:var(--text3)">${isThisM?'<span class="badge bb" style="font-size:8px;padding:1px 6px">🎯</span>':'↳'}<span style="display:none">${esc(p.clientName||'')}</span></td>
       <td style="white-space:nowrap;font-size:11px">${esc(p.productType||'–')}</td>
       <td style="font-weight:600">${esc(p.product||'–')}</td>
-      <td class="nb">${p.estimatedValue?fmt(+p.estimatedValue):'–'}</td>
+      <td class="nb">${p.estimatedValue?fmt(+p.estimatedValue):'–'}${p.roi&&p.roi.payback?`<div style="font-size:9px;font-weight:700;color:${p.roi.payback<=(p.roi.months||0)?'var(--teal)':'#e63946'};margin-top:2px;white-space:nowrap" title="החזר השקעה ${p.roi.payback} חודשים · ROI ${p.roi.roiPct}%">🧮 החזר ${p.roi.payback}ח'</div>`:''}</td>
       <td><select style="font-size:10px;padding:2px 4px;border-radius:6px;min-width:70px" onchange="updatePotentialPriority('${p.clientId}',${p.potIdx},this.value)">${priOpts(p.priority)}</select></td>
       <td style="font-size:10px;white-space:nowrap">${fmtDate(p.targetDate)}</td>
       <td>${dH}</td>
@@ -12125,6 +12248,7 @@ function rWorkPlan(){
       <td style="font-size:10px;max-width:130px;overflow:hidden;text-overflow:ellipsis">${esc(p.notes||'–')}</td>
       <td style="white-space:nowrap">
         ${(()=>{const ph=(D.clients.find(x=>x.id==p.clientId)||{}).phone;return ph?`<button class="btn btns" onclick="callClient('${p.clientId}')" title="חייג ${esc(ph)}" style="border-color:#4cc9f0;color:#4cc9f0">📞</button><button class="btn btns" onclick="waClient('${p.clientId}')" title="וואטסאפ ${esc(ph)}" style="border-color:#25D366;color:#25D366">💬</button> `:'';})()}
+        <button class="btn btns" onclick="openRoiCalc('${p.clientId}',${p.potIdx})" title="מחשבון החזר השקעה" style="border-color:#a78bfa;color:#a78bfa">🧮</button>
         <button class="btn btns" onclick="openClientModal('${p.clientId}')" title="ערוך כרטיס לקוח">✏️</button>
         <button class="btn btns btnd" onclick="removePotential('${p.clientId}',${p.potIdx})" title="מחק">🗑</button>
       </td>
