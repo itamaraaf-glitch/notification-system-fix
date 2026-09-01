@@ -1713,6 +1713,7 @@ body.logged-in #ai-fab{display:flex}
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ltb','stb')">
       <button class="btn btnp" onclick="openM('deal',null)">+ עסקה חדשה</button>
+      <button class="btn" onclick="openEquipCalc()" title="מחשבון OTC לעסקאות ציוד" style="background:rgba(76,201,240,.12);color:#4cc9f0;border-color:rgba(76,201,240,.35)">🖥️ מחשבון ציוד</button>
       <button class="btn btn-excel" onclick="exportExcel('deals')">📥 Excel</button>
       <button class="btn btn-import" onclick="importFromExcel('deals')" title="ייבוא מ-Excel">📤 ייבוא</button>
       <button class="btn btnwp" onclick="sendWhatsAppDeals()">📱 WA</button>
@@ -2288,6 +2289,7 @@ body.logged-in #ai-fab{display:flex}
       </select>
       <button class="btn" onclick="nav('clients')" style="background:rgba(200,169,110,.12);color:var(--gold);border-color:rgba(200,169,110,.3)" title="עבור לכרטיסי לקוח להוספת מוצרים">🏢 לקוחות</button>
       <button class="btn" onclick="openRoiCalc()" title="מחשבון החזר השקעה בתשתית" style="background:rgba(167,139,250,.12);color:#a78bfa;border-color:rgba(167,139,250,.35)">🧮 החזר השקעה</button>
+      <button class="btn" onclick="openEquipCalc()" title="מחשבון OTC לעסקאות ציוד" style="background:rgba(76,201,240,.12);color:#4cc9f0;border-color:rgba(76,201,240,.35)">🖥️ מחשבון ציוד</button>
       <button class="btn btn-excel" onclick="exportExcel('workplan')">📥 Excel</button>
     </div>
   </div>
@@ -12139,6 +12141,144 @@ function renderWorkPlanPlan(all){
         <div style="min-width:0"><div style="font-size:11.5px;font-weight:700;color:${a.clr}">${esc(a.t)}</div>
         <div style="font-size:10.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.s)}</div></div></div>`).join('')}</div></div>`:''}
   </div>`;
+}
+// ===== 🖥️ מחשבון OTC ציוד — מודל עסקאות ציוד מלא (לפי מחשבון ה-OTC הארגוני) =====
+// פריסת תשלומים בריבית שנתית 10%, אחוז העמסה, דמי שירות חודשיים לפי מדרגת עלות,
+// והחזרי PMI/ROI מהוונים — כולל בקרת אישורים (אחוז העמסה מינימלי ופריסה מקסימלית לפי מאשר העסקה).
+const EQ_ANNUAL_RATE=0.10;                                   // ריבית שנתית
+const EQ_MRATE=Math.pow(1+EQ_ANNUAL_RATE,1/12)-1;            // ריבית חודשית אפקטיבית
+const EQ_SURVEY_COST=600;                                    // עלות חד"פ סקר אתר
+const EQ_APPROVERS={                                         // מאשר העסקה → העמסה מינימלית + פריסה מקסימלית
+  'מת"ל':{min:0.25,maxPays:36},
+  'מנהל מחלקה/תחום':{min:0.20,maxPays:36},
+  'מנהל אגף':{min:0.15,maxPays:36},
+  'מנהל חטיבה':{min:0.08,maxPays:60}
+};
+const EQ_SERVICE_TIERS=[[10000,120],[5000,90],[0,50]];       // דמ"ש חודשי לפי סה"כ עלות
+function _eqServiceFee(totalCost){ for(const [t,f] of EQ_SERVICE_TIERS){ if(totalCost>=t)return f; } return 0; }
+function _pmt(rate,nper,pv){ if(!nper)return 0; if(!rate)return pv/nper; return pv*rate/(1-Math.pow(1+rate,-nper)); }
+function _pv(rate,nper,pmt){ if(!nper)return 0; if(!rate)return pmt*nper; return pmt*(1-Math.pow(1+rate,-nper))/rate; }
+function _eqCalc(v){
+  const cost=(+v.cost||0)+(+v.lic||0)+(+v.inst||0)+(+v.supp||0)+(v.survey?EQ_SURVEY_COST:0);
+  const markup=Math.max(0,+v.markup||0);
+  const pays=Math.max(1,Math.round(+v.pays||1));
+  const years=Math.max(0,+v.years||0), agMonths=Math.round(years*12);
+  const ap=EQ_APPROVERS[v.approver]||EQ_APPROVERS['מת"ל'];
+  const customerTotal=cost*(1+markup);                       // מחיר ללקוח כולל העמסה
+  const monthlyOtc=pays===1?customerTotal:_pmt(EQ_MRATE,pays,customerTotal);
+  const monthlyOtcR=Math.round(monthlyOtc);                  // התשלום מחויב בשקלים שלמים (כמו ROUND בגיליון)
+  const svcFee=v.waived?0:_eqServiceFee(cost);               // דמ"ש — 0 אם הלקוח ויתר על שירות
+  // תשלום יחיד — ההכנסה היא המחיר המלא; בפריסה — היוון התשלום המעוגל בפועל
+  const pvOtc=pays===1?customerTotal:_pv(EQ_MRATE,pays,monthlyOtcR);
+  const pvSvc=_pv(EQ_MRATE,agMonths,svcFee);
+  const revenuePV=pvOtc+pvSvc;                               // סה"כ הכנסה מהוונת להיום
+  const pmi=(!cost||!revenuePV)?0:(pays===1?((markup*cost+pvSvc)/((1+markup)*cost+pvSvc)):(1-cost/revenuePV));
+  // ROI = כמה חודשים עד שההכנסה המצטברת מכסה את העלות החד-פעמית (אינטרפולציה בתוך החודש)
+  let roiMonths=null, cum=0, prev=0;
+  const horizon=Math.max(pays,agMonths)+1;
+  for(let m=1;m<=horizon;m++){
+    prev=cum;
+    cum+=(m<=pays?monthlyOtcR:0)+(m<=agMonths?svcFee:0);
+    if(prev<=cost&&cum>=cost&&cum>prev){ roiMonths=(m-1)+(cost-prev)/(cum-prev); break; }
+  }
+  const grossProfit=revenuePV-cost;
+  // בקרת אישורים — בדיוק כמו בגיליון
+  const errs=[];
+  if(markup<ap.min)errs.push('אחוז העמסה '+Math.round(markup*100)+'% נמוך מהמינימום של '+esc(v.approver||'')+' ('+Math.round(ap.min*100)+'%)');
+  if(agMonths&&pays>agMonths)errs.push('פריסת תשלום ('+pays+') גבוהה מתקופת ההסכם ('+agMonths+' חודשים)');
+  if(pays>ap.maxPays)errs.push('פריסת תשלום ('+pays+') מעל הרשאת מאשר העסקה ('+ap.maxPays+')');
+  return {cost,markup,pays,agMonths,customerTotal,monthlyOtc,monthlyOtcR,svcFee,pvOtc,pvSvc,revenuePV,pmi,roiMonths,grossProfit,errs,ap};
+}
+function _eqRead(){
+  const g=id=>_aiNum((document.getElementById(id)||{}).value||0);
+  const s=id=>(document.getElementById(id)||{}).value||'';
+  return {cost:g('eq-cost'),lic:g('eq-lic'),inst:g('eq-inst'),supp:g('eq-supp'),
+          survey:s('eq-survey')==='כן', markup:g('eq-markup')/100, pays:g('eq-pays')||1,
+          years:g('eq-years'), approver:s('eq-approver'), waived:s('eq-waive')==='כן'};
+}
+function _eqRender(){
+  const box=document.getElementById('eq-out'); if(!box)return;
+  const v=_eqRead(), r=_eqCalc(v);
+  const t=(lbl,val,clr,sub)=>`<div class="stat-mini" style="background:rgba(255,255,255,.03);border:1px solid ${clr}33"><div style="font-size:9.5px;color:var(--text3);font-weight:700">${lbl}</div><div style="font-size:16px;font-weight:900;color:${clr}">${val}</div>${sub?`<div style="font-size:9px;color:var(--text3);margin-top:1px">${sub}</div>`:''}</div>`;
+  const pmiC=r.pmi>=0.3?'var(--teal)':r.pmi>=0.15?'#f4a261':'#e63946';
+  const roiTxt=r.roiMonths==null?'לא מוחזר':(r.roiMonths<1?r.roiMonths.toFixed(2)+' חודשים':r.roiMonths.toFixed(1)+' חודשים');
+  const roiC=r.roiMonths==null?'#e63946':(r.roiMonths<=12?'var(--teal)':r.roiMonths<=24?'#f4a261':'#e63946');
+  box.innerHTML=`
+    ${r.errs.length?`<div style="background:rgba(230,57,70,.1);border:1px solid rgba(230,57,70,.45);border-radius:10px;padding:9px 11px;margin-bottom:10px">
+      <div style="font-size:11.5px;font-weight:800;color:#e63946;margin-bottom:4px">⛔ העסקה אינה מאושרת להפצה</div>
+      ${r.errs.map(e=>`<div style="font-size:10.5px;color:var(--text2);line-height:1.5">• ${e}</div>`).join('')}</div>`
+    :`<div style="background:rgba(6,214,160,.08);border:1px solid rgba(6,214,160,.35);border-radius:10px;padding:7px 11px;margin-bottom:10px;font-size:11.5px;font-weight:800;color:var(--teal)">✅ העסקה עומדת בכללי האישור</div>`}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:7px;margin-bottom:10px">
+      ${t('סה"כ עלות',fmt(r.cost),'#f4a261','לספק')}
+      ${t('מחיר ללקוח',fmt(r.customerTotal),'#4cc9f0','כולל העמסה '+Math.round(r.markup*100)+'%')}
+      ${t('תשלום חודשי OTC',fmt(r.monthlyOtcR),'#a78bfa','× '+r.pays+' תשלומים')}
+      ${t('דמ"ש חודשי',fmt(r.svcFee),r.svcFee?'var(--teal)':'var(--text3)',r.agMonths?('× '+r.agMonths+' חודשים'):'ללא הסכם')}
+      ${t('הכנסה מהוונת',fmt(Math.round(r.revenuePV)),'#4cc9f0','OTC + דמ"ש')}
+      ${t('רווח גולמי',fmt(Math.round(r.grossProfit)),r.grossProfit>0?'var(--teal)':'#e63946')}
+      ${t('PMI',Math.round(r.pmi*1000)/10+'%',pmiC,'רווחיות')}
+      ${t('ROI',roiTxt,roiC,'עד כיסוי העלות')}
+    </div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:9px 11px;font-size:11px;color:var(--text2);line-height:1.7">
+      <div>💰 <b>הלקוח משלם:</b> ${fmt(r.monthlyOtcR)} × ${r.pays} תשלומים${r.svcFee?` + דמ"ש ${fmt(r.svcFee)} × ${r.agMonths} חודשים`:''}</div>
+      <div>📉 <b>עלות לספק:</b> ${fmt(r.cost)} · <b>הכנסה מהוונת:</b> ${fmt(Math.round(r.revenuePV))} · <b>רווח:</b> <span style="color:${r.grossProfit>0?'var(--teal)':'#e63946'}">${fmt(Math.round(r.grossProfit))}</span></div>
+      <div>⏱️ <b>העלות מכוסה אחרי:</b> ${roiTxt}${r.pays>1?` (ריבית שנתית ${Math.round(EQ_ANNUAL_RATE*100)}%)`:''}</div>
+    </div>`;
+}
+function _eqSummaryText(){
+  const v=_eqRead(), r=_eqCalc(v);
+  return `🖥️ מחשבון OTC ציוד\nעלות לספק: ${fmt(r.cost)} · העמסה ${Math.round(r.markup*100)}% → מחיר ללקוח ${fmt(Math.round(r.customerTotal))}\n`
+    +`תשלום חודשי: ${fmt(r.monthlyOtcR)} × ${r.pays}${r.svcFee?` · דמ"ש ${fmt(r.svcFee)} × ${r.agMonths} חודשים`:''}\n`
+    +`הכנסה מהוונת: ${fmt(Math.round(r.revenuePV))} · רווח גולמי: ${fmt(Math.round(r.grossProfit))}\n`
+    +`PMI: ${Math.round(r.pmi*1000)/10}% · ROI: ${r.roiMonths==null?'לא מוחזר':r.roiMonths.toFixed(1)+' חודשים'}\n`
+    +(r.errs.length?('⛔ לא מאושר: '+r.errs.join(' · ')):'✅ מאושר להפצה');
+}
+function _eqCopy(){
+  const t=_eqSummaryText(); const done=()=>showToast('📋 סיכום עסקת הציוד הועתק','ok');
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done).catch(done); else done();
+}
+function openEquipCalc(){
+  const old=document.getElementById('eq-popup'); if(old)old.remove();
+  const num=(id,lbl,val,hint)=>`<div>
+      <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">${lbl}${hint?` <span style="font-weight:400;opacity:.8">${hint}</span>`:''}</label>
+      <input id="${id}" type="number" inputmode="numeric" value="${val}" oninput="_eqRender()" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none;direction:ltr;text-align:left"></div>`;
+  const sel=(id,lbl,opts,cur)=>`<div>
+      <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">${lbl}</label>
+      <select id="${id}" onchange="_eqRender()" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none">${opts.map(o=>`<option ${o===cur?'selected':''}>${o}</option>`).join('')}</select></div>`;
+  const el=document.createElement('div');
+  el.id='eq-popup';
+  el.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.78);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
+  el.innerHTML=`<div style="background:linear-gradient(135deg,#101525,#0a0e1c);border:1px solid rgba(76,201,240,.32);border-radius:16px;max-width:520px;width:100%;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.65);animation:cardIn .25s ease;max-height:94vh;overflow-y:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+      <div style="font-size:15px;font-weight:900;color:#4cc9f0">🖥️ מחשבון OTC ציוד</div>
+      <button onclick="document.getElementById('eq-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:11px">עסקת ציוד בלבד · פריסת תשלומים בריבית ${Math.round(EQ_ANNUAL_RATE*100)}% שנתית · בקרת אחוז העמסה ופריסה לפי מאשר העסקה</div>
+    <div style="font-size:10px;font-weight:800;color:#f4a261;letter-spacing:.5px;margin-bottom:6px">💸 עלויות לספק</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px">
+      ${num('eq-cost','עלות ציוד',0)}
+      ${num('eq-lic','עלות רישוי / אחריות',0)}
+      ${num('eq-inst','עלות התקנה / משלוח',0)}
+      ${num('eq-supp','עלות שירות ותמיכה',0)}
+      ${sel('eq-survey','נדרש סקר אתר (₪'+EQ_SURVEY_COST+')',['לא','כן'],'לא')}
+      ${sel('eq-waive','הלקוח ויתר על שירות',['לא','כן'],'לא')}
+    </div>
+    <div style="font-size:10px;font-weight:800;color:#a78bfa;letter-spacing:.5px;margin-bottom:6px">📐 תנאי העסקה</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px">
+      ${num('eq-markup','אחוז העמסה',25,'%')}
+      ${num('eq-pays','פריסת תשלום',1,'תשלומים')}
+      ${num('eq-years','תקופת הסכם שירות',2,'שנים')}
+      ${sel('eq-approver','מאשר העסקה',Object.keys(EQ_APPROVERS),'מת"ל')}
+    </div>
+    <div id="eq-out"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px">
+      <button class="btn btnp" onclick="_eqCopy()" style="font-size:12px;background:#4cc9f0;border-color:#4cc9f0;color:#0a0e1c;font-weight:800">📋 העתק סיכום</button>
+      <button class="btn btns" onclick="document.getElementById('eq-popup').remove()" style="font-size:12px">סגור</button>
+    </div>
+  </div>`;
+  el.addEventListener('click',()=>el.remove());
+  document.body.appendChild(el);
+  _eqRender();
+  const f=document.getElementById('eq-cost'); if(f)f.focus();
 }
 // ===== 🧮 מחשבון החזר השקעה בתשתית — תכנון כלכלי לעסקה לפני שסוגרים =====
 // מחשב: רווח חודשי נטו, השקעה נטו, זמן החזר (חודשים), רווח כולל לתקופת ההתקשרות ו-ROI%,
