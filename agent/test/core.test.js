@@ -13,6 +13,7 @@ const { parseDateNear, dateAfterHint, dateFromUrl, yearFromSerial, BINARY_URL_RE
 const { registrableDomain, sameSite, isSiteRoot, sameUrl, sectionParent, lastPathSegment } = require('../core/urls');
 const { harvestAnchors, harvestFeed } = require('../core/harvest');
 const { findSectionLinks, compileVocab, demotedOnly } = require('../core/discover');
+const { compileDateHints, extractDates } = require('../core/pipeline');
 
 /* ───────────────────────── טקסט ───────────────────────── */
 
@@ -207,4 +208,34 @@ test('demotedOnly מדיח דרושים אבל לא עמוד משולב', () => 
   assert.ok(demotedOnly('דרושים במועצה', VOCAB));
   assert.ok(!demotedOnly('מכרזים ודרושים', VOCAB),
     'ברשויות רבות זה אותו עמוד — הדחה שלו הייתה מאבדת את המקור');
+});
+
+/* ───────────────────────── תאריכים מהכותרת ───────────────────────── */
+
+// באתרים רבים המועד כתוב בתוך טקסט הקישור עצמו, והכותרת שייכת לפריט הזה בלבד
+// בעוד שחלון ההקשר בולע את שכניו. נצפה באשכול רשויות נגב מערבי: הכותרת נשאה
+// את המועד הנכון, ההקשר לא, והפריט נכנס כאילו אין לו מועד — מכרז שפג לפני
+// יותר משנה. `item.context || item.title` לא תפס את זה כי ההקשר לא היה ריק.
+test('מועד שבכותרת גובר על חלון ההקשר', () => {
+  const hints = compileDateHints({
+    deadlineHints: '(מועד\\s*אחרון|תאריך\\s*אחרון|להגשה\\s*עד|מועד\\s*הגשה)',
+    publishHints: '(תאריך\\s*פרסום)'
+  });
+  const today = '2026-08-26';
+
+  const item = {
+    title: "מכרז משותף 6/25 — שירותי DPO | תאריך אחרון להגשה: 24/06/2025",
+    context: 'פריט שכן כלשהו . מועד אחרון להגשה 30/11/2026 . פריט שכן נוסף',
+    url: 'https://x.org.il/f.pdf'
+  };
+  assert.strictEqual(extractDates(item, hints, today).deadlineAt, '2025-06-24',
+    'המועד נלקח מהכותרת ולא מהשכן שבהקשר');
+
+  // בלי מועד בכותרת — ההקשר עדיין משמש, כמו קודם
+  const noTitleDate = { title: 'מכרז לאספקת ציוד', context: 'מועד אחרון להגשה 30/11/2026', url: 'https://x.org.il/a' };
+  assert.strictEqual(extractDates(noTitleDate, hints, today).deadlineAt, '2026-11-30');
+
+  // ובלי תאריך בשום מקום — ריק, ולא נפילה
+  const none = { title: 'מכרז לאספקת ציוד', context: '', url: 'https://x.org.il/a' };
+  assert.strictEqual(extractDates(none, hints, today).deadlineAt, '');
 });

@@ -72,13 +72,24 @@ function compileDateHints(spec = {}) {
   };
 }
 
-/** שולף תאריכים ומזהה מתוך חלון ההקשר של הפריט */
+/**
+ * שולף תאריכים מהפריט.
+ *
+ * **הכותרת נבדקת לפני חלון ההקשר, לא כגיבוי לו.** באתרים רבים המועד כתוב בתוך
+ * טקסט הקישור עצמו ("… | תאריך אחרון להגשה: 24/06/2025"), והכותרת שייכת לפריט
+ * הזה בלבד — בעוד שחלון ההקשר בולע גם את שכניו בדף רשימה צפוף. נצפה בפועל
+ * באשכול רשויות נגב מערבי: הכותרת נשאה את המועד הנכון, ההקשר לא, והפריט נכנס
+ * כאילו אין לו מועד כלל — מכרז שפג לפני יותר משנה. `item.context || item.title`
+ * לא תפס את זה, כי ההקשר לא היה ריק.
+ */
 function extractDates(item, hints, today) {
-  const ctx = item.context || item.title || '';
-  const deadlineAt = hints.deadline ? dateAfterHint(ctx, hints.deadline, today) : '';
+  const title = item.title || '';
+  const ctx = item.context || title;
+  const pick = (re) => (re ? (dateAfterHint(title, re, today) || dateAfterHint(ctx, re, today)) : '');
+  const deadlineAt = pick(hints.deadline);
   const publishedAt =
-    (hints.publish ? dateAfterHint(ctx, hints.publish, today) : '') ||
-    (hints.updated ? dateAfterHint(ctx, hints.updated, today) : '') ||
+    pick(hints.publish) ||
+    pick(hints.updated) ||
     (item.feedDate ? parseDateNear(item.feedDate) : '') ||
     dateFromUrl(item.url);
   return { deadlineAt, publishedAt };
