@@ -221,6 +221,7 @@ footer{text-align:center;font-size:10.5px;color:var(--text3);margin-top:26px;lin
     <h1>📡 ראדאר מכרזים <span class="sub">תקשורת · ציוד תקשורת · אבטחת מידע · IT</span></h1>
     <div class="spacer"></div>
     <div class="meta" id="freshness"><span class="dot none"></span><span id="freshtext">טוען…</span></div>
+    <button class="btn" id="btn-run" title="פותח את מסך ההרצה ב-GitHub — לחיצה אחת שם מפעילה סריקה חדשה" style="border-color:#06d6a0;color:#06d6a0">▶ הרץ סקירה</button>
     <button class="btn" id="btn-reload" title="טעינה מחדש של נתוני הראדאר">↻ רענון</button>
     <a class="btn gold" href="index.html" title="חזרה למערכת ה-CRM">← ל-CRM</a>
   </div>
@@ -838,10 +839,43 @@ function renderSources(){
 }
 
 /** חיפוש ממוקד לדומיין אחד — נוחת על עמוד המכרזים של הרשות ולא על דף הבית */
-function tendersSearchUrl(siteUrl){
+/* האם הכתובת שלנו לאותו גוף אומתה בפועל — כלומר האם קיבלנו ממנה תשובה כלשהי.
+   403 היא תשובה; "החיבור נכשל" ו"לא אומתה" אינן. */
+function authVerified(note){
+  const n = String(note || '');
+  if(/לא\s*אומת|החיבור\s*נכשל/.test(n)) return false;
+  return /אומת|חוסם\s*סריקה|403|JavaScript|מופנה\s*לדף\s*הבית|לא\s*אותר|נטען/.test(n);
+}
+
+/* קישור לחיפוש עמוד המכרזים של גוף שאינו נסרק.
+   site: על דומיין נכון נוחת ישר על עמוד המכרזים — אבל על דומיין שגוי הוא מחזיר
+   תמיד אפס תוצאות, ו-66 מתוך 158 הכתובות ברשימה הן ניחוש שלא אומת. נצפה בפועל:
+   site:www.ofakim.muni.il מכרזים → "לא נמצאו תוצאות". לכן כשהכתובת לא אומתה
+   מחפשים לפי שם הרשות, שמוצא את האתר האמיתי בלי תלות בניחוש. */
+function tendersSearchUrl(siteUrl, name, note){
   let host = '';
-  try { host = new URL(siteUrl).host; } catch(_) { return siteUrl; }
-  return 'https://www.google.com/search?q=' + encodeURIComponent('site:' + host + ' מכרזים');
+  try { host = new URL(siteUrl).host; } catch(_) { host = ''; }
+  const q = (host && authVerified(note)) ? 'site:' + host + ' מכרזים'
+          : (String(name || '').trim() ? '"' + String(name).trim() + '" מכרזים'
+          : (host ? 'site:' + host + ' מכרזים' : ''));
+  if(!q) return siteUrl;
+  return 'https://www.google.com/search?q=' + encodeURIComponent(q);
+}
+
+/* הרצת סקירה על פי דרישה.
+   הדף סטטי ומוגש מ-GitHub Pages, ולהפעיל Actions צריך טוקן. טוקן בדף ציבורי הוא
+   סיכון אמיתי ולכן אינו נשמר כאן: הכפתור פותח את מסך ההרצה, ושם לחיצה אחת על
+   "Run workflow" מפעילה את הסריקה. */
+function repoSlug(){
+  try{
+    const m = location.hostname.match(/^([\w-]+)\.github\.io$/i);
+    const seg = location.pathname.split('/').filter(Boolean)[0];
+    if(m && seg && !seg.includes('.')) return m[1] + '/' + seg;
+  }catch(_){}
+  return 'itamaraaf-glitch/notification-system-fix';
+}
+function runScan(){
+  window.open('https://github.com/' + repoSlug() + '/actions/workflows/tenders-radar.yml', '_blank', 'noopener');
 }
 
 function renderAuthorities(){
@@ -855,10 +889,14 @@ function renderAuthorities(){
     // הקישור הראשי מוביל לעמוד המכרזים של הרשות ולא לדף הבית: חיפוש ממוקד באתר.
     // אין לנו את הנתיב המדויק (האתרים חוסמים סריקה), וחיפוש מתוחם לדומיין הוא
     // הדרך היציבה ביותר לנחות על עמוד המכרזים בלחיצה אחת.
-    return `<a class="mlink" href="${esc(tendersSearchUrl(u))}" target="_blank" rel="noopener noreferrer"
+    const vf = authVerified(a.note);
+    const tip = (a.note ? a.note + ' · ' : '') + (vf ? 'חיפוש ממוקד באתר' : 'הכתובת לא אומתה — חיפוש לפי שם הרשות');
+    // קישור "דף הבית" מוצג רק כשהכתובת אומתה: על כתובת משוערת הוא מוביל לשגיאת דפדפן
+    const home = vf ? ` · <span onclick="event.preventDefault();event.stopPropagation();window.open('${esc(u)}','_blank','noopener')" style="text-decoration:underline;cursor:pointer">דף הבית</span>` : ' · לפי שם';
+    return `<a class="mlink" href="${esc(tendersSearchUrl(u, a.name, a.note))}" target="_blank" rel="noopener noreferrer"
        data-n="${esc(a.name + ' ' + (a.note || ''))}"
-       title="${esc(a.note || ('חיפוש עמוד המכרזים באתר ' + a.name))}">${esc(a.name)}
-       <small>מכרזים ↗ · <span onclick="event.preventDefault();event.stopPropagation();window.open('${esc(u)}','_blank','noopener')" style="text-decoration:underline;cursor:pointer">דף הבית</span></small></a>`;
+       title="${esc(tip)}">${esc(a.name)}
+       <small>מכרזים ↗${home}</small></a>`;
   }).join('');
 }
 
@@ -1015,6 +1053,7 @@ $('btn-clear').onclick = () => {
   syncChips(); syncKindChips(); syncCatChips(); saveFilters(); render();
 };
 $('btn-reload').onclick = () => { toast('מרענן…'); load(); };
+$('btn-run').onclick = runScan;
 $('btn-export').onclick = exportCsv;
 $('btn-copy').onclick = () => {
   const rows = pickedTenders();

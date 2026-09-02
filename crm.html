@@ -7454,11 +7454,46 @@ async function rTenderRadar(){
 }
 function radarReload(){ _radar=null; _radarErr=''; _radarPick.clear(); rTenderRadar(); }
 /** חיפוש ממוקד לדומיין אחד — נוחת על עמוד המכרזים של הרשות ולא על דף הבית */
-function _tendersSearchUrl(siteUrl){
-  let host='';
-  try{ host=new URL(siteUrl).host; }catch(e){ return siteUrl; }
-  return 'https://www.google.com/search?q='+encodeURIComponent('site:'+host+' מכרזים');
+/* האם הכתובת שלנו לאותו גוף אומתה בפועל — כלומר האם קיבלנו ממנה תשובה כלשהי.
+   403 היא תשובה; "החיבור נכשל" ו"לא אומתה" אינן. ההבחנה קריטית לחיפוש: */
+function _authVerified(note){
+  const n=String(note||'');
+  if(/לא\s*אומת|החיבור\s*נכשל/.test(n)) return false;
+  return /אומת|חוסם\s*סריקה|403|JavaScript|מופנה\s*לדף\s*הבית|לא\s*אותר|נטען/.test(n);
 }
+
+/* קישור לחיפוש עמוד המכרזים של גוף שאינו נסרק.
+   site: על דומיין נכון נוחת ישר על עמוד המכרזים — אבל על דומיין שגוי הוא מחזיר
+   **תמיד אפס תוצאות**, ו-66 מתוך 158 הכתובות ברשימה הן ניחוש שמעולם לא אומת.
+   נצפה בפועל: site:www.ofakim.muni.il מכרזים → "לא נמצאו תוצאות". לכן כשהכתובת
+   לא אומתה מחפשים לפי שם הרשות, שמוצא את האתר האמיתי בלי תלות בניחוש. */
+function _tendersSearchUrl(siteUrl,name,note){
+  let host='';
+  try{ host=new URL(siteUrl).host; }catch(e){ host=''; }
+  const q=(host && _authVerified(note)) ? 'site:'+host+' מכרזים'
+        : (String(name||'').trim() ? '"'+String(name).trim()+'" מכרזים'
+        : (host?'site:'+host+' מכרזים':''));
+  if(!q) return siteUrl;
+  return 'https://www.google.com/search?q='+encodeURIComponent(q);
+}
+/* הרצת סקירה על פי דרישה.
+   הדף סטטי ומוגש מ-GitHub Pages, ולהפעיל Actions צריך טוקן. טוקן בדף ציבורי
+   הוא סיכון אמיתי ולכן אינו נשמר כאן: הכפתור פותח את מסך ההרצה של GitHub,
+   ושם לחיצה אחת על "Run workflow" מפעילה את הסריקה. */
+function _radarRepoSlug(){
+  // המאגר נגזר מכתובת ה-Pages ולא מקובע בקוד, כדי שפיצול של המאגר יעבוד מעצמו
+  try{
+    const m=location.hostname.match(/^([\w-]+)\.github\.io$/i);
+    const seg=location.pathname.split('/').filter(Boolean)[0];
+    if(m && seg && !seg.includes('.')) return m[1]+'/'+seg;
+  }catch(e){}
+  return 'itamaraaf-glitch/notification-system-fix';
+}
+function _radarRunScan(){
+  window.open('https://github.com/'+_radarRepoSlug()+'/actions/workflows/tenders-radar.yml','_blank','noopener');
+  toast('נפתח מסך ההרצה ב-GitHub — לחץ "Run workflow". הסריקה נמשכת כ-3 דקות, ואז ↻ לרענון','ok');
+}
+
 function _radarTopic(id){ return (_radar&&_radar.topics&&_radar.topics[id])||{label:id,icon:'•',color:'#c8a96e'}; }
 /** האם המכרז כבר קיים בטבלת המכרזים — לפי מזהה הראדאר שנשמר ברשומה, ובגיבוי לפי שם.
     לא מזהים לפי הקישור: יש מקורות שבהם כמה מכרזים מפנים לאותו דף רשימה,
@@ -7738,7 +7773,9 @@ function _radarRender(){
     // ולכן אין בידינו את הנתיב, וחיפוש מתוחם לדומיין נוחת עליו בלחיצה אחת
     // שם הרשות והסיבה נשמרים על האלמנט לצורך הסינון: 158 גופים הם יותר מדי
     // לגלילה, וחיפוש לפי שם או לפי סיבה ("חוסם סריקה") מגיע לשורה בשנייה
-    return u?`<a class="rdr-mlink" data-n="${esc(a.name+' '+(a.note||''))}" href="${esc(_tendersSearchUrl(u))}" target="_blank" rel="noopener noreferrer" title="${esc(a.note||('חיפוש עמוד המכרזים באתר '+a.name))}">${esc(a.name)}<small>מכרזים ↗</small></a>`:''}).join('');
+    const vf=_authVerified(a.note);
+    const tip=(a.note?a.note+' · ':'')+(vf?'חיפוש ממוקד באתר':'הכתובת לא אומתה — חיפוש לפי שם הרשות');
+    return u?`<a class="rdr-mlink" data-n="${esc(a.name+' '+(a.note||''))}" href="${esc(_tendersSearchUrl(u,a.name,a.note))}" target="_blank" rel="noopener noreferrer" title="${esc(tip)}">${esc(a.name)}<small>מכרזים ↗${vf?'':' · לפי שם'}</small></a>`:''}).join('');
   const authPanel=auths?`<details class="rdr-panel"><summary>🏛️ רשויות ומוסדות – בדיקה ידנית <span id="rdrAuthCount" style="font-size:10.5px;font-weight:400;color:var(--text3)">— ${(_radar.manualAuthorities||[]).length} גופים</span></summary>
     <p style="font-size:11px;color:var(--text2);margin:12px 0 10px;line-height:1.7">הרשויות המקומיות והמוסדות האקדמיים האלה נמדדו ולא ניתן לסרוק אותם אוטומטית — חוסמים סריקה, אינם נענים מכתובת שרת, או שעמוד המכרזים שלהם אינו נגיש מדף הבית. הקישורים פותחים את עמוד המכרזים שלהם לבדיקה ידנית מהירה.</p>
     <input class="rdr-filter" type="search" id="rdrAuthQ" placeholder="חיפוש רשות או מוסד — לפי שם, או לפי סיבה (למשל: חוסם סריקה)" oninput="_radarAuthFilter(this.value)" autocomplete="off">
@@ -7816,6 +7853,7 @@ function _radarRender(){
         <span style="flex:1"></span>
         <span style="font-size:10px;color:var(--text3)">${esc(upd)} · ${all.length} ממצאים${failed?` · ${failed} מקורות לא נסרקו`:''}</span>
         <button class="btn btns" onclick="_radarClear()">✕ נקה סינון</button>
+        <button class="btn btns" onclick="_radarRunScan()" title="פותח את מסך ההרצה ב-GitHub — לחיצה אחת שם מפעילה סריקה חדשה" style="border-color:#06d6a0;color:#06d6a0">▶ הרץ סקירה</button>
         <button class="btn btns" onclick="radarReload()" title="טעינה מחדש">↻</button>
         <a class="btn btns" href="tenders.html" target="_blank" rel="noopener noreferrer" style="border-color:#4cc9f0;color:#4cc9f0;text-decoration:none">📡 ראדאר מלא</a>
       </div>
