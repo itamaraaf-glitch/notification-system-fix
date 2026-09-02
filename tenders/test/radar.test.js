@@ -1025,3 +1025,56 @@ test('תווי בקרה מטקסט PDF אינם נשמרים בכותרת', () =
   assert.strictEqual(a.title, 'מכרז לאספקת ציוד תקשורת לרשויות החברות בהן');
   assert.ok(!/[\u0000-\u001F]/.test(a.title), 'אין תווי בקרה');
 });
+
+/* ─────────── שימוש חוזר בכתובת עמוד המכרזים שהתגלתה ─────────── */
+
+// מקור discover עולה שתי בקשות בכל ריצה: דף הבית, ואז עמוד המכרזים שנמצא בו.
+// הכתובת כמעט אף פעם לא משתנה, והסורק כבר שמר אותה תחת discovered — ופשוט לא
+// קרא אותה. בסריקה שבה 25 אתרים החזירו 403 אחרי סריקות תכופות, פחות בקשות
+// לאותם שרתים הוא לא רק מהירות.
+test('כתובת שהתגלתה נוסה שוב, בלי לכפול ובלי לגעת במקורות אחרים', () => {
+  const learned = new Map([['a', ['https://a.muni.il/bids']]]);
+  const day = '2026-08-27';
+
+  const added = R.withLearnedTendersUrls({ id: 'a', kind: 'discover', home: 'https://a.muni.il/' }, learned, day);
+  assert.deepStrictEqual(added.tendersUrls, ['https://a.muni.il/bids']);
+  assert.strictEqual(added.learnedUrls, 1);
+
+  // רמז שהוגדר ביד נשאר ראשון — הוא מתוחזק וגובר על מה שנלמד
+  const both = R.withLearnedTendersUrls(
+    { id: 'a', kind: 'discover', tendersUrls: ['https://a.muni.il/hand'] }, learned, day);
+  assert.deepStrictEqual(both.tendersUrls, ['https://a.muni.il/hand', 'https://a.muni.il/bids']);
+
+  // אותה כתובת אינה נוספת פעמיים
+  const dup = R.withLearnedTendersUrls(
+    { id: 'a', kind: 'discover', tendersUrls: ['https://a.muni.il/bids'] }, learned, day);
+  assert.deepStrictEqual(dup.tendersUrls, ['https://a.muni.il/bids']);
+  assert.strictEqual(dup.learnedUrls, undefined);
+
+  // מקור שאינו discover אינו מושפע
+  const html = R.withLearnedTendersUrls({ id: 'a', kind: 'html', urls: ['u'] }, learned, day);
+  assert.strictEqual(html.tendersUrls, undefined);
+
+  // ומקור בלי היסטוריה נשאר כמו שהוא
+  const none = R.withLearnedTendersUrls({ id: 'zz', kind: 'discover' }, learned, day);
+  assert.strictEqual(none.tendersUrls, undefined);
+});
+
+// עמוד שזז חייב להתגלות מחדש, אבל לא כל המקורות באותו יום — אחרת הרענון מחזיר
+// בדיוק את ספייק הבקשות שבגללו נוספה השמירה.
+test('הרענון מבוזר: כל מקור פעם בשבוע, ולא כולם יחד', () => {
+  const ids = Array.from({ length: 60 }, (_, i) => 'muni-src-' + i);
+  const dayOf = i => new Date(Date.UTC(2026, 7, 26 + i)).toISOString().slice(0, 10);
+
+  // כל מקור מתרענן בדיוק פעם אחת בכל שבעה ימים
+  for (const id of ids.slice(0, 12)) {
+    const hits = [0, 1, 2, 3, 4, 5, 6].filter(i => !R.learnedIsFresh(id, dayOf(i))).length;
+    assert.strictEqual(hits, 1, `${id} מתרענן בדיוק פעם בשבוע`);
+  }
+
+  // והפיזור אינו מנוון: ביום בודד לא מתרעננים כולם ולא אף אחד
+  const perDay = [0, 1, 2, 3, 4, 5, 6].map(i => ids.filter(id => !R.learnedIsFresh(id, dayOf(i))).length);
+  assert.strictEqual(perDay.reduce((a, b) => a + b, 0), ids.length, 'כל מקור נספר פעם אחת בשבוע');
+  assert.ok(Math.max(...perDay) < ids.length / 2,
+    `אין יום שבו מתרענן חצי מהמקורות (${perDay.join(',')})`);
+});

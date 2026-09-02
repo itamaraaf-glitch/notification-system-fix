@@ -527,9 +527,17 @@ async function main() {
   const previous = readJson(path.join(DATA_DIR, 'tenders.json'), { tenders: [] });
   const prevById = new Map((previous.tenders || []).map(t => [t.id, t]));
 
+  // כתובות עמוד המכרזים שהתגלו בריצה הקודמת — נוסו לפני גילוי מחדש מדף הבית
+  const learned = new Map((previous.sources || [])
+    .filter(s => s.ok && Array.isArray(s.discovered) && s.discovered.length)
+    .map(s => [s.id, s.discovered]));
+
   const sources = (cfg.sources || []).filter(s => s.enabled !== false)
     .filter(s => !ONLY_SOURCE || s.id === ONLY_SOURCE)
-    .map(s => expandSearchUrls(s, kw));
+    .map(s => expandSearchUrls(s, kw))
+    .map(s => withLearnedTendersUrls(s, learned, today));
+  const reused = sources.filter(s => s.learnedUrls).length;
+  if (reused) console.error(`↻ ${reused} מקורות מנסים קודם את עמוד המכרזים שהתגלה בריצה הקודמת`);
 
   const status = [];
   const found = new Map();
@@ -1357,6 +1365,40 @@ function publisherAllowed(publisher, source) {
   return true;
 }
 
+/**
+ * שימוש חוזר בכתובת עמוד המכרזים שהתגלתה בריצה הקודמת.
+ *
+ * מקור `discover` עולה שתי בקשות בכל ריצה: דף הבית, ואז עמוד המכרזים שנמצא בו.
+ * הכתובת הזו כמעט אף פעם לא משתנה — הסורק כבר שומר אותה תחת `discovered`,
+ * ופשוט לא קרא אותה. השימוש בה חוסך בקשה אחת לכל מקור כזה (32 מתוך 66 מקורות
+ * ביום), וזה לא רק מהירות: בסריקה הזו 25 אתרים החזירו 403 אחרי שהרצנו סריקות
+ * תכופות: פחות בקשות לאותם שרתים הוא הדבר הנכון כלפיהם.
+ *
+ * הכתובת נוספת אחרי הרמזים שהוגדרו ביד, כך שרמז מתוחזק גובר עליה, ואם היא לא
+ * נענית הגילוי מדף הבית ממשיך כרגיל — עמוד שזז מתקן את עצמו.
+ */
+const LEARNED_REFRESH_DAYS = 7;
+function learnedIsFresh(sourceId, todayYmd) {
+  // רענון מבוזר: לכל מקור יום קבוע משלו בשבוע, כדי שלא כל המקורות יתגלו מחדש
+  // באותו יום ויחזירו את הספייק שאותו באנו למנוע
+  const day = Math.floor(Date.parse(todayYmd + 'T00:00:00Z') / 86400000);
+  if (!Number.isFinite(day)) return true;
+  // הסיפא ולא התחילית: hashId של מזהים דומים ("muni-a", "muni-b") מתחיל באותם
+  // בייטים, ולכן תחילית נותנת פיזור גרוע — נמדד 2 מתוך 70 ביום במקום 10
+  const seed = parseInt(hashId(String(sourceId)).slice(-6), 16) || 0;
+  return (day + seed) % LEARNED_REFRESH_DAYS !== 0;
+}
+
+function withLearnedTendersUrls(source, learned, todayYmd) {
+  if (source.kind !== 'discover' || !learned) return source;
+  const urls = learned.get(source.id) || [];
+  if (!urls.length || !learnedIsFresh(source.id, todayYmd)) return source;
+  const have = new Set(source.tendersUrls || []);
+  const add = urls.filter(u => u && !have.has(u));
+  if (!add.length) return source;
+  return { ...source, tendersUrls: [...(source.tendersUrls || []), ...add], learnedUrls: add.length };
+}
+
 function buildRecord(item, source, kw, opts = {}) {
   const haystack = `${item.title} ${item.summary || ''} ${item.context || ''}`;
   const titleAndSummary = `${item.title} ${item.summary || ''}`;
@@ -1550,7 +1592,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, dropReason, DROP_LABELS, looksLikeTender, isNavTitle, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, withHealth, pageTitle, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
+  classify, dropReason, DROP_LABELS, looksLikeTender, isNavTitle, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, withHealth, pageTitle, withLearnedTendersUrls, learnedIsFresh, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
   extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, publisherAllowed, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
