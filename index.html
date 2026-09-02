@@ -4708,9 +4708,9 @@ function renderSecurityPanel(){
 }
 // ── שורת "הגנת אחסון": מציגה אם הדפדפן רשאי למחוק את הנתונים, ומאפשרת התקנה על המחשב/הטלפון ──
 // התקנת האפליקציה (PWA) היא הדרך הבטוחה: דפדפן מעניק לאפליקציה מותקנת אחסון קבוע ולא מוחק אותה.
-let _installPrompt=null, _installed=false;
+let _installPrompt=null, _installed=false, _bipSeen=false;
 try{
-  window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); _installPrompt=e; try{renderStorageRow();}catch(_){} });
+  window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); _installPrompt=e; _bipSeen=true; try{renderStorageRow();}catch(_){} });
   window.addEventListener('appinstalled',()=>{ _installed=true; _installPrompt=null; try{renderStorageRow();showToast('✅ המערכת הותקנה — הנתונים מוגנים מפני מחיקת הדפדפן','ok');}catch(_){} });
 }catch(e){}
 function _isStandalone(){ try{ return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true; }catch(e){ return false; } }
@@ -4746,7 +4746,57 @@ function _renderInstallBanner(safe){
     <button class="btn btnp" onclick="installApp()" style="font-size:11.5px;white-space:nowrap">⬇️ התקן עכשיו</button>`;
   host.insertAdjacentElement('afterend',el);
 }
-// התקנת המערכת כאפליקציה. בכרום/אדג' יש חלון התקנה מובנה; בשאר הדפדפנים מציגים הוראות מדויקות.
+// זיהוי הדפדפן שבו המערכת פתוחה — קובע אילו הוראות התקנה מציגים
+function _installEnv(){
+  const ua=navigator.userAgent||'';
+  const iOS=/iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const android=/Android/i.test(ua);
+  const edge=/Edg\//i.test(ua);
+  const opera=/OPR\//i.test(ua);
+  const samsung=/SamsungBrowser/i.test(ua);
+  const firefox=/Firefox|FxiOS/i.test(ua);
+  const chromium=!edge&&!opera&&!samsung&&/Chrome|Chromium|CriOS/i.test(ua);
+  const safari=!chromium&&!edge&&!opera&&!samsung&&!firefox&&/Safari/i.test(ua);
+  let key='chrome', name='כרום';
+  if(iOS&&!firefox){ key='ios'; name=chromium?'כרום באייפון':'ספארי באייפון'; }
+  else if(firefox){ key='firefox'; name='פיירפוקס'; }
+  else if(edge){ key='edge'; name='אדג\''; }
+  else if(samsung){ key='samsung'; name='Samsung Internet'; }
+  else if(opera){ key='chrome'; name='אופרה'; }
+  else if(safari){ key='safari'; name='ספארי'; }
+  else if(android){ key='android'; name='כרום באנדרואיד'; }
+  return {key,name,iOS,android};
+}
+// הוראות ההתקנה המדויקות לכל דפדפן (נכון לגרסאות הנוכחיות — כרום העביר את ההתקנה לתת-תפריט)
+function _installSteps(key){
+  if(key==='ios') return ['פתח את המערכת בדפדפן <b>ספארי</b> (בכרום באייפון אין התקנה)','לחץ על כפתור השיתוף <b>⬆️</b> בסרגל התחתון','גלול ברשימה ובחר <b>"הוספה למסך הבית"</b>','לחץ <b>"הוספה"</b> בפינה הימנית העליונה'];
+  if(key==='android') return ['לחץ על תפריט <b>⋮</b> בפינה העליונה','בחר <b>"הוספה למסך הבית"</b> (או "התקנת אפליקציה")','אשר <b>"התקנה"</b>'];
+  if(key==='samsung') return ['לחץ על תפריט <b>☰</b> בסרגל התחתון','בחר <b>"הוספת דף אל"</b> ← <b>"מסך הבית"</b>','אשר <b>"הוספה"</b>'];
+  if(key==='safari') return ['בשורת התפריטים למעלה פתח את תפריט <b>"קובץ"</b>','בחר <b>"הוספה ל-Dock…"</b> (File ← Add to Dock…)','לחץ <b>"הוספה"</b>','בספארי ישן יותר אין התקנה — פתח את המערכת בכרום והתקן משם'];
+  if(key==='firefox') return ['פיירפוקס <b>אינו תומך</b> בהתקנת אפליקציה במחשב','פתח את הכתובת של המערכת ב<b>כרום</b> או ב<b>אדג\'</b> והתקן שם','לחלופין — ודא שסנכרון הענן מחובר, כך הנתונים משוחזרים גם אם הדפדפן ימחק אותם'];
+  if(key==='edge') return ['לחץ על תפריט <b>⋯</b> בפינה השמאלית העליונה','בחר <b>"אפליקציות"</b> (Apps)','לחץ <b>"התקנת אתר זה כאפליקציה"</b>','אשר <b>"התקנה"</b>'];
+  // כרום — מיקום ההתקנה השתנה: היום הוא בתוך "העברה, שמירה ושיתוף"
+  return ['אם מופיע אייקון <b>⊕</b> או <b>מסך עם חץ למטה</b> בקצה שורת הכתובת — לחץ עליו ואשר "התקנה". זו הדרך הקצרה',
+          'אחרת: תפריט <b>⋮</b> ← <b>"העברה, שמירה ושיתוף"</b> (Cast, save and share) ← <b>"התקנת דף כאפליקציה…"</b>',
+          'בגרסאות כרום ישנות יותר: תפריט <b>⋮</b> ← <b>"שמירה ושיתוף"</b> ← <b>"התקנת דף כאפליקציה…"</b>, או ⋮ ← "עוד כלים" ← "יצירת קיצור דרך…" עם סימון "פתח כחלון"',
+          'אשר <b>"התקנה"</b> — המערכת תיפתח כאפליקציה נפרדת עם אחסון קבוע'];
+}
+// בדיקת תנאי ההתקנה בפועל — מראה למשתמש מה בדיוק חוסם, במקום הוראות כלליות
+async function _installDiag(){
+  const d={};
+  d.standalone=_isStandalone()||_installed;
+  d.secure=(location.protocol==='https:')||location.hostname==='localhost'||location.hostname==='127.0.0.1';
+  d.local=location.protocol==='file:';
+  d.bip=_bipSeen;
+  try{ const regs=await navigator.serviceWorker.getRegistrations(); d.sw=regs.length>0; }catch(e){ d.sw=false; }
+  try{
+    const link=document.querySelector('link[rel="manifest"]');
+    if(!link){ d.manifest=false; }
+    else{ const r=await fetch(link.href,{cache:'no-store'}); d.manifest=r.ok; if(r.ok){ const m=await r.json(); d.icons=Array.isArray(m.icons)&&m.icons.length>0; } }
+  }catch(e){ d.manifest=false; }
+  return d;
+}
+// התקנת המערכת כאפליקציה. בכרום/אדג' יש חלון התקנה מובנה; אם הדפדפן לא הציע אותו — מציגים הוראות מדויקות + אבחון
 async function installApp(){
   if(_installPrompt){
     try{
@@ -4758,16 +4808,42 @@ async function installApp(){
       renderStorageRow(); return;
     }catch(e){}
   }
-  const ua=navigator.userAgent||'';
-  const iOS=/iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  const firefox=/Firefox/i.test(ua);
-  const safariDesktop=/Safari/i.test(ua)&&!/Chrome|Chromium|Edg/i.test(ua)&&!iOS;
-  let how;
-  if(iOS) how='אייפון / אייפד (ספארי):\n1. לחץ על כפתור השיתוף ⬆️ בתחתית המסך\n2. גלול ובחר "הוסף למסך הבית"\n3. אשר "הוסף"';
-  else if(safariDesktop) how='מק (ספארי):\n1. תפריט "קובץ" ← "הוסף ל-Dock…"\n2. אשר "הוסף"';
-  else if(firefox) how='פיירפוקס אינו תומך בהתקנת אפליקציה.\nכדי להגן על הנתונים:\n1. פתח את המערכת בכרום או באדג\' והתקן שם, או\n2. ודא שסנכרון הענן מחובר — כך הנתונים משוחזרים אוטומטית.';
-  else if(!how) how='מחשב (כרום / אדג\'):\n1. לחץ על אייקון ההתקנה ⊕ בצד שורת הכתובת (מימין ל-★), או\n2. תפריט ⋮ ← "התקן" / "Install HOT CRM"\n3. אשר "התקן" — המערכת תיפתח כאפליקציה נפרדת';
-  alert('⬇️ התקנת המערכת כאפליקציה\n\n'+how+'\n\nלמה זה חשוב: לאפליקציה מותקנת הדפדפן מקצה אחסון קבוע ולא מוחק את הנתונים.');
+  const env=_installEnv();
+  const d=await _installDiag();
+  const old=document.getElementById('install-popup'); if(old)old.remove();
+  const steps=_installSteps(env.key);
+  const line=(ok,txt)=>`<div style="display:flex;gap:7px;align-items:flex-start;font-size:11px;line-height:1.55;color:var(--text2)"><span style="flex:0 0 auto">${ok?'✅':'⚠️'}</span><span>${txt}</span></div>`;
+  let diag='';
+  if(d.standalone) diag=line(true,'המערכת כבר פועלת כאפליקציה מותקנת — אין צורך להתקין שוב.');
+  else{
+    diag=line(d.secure,d.local?'המערכת נפתחה מקובץ מקומי (file://) — כך אי אפשר להתקין. פתח את כתובת האתר של המערכת.':(d.secure?'החיבור מאובטח (https)':'החיבור אינו מאובטח — התקנה אפשרית רק ב-https'))
+        +line(d.sw,d.sw?'שירות הרקע רשום':'שירות הרקע לא נרשם — רענן את הדף פעם אחת ונסה שוב')
+        +line(d.manifest!==false,d.manifest!==false?'קובץ ההגדרות של האפליקציה נטען':'קובץ ההגדרות של האפליקציה לא נטען')
+        +line(d.bip,d.bip?'הדפדפן הציע התקנה':'הדפדפן לא הציע התקנה אוטומטית — התקן ידנית לפי השלבים למעלה'+(env.key==='chrome'||env.key==='edge'?' (בכרום/אדג\' זה קורה גם כשהמערכת כבר מותקנת במחשב — בדוק בתפריט האפליקציות)':''));
+  }
+  const el=document.createElement('div');
+  el.id='install-popup';
+  el.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.78);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
+  el.onclick=function(ev){ if(ev.target===el)el.remove(); };
+  el.innerHTML=`<div style="background:linear-gradient(135deg,#101525,#0a0e1c);border:1px solid rgba(244,162,97,.4);border-radius:16px;max-width:460px;width:100%;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.65);animation:cardIn .25s ease;max-height:94vh;overflow-y:auto;direction:rtl" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+      <div style="font-size:15px;font-weight:900;color:#f4a261">⬇️ התקנת המערכת כאפליקציה</div>
+      <button onclick="document.getElementById('install-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="font-size:10.5px;color:var(--text3);margin-bottom:12px">זוהה: <b style="color:var(--text2)">${env.name}</b> · לאפליקציה מותקנת הדפדפן מקצה אחסון קבוע ולא מוחק את הנתונים</div>
+    <ol id="install-steps" style="margin:0 0 12px;padding:0 18px 0 0;display:flex;flex-direction:column;gap:7px">
+      ${steps.map(s=>`<li style="font-size:12px;line-height:1.6;color:var(--text)">${s}</li>`).join('')}
+    </ol>
+    <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:5px">
+      <div style="font-size:11px;font-weight:800;color:var(--text2);margin-bottom:1px">🔎 בדיקת תנאי ההתקנה במכשיר שלך</div>
+      ${diag}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap">
+      <button class="btn btnp" onclick="document.getElementById('install-popup').remove();installApp()" style="font-size:12px">🔄 בדוק שוב</button>
+      <button class="btn btns" onclick="document.getElementById('install-popup').remove()" style="font-size:12px">סגור</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
 }
 
 // ═══ בודק אבטחת ענן: מזהה בסיס נתונים פתוח, מנחה לנעילה ומוודא שבוצעה ═══
