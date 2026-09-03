@@ -2376,6 +2376,7 @@ body.logged-in #ai-fab{display:flex}
         <option value="נסגר">נסגר</option>
       </select>
       <button class="btn" onclick="nav('clients')" style="background:rgba(200,169,110,.12);color:var(--gold);border-color:rgba(200,169,110,.3)" title="עבור לכרטיסי לקוח להוספת מוצרים">🏢 לקוחות</button>
+      <button class="btn" onclick="openWpPricing()" title="קבע שווי משוער לכל המוצרים מאותו סוג בבת אחת" style="background:rgba(200,169,110,.12);color:var(--gold);border-color:rgba(200,169,110,.3)">💰 תמחור מהיר</button>
       <button class="btn" onclick="openRoiCalc()" title="מחשבון החזר השקעה בתשתית" style="background:rgba(167,139,250,.12);color:#a78bfa;border-color:rgba(167,139,250,.35)">🧮 החזר השקעה</button>
       <button class="btn" onclick="openEquipCalc()" title="מחשבון OTC לעסקאות ציוד" style="background:rgba(76,201,240,.12);color:#4cc9f0;border-color:rgba(76,201,240,.35)">🖥️ מחשבון ציוד</button>
       <button class="btn btn-excel" onclick="exportExcel('workplan')">📥 Excel</button>
@@ -12886,7 +12887,7 @@ function _wpPlanData(all){
   const dueM=open.filter(p=>(p.targetDate||'').substring(0,7)===cur);
   if(dueM.length)acts.push({ico:'🎯',clr:'#f4a261',t:`${dueM.length} מוצרים ביעד סגירה החודש`,s:fmt(dueM.reduce((s,p)=>s+(+p.estimatedValue||0),0))+' שווי · דחוף לקדם'});
   const noVal=open.filter(p=>!+p.estimatedValue);
-  if(noVal.length)acts.push({ico:'🧮',clr:'#a78bfa',t:`${noVal.length} מוצרים ללא שווי משוער`,s:'הרץ מחשבון החזר השקעה כדי לתמחר ולתעדף'});
+  if(noVal.length)acts.push({ico:'🧮',clr:'#a78bfa',t:`${noVal.length} מוצרים ללא שווי משוער`,s:'בלעדיהם התחזית המשוקללת חסרה — תמחר את כולם בבת אחת',btn:{l:'💰 תמחור מהיר',fn:'openWpPricing()'}});
   const stuck=open.filter(p=>p.status==='הצעה נשלחה'||p.status==='ממתין לאישור');
   if(stuck.length)acts.push({ico:'⏳',clr:'#4cc9f0',t:`${stuck.length} הצעות ממתינות לתשובה`,s:fmt(stuck.reduce((s,p)=>s+(+p.estimatedValue||0),0))+' — הכי קרוב לסגירה, שווה מעקב'});
   return {open,pipeline,weighted,won,goal,gap,avg,needed,byStage,acts};
@@ -12921,8 +12922,9 @@ function renderWorkPlanPlan(all){
       <div style="font-size:10.5px;font-weight:800;color:var(--text3);letter-spacing:.5px;margin-bottom:6px">⚡ הצעדים הבאים</div>
       <div style="display:grid;gap:6px">${d.acts.map(a=>`<div style="display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.03);border-right:2px solid ${a.clr};border-radius:8px;padding:6px 10px">
         <span style="font-size:13px">${a.ico}</span>
-        <div style="min-width:0"><div style="font-size:11.5px;font-weight:700;color:${a.clr}">${esc(a.t)}</div>
-        <div style="font-size:10.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.s)}</div></div></div>`).join('')}</div></div>`:''}
+        <div style="min-width:0;flex:1"><div style="font-size:11.5px;font-weight:700;color:${a.clr}">${esc(a.t)}</div>
+        <div style="font-size:10.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.s)}</div></div>
+        ${a.btn?`<button class="btn btnp" onclick="${a.btn.fn}" style="font-size:10.5px;white-space:nowrap;flex:0 0 auto">${a.btn.l}</button>`:''}</div>`).join('')}</div></div>`:''}
   </div>`;
 }
 // ===== 🖥️ מחשבון OTC ציוד — מודל עסקאות ציוד מלא (לפי מחשבון ה-OTC הארגוני) =====
@@ -13723,6 +13725,7 @@ function rWorkPlan(){
   });
   groupArr.sort((a,b)=>{ if(a.bestPri!==b.bestPri)return a.bestPri-b.bestPri; return (a.name||'').localeCompare(b.name||''); });
   const rowHtml=p=>{
+    const pid=p.clientId+'|'+p.potIdx;   // מזהה לעריכה-בשורה: המוצר יושב בתוך כרטיס הלקוח
     let dH='–';
     if(p.targetDate&&p.status!=='נסגר'){const d=db(nd(),p.targetDate);dH=d<0?`<b style="color:#e63946">עבר ${Math.abs(d)}י</b>`:`<b style="color:${d<=7?'#f4a261':'var(--teal)'}">${d}י</b>`;}
     const rc=p.priority==='גבוהה'?'pr':p.priority==='בינונית'?'po':'pg';
@@ -13731,13 +13734,13 @@ function rWorkPlan(){
       <td style="text-align:center;color:var(--text3)">${isThisM?'<span class="badge bb" style="font-size:8px;padding:1px 6px">🎯</span>':'↳'}<span style="display:none">${esc(p.clientName||'')}</span></td>
       <td style="white-space:nowrap;font-size:11px">${esc(p.productType||'–')}</td>
       <td style="font-weight:600">${esc(p.product||'–')}</td>
-      <td class="nb">${p.estimatedValue?fmt(+p.estimatedValue):'–'}${p.roi&&p.roi.payback?`<div style="font-size:9px;font-weight:700;color:${p.roi.payback<=(p.roi.months||0)?'var(--teal)':'#e63946'};margin-top:2px;white-space:nowrap" title="החזר השקעה ${p.roi.payback} חודשים · ROI ${p.roi.roiPct}%">🧮 החזר ${p.roi.payback}ח'</div>`:''}${p.eqCalc?`<div style="font-size:9px;font-weight:700;color:#4cc9f0;margin-top:2px;white-space:nowrap" title="מחשבון ציוד שמור · עלות ${fmt(p.eqCalc.cost)} · רווח ${fmt(p.eqCalc.profit)} · PMI ${p.eqCalc.pmi}%">🖥️ ציוד · PMI ${p.eqCalc.pmi}%</div>`:''}</td>
+      <td class="nb">${_cellSpan('potential',pid,'estimatedValue',p.estimatedValue?fmt(+p.estimatedValue):'–','num')}${p.roi&&p.roi.payback?`<div style="font-size:9px;font-weight:700;color:${p.roi.payback<=(p.roi.months||0)?'var(--teal)':'#e63946'};margin-top:2px;white-space:nowrap" title="החזר השקעה ${p.roi.payback} חודשים · ROI ${p.roi.roiPct}%">🧮 החזר ${p.roi.payback}ח'</div>`:''}${p.eqCalc?`<div style="font-size:9px;font-weight:700;color:#4cc9f0;margin-top:2px;white-space:nowrap" title="מחשבון ציוד שמור · עלות ${fmt(p.eqCalc.cost)} · רווח ${fmt(p.eqCalc.profit)} · PMI ${p.eqCalc.pmi}%">🖥️ ציוד · PMI ${p.eqCalc.pmi}%</div>`:''}</td>
       <td><select style="font-size:10px;padding:2px 4px;border-radius:6px;min-width:70px" onchange="updatePotentialPriority('${p.clientId}',${p.potIdx},this.value)">${priOpts(p.priority)}</select></td>
-      <td style="font-size:10px;white-space:nowrap">${fmtDate(p.targetDate)}</td>
+      <td style="font-size:10px;white-space:nowrap">${_cellSpan('potential',pid,'targetDate',fmtDate(p.targetDate),'date')}</td>
       <td>${dH}</td>
       <td>${(()=>{const cl2=contactLight(p);if(!cl2)return'<span style="color:var(--text3)">–</span>';return`<span title="יעד יצירת קשר: ${fmtDate(p.contactBy)}" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;background:${cl2.bg};color:${cl2.clr};border:1px solid ${cl2.clr}55;white-space:nowrap"><span style="width:8px;height:8px;border-radius:50%;background:${cl2.clr};box-shadow:0 0 6px ${cl2.clr}"></span>${cl2.l}</span>`;})()}</td>
       <td><select style="font-size:10px;padding:2px 4px;border-radius:6px;min-width:110px" onchange="updatePotentialStatus('${p.clientId}',${p.potIdx},this.value)">${stOpts(p.status)}</select></td>
-      <td style="font-size:10px;max-width:130px;overflow:hidden;text-overflow:ellipsis">${esc(p.notes||'–')}</td>
+      <td style="font-size:10px;max-width:130px;overflow:hidden;text-overflow:ellipsis">${_cellSpan('potential',pid,'notes',esc(p.notes||'–'),'text')}</td>
       <td style="white-space:nowrap">
         ${(()=>{const ph=(D.clients.find(x=>x.id==p.clientId)||{}).phone;return ph?`<button class="btn btns" onclick="callClient('${p.clientId}')" title="חייג ${esc(ph)}" style="border-color:#4cc9f0;color:#4cc9f0">📞</button><button class="btn btns" onclick="waClient('${p.clientId}')" title="וואטסאפ ${esc(ph)}" style="border-color:#25D366;color:#25D366">💬</button> `:'';})()}
         <button class="btn btns" onclick="openRoiCalc('${p.clientId}',${p.potIdx})" title="מחשבון החזר השקעה" style="border-color:#a78bfa;color:#a78bfa">🧮</button>
@@ -13765,6 +13768,89 @@ function clearWpFilters(){
   const pf=document.getElementById('wp-pri-filter'); if(pf)pf.value='';
   const sf=document.getElementById('wp-status-filter'); if(sf)sf.value='';
   rWorkPlan();
+}
+// ═══ תמחור מהיר: קובע שווי משוער לכל המוצרים מאותו סוג בבת אחת ═══
+// בלי שווי משוער התחזית המשוקללת בתוכנית העבודה ריקה, והדרך היחידה למלא הייתה מוצר-מוצר בכרטיס הלקוח.
+function _wpPriceGroups(){
+  const g={};
+  (D.clients||[]).forEach(c=>(c.potential||[]).forEach((p,idx)=>{
+    if(p.status==='נסגר')return;                       // כבר נסגר — לא חלק מהפיפליין לתמחור
+    const key=String(p.product||'').trim()||'(ללא שם מוצר)';
+    const e=g[key]||(g[key]={name:key,total:0,priced:0,sum:0,type:p.productType||'',rows:[]});
+    e.total++; e.rows.push({cid:c.id,idx:idx});
+    const v=+p.estimatedValue||0; if(v>0){ e.priced++; e.sum+=v; }
+    if(!e.type&&p.productType)e.type=p.productType;
+  }));
+  return Object.values(g).sort((a,b)=>(b.total-a.total)||a.name.localeCompare(b.name));
+}
+function openWpPricing(){
+  const gs=_wpPriceGroups();
+  const old=document.getElementById('wp-price-popup'); if(old)old.remove();
+  if(!gs.length){ showToast('אין מוצרים פוטנציאליים לתמחור','info'); return; }
+  window._wpPriceState=gs;
+  const rows=gs.map((g,i)=>{
+    const avg=g.priced?Math.round(g.sum/g.priced):0;
+    const missing=g.total-g.priced;
+    return `<tr>
+      <td style="font-size:11.5px;font-weight:700;padding:5px 6px">${esc(g.name)}${g.type?`<div style="font-size:9px;font-weight:400;color:var(--text3)">${esc(g.type)}</div>`:''}</td>
+      <td style="text-align:center;font-size:11px;color:var(--text2);padding:5px 6px">${g.total}</td>
+      <td style="text-align:center;font-size:11px;padding:5px 6px;color:${missing?'#f4a261':'var(--teal)'};font-weight:700">${missing||'✓'}</td>
+      <td style="padding:5px 6px"><input id="wpp-${i}" type="number" inputmode="numeric" value="${avg||''}" placeholder="${avg?avg:'שווי לעסקה'}" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:7px;padding:5px 8px;color:var(--text);font-family:inherit;font-size:12px;outline:none;direction:ltr;text-align:left"></td>
+    </tr>`;
+  }).join('');
+  const totalMissing=gs.reduce((s,g)=>s+(g.total-g.priced),0);
+  const el=document.createElement('div');
+  el.id='wp-price-popup';
+  el.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.78);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
+  el.onclick=function(ev){ if(ev.target===el)el.remove(); };
+  el.innerHTML=`<div style="background:linear-gradient(135deg,#101525,#0a0e1c);border:1px solid rgba(200,169,110,.35);border-radius:16px;max-width:560px;width:100%;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.65);animation:cardIn .25s ease;max-height:94vh;overflow-y:auto;direction:rtl" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+      <div style="font-size:15px;font-weight:900;color:var(--gold)">💰 תמחור מהיר של הפיפליין</div>
+      <button onclick="document.getElementById('wp-price-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="font-size:10.5px;color:var(--text3);margin-bottom:12px">קובעים שווי אחד לכל סוג מוצר — והוא מוחל על כל המוצרים מאותו סוג. ${totalMissing?`<b style="color:#f4a261">${totalMissing} מוצרים עדיין ללא שווי</b> — בלעדיהם התחזית המשוקללת ריקה.`:'כל המוצרים מתומחרים ✓'}</div>
+    <div style="max-height:52vh;overflow-y:auto;border:1px solid var(--border);border-radius:10px">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="position:sticky;top:0;background:#0d1220">
+          <th style="text-align:right;font-size:10px;color:var(--text3);padding:7px 6px;font-weight:700">מוצר</th>
+          <th style="text-align:center;font-size:10px;color:var(--text3);padding:7px 6px;font-weight:700">כמות</th>
+          <th style="text-align:center;font-size:10px;color:var(--text3);padding:7px 6px;font-weight:700">ללא שווי</th>
+          <th style="text-align:right;font-size:10px;color:var(--text3);padding:7px 6px;font-weight:700;width:38%">שווי לעסקה ₪</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <label style="display:flex;align-items:center;gap:7px;margin-top:11px;font-size:11.5px;color:var(--text2);cursor:pointer">
+      <input type="checkbox" id="wpp-overwrite" style="width:auto;margin:0">
+      דרוס גם מוצרים שכבר יש להם שווי
+    </label>
+    <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap">
+      <button class="btn btnp" onclick="applyWpPricing()" style="font-size:12px">✅ החל תמחור</button>
+      <button class="btn btns" onclick="document.getElementById('wp-price-popup').remove()" style="font-size:12px">ביטול</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+}
+function applyWpPricing(){
+  const gs=window._wpPriceState||[];
+  const over=(document.getElementById('wpp-overwrite')||{}).checked;
+  let changed=0, touchedClients={};
+  gs.forEach((g,i)=>{
+    const inp=document.getElementById('wpp-'+i); if(!inp)return;
+    const val=Math.max(0,_aiNum(inp.value)); if(!val)return;
+    g.rows.forEach(r=>{
+      const c=(D.clients||[]).find(x=>x.id==r.cid); if(!c)return;
+      const p=(c.potential||[])[r.idx]; if(!p)return;
+      if(!over&&(+p.estimatedValue||0)>0)return;
+      if((+p.estimatedValue||0)===val)return;
+      p.estimatedValue=val; changed++; touchedClients[c.id]=c;
+    });
+  });
+  Object.values(touchedClients).forEach(c=>{ c._mts=Date.now(); });
+  if(!changed){ showToast('לא בוצע שינוי — לא הוזן שווי חדש','info'); return; }
+  saveAll(); rAll();
+  const el=document.getElementById('wp-price-popup'); if(el)el.remove();
+  showToast('💰 '+changed+' מוצרים תומחרו — התחזית עודכנה','ok');
 }
 
 // ===== MODALS =====
@@ -14551,7 +14637,21 @@ function advanceDealStatus(id){
 // ═══ עריכה מהירה בשורה — כל שדה בכל טבלה נערך במקום, בלי להיכנס לשורה ═══
 // שמירה אוטומטית (saveAll דרך dbUpdate) + רענון כל המסכים (rAll) בכל שינוי.
 // סנכרון מיוחד: בעסקה שסטטוסה עודכן ל"נסגר" מסנכרנים ללקוח/שכר/הפצות.
+// מוצרים פוטנציאליים יושבים בתוך כרטיס הלקוח ולא בטבלה נפרדת — המזהה לעריכה-בשורה הוא "מזהה-לקוח|אינדקס"
+function _potRef(id){
+  const s=String(id), i=s.lastIndexOf('|'); if(i<0)return null;
+  const c=(D.clients||[]).find(x=>String(x.id)===s.substring(0,i));
+  const idx=+s.substring(i+1);
+  const p=c&&Array.isArray(c.potential)?c.potential[idx]:null;
+  return p?{c,p}:null;
+}
 function _commitCell(table,id,field,nv){
+  if(table==='potential'){
+    const ref=_potRef(id); if(!ref)return;
+    ref.p[field]=nv; ref.c._mts=Date.now(); saveAll();
+    showToast('✓ עודכן — כל המסכים סונכרנו','ok');
+    rAllBatched(); return;
+  }
   dbUpdate(table,id,{[field]:nv});
   if(table==='deals'){ const d2=(D.deals||[]).find(d=>d.id===id);
     if(field==='st'&&nv==='נסגר'&&d2){ try{syncDealToClient(d2);syncDealToSalary(d2);syncDealToDist(d2);saveAll();}catch(e){} } }
@@ -14603,7 +14703,8 @@ function _restoreCell(ctl,table,id,field,kind,nv){
 // עורך תא כללי לכל טבלה: kind = 'num' | 'pct' | 'text' | 'date' | 'select'
 function editCell(table,id,field,el,kind,opts){
   if(!el||el._editing)return; el._editing=true;
-  const rec=(D[table]||[]).find(x=>x.id===id); if(!rec){el._editing=false;return;}
+  const rec=table==='potential'?((_potRef(id)||{}).p):(D[table]||[]).find(x=>x.id===id);
+  if(!rec){el._editing=false;return;}
   kind=kind||'text';
   if(kind==='select'&&(!opts||!opts.length)) opts=_CELL_SELECTS[table+'.'+field]||_CELL_SELECTS[field]||[];
   const cur = kind==='num' ? (+rec[field]||0)
