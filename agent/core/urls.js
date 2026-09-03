@@ -33,15 +33,21 @@ function lastPathSegment(u) {
   } catch (_) { return ''; }
 }
 
+/**
+ * הכתובת בצורתה המנורמלת — בלי עוגן ובלי קו נטוי מסיים. זהו המפתח להשוואה בין
+ * כתובות, ולכן הוא מיוצא: מי שמאחד רשומות לפי כתובת חייב לנרמל בדיוק כמו sameUrl,
+ * אחרת שתי הבדיקות היו נחלקות על אותה כתובת.
+ */
+function normUrl(u) {
+  try {
+    const p = new URL(u);
+    return p.origin + p.pathname.replace(/\/+$/, '') + p.search;
+  } catch (_) { return String(u); }
+}
+
 /** אותה כתובת, בהתעלם מעוגן ומקו נטוי מסיים */
 function sameUrl(a, b) {
-  const norm = u => {
-    try {
-      const p = new URL(u);
-      return p.origin + p.pathname.replace(/\/+$/, '') + p.search;
-    } catch (_) { return String(u); }
-  };
-  return norm(a) === norm(b);
+  return normUrl(a) === normUrl(b);
 }
 
 /**
@@ -66,5 +72,5 @@ function shortUrl(u) {
 }
 
 module.exports = {
-  registrableDomain, sameSite, isSiteRoot, lastPathSegment, sameUrl, sectionParent, shortUrl
+  registrableDomain, sameSite, isSiteRoot, lastPathSegment, sameUrl, normUrl, sectionParent, shortUrl
 };

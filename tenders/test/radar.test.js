@@ -819,6 +819,40 @@ test('מועד שההעשרה מילאה שורד את הסריקה הבאה', (
   assert.strictEqual(merged.find(r => r.id === 'x').deadlineAt, '2026-09-30');
 });
 
+// תיקון נוסחת המזהה ייצר כפילות: הרשומה הישנה שרדה בהיסטוריה עד שתתיישן, החדשה
+// הצטרפה לצידה, ואותו מכרז הופיע פעמיים ברשימה. האיחוד הוא לפי הכתובת, כי היא
+// זו שמזהה את המכרז גם כשהמזהה משתנה תחתיו.
+test('אותה כתובת בשני מזהים מתאחדת לרשומה אחת', () => {
+  const old = { id: 'ישן', source: 'muni-x', title: 'מכרז לאספקת ציוד תקשורת',
+                url: 'https://x.muni.il/bids/455/', score: 3,
+                deadlineAt: '2026-10-01', deadlineFrom: 'detail',
+                firstSeen: '2026-08-24', lastSeen: '2026-09-02' };
+  const neu = { id: 'חדש', source: 'muni-x', title: 'מכרז לאספקת ציוד תקשורת',
+                url: 'https://x.muni.il/bids/455', score: 3,
+                deadlineAt: '', firstSeen: '2026-09-03', lastSeen: '2026-09-03' };
+
+  const out = R.dedupeByUrl([old, neu]);
+  assert.strictEqual(out.length, 1, 'קו נטוי מסיים אינו כתובת אחרת');
+  assert.strictEqual(out[0].id, 'חדש', 'המזהה החדש הוא זה ששורד');
+  assert.strictEqual(out[0].firstSeen, '2026-08-24', 'התווית "חדש" לא משקרת');
+  assert.strictEqual(out[0].deadlineAt, '2026-10-01', 'המועד שנשלף פעם לא אובד באיחוד');
+
+  // ובאותה סריקה: דף רשימה מצמיד לאותו קישור גם את הכותרת וגם את "שם מכרז: …"
+  const same = R.dedupeByUrl([
+    { id: 'א', source: 'muni-y', title: 'שם מכרז: מכרז פומבי לעבודות חשמל',
+      url: 'https://y.muni.il/b/42', lastSeen: '2026-09-03', score: 2 },
+    { id: 'ב', source: 'muni-y', title: 'מכרז פומבי לעבודות חשמל',
+      url: 'https://y.muni.il/b/42', lastSeen: '2026-09-03', score: 2 }
+  ]);
+  assert.strictEqual(same.length, 1);
+  assert.strictEqual(same[0].title, 'מכרז פומבי לעבודות חשמל', 'הכותרת הנקייה גוברת');
+
+  // כתובות שונות באותו מקור אינן מתאחדות
+  assert.strictEqual(R.dedupeByUrl([old, { ...neu, url: 'https://x.muni.il/bids/456' }]).length, 2);
+  // ואותה כתובת בשני מקורות היא שני פרסומים
+  assert.strictEqual(R.dedupeByUrl([old, { ...neu, source: 'muni-z' }]).length, 2);
+});
+
 // מנהל הרכש הממשלתי הוא מקור אחד שמפרסם עבור כל משרדי הממשלה, ולכן אי אפשר
 // לנטרל משרד בודד על ידי נטרול המקור. ההבחנה היחידה היא שדה הגוף המפרסם.
 test('סינון לפי גוף מפרסם משאיר רק את המשרדים שברשימה', () => {

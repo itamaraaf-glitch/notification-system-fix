@@ -20,7 +20,7 @@ const path = require('path');
 const { ymd, daysBetween, sleep, decodeEntities, stripTags, normKey, hashId } = require('../../agent/core/text');
 const { classify, termRegex } = require('../../agent/core/match');
 const { parseDateNear, dateFromUrl, dateAfterHint: dateAfterHintCore, yearFromSerial, BINARY_URL_RE } = require('../../agent/core/dates');
-const { registrableDomain, sameSite, isSiteRoot, lastPathSegment, sameUrl, sectionParent, shortUrl } = require('../../agent/core/urls');
+const { registrableDomain, sameSite, isSiteRoot, lastPathSegment, sameUrl, normUrl, sectionParent, shortUrl } = require('../../agent/core/urls');
 const { harvestAnchors, pickTag, pickLink } = require('../../agent/core/harvest');
 const { createClient, withDeadline } = require('../../agent/core/net');
 const { findSectionLinks, compileVocab, demotedOnly } = require('../../agent/core/discover');
@@ -635,8 +635,12 @@ async function main() {
   }
   // מועמדים לבדיקה: רק כאלה שאפשר להגיש אליהם. בלי הסינון הזה הרשימה מתמלאת
   // בארכיון של כל מכרזי הגינון והבנייה מכל המקורות, ואין בה שום ערך.
+  // ההשוואה היא על הכתובת ולא רק על המזהה: מכרז שנכנס לראדאר יכול להופיע ברשימת
+  // המועמדים תחת כותרת אחרת של אותו קישור, ואז הוא היה מוצג בשני המקומות
   const inRadar = new Set(merged.map(t => t.id));
-  const nearAll = [...nearMisses.values()].filter(r => !inRadar.has(r.id));
+  const radarUrls = new Set(merged.map(t => t.source + '|' + normUrl(t.url || '')));
+  const nearAll = dedupeByUrl([...nearMisses.values()]
+    .filter(r => !inRadar.has(r.id) && !radarUrls.has(r.source + '|' + normUrl(r.url || ''))));
   const nearActionable = nearAll.filter(isActionable);
   // הקרוב להיסגר קודם: הרשימה חתוכה בתקרה, וחבל לחתוך דווקא את מה שנסגר מחר.
   // מכרז בלי מועד יורד לסוף — אי אפשר לדעת כמה הוא דחוף.
@@ -1518,6 +1522,36 @@ function keepEnriched(prev, rec) {
   return merged;
 }
 
+/**
+ * שתי רשומות על אותה כתובת הן אותו מכרז, גם כשהמזהים שונים. זה קורה כשנוסחת
+ * המזהה משתנה: הרשומה הישנה שורדת בהיסטוריה עד שהיא מתיישנת, והחדשה מצטרפת
+ * לצידה — ואותו מכרז מוצג פעמיים. האיחוד שומר את הרשומה שנראתה לאחרונה, ומושך
+ * ממנה firstSeen המוקדם ביותר כדי שהתווית "חדש" לא תשקר, ואת השדות המועשרים
+ * כדי שמועד ההגשה שנשלף פעם לא יאבד באיחוד.
+ */
+function dedupeByUrl(records) {
+  // הרשומה שנראתה לאחרונה גוברת; בתיקו — הניקוד, ואז הכותרת הקצרה, כי דפי רשימה
+  // מצמידים לאותה כתובת גם "מכרז פומבי ל…" וגם "שם מכרז: מכרז פומבי ל…"
+  const better = (a, b) => {
+    const la = a.lastSeen || '', lb = b.lastSeen || '';
+    if (la !== lb) return la > lb;
+    if ((a.score || 0) !== (b.score || 0)) return (a.score || 0) > (b.score || 0);
+    return String(a.title || '').length <= String(b.title || '').length;
+  };
+  const byKey = new Map();
+  for (const rec of records) {
+    const key = rec.source + '|' + normUrl(rec.url || rec.id);
+    const prev = byKey.get(key);
+    if (!prev) { byKey.set(key, rec); continue; }
+    const [keep, drop] = better(prev, rec) ? [prev, rec] : [rec, prev];
+    const merged = keepEnriched(drop, keep);
+    const seen = [keep.firstSeen, drop.firstSeen].filter(Boolean).sort();
+    if (seen.length) merged.firstSeen = seen[0];
+    byKey.set(key, merged);
+  }
+  return [...byKey.values()];
+}
+
 function mergeWithHistory(current, prevById, activeSources, kw) {
   const out = new Map();
 
@@ -1565,7 +1599,7 @@ function mergeWithHistory(current, prevById, activeSources, kw) {
     out.set(id, prev);
   }
 
-  return [...out.values()].sort((a, b) => {
+  return dedupeByUrl([...out.values()]).sort((a, b) => {
     // פתוחים עם דדליין קרוב קודם, אחר כך לפי ניקוד רלוונטיות
     const da = a.deadlineAt ? daysBetween(today, a.deadlineAt) : null;
     const db = b.deadlineAt ? daysBetween(today, b.deadlineAt) : null;
@@ -1604,7 +1638,7 @@ if (require.main === module) {
 
 module.exports = {
   classify, dropReason, DROP_LABELS, looksLikeTender, isNavTitle, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, withHealth, pageTitle, withLearnedTendersUrls, learnedIsFresh, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
-  extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, publisherAllowed, summarize,
+  extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, dedupeByUrl, publisherAllowed, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
 };

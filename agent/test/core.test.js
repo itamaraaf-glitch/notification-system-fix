@@ -14,6 +14,7 @@ const { registrableDomain, sameSite, isSiteRoot, sameUrl, sectionParent, lastPat
 const { harvestAnchors, harvestFeed } = require('../core/harvest');
 const { findSectionLinks, compileVocab, demotedOnly } = require('../core/discover');
 const { compileDateHints, extractDates } = require('../core/pipeline');
+const net = require('../core/net');
 
 /* ───────────────────────── טקסט ───────────────────────── */
 
@@ -238,4 +239,15 @@ test('מועד שבכותרת גובר על חלון ההקשר', () => {
   // ובלי תאריך בשום מקום — ריק, ולא נפילה
   const none = { title: 'מכרז לאספקת ציוד', context: '', url: 'https://x.org.il/a' };
   assert.strictEqual(extractDates(none, hints, today).deadlineAt, '');
+});
+
+// עשרה מקורות מוניציפליים נפלו ימים ברצף עם "fetch failed" ותו לא. הסיבה יושבת
+// ב-cause, וכל עוד היא לא צורפה להודעה כל הכשלים נראו בדוח כתקלה אחת.
+test('כשל רשת מדווח את סיבתו', async () => {
+  const client = net.createClient({ retries: 0, timeoutMs: 200 });
+  // כתובת שלא ניתנת ליישוב — הכשל הוא DNS, ולא תלוי ברשת חיצונית
+  await assert.rejects(
+    () => client.fetchText('https://אין-כזה-אתר.invalid/'),
+    err => /fetch failed \(/.test(err.message) || err.name === 'AbortError'
+  );
 });
