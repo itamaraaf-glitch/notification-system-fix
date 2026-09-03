@@ -504,22 +504,24 @@
       "name": "עיריית אור יהודה",
       "category": "רשויות מקומיות",
       "kind": "discover",
-      "enabled": true,
+      "enabled": false,
       "allTenders": false,
       "home": "https://www.oryehuda.muni.il/",
       "searchUrl": "https://www.oryehuda.muni.il/",
-      "keepUndated": true
+      "keepUndated": true,
+      "disabledReason": "המארח 51.16.228.151 אינו מקבל חיבור מהסורק — הועבר לבדיקה ידנית"
     },
     {
       "id": "muni-ariel",
       "name": "עיריית אריאל",
       "category": "רשויות מקומיות",
       "kind": "discover",
-      "enabled": true,
+      "enabled": false,
       "allTenders": false,
       "home": "https://www.ariel.muni.il/",
       "searchUrl": "https://www.ariel.muni.il/",
-      "keepUndated": true
+      "keepUndated": true,
+      "disabledReason": "המארח 51.16.228.151 אינו מקבל חיבור מהסורק — הועבר לבדיקה ידנית"
     },
     {
       "id": "muni-yehud-monosson",
@@ -537,11 +539,12 @@
       "name": "עיריית לוד",
       "category": "רשויות מקומיות",
       "kind": "discover",
-      "enabled": true,
+      "enabled": false,
       "allTenders": false,
       "home": "https://www.lod.muni.il/",
       "searchUrl": "https://www.lod.muni.il/",
-      "keepUndated": true
+      "keepUndated": true,
+      "disabledReason": "המארח 51.16.228.151 אינו מקבל חיבור מהסורק — הועבר לבדיקה ידנית"
     },
     {
       "id": "muni-modiin",
@@ -562,32 +565,35 @@
       "name": "עיריית נהריה",
       "category": "רשויות מקומיות",
       "kind": "discover",
-      "enabled": true,
+      "enabled": false,
       "allTenders": false,
       "home": "https://www.nahariya.muni.il/",
       "searchUrl": "https://www.nahariya.muni.il/",
-      "keepUndated": true
+      "keepUndated": true,
+      "disabledReason": "המארח 51.16.228.151 אינו מקבל חיבור מהסורק — הועבר לבדיקה ידנית"
     },
     {
       "id": "muni-rosh-haayin",
       "name": "עיריית ראש העין",
       "category": "רשויות מקומיות",
       "kind": "discover",
-      "enabled": true,
+      "enabled": false,
       "allTenders": false,
       "home": "https://www.rosh-haayin.muni.il/",
       "searchUrl": "https://www.rosh-haayin.muni.il/",
-      "keepUndated": true
+      "keepUndated": true,
+      "disabledReason": "המארח 51.16.228.151 אינו מקבל חיבור מהסורק — הועבר לבדיקה ידנית"
     },
     {
       "id": "muni-arraba",
       "name": "עיריית עראבה",
       "category": "רשויות מקומיות",
       "kind": "discover",
-      "enabled": true,
+      "enabled": false,
       "allTenders": false,
       "home": "https://www.arraba.muni.il/",
-      "keepUndated": true
+      "keepUndated": true,
+      "disabledReason": "המארח 51.16.228.151 אינו מקבל חיבור מהסורק — הועבר לבדיקה ידנית"
     },
     {
       "id": "muni-ramat-hasharon",
@@ -634,10 +640,11 @@
       "name": "מועצה אזורית חבל מודיעין",
       "category": "רשויות מקומיות",
       "kind": "discover",
-      "enabled": true,
+      "enabled": false,
       "allTenders": false,
       "home": "https://www.modiin-region.muni.il/",
-      "keepUndated": true
+      "keepUndated": true,
+      "disabledReason": "המארח 51.16.228.151 אינו מקבל חיבור מהסורק — הועבר לבדיקה ידנית"
     },
     {
       "id": "muni-lachish",
@@ -654,20 +661,22 @@
       "name": "מועצה אזורית רמת נגב",
       "category": "רשויות מקומיות",
       "kind": "discover",
-      "enabled": true,
+      "enabled": false,
       "allTenders": false,
       "home": "https://www.rng.org.il/",
-      "keepUndated": true
+      "keepUndated": true,
+      "disabledReason": "המארח 51.16.228.151 אינו מקבל חיבור מהסורק — הועבר לבדיקה ידנית"
     },
     {
       "id": "muni-shomron",
       "name": "מועצה אזורית שומרון",
       "category": "רשויות מקומיות",
       "kind": "discover",
-      "enabled": true,
+      "enabled": false,
       "allTenders": false,
       "home": "https://www.shomron.org.il/",
-      "keepUndated": true
+      "keepUndated": true,
+      "disabledReason": "המארח 51.16.228.151 אינו מקבל חיבור מהסורק — הועבר לבדיקה ידנית"
     },
     {
       "id": "muni-sng",
@@ -790,14 +799,15 @@
       "name": "גוף מוניציפלי — mvhr.org.il",
       "category": "רשויות מקומיות",
       "kind": "discover",
-      "enabled": true,
+      "enabled": false,
       "allTenders": false,
       "keepUndated": true,
       "home": "https://www.mvhr.org.il/",
       "tendersUrls": [
         "https://www.mvhr.org.il/%D7%95%D7%A2%D7%93%D7%AA-%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/"
       ],
-      "_note": "הדומיין הגיע מסריקת כתובות דוא\"ל רשמיות ב-data.gov.il ויש בו עמוד מכרזים פעיל, אבל כותרת הדף (\"מכרזים\"/\"ועדת מכרזים\") אינה מזהה את הגוף. השם ייקבע כשמכרז ממנו יגיע לראדאר; לא נרשם שם משוער."
+      "_note": "הדומיין הגיע מסריקת כתובות דוא\"ל רשמיות ב-data.gov.il ויש בו עמוד מכרזים פעיל, אבל כותרת הדף (\"מכרזים\"/\"ועדת מכרזים\") אינה מזהה את הגוף. השם ייקבע כשמכרז ממנו יגיע לראדאר; לא נרשם שם משוער.",
+      "disabledReason": "המארח 51.16.228.151 אינו מקבל חיבור מהסורק — הועבר לבדיקה ידנית"
     },
     {
       "id": "muni-sdan",
@@ -942,6 +952,11 @@
       "note": "עמוד המכרזים לא אותר אוטומטית"
     },
     {
+      "name": "גוף מוניציפלי — mvhr.org.il",
+      "url": "https://www.mvhr.org.il/",
+      "note": "האתר מסרב לחיבור מהסורק (מארח משותף 51.16.228.151) — בדיקה ידנית"
+    },
+    {
       "name": "הטכניון",
       "url": "https://www.technion.ac.il/",
       "note": "עמוד המכרזים לא אותר אוטומטית"
@@ -1052,6 +1067,11 @@
       "note": "חוסם סריקה (HTTP 403)"
     },
     {
+      "name": "מועצה אזורית חבל מודיעין",
+      "url": "https://www.modiin-region.muni.il/",
+      "note": "האתר מסרב לחיבור מהסורק (מארח משותף 51.16.228.151) — בדיקה ידנית"
+    },
+    {
       "name": "מועצה אזורית חוף הכרמל",
       "url": "https://www.hof-hacarmel.org.il/",
       "note": "כתובת האתר לא אומתה — לא נענתה כלל"
@@ -1152,6 +1172,11 @@
       "note": "כתובת האתר לא אומתה — לא נענתה כלל"
     },
     {
+      "name": "מועצה אזורית רמת נגב",
+      "url": "https://www.rng.org.il/",
+      "note": "האתר מסרב לחיבור מהסורק (מארח משותף 51.16.228.151) — בדיקה ידנית"
+    },
+    {
       "name": "מועצה אזורית שדות דן",
       "url": "https://www.sdotdan.org.il/",
       "note": "כתובת האתר לא אומתה — לא נענתה כלל"
@@ -1160,6 +1185,11 @@
       "name": "מועצה אזורית שדות נגב",
       "url": "https://www.sdotnegev.org.il/",
       "note": "חוסם סריקה (HTTP 403)"
+    },
+    {
+      "name": "מועצה אזורית שומרון",
+      "url": "https://www.shomron.org.il/",
+      "note": "האתר מסרב לחיבור מהסורק (מארח משותף 51.16.228.151) — בדיקה ידנית"
     },
     {
       "name": "מועצה אזורית שפיר",
@@ -1277,6 +1307,11 @@
       "note": "כתובת האתר לא אומתה — הניחוש הוביל לארגון אחר"
     },
     {
+      "name": "מועצת מעלות תרשיחא",
+      "url": "https://www.maltar.co.il/",
+      "note": "הדומיין אומת מול data.gov.il — האתר אינו נענה לבקשה מ-datacenter IP"
+    },
+    {
       "name": "מועצת משהד",
       "url": "https://www.mashhad.muni.il/",
       "note": "כתובת האתר לא אומתה — לא נענתה כלל"
@@ -1310,6 +1345,11 @@
       "name": "מועצת קריית טבעון",
       "url": "https://www.ktv.org.il/",
       "note": "חוסם סריקה (HTTP 403)"
+    },
+    {
+      "name": "מועצת קרית ארבע",
+      "url": "https://www.kiryat-arba.muni.il/",
+      "note": "הדומיין אומת מול data.gov.il — האתר חוסם סריקה (HTTP 403)"
     },
     {
       "name": "מועצת ראש פינה",
@@ -1362,6 +1402,11 @@
       "note": "החיבור נכשל מכתובת שרת"
     },
     {
+      "name": "עיריית אור יהודה",
+      "url": "https://www.oryehuda.muni.il/",
+      "note": "האתר מסרב לחיבור מהסורק (מארח משותף 51.16.228.151) — בדיקה ידנית"
+    },
+    {
       "name": "עיריית אילת",
       "url": "https://www.eilat.muni.il/",
       "note": "חוסם סריקה (HTTP 403)"
@@ -1370,6 +1415,11 @@
       "name": "עיריית אלעד",
       "url": "https://www.elad.muni.il/",
       "note": "החיבור נכשל מכתובת שרת"
+    },
+    {
+      "name": "עיריית אריאל",
+      "url": "https://www.ariel.muni.il/",
+      "note": "האתר מסרב לחיבור מהסורק (מארח משותף 51.16.228.151) — בדיקה ידנית"
     },
     {
       "name": "עיריית אשדוד",
@@ -1517,6 +1567,11 @@
       "note": "הדומיין אומת מול data.gov.il — האתר חוסם סריקה (HTTP 403)"
     },
     {
+      "name": "עיריית לוד",
+      "url": "https://www.lod.muni.il/",
+      "note": "האתר מסרב לחיבור מהסורק (מארח משותף 51.16.228.151) — בדיקה ידנית"
+    },
+    {
       "name": "עיריית מגדל העמק",
       "url": "https://www.migdal-haemeq.muni.il/",
       "note": "הדומיין אומת מול data.gov.il — האתר אינו נענה לבקשה מ-datacenter IP"
@@ -1535,6 +1590,11 @@
       "name": "עיריית מעלות-תרשיחא",
       "url": "https://www.maalot.muni.il/",
       "note": "כתובת האתר לא אומתה — לא נענתה כלל"
+    },
+    {
+      "name": "עיריית נהריה",
+      "url": "https://www.nahariya.muni.il/",
+      "note": "האתר מסרב לחיבור מהסורק (מארח משותף 51.16.228.151) — בדיקה ידנית"
     },
     {
       "name": "עיריית נוף הגליל",
@@ -1575,6 +1635,11 @@
       "name": "עיריית עפולה",
       "url": "https://www.afula.muni.il/",
       "note": "חוסם סריקה (HTTP 403)"
+    },
+    {
+      "name": "עיריית עראבה",
+      "url": "https://www.arraba.muni.il/",
+      "note": "האתר מסרב לחיבור מהסורק (מארח משותף 51.16.228.151) — בדיקה ידנית"
     },
     {
       "name": "עיריית ערד",
@@ -1637,6 +1702,31 @@
       "note": "כתובת האתר לא אומתה — לא נענתה כלל"
     },
     {
+      "name": "עיריית קרית ביאליק",
+      "url": "https://www.qbialik.org.il/",
+      "note": "הדומיין אומת מול data.gov.il — האתר אינו נענה לבקשה מ-datacenter IP"
+    },
+    {
+      "name": "עיריית קרית גת",
+      "url": "https://www.qiryat-gat.muni.il/",
+      "note": "הדומיין אומת מול data.gov.il — האתר חוסם סריקה (HTTP 403)"
+    },
+    {
+      "name": "עיריית קרית ים",
+      "url": "https://www.k-yam.co.il/",
+      "note": "הדומיין אומת מול data.gov.il — האתר אינו נענה לבקשה מ-datacenter IP"
+    },
+    {
+      "name": "עיריית קרית מוצקין",
+      "url": "https://www.motzkin.org/",
+      "note": "הדומיין אומת מול data.gov.il — האתר חוסם סריקה (HTTP 403)"
+    },
+    {
+      "name": "עיריית ראש העין",
+      "url": "https://www.rosh-haayin.muni.il/",
+      "note": "האתר מסרב לחיבור מהסורק (מארח משותף 51.16.228.151) — בדיקה ידנית"
+    },
+    {
       "name": "עיריית ראשון לציון",
       "url": "https://www.rishonlezion.muni.il/",
       "note": "החיבור נכשל מכתובת שרת"
@@ -1675,36 +1765,6 @@
       "name": "עיריית שפרעם",
       "url": "https://www.shefa-amr.muni.il/",
       "note": "החיבור נכשל מכתובת שרת"
-    },
-    {
-      "name": "מועצת מעלות תרשיחא",
-      "url": "https://www.maltar.co.il/",
-      "note": "הדומיין אומת מול data.gov.il — האתר אינו נענה לבקשה מ-datacenter IP"
-    },
-    {
-      "name": "עיריית קרית ים",
-      "url": "https://www.k-yam.co.il/",
-      "note": "הדומיין אומת מול data.gov.il — האתר אינו נענה לבקשה מ-datacenter IP"
-    },
-    {
-      "name": "עיריית קרית מוצקין",
-      "url": "https://www.motzkin.org/",
-      "note": "הדומיין אומת מול data.gov.il — האתר חוסם סריקה (HTTP 403)"
-    },
-    {
-      "name": "מועצת קרית ארבע",
-      "url": "https://www.kiryat-arba.muni.il/",
-      "note": "הדומיין אומת מול data.gov.il — האתר חוסם סריקה (HTTP 403)"
-    },
-    {
-      "name": "עיריית קרית גת",
-      "url": "https://www.qiryat-gat.muni.il/",
-      "note": "הדומיין אומת מול data.gov.il — האתר חוסם סריקה (HTTP 403)"
-    },
-    {
-      "name": "עיריית קרית ביאליק",
-      "url": "https://www.qbialik.org.il/",
-      "note": "הדומיין אומת מול data.gov.il — האתר אינו נענה לבקשה מ-datacenter IP"
     }
   ],
   "_manualAuthoritiesNote": "נמדד ב-23/08/2026 על 118 רשויות מקומיות: 26 נסרקות אוטומטית. השאר מסווגות לפי מה שנמדד — חוסמות סריקה, לא נענות מכתובת שרת, עמוד המכרזים לא אותר, או שכתובת האתר לא אומתה (הדומיין שנוסה לא נענה כלל, וייתכן שהוא פשוט שגוי). לא נעשה ולא ייעשה ניסיון לעקוף הגנות בוט."

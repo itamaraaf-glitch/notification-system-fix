@@ -1538,12 +1538,16 @@ function keepEnriched(prev, rec) {
  * מפתח — היא מושמטת, ואז נדרשת הכרעה מחדש במקום להחיל את הראשונה שנמצאה.
  */
 function decisionLookup(decisions) {
+  // הכותרת נשמרת בהכרעה חתוכה ל-120 תווים, ולכן ההשוואה היא על תחילית קצרה
+  // ממנה. בלי זה, כותרות ארוכות — "קול קורא להגשת הצעות להיכלל במאגר מועמדות
+  // לכהונה בתפקיד: דירקטור/ית…" — לא נמצאו, וההכרעה עליהן דלפה
+  const titleKey = t => normKey(t || '').slice(0, 80);
   const byUrl = new Map();
   const byTitle = new Map();
   const titleClash = new Set();
   for (const d of Object.values(decisions)) {
     if (d.url) byUrl.set((d.source || '') + '|' + normUrl(d.url), d);
-    const key = normKey(d.title || '');
+    const key = titleKey(d.title);
     if (!key) continue;
     const seen = byTitle.get(key);
     if (seen && (seen.relevant !== d.relevant || seen.topic !== d.topic)) titleClash.add(key);
@@ -1553,7 +1557,7 @@ function decisionLookup(decisions) {
     if (decisions[rec.id]) return decisions[rec.id];
     const byUrlHit = byUrl.get((rec.source || '') + '|' + normUrl(rec.url || ''));
     if (byUrlHit) return byUrlHit;
-    const key = normKey(rec.title || '');
+    const key = titleKey(rec.title);
     return (key && !titleClash.has(key)) ? byTitle.get(key) : undefined;
   };
 }
