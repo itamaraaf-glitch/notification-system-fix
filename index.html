@@ -450,6 +450,8 @@ input[type=text],input[type=date],input[type=number],select,textarea{
 }
 input:focus,select:focus,textarea:focus{border-color:rgba(200,169,110,.55);box-shadow:0 0 0 3px rgba(200,169,110,.1),inset 0 1px 0 rgba(255,255,255,.06)}
 .srch{min-width:130px;max-width:200px}
+/* סינון בכותרת המסך: הרוחב הגלובלי 100% של select/תיבת הבחירה דחף כל תיבה לשורה נפרדת ופירק את שורת הכלים */
+.shdr select,.shdr .cs-trigger{width:auto;max-width:200px}
 /* dropdown options: black text on white — fallback for any native popup */
 select option{background:#ffffff;color:#111111}
 select option:checked,select option:hover{background:#2563eb;color:#ffffff}
