@@ -819,6 +819,37 @@ test('מועד שההעשרה מילאה שורד את הסריקה הבאה', (
   assert.strictEqual(merged.find(r => r.id === 'x').deadlineAt, '2026-09-30');
 });
 
+// תיקון נוסחת המזהה ניתק את ההכרעות שנשמרו: מכרז שאושר צנח מהראדאר, ומכרזים
+// שנדחו חזרו לרשימת הבדיקה. המפתח לפי מזהה אינו מספיק — צריך גיבוי לפי הכתובת
+// ולפי הכותרת, כי הן אלה שמזהות את המכרז לאורך זמן.
+test('הכרעה שמורה נמצאת גם כשהמזהה השתנה', () => {
+  const decisions = {
+    'מזהה-ישן-א': { relevant: true, topic: 'it', title: 'מערך שליטה ובקרה על פינוי פסולת',
+                    url: 'https://n.org.il/f/rfi.pdf', source: 'cluster-x' },
+    'מזהה-ישן-ב': { relevant: false, topic: '', title: 'קול קורא לירידי מתנות לחג' }
+  };
+  const look = R.decisionLookup(decisions);
+
+  // לפי מזהה, כשהוא לא השתנה
+  assert.strictEqual(look({ id: 'מזהה-ישן-ב', title: 'משהו אחר' }).relevant, false);
+  // לפי כתובת, כשהמזהה השתנה
+  const byUrl = look({ id: 'מזהה-חדש', source: 'cluster-x', url: 'https://n.org.il/f/rfi.pdf/', title: 'כותרת אחרת' });
+  assert.strictEqual(byUrl && byUrl.relevant, true, 'הכתובת מזהה את המכרז');
+  // לפי כותרת, כשגם הכתובת אינה שמורה (הכרעות ותיקות)
+  const byTitle = look({ id: 'מזהה-חדש-2', source: 'muni-y', url: 'https://y.muni.il/b/9',
+                         title: 'קול קורא לירידי מתנות לחג' });
+  assert.strictEqual(byTitle && byTitle.relevant, false, 'הכותרת היא הגיבוי האחרון');
+  // מכרז שלא הוכרע נשאר בלי הכרעה
+  assert.strictEqual(look({ id: 'ז', source: 'muni-y', url: 'https://y.muni.il/b/10', title: 'מכרז אחר לגמרי' }), undefined);
+
+  // כותרת שחוזרת בשתי הכרעות סותרות אינה מפתח — עדיף לשאול שוב מלהחיל ניחוש
+  const clashing = R.decisionLookup({
+    a: { relevant: true, topic: 'it', title: 'מסמכי המכרז' },
+    b: { relevant: false, topic: '', title: 'מסמכי המכרז' }
+  });
+  assert.strictEqual(clashing({ id: 'ח', title: 'מסמכי המכרז' }), undefined);
+});
+
 // תיקון נוסחת המזהה ייצר כפילות: הרשומה הישנה שרדה בהיסטוריה עד שתתיישן, החדשה
 // הצטרפה לצידה, ואותו מכרז הופיע פעמיים ברשימה. האיחוד הוא לפי הכתובת, כי היא
 // זו שמזהה את המכרז גם כשהמזהה משתנה תחתיו.

@@ -666,20 +666,21 @@ async function main() {
   // ריצה, ובלעדיהן כל מכרז שסקירת ה-AI אישרה היה נעלם בסריקה הבאה.
   const aiStore = readJson(path.join(DATA_DIR, 'ai-decisions.json'), { decisions: {} });
   const aiDec = aiStore.decisions || {};
+  const decisionOf = decisionLookup(aiDec);
   let restored = 0;
-  for (const [id, d] of Object.entries(aiDec)) {
-    const cand = nearMisses.get(id);
-    if (!cand || inRadar.has(id)) continue;
+  for (const cand of nearMisses.values()) {
+    const d = decisionOf(cand);
+    if (!d || inRadar.has(cand.id)) continue;
     if (!d.relevant || !kw.topics[d.topic] || !isActionable(cand)) continue;
     const { near, ...rec } = cand;
     merged.push({ ...rec, topics: [d.topic], aiMatched: true, aiReviewer: d.reviewer || 'api', aiReason: d.reason || '' });
-    inRadar.add(id);
+    inRadar.add(cand.id);
     restored++;
   }
   if (restored) console.error(`\n🤖 ${restored} מכרזים הוחזרו מהכרעות AI שמורות`);
 
   // מועמד שכבר הוכרע — לחיוב או לשלילה — אינו מוצג שוב ברשימת הבדיקה
-  const nearFinal = nearList.filter(r => !aiDec[r.id] && !inRadar.has(r.id));
+  const nearFinal = nearList.filter(r => !decisionOf(r) && !inRadar.has(r.id));
 
   const payload = {
     generatedAt: new Date().toISOString(),
@@ -1529,6 +1530,34 @@ function keepEnriched(prev, rec) {
  * ממנה firstSeen המוקדם ביותר כדי שהתווית "חדש" לא תשקר, ואת השדות המועשרים
  * כדי שמועד ההגשה שנשלף פעם לא יאבד באיחוד.
  */
+/**
+ * איתור ההכרעה של מועמד. המפתח בקובץ הוא המזהה, אבל המזהה יכול להשתנות תחת
+ * אותו מכרז כשנוסחתו מתוקנת — וכשזה קרה, מכרז שאושר צנח מהראדאר ומכרז שנדחה
+ * חזר לרשימת הבדיקה. לכן יש שתי דרכי גיבוי: הכתובת, שנשמרת בהכרעות חדשות,
+ * והכותרת המנורמלת, שנשמרת מאז ומעולם. כותרת שחוזרת בשתי הכרעות סותרות אינה
+ * מפתח — היא מושמטת, ואז נדרשת הכרעה מחדש במקום להחיל את הראשונה שנמצאה.
+ */
+function decisionLookup(decisions) {
+  const byUrl = new Map();
+  const byTitle = new Map();
+  const titleClash = new Set();
+  for (const d of Object.values(decisions)) {
+    if (d.url) byUrl.set((d.source || '') + '|' + normUrl(d.url), d);
+    const key = normKey(d.title || '');
+    if (!key) continue;
+    const seen = byTitle.get(key);
+    if (seen && (seen.relevant !== d.relevant || seen.topic !== d.topic)) titleClash.add(key);
+    byTitle.set(key, d);
+  }
+  return (rec) => {
+    if (decisions[rec.id]) return decisions[rec.id];
+    const byUrlHit = byUrl.get((rec.source || '') + '|' + normUrl(rec.url || ''));
+    if (byUrlHit) return byUrlHit;
+    const key = normKey(rec.title || '');
+    return (key && !titleClash.has(key)) ? byTitle.get(key) : undefined;
+  };
+}
+
 function dedupeByUrl(records) {
   // הרשומה שנראתה לאחרונה גוברת; בתיקו — הניקוד, ואז הכותרת הקצרה, כי דפי רשימה
   // מצמידים לאותה כתובת גם "מכרז פומבי ל…" וגם "שם מכרז: מכרז פומבי ל…"
@@ -1638,7 +1667,7 @@ if (require.main === module) {
 
 module.exports = {
   classify, dropReason, DROP_LABELS, looksLikeTender, isNavTitle, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, withHealth, pageTitle, withLearnedTendersUrls, learnedIsFresh, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
-  extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, dedupeByUrl, publisherAllowed, summarize,
+  extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, dedupeByUrl, decisionLookup, publisherAllowed, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
 };

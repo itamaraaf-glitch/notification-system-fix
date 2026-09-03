@@ -115,6 +115,10 @@ test('ההכרעות נשמרות בקובץ נפרד ששורד סריקה מח
   const fetcher = fs.readFileSync(path.join(__dirname, '..', '..', '.github', 'scripts', 'tenders-fetch.js'), 'utf8');
   assert.ok(fetcher.includes("readJson(path.join(DATA_DIR, 'ai-decisions.json')"), 'הסורק קורא את האחסון');
   assert.ok(/aiMatched: true, aiReviewer: d\.reviewer/.test(fetcher), 'ומחזיר את המכרזים שאושרו');
-  assert.ok(/nearList\.filter\(r => !aiDec\[r\.id\]/.test(fetcher),
+  assert.ok(/nearList\.filter\(r => !decisionOf\(r\)/.test(fetcher),
     'מועמד שכבר הוכרע אינו מוצג שוב ברשימת הבדיקה');
+  // האיתור אינו לפי מזהה בלבד: המזהה השתנה תחת מכרזים קיימים כשנוסחתו תוקנה,
+  // ואז מכרז שאושר צנח מהראדאר ומכרזים שנדחו חזרו לרשימה
+  assert.ok(fetcher.includes('decisionLookup(aiDec)'), 'ההכרעה נמצאת גם כשהמזהה השתנה');
+  assert.ok(/url: d\.rec\.url/.test(src), 'הכתובת נשמרת בהכרעה כדי לשמש עוגן יציב');
 });
