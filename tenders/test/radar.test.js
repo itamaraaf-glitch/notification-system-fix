@@ -1078,3 +1078,41 @@ test('הרענון מבוזר: כל מקור פעם בשבוע, ולא כולם 
   assert.ok(Math.max(...perDay) < ids.length / 2,
     `אין יום שבו מתרענן חצי מהמקורות (${perDay.join(',')})`);
 });
+
+/* ─────────── יציבות המזהה ─────────── */
+
+// המזהה בלע מספר מכרז מחלון ההקשר, וההקשר בולע את שכניו בדף רשימה — כך שהמספר
+// היה לעיתים של הפריט שאחריו, והשתנה בין סריקות כשתוכן הדף זז. נצפה בפועל:
+// "קולות קוראים / RFI" של מועצת אזור קיבל שלושה מזהים שונים בשלושה ימים, אותו
+// מקור ואותה כתובת. מזהה שאינו יציב שובר שלושה דברים בשקט: הכרעות ה-AI אינן
+// נדבקות והפריט חוזר לנצח, firstSeen מתאפס, ומחיקה של המשתמש חוזרת.
+test('המזהה יציב גם כשחלון ההקשר משתנה בין סריקות', () => {
+  const src = { id: 'muni-azor', name: 'מועצת אזור', allTenders: false, keepUndated: true };
+  // כותרת ניטרלית בכוונה: הבדיקה בוחנת יציבות מזהה, לא את שער הניווט
+  const mk = context => R.buildRecord(
+    { title: 'מכרז פומבי לאספקת ריהוט משרדי למועצה', url: 'https://www.azor.muni.il/bids/', context },
+    src, KW, { near: true });
+
+  const a = mk('מכרז פומבי 12/2026 לאספקת ריהוט . קולות קוראים . עוד');
+  const b = mk('מכרז פומבי 3/2027 לגינון . קולות קוראים . עוד');
+  const c = mk('');
+  assert.ok(a && b && c, 'הרשומות נבנות');
+  assert.strictEqual(a.id, b.id, 'שכן אחר בהקשר אינו משנה את המזהה');
+  assert.strictEqual(a.id, c.id, 'היעדר הקשר אינו משנה את המזהה');
+
+  // מספר המכרז לתצוגה עדיין מושלם מההקשר — שם זו רק השלמת מידע
+  assert.strictEqual(a.tenderNumber, '12/2026');
+  assert.strictEqual(c.tenderNumber, '');
+
+  // ומספר שכן בכותרת עצמה כן מזהה, ויציב מול הקשר משתנה
+  const own = ctx => R.buildRecord(
+    { title: "מכרז פומבי 7/2026 לאספקת ציוד תקשורת ומתגים", url: 'https://x.muni.il/a', context: ctx },
+    src, KW);
+  assert.strictEqual(own('מכרז 99/2020 של שכן').id, own('הקשר אחר').id);
+  assert.strictEqual(own('').tenderNumber, '7/2026');
+
+  // שני מכרזים שונים באותו מקור עדיין מקבלים מזהים שונים
+  const t1 = own('');
+  const t2 = R.buildRecord({ title: 'מכרז פומבי 8/2026 לאספקת מתגים ונתבים', url: 'https://x.muni.il/a', context: '' }, src, KW);
+  assert.notStrictEqual(t1.id, t2.id);
+});

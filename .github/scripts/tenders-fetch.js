@@ -114,7 +114,9 @@ const NAV_TITLE_RE = new RegExp([
   '^\\s*מכרזים\\s*(פעילים|קודמים|ארכיון)\\s*$',
   '^\\s*מחלקת\\s',
   '^\\s*ל?ארכיון\\s*מכרזים',
-  '^\\s*דיון\\s'
+  '^\\s*דיון\\s',
+  // תווית קטגוריה ולא פרסום: "קולות קוראים / RFI" חזר בכל סריקה
+  '^\\s*קולות\\s*קוראים\\s*(\\/|$)'
 ].join('|'));
 function isNavTitle(title) {
   return NAV_TITLE_RE.test(String(title || ''));
@@ -1440,9 +1442,18 @@ function buildRecord(item, source, kw, opts = {}) {
   const publisher = item.publisher || extractPublisher(item.context) || source.name;
   if (!publisherAllowed(publisher, source)) return reject(opts, 'גוף מפרסם שאינו נסרק', publisher);
 
-  const tenderNumber = extractTenderNumber(titleAndSummary) || extractTenderNumber(item.context || '');
+  // מספר המכרז לתצוגה יכול לבוא גם מההקשר — שם זו רק השלמת מידע.
+  const ownNumber = extractTenderNumber(titleAndSummary);
+  const tenderNumber = ownNumber || extractTenderNumber(item.context || '');
   const host = (() => { try { return new URL(item.url).host; } catch (_) { return source.id; } })();
-  const id = hashId(source.id + '|' + (tenderNumber || normKey(item.title)) + '|' + host);
+
+  // **המזהה נבנה רק ממה ששייך לפריט עצמו.** חלון ההקשר בולע את שכניו בדף רשימה,
+  // ולכן מספר מכרז שנשלף ממנו הוא לעיתים של הפריט שאחריו — והוא משתנה בין
+  // סריקות כשתוכן הדף זז. נצפה בפועל: "קולות קוראים / RFI" של מועצת אזור קיבל
+  // שלושה מזהים שונים בשלושה ימים, אותו מקור ואותה כתובת. מזהה שאינו יציב שובר
+  // שלושה דברים בשקט — הכרעות ה-AI אינן נדבקות והפריט חוזר לנצח, firstSeen
+  // מתאפס והתווית "חדש" משקרת, ומחיקה של המשתמש חוזרת בסריקה הבאה.
+  const id = hashId(source.id + '|' + (ownNumber || normKey(item.title)) + '|' + host);
 
   // סדר העדפה לתאריך הפרסום: מה שהדף אמר, ואם אין — נתיב הקובץ, ואם גם אין —
   // השנה שבמספר המכרז. בלי החוליה האחרונה פרסום בלי שום תאריך נראה "טרי" לנצח.
