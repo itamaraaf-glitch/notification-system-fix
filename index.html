@@ -14186,51 +14186,124 @@ function _txSaveToPlan(){
   c._mts=Date.now(); dbUpdate('clients',c.id,c); saveAll(); rAll();
   showToast('📋 החישוב נשמר לתוכנית העבודה — אפשר לחזור אליו ולשנות','ok');
 }
+// ── טופס אישור שיווק לעסקת תמסורת — קובץ אקסל מעוצב, מוכן להגשה וחתימה ──
 function _txExport(){
   const {v,r}=(window._txLast||{v:_txRead(),r:null});
   const rr=r||_txCalc(v);
-  const L=[];
-  L.push(['מחשבון תמסורת — הוט וצד ג׳']);
-  L.push(['לקוח',v.client||'–','עסקה',_txLabel(v)]);
-  L.push(['דרג אישור',v.level,'תקופת התחייבות',v.months+' חודשים']);
-  L.push([]);
-  L.push(['תשתית','רוחב פס','כמות','מחירון תשתית','תשתית בפועל','תוספת לקו','מחירון ספק','ספק בפועל','DDOS','סה"כ לקו','סה"כ']);
-  (rr.lines||[]).forEach(ln=>L.push([ln.gl,ln.bw,ln.qty,Math.round(ln.ref*10)/10,Math.round(ln.list*10)/10,
-    ln.extra,ln.ispRef||'–',ln.isp||'–',ln.ddos||'–',Math.round(ln.per*10)/10,Math.round(ln.total*10)/10]));
-  if(rr.cut>0.004)L.push(['הנחה מהמחירון',Math.round(rr.cut),(Math.round(rr.cutPct*1000)/10)+'%']);
-  L.push([]);
-  L.push(['הכנסה חודשית',Math.round(rr.monthly)]);
-  L.push(['  תשתית הוט',Math.round(rr.hotRev)]);
-  L.push(['  צד ג׳ הוט נט',Math.round(rr.netRev)]);
-  L.push(['  צד ג׳ סלקום',Math.round(rr.cellRev)]);
-  L.push(['מבצע סוף שנה',Math.round(rr.promo)]);
-  L.push(['חודשי חינם',rr.free]);
-  L.push(['הכנסה לכל התקופה',Math.round(rr.termIncome)]);
-  L.push(['הכנסה שוטפת ממוצעת',Math.round(rr.incAvg)]);
-  L.push([]);
-  L.push(['הוצאה שוטפת ממוצעת',Math.round(rr.expAvg)]);
-  L.push(['  הפעלה שוטפת',Math.round(rr.opex)]);
-  L.push(['  תעבורת ISP',Math.round(rr.hotIspCost+rr.netIspCost)]);
-  L.push(['  שכירות צד ג׳',Math.round(rr.rent)]);
-  L.push(['רווחיות שוטפת',Math.round(rr.profit)]);
-  L.push([]);
-  L.push(['עלות תשתית',Math.round(v.infra)]);
-  L.push(['אופטיקה מתוקננת',Math.round(rr.optics)]);
-  L.push(['זיכוי פער אופטיקה',Math.round(-rr.opticGap)]);
-  L.push(['עלות BOM',Math.round(v.bom)]);
-  L.push(['התקנה',Math.round(rr.install)]);
-  L.push(['שקע חומר',Math.round(rr.socket)]);
-  L.push(['השקעה נטו לחישוב ROI',Math.round(rr.netInvest)]);
-  L.push([]);
-  L.push(['PMI כולל',Math.round(rr.pmi*100)+'%']);
-  L.push(['PMI תשתית הוט',Math.round(rr.hotPmi*100)+'%','מינימום',Math.round(rr.minPmi*100)+'%']);
-  L.push(['ROI בחודשים',rr.roiM||'לא מוחזר','מותר עד',Math.round(rr.minRoi*rr.months)]);
-  L.push(['תוצאה',rr.approved?'מאושר כלכלית':'לא מאושר כלכלית']);
-  rr.errs.forEach(e=>L.push(['  חריגה',e]));
-  dlCSV(L.map(row=>row.map(_csvCell).join(',')).join('\n'),'תמסורת_'+((v.client||'חישוב').replace(/[\\/:*?"<>|]/g,''))+'_'+nd()+'.csv');
-  showToast('📥 הקובץ ירד — נפתח באקסל','ok');
-}
+  const rows=[], merges=[];
+  const R=()=>rows.length;                       // מספר השורה הבאה (0-בסיס)
+  const A=n=>rows.push(n);
+  const cellsOf=(arr)=>({cells:arr});
+  const blank=()=>A({cells:[]});
+  const T=(txt,st)=>({v:txt,s:st||'txt'});
+  const N=(num,st)=>({v:(+num||0),n:true,s:st||'num'});
+  const P=(num,st)=>({v:(+num||0),n:true,s:st||'pct'});
+  const wide=(txt,st,h)=>{ merges.push('A'+(R()+1)+':K'+(R()+1)); A({h:h||18,cells:[{v:txt,s:st}]}); };
+  const pair=(l1,v1,l2,v2)=>{ const rn=R()+1;
+    merges.push('B'+rn+':E'+rn); merges.push('F'+rn+':G'+rn); merges.push('H'+rn+':K'+rn);
+    A({h:17,cells:[T(l1,'lbl'),T(v1,'txt'),null,null,null,T(l2||'','lbl'),null,T(v2==null?'':String(v2),'txt')]}); };
+  const sec=t=>{ blank(); wide(t,'sec',20); };
 
+  // ── כותרת ──
+  wide('טופס אישור שיווק — עסקת תמסורת','title',30);
+  wide('HOT Business · הופק '+fmtDate(nd())+(_currentUserName()?' · '+_currentUserName():''),'titleSub',18);
+
+  // ── 1. פרטי העסקה ──
+  sec('1. פרטי העסקה');
+  pair('שם הלקוח',v.client||'—','שם העסקה',_txLabel(v));
+  pair('דרג אישור נדרש',v.level,'תקופת התחייבות',rr.months+' חודשים');
+  pair('חודשי חינם',rr.free,'מבצע סוף שנה',v.promo?'כן':'לא');
+  pair('כתובות בתשתית הוט',v.addr||0,'סה"כ קווים בעסקה',rr.hotQty+rr.netQty+rr.cellQty);
+
+  // ── 2. פירוט הקווים ──
+  sec('2. פירוט הקווים');
+  A({h:28,cells:['תשתית','רוחב פס','כמות','מחירון תשתית','תשתית בפועל','תוספת לקו','מחירון ספק','ספק בפועל','DDOS','סה"כ לקו','סה"כ חודשי'].map(t=>T(t,'hdr'))});
+  const gname={hot:'תשתית הוט',net:'צד ג׳ — הוט נט',cell:'צד ג׳ — סלקום'};
+  const gsum={hot:rr.hotRev,net:rr.netRev,cell:rr.cellRev};
+  ['hot','net','cell'].forEach(g=>{
+    const ls=(rr.lines||[]).filter(x=>x.g===g); if(!ls.length)return;
+    ls.forEach(ln=>{
+      const cut=ln.list<ln.ref-0.004, icut=ln.isp<(ln.ispRef||0)-0.004;
+      A({cells:[T(gname[g],'txt'),T(ln.bw,'txtc'),N(ln.qty),N(ln.ref,'num1'),N(ln.list,cut?'numr':'num1'),
+        N(ln.extra,'num1'),N(ln.ispRef||0,'num1'),N(ln.isp,icut?'numr':'num1'),N(ln.ddos,'num1'),N(ln.per,'num1'),N(ln.total,'numb')]});
+    });
+    const rn=R()+1; merges.push('A'+rn+':J'+rn);
+    A({cells:[T('סיכום '+gname[g],'lbl'),null,null,null,null,null,null,null,null,null,N(gsum[g],'numb')]});
+  });
+  if(rr.cut>0.004){ const rn=R()+1; merges.push('A'+rn+':J'+rn);
+    A({cells:[T('הנחה שניתנה מהמחירון — '+(Math.round(rr.cutPct*1000)/10)+'% מתוך '+fmt(Math.round(rr.refTotal)),'warn'),
+      null,null,null,null,null,null,null,null,null,N(-rr.cut,'numr')]}); }
+  if(rr.promo){ const rn=R()+1; merges.push('A'+rn+':J'+rn);
+    A({cells:[T('בניכוי מבצע סוף שנה (נזקף להכנסת התקופה, לא לחודשית)','warn'),
+      null,null,null,null,null,null,null,null,null,N(-rr.promo,'numb')]}); }
+  { const rn=R()+1; merges.push('A'+rn+':J'+rn);
+    A({h:20,cells:[T('סה"כ הכנסה חודשית','lbl'),null,null,null,null,null,null,null,null,null,N(rr.monthly,'numb')]}); }
+
+  // ── 3. הכנסות לאורך ההתחייבות ──
+  sec('3. הכנסות לאורך תקופת ההתחייבות');
+  const money2=(l,val,st)=>{ const rn=R()+1; merges.push('A'+rn+':G'+rn); merges.push('H'+rn+':K'+rn);
+    A({cells:[T(l,st==='lbl'?'lbl':'txt'),null,null,null,null,null,null,N(val,st==='lbl'?'numb':'num1')]}); };
+  money2('הכנסה חודשית',rr.monthly);
+  money2('הכנסת מבצע סוף שנה (12 חודשים)',rr.metro);
+  money2('הכנסה חד-פעמית (התקנות)',v.oneInc||0);
+  money2('סה"כ הכנסה מ-SERVICE לכל התקופה',rr.termIncome,'lbl');
+  money2('הכנסה שוטפת ממוצעת לחודש',rr.incAvg,'lbl');
+
+  // ── 4. הוצאות שוטפות ──
+  sec('4. הוצאות שוטפות (ממוצע חודשי)');
+  money2('עלות הפעלה שוטפת (תעבורה, תחזוקה, חשמל, גבייה, שירות)',rr.opex);
+  money2('עלות תעבורת ISP',rr.hotIspCost+rr.netIspCost);
+  money2('שכירות תשתית צד ג׳',rr.rent);
+  money2('סה"כ הוצאה שוטפת',rr.expAvg,'lbl');
+  money2('רווחיות שוטפת',rr.profit,'lbl');
+
+  // ── 5. השקעה ──
+  sec('5. השקעה לחישוב ROI');
+  money2('עלות תשתית לפי טופס תשתיות',v.infra||0);
+  money2('מתוכה אופטיקה מתוקננת',rr.optics);
+  money2('זיכוי פער אופטיקה',-rr.opticGap);
+  money2('עלות BOM',v.bom||0);
+  money2('עלות התקנה ('+(v.addr||0)+' כתובות × ₪1,000)',rr.install);
+  money2('שקע חומר',rr.socket);
+  money2('הוצאה חד-פעמית / צד ג׳ זמנית',(+v.oneExp||0)+(+v.tmp3rd||0));
+  money2('בניכוי הכנסה חד-פעמית',-(+v.oneInc||0));
+  money2('סה"כ השקעה נטו',rr.netInvest,'lbl');
+
+  // ── 6. מדדים ובקרת אישור ──
+  sec('6. מדדים כלכליים ובקרת אישור');
+  A({h:22,cells:[T('מדד','hdr'),T('ערך בעסקה','hdr'),null,T('נדרש לדרג '+rr.level,'hdr'),null,T('תוצאה','hdr'),null,null,null,null,null]});
+  merges.push('B'+R()+':C'+R()); merges.push('D'+R()+':E'+R()); merges.push('F'+R()+':K'+R());
+  const chk=(name,val,need,ok,valSt)=>{ const rn=R()+1;
+    merges.push('B'+rn+':C'+rn); merges.push('D'+rn+':E'+rn); merges.push('F'+rn+':K'+rn);
+    A({cells:[T(name,'txtb'),(typeof val==='number'?(valSt==='pct'?P(val,'pct'):N(val,valSt==='money'?'num1':'num')):T(val,'txtc')),null,
+      T(need,'txtc'),null,T(ok===null?'—':(ok?'✔ עומד':'✘ חורג'),ok===null?'txtc':(ok?'ok':'bad'))]}); };
+  chk('PMI כולל',rr.pmi,'—',null,'pct');
+  chk('PMI תשתית הוט',rr.hotPmi,'לפחות '+Math.round(rr.minPmi*100)+'%',!(rr.hotAvg>0&&rr.hotPmi<rr.minPmi),'pct');
+  chk('החזר השקעה (ROI)',rr.roiM?rr.roiM+' חודשים':'לא מוחזר','עד '+Math.round(rr.minRoi*rr.months)+' חודשים',!!rr.roiM&&rr.roiM<=rr.minRoi*rr.months);
+  chk('חודשי חינם שניתנו',rr.free,'עד '+rr.maxFree,rr.free<=rr.maxFree);
+  chk('מחיר תשתית מול אופטיקה',+v.infra||0,'לפחות '+fmt(Math.round(rr.optics)),(+v.infra||0)>=rr.optics,'money');
+  chk('הנחה מהמחירון',rr.cutPct,'—',null,'pct');
+  if(rr.warn){ const rn=R()+1; merges.push('A'+rn+':K'+rn); A({h:18,cells:[T('⚠ '+rr.warn,'warn')]}); }
+  { const rn=R()+1; merges.push('A'+rn+':K'+rn);
+    A({h:26,cells:[T(rr.approved?'✔ מאושר כלכלית — נדרש אישור כתוב של '+rr.level
+      :'✘ לא מאושר כלכלית — '+rr.errs.join(' · '),rr.approved?'ok':'bad')]}); }
+
+  // ── 7. אישורים ──
+  sec('7. אישורים וחתימות');
+  A({h:20,cells:[T('תפקיד','hdr'),T('שם','hdr'),null,T('חתימה','hdr'),null,T('תאריך','hdr'),null,T('הערות','hdr'),null,null,null]});
+  merges.push('B'+R()+':C'+R()); merges.push('D'+R()+':E'+R()); merges.push('F'+R()+':G'+R()); merges.push('H'+R()+':K'+R());
+  ['מכין הטופס','מנהל שיווק',rr.level].forEach(role=>{ const rn=R()+1;
+    merges.push('B'+rn+':C'+rn); merges.push('D'+rn+':E'+rn); merges.push('F'+rn+':G'+rn); merges.push('H'+rn+':K'+rn);
+    A({h:26,cells:[T(role,'txtb'),T('','txt'),null,T('','txt'),null,T('','txt'),null,T('','txt')]}); });
+  blank();
+  { const rn=R()+1; merges.push('A'+rn+':K'+rn);
+    A({cells:[T('המסמך הופק אוטומטית ממחשבון התמסורת של מערכת HOT Business CRM לפי המודל הכלכלי הארגוני. המחירים נגזרים מדרג האישור ומתקופת ההתחייבות.','note')]}); }
+
+  const safe=(v.client||'חישוב').replace(/[\\/:*?"<>|]/g,'').trim()||'חישוב';
+  _dlXlsx('אישור_שיווק_תמסורת_'+safe+'_'+nd()+'.xlsx',
+    {name:'אישור שיווק',cols:[24,13,7,13,13,10,12,12,10,13,14],merges,rows});
+  showToast('📥 טופס אישור השיווק ירד כקובץ אקסל','ok');
+}
 function rWorkPlan(){
   const priF=(document.getElementById('wp-pri-filter')||{}).value||'';
   const stF=(document.getElementById('wp-status-filter')||{}).value||'';
@@ -15652,6 +15725,144 @@ function toCSV(hdrs,rows){
   rows.forEach(r=>{out+=r.map(_csvCell).join(',')+'\n';});
   return out;
 }
+// ═══ כתיבת קובץ אקסל אמיתי (.xlsx) — בלי ספריות חיצוניות ═══
+// ארכיון ZIP ללא דחיסה (stored) עם CRC32, ובתוכו חלקי OOXML. כך מתקבל קובץ שנפתח
+// באקסל עם עיצוב מלא — כותרות, מסגרות, פורמט מספרים, רוחבי עמודות וגיליון מימין לשמאל.
+const _crcTab=(()=>{const t=new Uint32Array(256);
+  for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}
+  return t;})();
+function _crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=_crcTab[(c^u8[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+function _zipStore(files){
+  const enc=new TextEncoder(), parts=[], central=[]; let off=0;
+  files.forEach(f=>{
+    const nb=enc.encode(f.name), data=(typeof f.data==='string')?enc.encode(f.data):f.data;
+    const crc=_crc32(data), len=data.length;
+    const lh=new Uint8Array(30+nb.length), dv=new DataView(lh.buffer);
+    dv.setUint32(0,0x04034b50,true); dv.setUint16(4,20,true); dv.setUint16(6,0x0800,true);
+    dv.setUint32(14,crc,true); dv.setUint32(18,len,true); dv.setUint32(22,len,true);
+    dv.setUint16(26,nb.length,true);
+    lh.set(nb,30); parts.push(lh,data);
+    const ch=new Uint8Array(46+nb.length), cv=new DataView(ch.buffer);
+    cv.setUint32(0,0x02014b50,true); cv.setUint16(4,20,true); cv.setUint16(6,20,true);
+    cv.setUint16(8,0x0800,true);
+    cv.setUint32(16,crc,true); cv.setUint32(20,len,true); cv.setUint32(24,len,true);
+    cv.setUint16(28,nb.length,true); cv.setUint32(42,off,true);
+    ch.set(nb,46); central.push(ch);
+    off+=lh.length+len;
+  });
+  const cdSize=central.reduce((a,c)=>a+c.length,0);
+  const end=new Uint8Array(22), ev=new DataView(end.buffer);
+  ev.setUint32(0,0x06054b50,true); ev.setUint16(8,files.length,true); ev.setUint16(10,files.length,true);
+  ev.setUint32(12,cdSize,true); ev.setUint32(16,off,true);
+  const all=parts.concat(central,[end]);
+  const out=new Uint8Array(all.reduce((a,c)=>a+c.length,0));
+  let p=0; all.forEach(c=>{out.set(c,p);p+=c.length;});
+  return out;
+}
+function _xe(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function _xlCol(n){let s='';n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;}
+// מפתח הסגנונות — השם שמופיע בתאים מתורגם לאינדקס ב-cellXfs
+const XL_STYLE={def:0,title:1,sub:2,sec:3,hdr:4,lbl:5,txt:6,num:7,num1:8,numb:9,pct:10,pctb:11,
+  ok:12,bad:13,warn:14,note:15,sign:16,titleSub:17,txtb:18,txtc:19,numr:20};
+const XL_STYLES=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="3"><numFmt numFmtId="164" formatCode="#,##0"/><numFmt numFmtId="165" formatCode="#,##0.##"/><numFmt numFmtId="166" formatCode="0.0%"/></numFmts>
+<fonts count="12">
+<font><sz val="10"/><name val="Arial"/></font>
+<font><b/><sz val="16"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>
+<font><i/><sz val="9"/><color rgb="FF6B7A88"/><name val="Arial"/></font>
+<font><b/><sz val="12"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>
+<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>
+<font><b/><sz val="10"/><color rgb="FF12324B"/><name val="Arial"/></font>
+<font><sz val="10"/><color rgb="FF1F2D3A"/><name val="Arial"/></font>
+<font><b/><sz val="11"/><color rgb="FF0B6B3A"/><name val="Arial"/></font>
+<font><b/><sz val="11"/><color rgb="FFB01B2E"/><name val="Arial"/></font>
+<font><b/><sz val="10"/><color rgb="FFB25E12"/><name val="Arial"/></font>
+<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>
+<font><sz val="10"/><color rgb="FFB01B2E"/><name val="Arial"/></font>
+</fonts>
+<fills count="9">
+<fill><patternFill patternType="none"/></fill>
+<fill><patternFill patternType="gray125"/></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FF12324B"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FF0E7C86"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FF34576F"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFF2F6F9"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFE3F5EA"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFFBE7EA"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFFDF3E6"/><bgColor indexed="64"/></patternFill></fill>
+</fills>
+<borders count="3">
+<border><left/><right/><top/><bottom/><diagonal/></border>
+<border><left style="thin"><color rgb="FFB8C4CE"/></left><right style="thin"><color rgb="FFB8C4CE"/></right><top style="thin"><color rgb="FFB8C4CE"/></top><bottom style="thin"><color rgb="FFB8C4CE"/></bottom><diagonal/></border>
+<border><left/><right/><top/><bottom style="thin"><color rgb="FF12324B"/></bottom><diagonal/></border>
+</borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="21">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+<xf numFmtId="0" fontId="3" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>
+<xf numFmtId="0" fontId="4" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="5" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>
+<xf numFmtId="0" fontId="6" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>
+<xf numFmtId="164" fontId="6" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="165" fontId="6" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="165" fontId="5" fillId="5" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="166" fontId="6" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="166" fontId="5" fillId="5" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="7" fillId="6" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="8" fillId="7" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="9" fillId="8" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="right" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="6" fillId="0" borderId="2" xfId="0" applyFont="1" applyBorder="1"/>
+<xf numFmtId="0" fontId="10" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="5" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>
+<xf numFmtId="0" fontId="6" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="165" fontId="11" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+</cellXfs>
+</styleSheet>`;
+// sheet = {name, cols:[w...], merges:['A1:K1'...], rows:[{h, cells:[{v,s,n:true}|null]}]}
+function _xlSheet(sheet){
+  const rows=(sheet.rows||[]).map((r,ri)=>{
+    const cells=(r.cells||[]).map((c,ci)=>{
+      if(c==null||c.v===''||c.v==null)return c&&c.s?`<c r="${_xlCol(ci)}${ri+1}" s="${XL_STYLE[c.s]||0}"/>`:'';
+      const ref=_xlCol(ci)+(ri+1), st=XL_STYLE[c.s]||0;
+      return c.n
+        ? `<c r="${ref}" s="${st}"><v>${Number(c.v)}</v></c>`
+        : `<c r="${ref}" s="${st}" t="inlineStr"><is><t xml:space="preserve">${_xe(c.v)}</t></is></c>`;
+    }).join('');
+    return `<row r="${ri+1}"${r.h?` ht="${r.h}" customHeight="1"`:''}>${cells}</row>`;
+  }).join('');
+  const cols=(sheet.cols||[]).map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('');
+  const merges=(sheet.merges||[]).map(m=>`<mergeCell ref="${m}"/>`).join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>
+<sheetViews><sheetView rightToLeft="1" showGridLines="0" tabSelected="1" workbookViewId="0"/></sheetViews>
+<sheetFormatPr defaultRowHeight="15"/>${cols?`<cols>${cols}</cols>`:''}
+<sheetData>${rows}</sheetData>${merges?`<mergeCells count="${(sheet.merges||[]).length}">${merges}</mergeCells>`:''}
+<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>
+<pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+}
+function _dlXlsx(fileName,sheet){
+  const files=[
+    {name:'[Content_Types].xml',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`},
+    {name:'_rels/.rels',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
+    {name:'xl/workbook.xml',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${_xe((sheet.name||'גיליון1').substring(0,31))}" sheetId="1" r:id="rId1"/></sheets></workbook>`},
+    {name:'xl/_rels/workbook.xml.rels',data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`},
+    {name:'xl/styles.xml',data:XL_STYLES},
+    {name:'xl/worksheets/sheet1.xml',data:_xlSheet(sheet)}
+  ];
+  const blob=new Blob([_zipStore(files)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download=fileName; document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},600);
+}
+
 function dlCSV(name,csv){
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');
