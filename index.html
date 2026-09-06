@@ -13778,10 +13778,19 @@ const TX_ISP_COST=0.50875;               // עלות תעבורה חודשית �
 
 let _txHot=[], _txNet=[], _txCell=[];
 function _txAdd(kind){
-  if(kind==='hot')_txHot.push({bw:TX_HOT[0][0],qty:1,extra:0,isp:false,ddos:false});
-  else if(kind==='net')_txNet.push({bw:TX_NET[0][0],qty:1,extra:0,forms:false,isp:false,ddos:false});
-  else _txCell.push({bw:TX_CELL[0][0],qty:1,extra:0,isp:false,ddos:false});
+  if(kind==='hot')_txHot.push({bw:TX_HOT[0][0],qty:1,price:null,extra:0,isp:false,ddos:false});
+  else if(kind==='net')_txNet.push({bw:TX_NET[0][0],qty:1,price:null,extra:0,forms:false,isp:false,ddos:false});
+  else _txCell.push({bw:TX_CELL[0][0],qty:1,price:null,extra:0,isp:false,ddos:false});
   _txRenderLines(); _txRender();
+}
+// מחיר המחירון לקו לפי דרג האישור ותקופת ההתחייבות — נקודת הייחוס שממנה נגזרת ההנחה
+function _txListPrice(kind,r){
+  const L=TX_LEVELS[(document.getElementById('tx-level')||{}).value]||TX_LEVELS['מת"ל'];
+  const m=+((document.getElementById('tx-months')||{}).value)||36, yi=m>=36?2:m>=24?1:0;
+  let t;
+  if(kind==='hot'){ t=TX_HOT.find(x=>x[0]===r.bw); return t?t[2][L.i]:0; }
+  if(kind==='net'){ t=TX_NET.find(x=>x[0]===r.bw); return t?t[3][(r.forms?3:0)+yi]:0; }
+  t=TX_CELL.find(x=>x[0]===r.bw); return t?t[2][yi]:0;
 }
 function _txDel(kind,i){
   (kind==='hot'?_txHot:kind==='net'?_txNet:_txCell).splice(i,1);
@@ -13789,7 +13798,11 @@ function _txDel(kind,i){
 }
 function _txSet(kind,i,field,val){
   const r=(kind==='hot'?_txHot:kind==='net'?_txNet:_txCell)[i]; if(!r)return;
-  r[field]=(field==='qty'||field==='extra')?Math.max(0,_aiNum(val)):val;
+  if(field==='qty'||field==='extra')r[field]=Math.max(0,_aiNum(val));
+  else if(field==='price')r.price=(String(val).trim()==='')?null:Math.max(0,_aiNum(val));
+  else r[field]=val;
+  // שינוי רוחב פס או טפסים מחזיר את הקו למחיר המחירון החדש, כדי שלא יישאר מחיר של קו אחר
+  if(field==='bw'||field==='forms'){ r.price=null; _txRenderLines(); }
   _txRender();
 }
 function _txRead(){
@@ -13807,14 +13820,17 @@ function _txCalc(v){
   const yi=months>=36?2:months>=24?1:0;         // עמודת המחירון לפי תקופת ההתחייבות
   // כל קו נרשם בנפרד (מחירון · תוספת · ISP · DDOS · מבצע) כדי שכל שקל בסיכום יהיה נתון למעקב
   const lines=[];
+  let cut=0;                                   // סך ההנחה מהמחירון (חודשי)
   let hotRev=0,promo=0,hotMb=0,hotQty=0,optics=0,opticGap=0,socket=0,hotIspMb=0,tenG=0;
   (v.hot||[]).forEach((r,i)=>{
     const t=TX_HOT.find(x=>x[0]===r.bw); if(!t)return;
     const q=Math.max(0,+r.qty||0), mb=t[1];
     const disc=(L.rank===1&&v.promo)?t[4]:0;
-    const list=t[2][L.i], isp=r.isp?t[3][L.i]:0, ddos=r.ddos?(TX_DDOS[mb]||0):0, ex=+r.extra||0;
+    const ref=t[2][L.i], list=(r.price==null||r.price==='')?ref:Math.max(0,+r.price);
+    const isp=r.isp?t[3][L.i]:0, ddos=r.ddos?(TX_DDOS[mb]||0):0, ex=+r.extra||0;
     const per=list+ex+isp+ddos+disc;
-    lines.push({g:'hot',gl:'תשתית הוט',i,bw:r.bw,list,extra:ex,isp,ddos,disc,per,qty:q,total:per*q});
+    cut+=(ref-list)*q;
+    lines.push({g:'hot',gl:'תשתית הוט',i,bw:r.bw,ref,list,extra:ex,isp,ddos,disc,per,qty:q,total:per*q});
     hotRev+=per*q; promo+=disc*q; hotQty+=q; hotMb+=mb*q;
     optics+=t[5]*q; opticGap+=(t[5]>0?TX_OPTIC_FULL-t[5]:0)*q;
     socket+=(TX_SOCKET[mb]||0)*q;
@@ -13825,22 +13841,25 @@ function _txCalc(v){
   (v.net||[]).forEach((r,i)=>{
     const t=TX_NET.find(x=>x[0]===r.bw); if(!t)return;
     const q=Math.max(0,+r.qty||0), up=t[1];
-    const list=t[3][(r.forms?3:0)+yi];
+    const ref=t[3][(r.forms?3:0)+yi], list=(r.price==null||r.price==='')?ref:Math.max(0,+r.price);
     const isp=r.isp?t[4][L.rank-1]:0, ddos=r.ddos?(TX_DDOS[up]||0):0, ex=+r.extra||0;
     const per=list+ex+isp+ddos;
-    lines.push({g:'net',gl:'צד ג׳ הוט נט',i,bw:r.bw,list,extra:ex,isp,ddos,disc:0,per,qty:q,total:per*q});
-    netRev+=per*q; netList+=list*q; netQty+=q;
+    cut+=(ref-list)*q;
+    lines.push({g:'net',gl:'צד ג׳ הוט נט',i,bw:r.bw,ref,list,extra:ex,isp,ddos,disc:0,per,qty:q,total:per*q});
+    // שכירות צד ג' נגזרת ממחיר המחירון — הנחה ללקוח אינה מוזילה את העלות לחברה
+    netRev+=per*q; netList+=ref*q; netQty+=q;
     if(r.isp)netIspMb+=up*q;
   });
   let cellRev=0,cellList=0,cellIspMb=0,cellQty=0;
   (v.cell||[]).forEach((r,i)=>{
     const t=TX_CELL.find(x=>x[0]===r.bw); if(!t)return;
     const q=Math.max(0,+r.qty||0);
-    const list=t[2][yi];
+    const ref=t[2][yi], list=(r.price==null||r.price==='')?ref:Math.max(0,+r.price);
     const isp=r.isp?t[4]:0, ddos=(r.ddos&&t[1]!=null)?(TX_DDOS[t[1]]||0):0, ex=+r.extra||0;
     const per=list+ex+isp+ddos;
-    lines.push({g:'cell',gl:'צד ג׳ סלקום',i,bw:r.bw,list,extra:ex,isp,ddos,disc:0,per,qty:q,total:per*q});
-    cellRev+=per*q; cellList+=list*q; cellQty+=q;
+    cut+=(ref-list)*q;
+    lines.push({g:'cell',gl:'צד ג׳ סלקום',i,bw:r.bw,ref,list,extra:ex,isp,ddos,disc:0,per,qty:q,total:per*q});
+    cellRev+=per*q; cellList+=ref*q; cellQty+=q;
     if(r.isp)cellIspMb+=t[3]*q;
   });
   const monthly=(hotRev-promo)+netRev+cellRev;                 // הכנסה חודשית
@@ -13874,7 +13893,8 @@ function _txCalc(v){
   if(hotAvg>0&&hotPmi<L.minPmi)errs.push('PMI תשתית הוט נמוך מהמותר — '+Math.round(hotPmi*100)+'% מול '+Math.round(L.minPmi*100)+'%');
   if((+v.infra||0)<optics)errs.push('מחיר תשתית לא תקין — נמוך מעלות האופטיקה ('+fmt(Math.round(optics))+')');
   const warn=(tenG>0&&(+v.bom||0)<10000)?'חובה להזין עלות BOM לקווי 10G':'';
-  return {lines,months,free,hotRev,promo,hotQty,hotMb,optics,opticGap,socket,hotIspMb,tenG,
+  const refTotal=lines.reduce((a,l)=>a+l.ref*l.qty,0);
+  return {lines,cut,cutPct:refTotal?cut/refTotal:0,refTotal,months,free,hotRev,promo,hotQty,hotMb,optics,opticGap,socket,hotIspMb,tenG,
     netRev,netList,netQty,cellRev,cellList,cellQty,monthly,metro,termIncome,
     opex,rent,hotIspCost,netIspCost,install,invest,netInvest,incAvg,hotAvg,expAvg,hotExp,
     profit,hotProfit,pmi,hotPmi,roiM,errs,warn,approved:errs.length===0,level:v.level,
@@ -13962,6 +13982,10 @@ function _txRenderLines(){
   const chk=(kind,i,f,on,lbl)=>`<label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:var(--text2);cursor:pointer;white-space:nowrap"><input type="checkbox" ${on?'checked':''} onchange="_txSet('${kind}',${i},'${f}',this.checked)" style="width:auto;margin:0">${lbl}</label>`;
   const qty=(kind,i,val)=>`<input type="number" inputmode="numeric" value="${val}" oninput="_txSet('${kind}',${i},'qty',this.value)" style="width:46px;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:3px 5px;color:var(--text);font-family:inherit;font-size:11.5px;outline:none;direction:ltr;text-align:center">`;
   const extra=(kind,i,val)=>`<input type="number" inputmode="numeric" value="${val}" oninput="_txSet('${kind}',${i},'extra',this.value)" title="תוספת הכנסה לקו" style="width:62px;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:3px 5px;color:var(--text);font-family:inherit;font-size:11.5px;outline:none;direction:ltr;text-align:center">`;
+  // מחיר הקו — מגיע מהמחירון וניתן להורדה. ריק מחזיר למחיר המחירון
+  const price=(kind,i,r)=>{const ref=_txListPrice(kind,r), cur=(r.price==null||r.price==='')?ref:r.price;
+    const low=cur<ref-0.004;
+    return `<input id="txp-${kind}-${i}" type="number" inputmode="numeric" value="${Math.round(cur*10)/10}" oninput="_txSet('${kind}',${i},'price',this.value)" title="מחיר הקו — מחירון ₪${Math.round(ref).toLocaleString('he-IL')}${low?' · הנחה של ₪'+Math.round(ref-cur).toLocaleString('he-IL'):''}. השאר ריק לחזרה למחירון" style="width:72px;box-sizing:border-box;background:${low?'rgba(244,162,97,.14)':'rgba(255,255,255,.05)'};border:1px solid ${low?'#f4a261':'var(--border)'};border-radius:6px;padding:3px 5px;color:${low?'#f4a261':'var(--text)'};font-family:inherit;font-size:11.5px;font-weight:${low?'800':'400'};outline:none;direction:ltr;text-align:center">`;};
   const bw=(kind,i,list,cur)=>`<select onchange="_txSet('${kind}',${i},'bw',this.value)" style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:3px 5px;color:var(--text);font-family:inherit;font-size:11.5px;outline:none;width:auto;min-width:96px;max-width:150px">${list.map(t=>`<option ${t[0]===cur?'selected':''}>${t[0]}</option>`).join('')}</select>`;
   const del=(kind,i)=>`<button class="btn btns btnd" onclick="_txDel('${kind}',${i})" title="הסר" style="font-size:10px;padding:2px 7px">🗑</button>`;
   // סכום הקו מתעדכן חי בלי לבנות מחדש את השורה — כדי שרואים מיד מה כל קו תורם לסיכום
@@ -13974,16 +13998,16 @@ function _txRenderLines(){
       ${rows.length?`<div style="display:flex;flex-direction:column;gap:5px">${body}</div>`:''}
     </div>`;
   const hotBody=_txHot.map((r,i)=>`<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-      ${bw('hot',i,TX_HOT,r.bw)}${qty('hot',i,r.qty)}${extra('hot',i,r.extra)}
+      ${bw('hot',i,TX_HOT,r.bw)}${qty('hot',i,r.qty)}${price('hot',i,r)}${extra('hot',i,r.extra)}
       ${chk('hot',i,'isp',r.isp,'ISP')}${chk('hot',i,'ddos',r.ddos,'DDOS')}${del('hot',i)}${sub('hot',i)}</div>`).join('');
   const netBody=_txNet.map((r,i)=>`<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-      ${bw('net',i,TX_NET,r.bw)}${qty('net',i,r.qty)}${extra('net',i,r.extra)}
+      ${bw('net',i,TX_NET,r.bw)}${qty('net',i,r.qty)}${price('net',i,r)}${extra('net',i,r.extra)}
       ${chk('net',i,'forms',r.forms,'טפסים')}${chk('net',i,'isp',r.isp,'ISP')}${chk('net',i,'ddos',r.ddos,'DDOS')}${del('net',i)}${sub('net',i)}</div>`).join('');
   const cellBody=_txCell.map((r,i)=>`<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-      ${bw('cell',i,TX_CELL,r.bw)}${qty('cell',i,r.qty)}${extra('cell',i,r.extra)}
+      ${bw('cell',i,TX_CELL,r.bw)}${qty('cell',i,r.qty)}${price('cell',i,r)}${extra('cell',i,r.extra)}
       ${chk('cell',i,'isp',r.isp,'ISP')}${chk('cell',i,'ddos',r.ddos,'DDOS')}${del('cell',i)}${sub('cell',i)}</div>`).join('');
   const sum=a=>a.reduce((s,r)=>s+Math.max(0,+r.qty||0),0);
-  host.innerHTML=`<div style="font-size:11px;font-weight:800;color:var(--text2);margin:4px 0 6px">🔌 קווים <span style="font-weight:400;color:var(--text3);font-size:10px">— רוחב פס · כמות · תוספת הכנסה לקו</span></div>`
+  host.innerHTML=`<div style="font-size:11px;font-weight:800;color:var(--text2);margin:4px 0 6px">🔌 קווים <span style="font-weight:400;color:var(--text3);font-size:10px">— רוחב פס · כמות · מחיר לקו (ניתן להורדה מהמחירון) · תוספת הכנסה</span></div>`
     +grp('📶 תשתית הוט','#06d6a0','hot',_txHot,hotBody,sum(_txHot))
     +grp('🔗 צד ג׳ — הוט נט','#4cc9f0','net',_txNet,netBody,sum(_txNet))
     +grp('📱 צד ג׳ — סלקום','#a78bfa','cell',_txCell,cellBody,sum(_txCell));
@@ -14009,6 +14033,13 @@ function _txRender(){
   // סכום חי לכל שורת קו
   (r.lines||[]).forEach(ln=>{ const e=document.getElementById('txsub-'+ln.g+'-'+ln.i);
     if(e)e.textContent=_txMoney(ln.total); });
+  // קווים שלא תומחרו ידנית עוקבים אחרי המחירון כשמשנים דרג אישור או תקופת התחייבות
+  [['hot',_txHot],['net',_txNet],['cell',_txCell]].forEach(([k,arr])=>arr.forEach((row,i)=>{
+    if(row.price!=null&&row.price!=='')return;
+    const e=document.getElementById('txp-'+k+'-'+i); if(!e)return;
+    const ref=Math.round(_txListPrice(k,row)*10)/10;
+    if(+e.value!==ref)e.value=ref;
+  }));
   const money=_txMoney;
   const cell=(t,clr,b)=>`<td style="padding:3px 5px;font-size:10.5px;text-align:center;direction:ltr;color:${clr||'var(--text2)'}${b?';font-weight:800':''}">${t}</td>`;
   const gsum={hot:r.hotRev,net:r.netRev,cell:r.cellRev};
@@ -14018,18 +14049,20 @@ function _txRender(){
   ['hot','net','cell'].forEach(g=>{
     const ls=(r.lines||[]).filter(x=>x.g===g); if(!ls.length)return;
     brk+=`<tr><td colspan="8" style="padding:5px 5px 2px;font-size:10.5px;font-weight:800;color:${gclr[g]};text-align:right">${gname[g]}</td></tr>`;
-    ls.forEach(ln=>{ brk+=`<tr style="border-top:1px solid rgba(255,255,255,.05)">
+    ls.forEach(ln=>{ const low=ln.list<ln.ref-0.004;
+      brk+=`<tr style="border-top:1px solid rgba(255,255,255,.05)">
       <td style="padding:3px 5px;font-size:10.5px;text-align:right;color:var(--text)">${esc(ln.bw)}</td>
-      ${cell(money(ln.list))}${cell(ln.extra?money(ln.extra):'–')}${cell(ln.isp?money(ln.isp):'–')}
+      ${cell(low?`<span title="מחירון ${money(ln.ref)} · הנחה ${money(ln.ref-ln.list)}">${money(ln.list)} ▾</span>`:money(ln.list),low?'#f4a261':'')}${cell(ln.extra?money(ln.extra):'–')}${cell(ln.isp?money(ln.isp):'–')}
       ${cell(ln.ddos?money(ln.ddos):'–')}${cell(ln.disc?money(ln.disc):'–',ln.disc?'#f4a261':'')}
       ${cell(money(ln.per)+' × '+ln.qty)}${cell(money(ln.total),'var(--gold)',1)}</tr>`; });
     brk+=`<tr style="background:rgba(255,255,255,.03)"><td colspan="7" style="padding:3px 5px;font-size:10.5px;font-weight:700;color:var(--text3);text-align:right">סיכום ${gname[g]}</td>${cell(money(gsum[g]),gclr[g],1)}</tr>`;
   });
+  if(r.cut>0.004)brk+=`<tr><td colspan="7" style="padding:3px 5px;font-size:10.5px;color:#f4a261;text-align:right">הנחה שניתנה מהמחירון (${Math.round(r.cutPct*1000)/10}% מתוך ${money(r.refTotal)})</td>${cell('-'+money(r.cut),'#f4a261',1)}</tr>`;
   if(r.promo)brk+=`<tr><td colspan="7" style="padding:3px 5px;font-size:10.5px;color:#f4a261;text-align:right">בניכוי מבצע סוף שנה (נזקף להכנסת התקופה, לא לחודשית)</td>${cell(money(-r.promo),'#f4a261',1)}</tr>`;
   brk+=`<tr style="border-top:2px solid rgba(200,169,110,.35)"><td colspan="7" style="padding:5px;font-size:11.5px;font-weight:900;color:var(--text);text-align:right">סה״כ הכנסה חודשית</td>${cell(money(r.monthly),'var(--gold)',1)}</tr>`;
   out.innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:7px;margin-bottom:9px">
-      ${tile('הכנסה חודשית',money(r.monthly),'#06d6a0',(r.hotQty+r.netQty+r.cellQty)+' קווים')}
+      ${tile('הכנסה חודשית',money(r.monthly),'#06d6a0',(r.hotQty+r.netQty+r.cellQty)+' קווים'+(r.cut>0.004?' · הנחה '+(Math.round(r.cutPct*1000)/10)+'%':''))}
       ${tile('הכנסה לתקופה',_txMoney(r.termIncome),'var(--gold)',r.months+' חודשים'+(r.free?' · '+r.free+' חינם':''))}
       ${tile('רווחיות שוטפת',_txMoney(r.profit),r.profit>0?'var(--teal)':'#e63946','לחודש')}
       ${tile('PMI כולל',Math.round(r.pmi*100)+'%','#4cc9f0','PMI הוט '+Math.round(r.hotPmi*100)+'% (מינ׳ '+Math.round(r.minPmi*100)+'%)')}
@@ -14082,6 +14115,7 @@ function _txPayload(){
   return {client:v.client,name:v.name,level:v.level,months:v.months,promo:v.promo,free:v.free,addr:v.addr,
     infra:v.infra,bom:v.bom,oneInc:v.oneInc,oneExp:v.oneExp,tmp3rd:v.tmp3rd,
     hot:v.hot,net:v.net,cell:v.cell,
+    cut:Math.round(rr.cut),cutPct:Math.round(rr.cutPct*1000)/10,
     monthly:Math.round(rr.monthly),termIncome:Math.round(rr.termIncome),profit:Math.round(rr.profit),
     pmi:Math.round(rr.pmi*100),hotPmi:Math.round(rr.hotPmi*100),netInvest:Math.round(rr.netInvest),
     roiM:rr.roiM,approved:rr.approved,ts:Date.now()};
@@ -14132,10 +14166,10 @@ function _txExport(){
   L.push(['לקוח',v.client||'–','עסקה',_txLabel(v)]);
   L.push(['דרג אישור',v.level,'תקופת התחייבות',v.months+' חודשים']);
   L.push([]);
-  L.push(['תשתית','רוחב פס','כמות','תוספת לקו','ISP','DDOS','טפסים']);
-  (v.hot||[]).forEach(x=>L.push(['תשתית הוט',x.bw,x.qty,x.extra,x.isp?'כן':'לא',x.ddos?'כן':'לא','–']));
-  (v.net||[]).forEach(x=>L.push(['צד ג׳ הוט נט',x.bw,x.qty,x.extra,x.isp?'כן':'לא',x.ddos?'כן':'לא',x.forms?'כן':'לא']));
-  (v.cell||[]).forEach(x=>L.push(['צד ג׳ סלקום',x.bw,x.qty,x.extra,x.isp?'כן':'לא',x.ddos?'כן':'לא','–']));
+  L.push(['תשתית','רוחב פס','כמות','מחירון','מחיר בפועל','תוספת לקו','ISP','DDOS','סה"כ לקו','סה"כ']);
+  (rr.lines||[]).forEach(ln=>L.push([ln.gl,ln.bw,ln.qty,Math.round(ln.ref*10)/10,Math.round(ln.list*10)/10,
+    ln.extra,ln.isp||'–',ln.ddos||'–',Math.round(ln.per*10)/10,Math.round(ln.total*10)/10]));
+  if(rr.cut>0.004)L.push(['הנחה מהמחירון',Math.round(rr.cut),(Math.round(rr.cutPct*1000)/10)+'%']);
   L.push([]);
   L.push(['הכנסה חודשית',Math.round(rr.monthly)]);
   L.push(['  תשתית הוט',Math.round(rr.hotRev)]);
