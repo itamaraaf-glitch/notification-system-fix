@@ -2884,7 +2884,100 @@ const nrmCo = s => String(s||'').trim().toLowerCase().replace(/["'׳״`’‘]/g
 const sameCo = (a,b) => {const x=nrmCo(a),y=nrmCo(b);return !!x&&x===y;};
 const findClientByName = name => D.clients.find(c=>sameCo(c.name,name));
 const heldThisMonth = () => {const m=nd().substring(0,7);return D.meetings.filter(x=>x.hl==='כן'&&(x.dt||'').startsWith(m)).length;};
-function wdM(y,m){let c=0;const d=new Date(y,m,1);while(d.getMonth()===m){if(d.getDay()!==5&&d.getDay()!==6)c++;d.setDate(d.getDate()+1);}return c;}
+// ═══ לוח החגים הישראלי ═══
+// התאריך העברי נגזר מהדפדפן (Intl עם לוח עברי), ולכן החגים נכונים לכל שנה — בלי טבלה קבועה
+// שצריך לתחזק. ימי העבודה נספרים נטו: בלי שישי־שבת, בלי ערב חג וחג, ובלי חול המועד.
+const _HEB_FMT=(()=>{ try{ return new Intl.DateTimeFormat('en-u-ca-hebrew',{day:'numeric',month:'long',year:'numeric'}); }catch(e){ return null; } })();
+const _hebCache={}, _holCache={};
+function _ymdOf(dt){ const p=n=>String(n).padStart(2,'0');
+  return dt.getFullYear()+'-'+p(dt.getMonth()+1)+'-'+p(dt.getDate()); }
+function _hebOf(ds){
+  if(!_HEB_FMT||!ds)return null;
+  if(_hebCache[ds]!==undefined)return _hebCache[ds];
+  let r=null;
+  try{ const parts=_HEB_FMT.formatToParts(new Date(ds+'T12:00:00'));
+    const g=t=>(parts.find(x=>x.type===t)||{}).value;
+    r={d:+g('day'),m:String(g('month')||'')};
+  }catch(e){ r=null; }
+  return (_hebCache[ds]=r);
+}
+// יום העצמאות נדחה כשה׳ באייר חל בשישי/שבת, ומוקדם ליום ג׳ כשהוא חל בשני
+function _iyarDay(ds,hd){
+  const base=new Date(ds+'T12:00:00');
+  const iyar5=new Date(base); iyar5.setDate(iyar5.getDate()+(5-hd));
+  const w=iyar5.getDay();
+  const obs=new Date(iyar5);
+  if(w===5)obs.setDate(obs.getDate()-1);
+  else if(w===6)obs.setDate(obs.getDate()-2);
+  else if(w===1)obs.setDate(obs.getDate()+1);
+  const zik=new Date(obs); zik.setDate(zik.getDate()-1);
+  if(ds===_ymdOf(obs))return {name:'יום העצמאות',kind:'chag'};
+  if(ds===_ymdOf(zik))return {name:'יום הזיכרון',kind:'info'};
+  return null;
+}
+// kind: chag = חג · erev = ערב חג · chol = חול המועד · info = מועד לידיעה (יום עבודה רגיל)
+function holidayOf(ds){
+  if(!ds)return null;
+  if(_holCache[ds]!==undefined)return _holCache[ds];
+  const h=_hebOf(ds);
+  let r=null;
+  if(h){
+    const M=h.m, d=h.d;
+    const chag=n=>({name:n,kind:'chag'}), erev=n=>({name:n,kind:'erev'}),
+          chol=n=>({name:n,kind:'chol'}), info=n=>({name:n,kind:'info'});
+    if(M==='Elul'&&d===29)r=erev('ערב ראש השנה');
+    else if(M==='Tishri'){
+      if(d===1)r=chag('ראש השנה');
+      else if(d===2)r=chag('ראש השנה ב׳');
+      else if(d===3)r=info('צום גדליה');
+      else if(d===9)r=erev('ערב יום כיפור');
+      else if(d===10)r=chag('יום כיפור');
+      else if(d===14)r=erev('ערב סוכות');
+      else if(d===15)r=chag('סוכות');
+      else if(d>=16&&d<=20)r=chol('חול המועד סוכות');
+      else if(d===21)r=chol('הושענא רבה');
+      else if(d===22)r=chag('שמחת תורה');
+    }
+    else if(M==='Kislev'&&d>=25)r=info('חנוכה');
+    else if(M==='Tevet'&&d<=3)r=info('חנוכה');
+    else if(M==='Tevet'&&d===10)r=info('צום עשרה בטבת');
+    else if((M==='Adar'||M==='Adar II')&&d===14)r=info('פורים');
+    else if((M==='Adar'||M==='Adar II')&&d===15)r=info('שושן פורים');
+    else if(M==='Nisan'){
+      if(d===14)r=erev('ערב פסח');
+      else if(d===15)r=chag('פסח');
+      else if(d>=16&&d<=19)r=chol('חול המועד פסח');
+      else if(d===20)r=erev('ערב שביעי של פסח');
+      else if(d===21)r=chag('שביעי של פסח');
+      else if(d===27)r=info('יום הזיכרון לשואה');
+    }
+    else if(M==='Iyar'){
+      if(d>=3&&d<=6)r=_iyarDay(ds,d);
+      else if(d===18)r=info('ל״ג בעומר');
+      else if(d===28)r=info('יום ירושלים');
+    }
+    else if(M==='Sivan'&&d===5)r=erev('ערב שבועות');
+    else if(M==='Sivan'&&d===6)r=chag('שבועות');
+    else if(M==='Tammuz'&&d===17)r=info('צום י״ז בתמוז');
+    else if(M==='Av'&&d===9)r=info('תשעה באב');
+  }
+  return (_holCache[ds]=r);
+}
+const HOL_OFF={chag:1,erev:1,chol:1};      // מה שיוצא מספירת ימי העבודה
+function isOffDay(ds){ const h=holidayOf(ds); return !!(h&&HOL_OFF[h.kind]); }
+function isWorkDay(ds){
+  const dt=new Date(ds+'T12:00:00'), w=dt.getDay();
+  if(w===5||w===6)return false;              // שישי־שבת
+  return !isOffDay(ds);
+}
+// כל המועדים בחודש נתון — לתצוגה ביומן הפגישות
+function holidaysInMonth(y,m){
+  const out=[]; const d=new Date(y,m,1);
+  while(d.getMonth()===m){ const ds=_ymdOf(d); const h=holidayOf(ds); if(h)out.push({date:ds,...h}); d.setDate(d.getDate()+1); }
+  return out;
+}
+// ימי עבודה בחודש — נטו, ללא שישי־שבת, ערב חג, חג וחול המועד
+function wdM(y,m){let c=0;const d=new Date(y,m,1);while(d.getMonth()===m){if(isWorkDay(_ymdOf(d)))c++;d.setDate(d.getDate()+1);}return c;}
 // תצוגה ישראלית (יום/חודש/שנה) ליד כל שדה תאריך — גם כשהדפדפן מציג mm/dd/yyyy
 function initDateHints(root){
   (root||document).querySelectorAll('input[type=date]').forEach(inp=>{
@@ -2899,7 +2992,7 @@ function initDateHints(root){
     upd();
   });
 }
-function wdP(y,m,dy){let c=0;for(let i=1;i<=dy;i++){const d=new Date(y,m,i);if(d.getDay()!==5&&d.getDay()!==6)c++;}return c;}
+function wdP(y,m,dy){let c=0;for(let i=1;i<=dy;i++){const d=new Date(y,m,i);if(isWorkDay(_ymdOf(d)))c++;}return c;}
 
 // ===== SAVE INDICATOR =====
 function showSaved(){
@@ -5493,7 +5586,8 @@ function _recentFirst(list,table){
 // לחיצה על ▾ בכותרת פותחת את רשימת הערכים שקיימים בפועל באותה עמודה; הסינון פועל על
 // הטבלה המוצגת, מצטבר בין עמודות, נשמר בין רינדורים, ומעדכן את שורת הסיכום שמתחת לטבלה.
 const _HDR_TABLES={ltb:'עסקאות',stb:'עסקאות',ttb:'מכרזים',ldtb:'הפצות',sdtb:'הפצות',
-  svctb:'שכר',eqtb:'שכר',mtb:'פגישות',tsktb:'משימות',wptb:'תוכנית עבודה'};
+  svctb:'שכר',eqtb:'שכר',mtb:'פגישות',tsktb:'משימות',wptb:'תוכנית עבודה',
+  'deal-detail-tb':'פירוט עסקאות','dist-detail-tb':'פירוט הפצות'};
 let _hdrF={};                       // {tbId:{colIndex:[ערכים נבחרים]}}
 let _hdrPanel=null;
 function _hdrCells(tbId){
@@ -5512,6 +5606,30 @@ function _hdrEligible(th,ci){
   return !!t && t!=='פעולות' && t!=='⚡';
 }
 function _hdrClose(){ if(_hdrPanel){_hdrPanel.remove();_hdrPanel=null;} }
+// שורה מוסתרת אם שורת הסינון שמעל הטבלה הסתירה אותה (hf) או סינון עמודה (hh) — כך שני
+// סוגי הסינון פועלים יחד במקום לדרוס זה את זה, והסיכום בכותרת משקף את שניהם
+function _rowsSync(tb,which){
+  const rows=[...tb.querySelectorAll(':scope>tr')].filter(tr=>!tr.hasAttribute('data-noresults')&&!tr.hasAttribute('data-hdr-empty'));
+  let n=0,sumVal=0,sumOt=0,anyFiltered=false;
+  rows.forEach(tr=>{ if(_hdrIsDivider(tr))return;
+    const hide=!!(tr.dataset.hf||tr.dataset.hh);
+    if(hide)anyFiltered=true;
+    tr.style.display=hide?'none':'';
+    if(!hide){ n++; sumVal+=+tr.getAttribute('data-val')||0; sumOt+=+tr.getAttribute('data-ot')||0; }
+  });
+  for(let i=0;i<rows.length;i++){ if(!_hdrIsDivider(rows[i]))continue;
+    let vis=false;
+    for(let j=i+1;j<rows.length&&!_hdrIsDivider(rows[j]);j++){ if(rows[j].style.display!=='none'){vis=true;break;} }
+    rows[i].style.display=vis?'':'none';
+  }
+  if(which){
+    const sum=document.getElementById(which==='dist'?'dist-detail-sum':'deal-detail-sum');
+    if(sum)sum.innerHTML=which==='dist'
+      ? `· ${n} הפצות · שווי ${fmt(sumVal)}${anyFiltered?' <span style="color:#f4a261">(מסונן)</span>':''}`
+      : `· ${n} עסקאות · חודשי ${fmt(sumVal)}${sumOt?' · OTC '+fmt(sumOt):''}${anyFiltered?' <span style="color:#f4a261">(מסונן)</span>':''}`;
+  }
+  return n;
+}
 document.addEventListener('mousedown',e=>{ if(_hdrPanel&&!_hdrPanel.contains(e.target)&&!(e.target.closest&&e.target.closest('.hdr-f')))_hdrClose(); },true);
 window.addEventListener('resize',_hdrClose);
 // מוסיף כפתור סינון לכל כותרת מתאימה, ומסמן עמודות שכבר מסוננות
@@ -5585,17 +5703,12 @@ function _hdrApply(tbId){
   const c=_hdrCells(tbId); if(!c)return;
   const f=_hdrF[tbId]||{}, cols=Object.keys(f).filter(k=>Array.isArray(f[k])&&f[k].length);
   const rows=_hdrRows(c.tb);
-  let shown=0, hidden=0;
+  let hidden=0;
   rows.forEach(tr=>{ if(_hdrIsDivider(tr))return;
     const hit=cols.every(ci=>f[ci].includes(_hdrText(tr,+ci)||'(ריק)'));
-    tr.style.display=hit?'':'none';
-    hit?shown++:hidden++;
+    if(hit)delete tr.dataset.hh; else { tr.dataset.hh='1'; hidden++; }
   });
-  for(let i=0;i<rows.length;i++){ if(!_hdrIsDivider(rows[i]))continue;
-    let vis=false;
-    for(let j=i+1;j<rows.length&&!_hdrIsDivider(rows[j]);j++){ if(rows[j].style.display!=='none'){vis=true;break;} }
-    rows[i].style.display=vis?'':'none';
-  }
+  const shown=_rowsSync(c.tb,tbId==='deal-detail-tb'?'deal':tbId==='dist-detail-tb'?'dist':'');
   const old=c.tb.querySelector('tr[data-hdr-empty]'); if(old)old.remove();
   if(cols.length&&!shown){
     const tr=document.createElement('tr'); tr.setAttribute('data-hdr-empty','1');
@@ -6545,9 +6658,11 @@ function sendAlertEmail(idx){
 function renderMonthSummary(){
   const el=document.getElementById('month-summary');if(!el)return;
   const curM=nd().substring(0,7);
-  // עסקאות — נסגר בחודש הנוכחי (מתוחם לחודש, כמו בסיכום העסקאות) מול צפי סגירה, לפי mv.
-  // חשוב: מתוחם לחודש כדי שהמספר לא "יקפוץ" כשעסקאות מחודשים קודמים עוברות לארכיון בסגירת חודש.
-  const dClosed=D.deals.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=curM);
+  // עסקאות — בדיוק כמו בסיכום שבמסך העסקאות: כל מה שנסגר בפועל מול צפי הסגירה, לפי mv.
+  // קודם היה כאן תיחום לפי תאריך פתיחת העסקה, ולכן עסקה שנפתחה בחודש קודם ונסגרה החודש
+  // לא נספרה — ולוח הבקרה הראה מספר אחר ממסך העסקאות. עסקאות סגורות מחודשים קודמים
+  // יוצאות מהרשימה בסגירת החודש, ולכן אין צורך בתיחום נוסף.
+  const dClosed=D.deals.filter(d=>d.st==='נסגר');
   const dOpen=D.deals.filter(d=>d.st!=='נסגר');
   const dClosedV=dClosed.reduce((a,d)=>a+(+d.mv||0),0);
   const dOpenV=dOpen.reduce((a,d)=>a+(+d.mv||0),0);
@@ -8226,26 +8341,13 @@ function _detailFilter(inp,which){
   const q=gv('.df-q').toLowerCase(), fst=gv('.df-st'), fmo=gv('.df-mo');
   const rows=[...tbody.querySelectorAll('tr')].filter(tr=>!tr.hasAttribute('data-noresults'));
   const isDivider=tr=>tr.children.length===1&&tr.children[0].hasAttribute('colspan');
-  let anyHit=false, nHit=0, sumVal=0, sumOt=0;
   rows.forEach(tr=>{ if(isDivider(tr))return;
     const hit=(!q||tr.textContent.toLowerCase().includes(q))
            && (!fst||(tr.getAttribute('data-st')||'')===fst)
            && (!fmo||(tr.getAttribute('data-mo')||'')===fmo);
-    tr.style.display=hit?'':'none';
-    if(hit){ anyHit=true; nHit++; sumVal+=+tr.getAttribute('data-val')||0; sumOt+=+tr.getAttribute('data-ot')||0; }
+    if(hit)delete tr.dataset.hf; else tr.dataset.hf='1';
   });
-  // הסיכום בכותרת משקף בדיוק את מה שמוצג
-  const sum=document.getElementById(which==='dist'?'dist-detail-sum':'deal-detail-sum');
-  if(sum){ const filtered=!!(q||fst||fmo);
-    sum.innerHTML=which==='dist'
-      ? `· ${nHit} הפצות · שווי ${fmt(sumVal)}${filtered?' <span style="color:#f4a261">(מסונן)</span>':''}`
-      : `· ${nHit} עסקאות · חודשי ${fmt(sumVal)}${sumOt?' · OTC '+fmt(sumOt):''}${filtered?' <span style="color:#f4a261">(מסונן)</span>':''}`; }
-  // מפריד-חודש גלוי רק אם יש שורת-נתונים גלויה תחתיו (עד המפריד הבא)
-  for(let i=0;i<rows.length;i++){ if(!isDivider(rows[i]))continue;
-    let vis=false;
-    for(let j=i+1;j<rows.length&&!isDivider(rows[j]);j++){ if(rows[j].style.display!=='none'){vis=true;break;} }
-    rows[i].style.display=vis?'':'none';
-  }
+  const anyHit=_rowsSync(tbody,which)>0;
   // שורת "אין תוצאות"
   const prev=tbody.querySelector('tr[data-noresults]'); if(prev)prev.remove();
   if(!anyHit){ const colspan=which==='dist'?9:10; const tr=document.createElement('tr'); tr.setAttribute('data-noresults','1');
@@ -8304,12 +8406,15 @@ function showDealGroupDetail(which){
         <thead><tr style="color:var(--text3);font-size:10px;text-align:right;text-transform:uppercase;letter-spacing:.4px">
           <th style="padding:7px 10px">#</th><th style="padding:7px 10px">תאריך</th><th style="padding:7px 10px">שם חברה</th><th style="padding:7px 10px">שירות</th><th style="padding:7px 10px">סוג מוצר</th><th style="padding:7px 10px">שווי ₪</th><th style="padding:7px 10px">חודשי ₪</th><th style="padding:7px 10px" title="תשלום חד-פעמי / ציוד">OTC ₪</th><th style="padding:7px 10px">סטטוס</th><th style="padding:7px 8px"></th>
         </tr></thead>
-        <tbody>${rows}</tbody>
+        <tbody id="deal-detail-tb">${rows}</tbody>
       </table>
     </div>
-    <div style="padding:9px 18px 14px;font-size:10.5px;color:var(--text3);border-top:1px solid rgba(255,255,255,.06)">✏️ לחיצה על תא — עריכה מהירה (Tab לתא הבא) · הכפתור פותח את העסקה המלאה</div>
+    <div style="padding:9px 18px 14px;font-size:10.5px;color:var(--text3);border-top:1px solid rgba(255,255,255,.06)">✏️ לחיצה על תא — עריכה מהירה (Tab לתא הבא) · ▾ בכותרת — סינון לפי עמודה</div>
   </div>`;
   document.body.appendChild(ov);
+  // סינון עמודות גם בחלון הפירוט; מתאפס כשעוברים לקבוצה אחרת
+  if(window._dealHdrKey!==which){ delete _hdrF['deal-detail-tb']; window._dealHdrKey=which; }
+  _hdrAttach('deal-detail-tb'); _hdrApply('deal-detail-tb');
 }
 // פירוט קבוצת הפצות (מלחיצה על אריח בבאנר) — רשימה עם מס' פרויקט, לקוח, תאריך, שווי וסטטוס
 function closeDistDetail(){ const o=document.getElementById('dist-detail-ov'); if(o)o.remove(); }
@@ -8350,12 +8455,14 @@ function showDistGroupDetail(which){
         <thead><tr style="color:var(--text3);font-size:10px;text-align:right;text-transform:uppercase;letter-spacing:.4px">
           <th style="padding:7px 10px">מס׳ פרויקט</th><th style="padding:7px 10px">שם חברה</th><th style="padding:7px 10px">לקוח</th><th style="padding:7px 10px">פתרון</th><th style="padding:7px 10px">תאריך</th><th style="padding:7px 10px">יעד ₪</th><th style="padding:7px 10px">ביצוע ₪</th><th style="padding:7px 10px">סטטוס</th><th style="padding:7px 8px"></th>
         </tr></thead>
-        <tbody>${rows}</tbody>
+        <tbody id="dist-detail-tb">${rows}</tbody>
       </table>
     </div>
-    <div style="padding:9px 18px 14px;font-size:10.5px;color:var(--text3);border-top:1px solid rgba(255,255,255,.06)">✏️ לחיצה על תא — עריכה מהירה (Tab לתא הבא) · הכפתור פותח את ההפצה המלאה</div>
+    <div style="padding:9px 18px 14px;font-size:10.5px;color:var(--text3);border-top:1px solid rgba(255,255,255,.06)">✏️ לחיצה על תא — עריכה מהירה (Tab לתא הבא) · ▾ בכותרת — סינון לפי עמודה</div>
   </div>`;
   document.body.appendChild(ov);
+  if(window._distHdrKey!==which){ delete _hdrF['dist-detail-tb']; window._distHdrKey=which; }
+  _hdrAttach('dist-detail-tb'); _hdrApply('dist-detail-tb');
 }
 function rDists(){
   updatePriChipCounts('sec-dists',D.dists,'dist');
@@ -8675,11 +8782,14 @@ function renderMeetingsMiniCal(){
     const hasMtg=dayMtgs.length>0;
     const allHeld=hasMtg&&dayMtgs.every(m=>m.hl==='כן'||m.hl==='מבוטל');
     const anyMissed=hasMtg&&dStr<todayStr&&dayMtgs.some(m=>m.hl!=='כן'&&m.hl!=='מבוטל');
-    const bg=isT?'rgba(200,169,110,.3)':hasMtg?(anyMissed?'rgba(230,57,70,.1)':'rgba(6,214,160,.16)'):'rgba(255,255,255,.06)';
-    const bd=isT?'1.5px solid rgba(200,169,110,.65)':hasMtg?(anyMissed?'1px solid rgba(230,57,70,.4)':'1px solid rgba(6,214,160,.4)'):'1px solid rgba(255,255,255,.14)';
+    const hol=holidayOf(dStr), off=!!(hol&&HOL_OFF[hol.kind]);
+    const bg=isT?'rgba(200,169,110,.3)':off?'rgba(167,139,250,.14)':hasMtg?(anyMissed?'rgba(230,57,70,.1)':'rgba(6,214,160,.16)'):'rgba(255,255,255,.06)';
+    const bd=isT?'1.5px solid rgba(200,169,110,.65)':off?'1px solid rgba(167,139,250,.5)':hasMtg?(anyMissed?'1px solid rgba(230,57,70,.4)':'1px solid rgba(6,214,160,.4)'):'1px solid rgba(255,255,255,.14)';
     const dotClr=anyMissed?'#e63946':allHeld?'#06d6a0':'#f4a261';
     const dot=hasMtg?`<span style="display:block;font-size:10px;line-height:1.2;color:${dotClr};font-weight:800">${dayMtgs.length>1?dayMtgs.length+' פגישות':'●'}</span>`:'';
-    cells+=`<div onclick="showDayMeetings('${dStr}',event)" title="${hasMtg?dayMtgs.length+' פגישות – לחץ לצפייה':'לחץ לקביעת פגישה'}" style="text-align:center;padding:6px 2px;min-height:34px;border-radius:7px;background:${bg};border:${bd};cursor:pointer;color:${isT?'var(--gold)':hasMtg?'var(--teal)':'var(--text2)'};font-weight:${isT||hasMtg?800:500}">${d}${dot}</div>`;
+    const holTag=hol?`<span style="display:block;font-size:8px;line-height:1.15;margin-top:1px;font-weight:700;color:${off?'#a78bfa':'var(--text3)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(hol.name)}</span>`:'';
+    const ttl=(hol?hol.name+(off?' — אינו יום עבודה':'')+' · ':'')+(hasMtg?dayMtgs.length+' פגישות – לחץ לצפייה':'לחץ לקביעת פגישה');
+    cells+=`<div onclick="showDayMeetings('${dStr}',event)" title="${esc(ttl)}" style="text-align:center;padding:6px 2px;min-height:34px;border-radius:7px;background:${bg};border:${bd};cursor:pointer;color:${isT?'var(--gold)':off?'#a78bfa':hasMtg?'var(--teal)':'var(--text2)'};font-weight:${isT||hasMtg||off?800:500}">${d}${dot}${holTag}</div>`;
   }
   cells+='</div>';
   const monthName=(MONTH_HE[mo]||'')+' '+y;
@@ -8691,9 +8801,16 @@ function renderMeetingsMiniCal(){
       <span style="min-width:110px;text-align:center;color:var(--gold)">📅 ${monthName}</span>
       ${navBtn('›','calShift(1)','חודש הבא')}
       ${navBtn('היום','calToday()','חזרה לחודש נוכחי')}
-      <span style="color:var(--text2);font-weight:500;font-size:11px">${monthCnt?monthCnt+' פגישות החודש · ':''}לחץ על יום לצפייה או קביעת פגישה</span>
+      <span style="color:var(--text2);font-weight:500;font-size:11px">${monthCnt?monthCnt+' פגישות החודש · ':''}${wdM(y,mo)} ימי עבודה נטו · לחץ על יום לצפייה או קביעת פגישה</span>
     </div>
     ${cells}
+    ${(()=>{ const hs=holidaysInMonth(y,mo); if(!hs.length)return '';
+      const clr=k=>k==='chag'?'#a78bfa':k==='erev'?'#7b5ea7':k==='chol'?'#8b7fd4':'var(--text3)';
+      const lbl=k=>k==='chag'?'חג':k==='erev'?'ערב חג':k==='chol'?'חול המועד':'מועד';
+      return `<div style="margin-top:11px;padding-top:9px;border-top:1px solid rgba(255,255,255,.07)">
+        <div style="font-size:10.5px;font-weight:800;color:#a78bfa;margin-bottom:5px">🕎 מועדי החודש <span style="font-weight:400;color:var(--text3)">— ערב חג, חג וחול המועד אינם נספרים כימי עבודה</span></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${hs.map(h=>`<span title="${lbl(h.kind)}" style="font-size:10px;font-weight:700;color:${clr(h.kind)};background:rgba(167,139,250,.10);border:1px solid ${clr(h.kind)}55;border-radius:10px;padding:2px 8px;white-space:nowrap">${fmtDate(h.date).substring(0,5)} ${esc(h.name)}</span>`).join('')}</div>
+      </div>`; })()}
   </div>`;
 }
 function showDayMeetings(dStr,e){
