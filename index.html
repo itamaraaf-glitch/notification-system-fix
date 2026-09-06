@@ -13721,26 +13721,27 @@ const TX_LEVELS={
   'מנהל מחלקה':  {i:1,rank:2,minRoi:0.55,minPmi:0.69,free:1},
   'מנהל אגף':    {i:2,rank:3,minRoi:0.75,minPmi:0.65,free:2}};
 // תשתית הוט: [תווית, מגה, [תשתית לפי דרג], [ספק/ISP לפי דרג], הנחת מבצע סוף שנה, אופטיקה מתוקננת]
+// דרג מנהל אגף מתומחר לפי עמודת ההנחה העמוקה של המחירון (75% מהמחירון) — למשל 550M ב-1,012.5 ולא 1,093.5
 const TX_HOT=[
   ['20M',20,[350,350,350],[20,20,20],0,2000],
   ['50M',50,[500,500,450],[50,50,50],0,2272.727272727273],
-  ['120M',120,[690,620,558.9],[100,100,100],-100,2654.5454545454545],
-  ['150M',150,[870,785,704.7],[100,100,100],-100,2818.181818181818],
-  ['250M',250,[1000,900,810],[200,200,200],-200,3363.6363636363635],
+  ['120M',120,[690,620,517.5],[100,100,100],-100,2654.5454545454545],
+  ['150M',150,[870,785,652.5],[100,100,100],-100,2818.181818181818],
+  ['250M',250,[1000,900,750],[200,200,200],-200,3363.6363636363635],
   ['300/200M',200,[800,800,800],[200,200,200],-200,3090.909090909091],
-  ['380M',380,[1350,1215,1093.5],[240,240,240],-240,4072.727272727273],
-  ['600/300M',300,[1510,1359,1223.1],[240,240,240],-240,3636.363636363636],
-  ['550M',550,[1350,1215,1093.5],[400,400,400],0,5000],
-  ['1000/500M',500,[2150,1935,1741.5],[400,400,400],0,4727.272727272727],
-  ['750M',750,[1550,1395,1255.5],[600,600,600],0,5000],
-  ['1G',1000,[2000,1800,1620],[1000,800,800],0,5000],
-  ['2G',2000,[3200,2880,2592],[1600,1600,1600],0,5000],
-  ['3G',3000,[3500,3150,2835],[2700,2700,2700],0,5000],
-  ['4G',4000,[3900,3510,3159],[3600,3600,3600],0,5000],
-  ['5G',5000,[4300,3870,3483],[4250,4250,4250],0,5000],
-  ['6G',6000,[4700,4230,3807],[5100,5100,5100],0,5000],
-  ['8G',8000,[5100,4590,4131],[6400,6400,6400],0,5000],
-  ['10G',10000,[5500,4950,4455],[10000,10000,10000],0,5000]];
+  ['380M',380,[1350,1215,1012.5],[240,240,240],-240,4072.727272727273],
+  ['600/300M',300,[1510,1359,1132.5],[240,240,240],-240,3636.363636363636],
+  ['550M',550,[1350,1215,1012.5],[400,400,400],0,5000],
+  ['1000/500M',500,[2150,1935,1612.5],[400,400,400],0,4727.272727272727],
+  ['750M',750,[1550,1395,1162.5],[600,600,600],0,5000],
+  ['1G',1000,[2000,1800,1500],[1000,800,800],0,5000],
+  ['2G',2000,[3200,2880,2400],[1600,1600,1600],0,5000],
+  ['3G',3000,[3500,3150,2625],[2700,2700,2700],0,5000],
+  ['4G',4000,[3900,3510,2925],[3600,3600,3600],0,5000],
+  ['5G',5000,[4300,3870,3225],[4250,4250,4250],0,5000],
+  ['6G',6000,[4700,4230,3525],[5100,5100,5100],0,5000],
+  ['8G',8000,[5100,4590,3825],[6400,6400,6400],0,5000],
+  ['10G',10000,[5500,4950,4125],[10000,10000,10000],0,5000]];
 // צד ג' הוט־נט: [תווית, UP, DOWN, [12/24/36 ללא טפסים, 12/24/36 עם טפסים], [ISP לפי דרג]]
 const TX_NET=[
   ['100/100',100,100,[1359.3,1222.45,1140.8,1359.3,968.3,951.05],[100,100,100]],
@@ -13778,9 +13779,9 @@ const TX_ISP_COST=0.50875;               // עלות תעבורה חודשית �
 
 let _txHot=[], _txNet=[], _txCell=[];
 function _txAdd(kind){
-  if(kind==='hot')_txHot.push({bw:TX_HOT[0][0],qty:1,price:null,extra:0,isp:false,ddos:false});
-  else if(kind==='net')_txNet.push({bw:TX_NET[0][0],qty:1,price:null,extra:0,forms:false,isp:false,ddos:false});
-  else _txCell.push({bw:TX_CELL[0][0],qty:1,price:null,extra:0,isp:false,ddos:false});
+  if(kind==='hot')_txHot.push({bw:TX_HOT[0][0],qty:1,price:null,ispPrice:null,extra:0,isp:false,ddos:false});
+  else if(kind==='net')_txNet.push({bw:TX_NET[0][0],qty:1,price:null,ispPrice:null,extra:0,forms:false,isp:false,ddos:false});
+  else _txCell.push({bw:TX_CELL[0][0],qty:1,price:null,ispPrice:null,extra:0,isp:false,ddos:false});
   _txRenderLines(); _txRender();
 }
 // מחיר המחירון לקו לפי דרג האישור ותקופת ההתחייבות — נקודת הייחוס שממנה נגזרת ההנחה
@@ -13792,6 +13793,14 @@ function _txListPrice(kind,r){
   if(kind==='net'){ t=TX_NET.find(x=>x[0]===r.bw); return t?t[3][(r.forms?3:0)+yi]:0; }
   t=TX_CELL.find(x=>x[0]===r.bw); return t?t[2][yi]:0;
 }
+// תעריף הספק (ISP) לקו לפי המחירון — גם הוא ניתן לעדכון ידני
+function _txIspPrice(kind,r){
+  const L=TX_LEVELS[(document.getElementById('tx-level')||{}).value]||TX_LEVELS['מת"ל'];
+  let t;
+  if(kind==='hot'){ t=TX_HOT.find(x=>x[0]===r.bw); return t?t[3][L.i]:0; }
+  if(kind==='net'){ t=TX_NET.find(x=>x[0]===r.bw); return t?t[4][L.rank-1]:0; }
+  t=TX_CELL.find(x=>x[0]===r.bw); return t?t[4]:0;
+}
 function _txDel(kind,i){
   (kind==='hot'?_txHot:kind==='net'?_txNet:_txCell).splice(i,1);
   _txRenderLines(); _txRender();
@@ -13799,10 +13808,12 @@ function _txDel(kind,i){
 function _txSet(kind,i,field,val){
   const r=(kind==='hot'?_txHot:kind==='net'?_txNet:_txCell)[i]; if(!r)return;
   if(field==='qty'||field==='extra')r[field]=Math.max(0,_aiNum(val));
-  else if(field==='price')r.price=(String(val).trim()==='')?null:Math.max(0,_aiNum(val));
+  else if(field==='price'||field==='ispPrice')r[field]=(String(val).trim()==='')?null:Math.max(0,_aiNum(val));
   else r[field]=val;
-  // שינוי רוחב פס או טפסים מחזיר את הקו למחיר המחירון החדש, כדי שלא יישאר מחיר של קו אחר
-  if(field==='bw'||field==='forms'){ r.price=null; _txRenderLines(); }
+  // שינוי רוחב פס או טפסים מחזיר את הקו למחירי המחירון החדשים, כדי שלא יישאר מחיר של קו אחר
+  if(field==='bw'||field==='forms'){ r.price=null; r.ispPrice=null; _txRenderLines(); }
+  // סימון/ביטול ספק מציג או מסתיר את שדה התעריף שלו
+  else if(field==='isp'){ if(!val)r.ispPrice=null; _txRenderLines(); }
   _txRender();
 }
 function _txRead(){
@@ -13827,10 +13838,12 @@ function _txCalc(v){
     const q=Math.max(0,+r.qty||0), mb=t[1];
     const disc=(L.rank===1&&v.promo)?t[4]:0;
     const ref=t[2][L.i], list=(r.price==null||r.price==='')?ref:Math.max(0,+r.price);
-    const isp=r.isp?t[3][L.i]:0, ddos=r.ddos?(TX_DDOS[mb]||0):0, ex=+r.extra||0;
+    const ispRef=r.isp?t[3][L.i]:0;
+    const isp=r.isp?((r.ispPrice==null||r.ispPrice==='')?ispRef:Math.max(0,+r.ispPrice)):0;
+    const ddos=r.ddos?(TX_DDOS[mb]||0):0, ex=+r.extra||0;
     const per=list+ex+isp+ddos+disc;
-    cut+=(ref-list)*q;
-    lines.push({g:'hot',gl:'תשתית הוט',i,bw:r.bw,ref,list,extra:ex,isp,ddos,disc,per,qty:q,total:per*q});
+    cut+=((ref-list)+(ispRef-isp))*q;
+    lines.push({g:'hot',gl:'תשתית הוט',i,bw:r.bw,ref,list,ispRef,extra:ex,isp,ddos,disc,per,qty:q,total:per*q});
     hotRev+=per*q; promo+=disc*q; hotQty+=q; hotMb+=mb*q;
     optics+=t[5]*q; opticGap+=(t[5]>0?TX_OPTIC_FULL-t[5]:0)*q;
     socket+=(TX_SOCKET[mb]||0)*q;
@@ -13842,10 +13855,12 @@ function _txCalc(v){
     const t=TX_NET.find(x=>x[0]===r.bw); if(!t)return;
     const q=Math.max(0,+r.qty||0), up=t[1];
     const ref=t[3][(r.forms?3:0)+yi], list=(r.price==null||r.price==='')?ref:Math.max(0,+r.price);
-    const isp=r.isp?t[4][L.rank-1]:0, ddos=r.ddos?(TX_DDOS[up]||0):0, ex=+r.extra||0;
+    const ispRef=r.isp?t[4][L.rank-1]:0;
+    const isp=r.isp?((r.ispPrice==null||r.ispPrice==='')?ispRef:Math.max(0,+r.ispPrice)):0;
+    const ddos=r.ddos?(TX_DDOS[up]||0):0, ex=+r.extra||0;
     const per=list+ex+isp+ddos;
-    cut+=(ref-list)*q;
-    lines.push({g:'net',gl:'צד ג׳ הוט נט',i,bw:r.bw,ref,list,extra:ex,isp,ddos,disc:0,per,qty:q,total:per*q});
+    cut+=((ref-list)+(ispRef-isp))*q;
+    lines.push({g:'net',gl:'צד ג׳ הוט נט',i,bw:r.bw,ref,list,ispRef,extra:ex,isp,ddos,disc:0,per,qty:q,total:per*q});
     // שכירות צד ג' נגזרת ממחיר המחירון — הנחה ללקוח אינה מוזילה את העלות לחברה
     netRev+=per*q; netList+=ref*q; netQty+=q;
     if(r.isp)netIspMb+=up*q;
@@ -13855,10 +13870,12 @@ function _txCalc(v){
     const t=TX_CELL.find(x=>x[0]===r.bw); if(!t)return;
     const q=Math.max(0,+r.qty||0);
     const ref=t[2][yi], list=(r.price==null||r.price==='')?ref:Math.max(0,+r.price);
-    const isp=r.isp?t[4]:0, ddos=(r.ddos&&t[1]!=null)?(TX_DDOS[t[1]]||0):0, ex=+r.extra||0;
+    const ispRef=r.isp?t[4]:0;
+    const isp=r.isp?((r.ispPrice==null||r.ispPrice==='')?ispRef:Math.max(0,+r.ispPrice)):0;
+    const ddos=(r.ddos&&t[1]!=null)?(TX_DDOS[t[1]]||0):0, ex=+r.extra||0;
     const per=list+ex+isp+ddos;
-    cut+=(ref-list)*q;
-    lines.push({g:'cell',gl:'צד ג׳ סלקום',i,bw:r.bw,ref,list,extra:ex,isp,ddos,disc:0,per,qty:q,total:per*q});
+    cut+=((ref-list)+(ispRef-isp))*q;
+    lines.push({g:'cell',gl:'צד ג׳ סלקום',i,bw:r.bw,ref,list,ispRef,extra:ex,isp,ddos,disc:0,per,qty:q,total:per*q});
     cellRev+=per*q; cellList+=ref*q; cellQty+=q;
     if(r.isp)cellIspMb+=t[3]*q;
   });
@@ -13893,7 +13910,7 @@ function _txCalc(v){
   if(hotAvg>0&&hotPmi<L.minPmi)errs.push('PMI תשתית הוט נמוך מהמותר — '+Math.round(hotPmi*100)+'% מול '+Math.round(L.minPmi*100)+'%');
   if((+v.infra||0)<optics)errs.push('מחיר תשתית לא תקין — נמוך מעלות האופטיקה ('+fmt(Math.round(optics))+')');
   const warn=(tenG>0&&(+v.bom||0)<10000)?'חובה להזין עלות BOM לקווי 10G':'';
-  const refTotal=lines.reduce((a,l)=>a+l.ref*l.qty,0);
+  const refTotal=lines.reduce((a,l)=>a+(l.ref+(l.ispRef||0))*l.qty,0);
   return {lines,cut,cutPct:refTotal?cut/refTotal:0,refTotal,months,free,hotRev,promo,hotQty,hotMb,optics,opticGap,socket,hotIspMb,tenG,
     netRev,netList,netQty,cellRev,cellList,cellQty,monthly,metro,termIncome,
     opex,rent,hotIspCost,netIspCost,install,invest,netInvest,incAvg,hotAvg,expAvg,hotExp,
@@ -13983,6 +14000,10 @@ function _txRenderLines(){
   const qty=(kind,i,val)=>`<input type="number" inputmode="numeric" value="${val}" oninput="_txSet('${kind}',${i},'qty',this.value)" style="width:46px;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:3px 5px;color:var(--text);font-family:inherit;font-size:11.5px;outline:none;direction:ltr;text-align:center">`;
   const extra=(kind,i,val)=>`<input type="number" inputmode="numeric" value="${val}" oninput="_txSet('${kind}',${i},'extra',this.value)" title="תוספת הכנסה לקו" style="width:62px;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:3px 5px;color:var(--text);font-family:inherit;font-size:11.5px;outline:none;direction:ltr;text-align:center">`;
   // מחיר הקו — מגיע מהמחירון וניתן להורדה. ריק מחזיר למחיר המחירון
+  const ispf=(kind,i,r)=>{ if(!r.isp)return '';
+    const ref=_txIspPrice(kind,r), cur=(r.ispPrice==null||r.ispPrice==='')?ref:r.ispPrice;
+    const low=cur<ref-0.004;
+    return `<input id="txi-${kind}-${i}" type="number" inputmode="numeric" value="${Math.round(cur*10)/10}" oninput="_txSet('${kind}',${i},'ispPrice',this.value)" title="עלות הספק (ISP) לקו — מחירון ₪${Math.round(ref).toLocaleString('he-IL')}${low?' · הופחת ב-₪'+Math.round(ref-cur).toLocaleString('he-IL'):''}. השאר ריק לחזרה למחירון" style="width:64px;box-sizing:border-box;background:${low?'rgba(244,162,97,.14)':'rgba(76,201,240,.08)'};border:1px solid ${low?'#f4a261':'rgba(76,201,240,.4)'};border-radius:6px;padding:3px 5px;color:${low?'#f4a261':'#4cc9f0'};font-family:inherit;font-size:11.5px;font-weight:${low?'800':'400'};outline:none;direction:ltr;text-align:center">`;};
   const price=(kind,i,r)=>{const ref=_txListPrice(kind,r), cur=(r.price==null||r.price==='')?ref:r.price;
     const low=cur<ref-0.004;
     return `<input id="txp-${kind}-${i}" type="number" inputmode="numeric" value="${Math.round(cur*10)/10}" oninput="_txSet('${kind}',${i},'price',this.value)" title="מחיר הקו — מחירון ₪${Math.round(ref).toLocaleString('he-IL')}${low?' · הנחה של ₪'+Math.round(ref-cur).toLocaleString('he-IL'):''}. השאר ריק לחזרה למחירון" style="width:72px;box-sizing:border-box;background:${low?'rgba(244,162,97,.14)':'rgba(255,255,255,.05)'};border:1px solid ${low?'#f4a261':'var(--border)'};border-radius:6px;padding:3px 5px;color:${low?'#f4a261':'var(--text)'};font-family:inherit;font-size:11.5px;font-weight:${low?'800':'400'};outline:none;direction:ltr;text-align:center">`;};
@@ -13999,15 +14020,15 @@ function _txRenderLines(){
     </div>`;
   const hotBody=_txHot.map((r,i)=>`<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
       ${bw('hot',i,TX_HOT,r.bw)}${qty('hot',i,r.qty)}${price('hot',i,r)}${extra('hot',i,r.extra)}
-      ${chk('hot',i,'isp',r.isp,'ISP')}${chk('hot',i,'ddos',r.ddos,'DDOS')}${del('hot',i)}${sub('hot',i)}</div>`).join('');
+      ${chk('hot',i,'isp',r.isp,'ISP')}${ispf('hot',i,r)}${chk('hot',i,'ddos',r.ddos,'DDOS')}${del('hot',i)}${sub('hot',i)}</div>`).join('');
   const netBody=_txNet.map((r,i)=>`<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
       ${bw('net',i,TX_NET,r.bw)}${qty('net',i,r.qty)}${price('net',i,r)}${extra('net',i,r.extra)}
-      ${chk('net',i,'forms',r.forms,'טפסים')}${chk('net',i,'isp',r.isp,'ISP')}${chk('net',i,'ddos',r.ddos,'DDOS')}${del('net',i)}${sub('net',i)}</div>`).join('');
+      ${chk('net',i,'forms',r.forms,'טפסים')}${chk('net',i,'isp',r.isp,'ISP')}${ispf('net',i,r)}${chk('net',i,'ddos',r.ddos,'DDOS')}${del('net',i)}${sub('net',i)}</div>`).join('');
   const cellBody=_txCell.map((r,i)=>`<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
       ${bw('cell',i,TX_CELL,r.bw)}${qty('cell',i,r.qty)}${price('cell',i,r)}${extra('cell',i,r.extra)}
-      ${chk('cell',i,'isp',r.isp,'ISP')}${chk('cell',i,'ddos',r.ddos,'DDOS')}${del('cell',i)}${sub('cell',i)}</div>`).join('');
+      ${chk('cell',i,'isp',r.isp,'ISP')}${ispf('cell',i,r)}${chk('cell',i,'ddos',r.ddos,'DDOS')}${del('cell',i)}${sub('cell',i)}</div>`).join('');
   const sum=a=>a.reduce((s,r)=>s+Math.max(0,+r.qty||0),0);
-  host.innerHTML=`<div style="font-size:11px;font-weight:800;color:var(--text2);margin:4px 0 6px">🔌 קווים <span style="font-weight:400;color:var(--text3);font-size:10px">— רוחב פס · כמות · מחיר לקו (ניתן להורדה מהמחירון) · תוספת הכנסה</span></div>`
+  host.innerHTML=`<div style="font-size:11px;font-weight:800;color:var(--text2);margin:4px 0 6px">🔌 קווים <span style="font-weight:400;color:var(--text3);font-size:10px">— רוחב פס · כמות · תשתית · תוספת · ספק (ISP) — התשתית והספק ניתנים לעדכון מהמחירון</span></div>`
     +grp('📶 תשתית הוט','#06d6a0','hot',_txHot,hotBody,sum(_txHot))
     +grp('🔗 צד ג׳ — הוט נט','#4cc9f0','net',_txNet,netBody,sum(_txNet))
     +grp('📱 צד ג׳ — סלקום','#a78bfa','cell',_txCell,cellBody,sum(_txCell));
@@ -14040,6 +14061,12 @@ function _txRender(){
     const ref=Math.round(_txListPrice(k,row)*10)/10;
     if(+e.value!==ref)e.value=ref;
   }));
+  [['hot',_txHot],['net',_txNet],['cell',_txCell]].forEach(([k,arr])=>arr.forEach((row,i)=>{
+    if(!row.isp||(row.ispPrice!=null&&row.ispPrice!==''))return;
+    const e=document.getElementById('txi-'+k+'-'+i); if(!e)return;
+    const ref=Math.round(_txIspPrice(k,row)*10)/10;
+    if(+e.value!==ref)e.value=ref;
+  }));
   const money=_txMoney;
   const cell=(t,clr,b)=>`<td style="padding:3px 5px;font-size:10.5px;text-align:center;direction:ltr;color:${clr||'var(--text2)'}${b?';font-weight:800':''}">${t}</td>`;
   const gsum={hot:r.hotRev,net:r.netRev,cell:r.cellRev};
@@ -14052,7 +14079,8 @@ function _txRender(){
     ls.forEach(ln=>{ const low=ln.list<ln.ref-0.004;
       brk+=`<tr style="border-top:1px solid rgba(255,255,255,.05)">
       <td style="padding:3px 5px;font-size:10.5px;text-align:right;color:var(--text)">${esc(ln.bw)}</td>
-      ${cell(low?`<span title="מחירון ${money(ln.ref)} · הנחה ${money(ln.ref-ln.list)}">${money(ln.list)} ▾</span>`:money(ln.list),low?'#f4a261':'')}${cell(ln.extra?money(ln.extra):'–')}${cell(ln.isp?money(ln.isp):'–')}
+      ${cell(low?`<span title="מחירון ${money(ln.ref)} · הנחה ${money(ln.ref-ln.list)}">${money(ln.list)} ▾</span>`:money(ln.list),low?'#f4a261':'')}${cell(ln.extra?money(ln.extra):'–')}${(()=>{const li=ln.isp<(ln.ispRef||0)-0.004;
+        return cell(ln.isp?(li?`<span title="מחירון ${money(ln.ispRef)} · הופחת ${money(ln.ispRef-ln.isp)}">${money(ln.isp)} ▾</span>`:money(ln.isp)):'–',li?'#f4a261':'');})()}
       ${cell(ln.ddos?money(ln.ddos):'–')}${cell(ln.disc?money(ln.disc):'–',ln.disc?'#f4a261':'')}
       ${cell(money(ln.per)+' × '+ln.qty)}${cell(money(ln.total),'var(--gold)',1)}</tr>`; });
     brk+=`<tr style="background:rgba(255,255,255,.03)"><td colspan="7" style="padding:3px 5px;font-size:10.5px;font-weight:700;color:var(--text3);text-align:right">סיכום ${gname[g]}</td>${cell(money(gsum[g]),gclr[g],1)}</tr>`;
@@ -14166,9 +14194,9 @@ function _txExport(){
   L.push(['לקוח',v.client||'–','עסקה',_txLabel(v)]);
   L.push(['דרג אישור',v.level,'תקופת התחייבות',v.months+' חודשים']);
   L.push([]);
-  L.push(['תשתית','רוחב פס','כמות','מחירון','מחיר בפועל','תוספת לקו','ISP','DDOS','סה"כ לקו','סה"כ']);
+  L.push(['תשתית','רוחב פס','כמות','מחירון תשתית','תשתית בפועל','תוספת לקו','מחירון ספק','ספק בפועל','DDOS','סה"כ לקו','סה"כ']);
   (rr.lines||[]).forEach(ln=>L.push([ln.gl,ln.bw,ln.qty,Math.round(ln.ref*10)/10,Math.round(ln.list*10)/10,
-    ln.extra,ln.isp||'–',ln.ddos||'–',Math.round(ln.per*10)/10,Math.round(ln.total*10)/10]));
+    ln.extra,ln.ispRef||'–',ln.isp||'–',ln.ddos||'–',Math.round(ln.per*10)/10,Math.round(ln.total*10)/10]));
   if(rr.cut>0.004)L.push(['הנחה מהמחירון',Math.round(rr.cut),(Math.round(rr.cutPct*1000)/10)+'%']);
   L.push([]);
   L.push(['הכנסה חודשית',Math.round(rr.monthly)]);
