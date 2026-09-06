@@ -1799,6 +1799,7 @@ body.logged-in #ai-fab{display:flex}
       <input type="text" class="srch" placeholder="חיפוש..." oninput="filt(event,'ltb','stb')">
       <button class="btn btnp" onclick="openM('deal',null)">+ עסקה חדשה</button>
       <button class="btn" onclick="openEquipCalc()" title="מחשבון OTC לעסקאות ציוד" style="background:rgba(76,201,240,.12);color:#4cc9f0;border-color:rgba(76,201,240,.35)">🖥️ מחשבון ציוד</button>
+      <button class="btn" onclick="openTxCalc()" title="מחשבון תמסורת — קווי הוט וצד ג׳" style="background:rgba(6,214,160,.12);color:#06d6a0;border-color:rgba(6,214,160,.35)">📡 מחשבון תמסורת</button>
       <button class="btn btn-excel" onclick="exportExcel('deals')">📥 Excel</button>
       <button class="btn btn-import" onclick="importFromExcel('deals')" title="ייבוא מ-Excel">📤 ייבוא</button>
       <button class="btn btnwp" onclick="sendWhatsAppDeals()">📱 WA</button>
@@ -2379,6 +2380,7 @@ body.logged-in #ai-fab{display:flex}
       <button class="btn" onclick="openWpPricing()" title="קבע שווי משוער לכל המוצרים מאותו סוג בבת אחת" style="background:rgba(200,169,110,.12);color:var(--gold);border-color:rgba(200,169,110,.3)">💰 תמחור מהיר</button>
       <button class="btn" onclick="openRoiCalc()" title="מחשבון החזר השקעה בתשתית" style="background:rgba(167,139,250,.12);color:#a78bfa;border-color:rgba(167,139,250,.35)">🧮 החזר השקעה</button>
       <button class="btn" onclick="openEquipCalc()" title="מחשבון OTC לעסקאות ציוד" style="background:rgba(76,201,240,.12);color:#4cc9f0;border-color:rgba(76,201,240,.35)">🖥️ מחשבון ציוד</button>
+      <button class="btn" onclick="openTxCalc()" title="מחשבון תמסורת — קווי הוט וצד ג׳" style="background:rgba(6,214,160,.12);color:#06d6a0;border-color:rgba(6,214,160,.35)">📡 מחשבון תמסורת</button>
       <button class="btn btn-excel" onclick="exportExcel('workplan')">📥 Excel</button>
     </div>
   </div>
@@ -9144,12 +9146,15 @@ function renderClientCalcs(id){
   const eqs=(c&&Array.isArray(c.eqCalcs))?c.eqCalcs.map(k=>({...k,_kind:'eq'})):[];
   const rois=(c&&Array.isArray(c.roiCalcs))?c.roiCalcs.map(k=>({...k,_kind:'roi',
     customer:k.cumIncome,profit:k.totalProfit,pmi:k.roiPct})):[];
-  const all=[...eqs,...rois].sort((a,b)=>(b.ts||0)-(a.ts||0));
+  const txs=(c&&Array.isArray(c.txCalcs))?c.txCalcs.map(k=>({...k,_kind:'tx',
+    customer:k.termIncome,profit:k.profit,pmi:k.pmi})):[];
+  const all=[...eqs,...rois,...txs].sort((a,b)=>(b.ts||0)-(a.ts||0));
   if(!all.length){sec.style.display='none';sec.innerHTML='';return;}
   sec.style.display='';
   const rows=all.map(k=>{
-    const names=k._kind==='roi'?(k.label||'תשתית'):((k.deals||[]).map(d=>d.name).join(' + ')||'עסקת ציוד');
-    const ico=k._kind==='roi'?'🧮':'🖥️';
+    const names=k._kind==='roi'?(k.label||'תשתית'):k._kind==='tx'?(k.label||'תמסורת')
+              :((k.deals||[]).map(d=>d.name).join(' + ')||'עסקת ציוד');
+    const ico=k._kind==='roi'?'🧮':k._kind==='tx'?'📡':'🖥️';
     const chip=k.closed?'<span style="font-size:9px;font-weight:800;color:var(--teal);background:rgba(6,214,160,.14);border-radius:10px;padding:1px 7px">נסגר</span>'
                        :'<span style="font-size:9px;font-weight:800;color:#a78bfa;background:rgba(167,139,250,.14);border-radius:10px;padding:1px 7px">טיוטה</span>';
     return `<div class="cmod-row" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07)">
@@ -9169,6 +9174,22 @@ function renderClientCalcs(id){
 // פתיחת חישוב שמור מכרטיס הלקוח לתוך מחשבון הציוד
 function _openCalcFromClient(clientId,calcId,kind){
   const c=(D.clients||[]).find(x=>x.id==clientId); if(!c)return;
+  if(kind==='tx'){
+    const k=(c.txCalcs||[]).find(x=>x.id==calcId); if(!k){ showToast('⚠️ החישוב לא נמצא','warn'); return; }
+    try{ closeM('mclient'); }catch(e){}
+    setTimeout(()=>{
+      openTxCalc();
+      const set=(id,val)=>{const e=document.getElementById(id); if(e)e.value=val;};
+      set('tx-client',k.client||c.name||''); set('tx-name',k.name||'');
+      set('tx-level',k.level||'מת"ל'); set('tx-months',k.months||36);
+      set('tx-free',k.free||0); set('tx-addr',k.addr||0); set('tx-infra',k.infra||0);
+      set('tx-bom',k.bom||0); set('tx-oneinc',k.oneInc||0); set('tx-oneexp',k.oneExp||0); set('tx-tmp',k.tmp3rd||0);
+      const pc=document.getElementById('tx-promo'); if(pc)pc.checked=!!k.promo;
+      _txHot=(k.hot||[]).map(x=>({...x})); _txNet=(k.net||[]).map(x=>({...x})); _txCell=(k.cell||[]).map(x=>({...x}));
+      _txRenderLines(); _txRender();
+    },160);
+    return;
+  }
   if(kind==='roi'){
     const k=(c.roiCalcs||[]).find(x=>x.id==calcId); if(!k){ showToast('⚠️ החישוב לא נמצא','warn'); return; }
     try{ closeM('mclient'); }catch(e){}
@@ -13689,6 +13710,411 @@ function _roiSave(){
   const el=document.getElementById('roi-popup'); if(el)el.remove();
   showToast('💾 תוכנית הכדאיות נשמרה למוצר','ok');
 }
+// ═══ 📡 מחשבון תמסורת — קווי הוט וקווי צד ג' (לפי המודל הכלכלי הארגוני V22) ═══
+// שלוש תשתיות: קווי הוט, צד ג' הוט־נט וצד ג' סלקום. המחירון נגזר מדרג האישור ומתקופת ההתחייבות,
+// ומהם נגזרות הכנסה חודשית, הוצאות שוטפות, PMI (כולל PMI תשתית הוט בלבד), השקעה נטו ו-ROI בחודשים.
+const TX_RATE_M=0.0056541453874052738;   // ריבית חודשית (7% שנתי)
+const TX_INSTALL=1000;                   // עלות התקנת תמסורת לכל כתובת
+const TX_OPTIC_FULL=5000;                // אופטיקה מלאה — הפער ממנה מוחזר מההשקעה
+const TX_LEVELS={
+  'מת"ל':        {i:0,rank:1,minRoi:0.45,minPmi:0.74,free:0},
+  'מנהל מחלקה':  {i:1,rank:2,minRoi:0.55,minPmi:0.69,free:1},
+  'מנהל אגף':    {i:2,rank:3,minRoi:0.75,minPmi:0.65,free:2}};
+// תשתית הוט: [תווית, מגה, [תשתית לפי דרג], [ספק/ISP לפי דרג], הנחת מבצע סוף שנה, אופטיקה מתוקננת]
+const TX_HOT=[
+  ['20M',20,[350,350,350],[20,20,20],0,2000],
+  ['50M',50,[500,500,450],[50,50,50],0,2272.727272727273],
+  ['120M',120,[690,620,558.9],[100,100,100],-100,2654.5454545454545],
+  ['150M',150,[870,785,704.7],[100,100,100],-100,2818.181818181818],
+  ['250M',250,[1000,900,810],[200,200,200],-200,3363.6363636363635],
+  ['300/200M',200,[800,800,800],[200,200,200],-200,3090.909090909091],
+  ['380M',380,[1350,1215,1093.5],[240,240,240],-240,4072.727272727273],
+  ['600/300M',300,[1510,1359,1223.1],[240,240,240],-240,3636.363636363636],
+  ['550M',550,[1350,1215,1093.5],[400,400,400],0,5000],
+  ['1000/500M',500,[2150,1935,1741.5],[400,400,400],0,4727.272727272727],
+  ['750M',750,[1550,1395,1255.5],[600,600,600],0,5000],
+  ['1G',1000,[2000,1800,1620],[1000,800,800],0,5000],
+  ['2G',2000,[3200,2880,2592],[1600,1600,1600],0,5000],
+  ['3G',3000,[3500,3150,2835],[2700,2700,2700],0,5000],
+  ['4G',4000,[3900,3510,3159],[3600,3600,3600],0,5000],
+  ['5G',5000,[4300,3870,3483],[4250,4250,4250],0,5000],
+  ['6G',6000,[4700,4230,3807],[5100,5100,5100],0,5000],
+  ['8G',8000,[5100,4590,4131],[6400,6400,6400],0,5000],
+  ['10G',10000,[5500,4950,4455],[10000,10000,10000],0,5000]];
+// צד ג' הוט־נט: [תווית, UP, DOWN, [12/24/36 ללא טפסים, 12/24/36 עם טפסים], [ISP לפי דרג]]
+const TX_NET=[
+  ['100/100',100,100,[1359.3,1222.45,1140.8,1359.3,968.3,951.05],[100,100,100]],
+  ['300/150',150,300,[1407.6,1267.3,1182.2,1407.6,1002.8,985.55],[100,100,100]],
+  ['200/200',200,200,[2072.3,1865.3,1741.1,2072.3,1476.6,1450.15],[100,100,100]],
+  ['600/300',300,600,[2121.75,1909,1781.35,2121.75,1511.1,1484.65],[240,240,240]],
+  ['500/500',500,500,[2834.75,2551.85,2381.65,2834.75,2019.4,1984.9],[400,400,400]],
+  ['1000/500',500,1000,[2884.2,2595.55,2421.9,2884.2,2055.05,2018.25],[400,400,400]],
+  ['1000/1000',1000,1000,[3307.4,2976.2,2777.25,3307.4,2356.35,2314.95],[800,800,800]],
+  ['2000/2000',2000,2000,[5353.25,4817.35,4496.5,5353.25,3813.4,3746.7],[1600,1600,1600]],
+  ['4000/4000',4000,4000,[7125.4,5451,5087.6,7125.4,4314.8,4240.05],[3000,3000,3000]],
+  ['6000/6000',6000,6000,[8680.2,6640.1,6197.35,8680.2,5256.65,5164.65],[4500,4250,3500]],
+  ['8000/8000',8000,8000,[9403.55,7193.25,6713.7,9403.55,5694.8,5594.75],[6000,5700,4800]],
+  ['10000/10000',10000,10000,[11212.5,8577.85,8006.3,11212.5,6790.75,6671.15],[9000,8500,7000]]];
+// צד ג' סלקום: [תווית, מפתח DDOS (null = אין התאמה במחירון), [מחיר ללקוח 12/24/36], UP, מחיר ISP]
+// ה-ISP במחירון נשלף לפי הקידומת המספרית של המהירות, ולכן "300 (150)" מקבל את תעריף 300 — כמו בגיליון.
+const TX_CELL=[
+  ['50',50,[600,600,600],50,50],
+  ['100',100,[780,780,780],100,100],
+  ['150',150,[960,960,960],150,100],
+  ['200',200,[1080,1080,1080],200,100],
+  ['300 (150)',null,[960,960,960],150,240],
+  ['300',300,[1200,1200,1200],300,240],
+  ['500',500,[1440,1440,1440],500,400],
+  ['1000',1000,[2040,2040,2040],1000,1000],
+  ['2000',2000,[3600,3600,3600],2000,1600]];
+const TX_DDOS={20:75,50:75,100:100,120:120,150:150,200:200,250:250,300:300,380:380,500:500,550:550,
+  600:600,750:700,1000:750,2000:1500,3000:2250,4000:3000,5000:3750,6000:4500,8000:6000,10000:7500};
+const TX_SOCKET={0:0,10:185,50:185,100:185,120:222,150:277.5,200:370,300:555,380:703,400:740,500:925,
+  550:1017.5,600:1110,700:1295,750:1387.5,800:1480,900:1665,1000:7400,1500:8880,2000:10360,2500:11840,
+  3000:13320,3500:14800,4000:16280,4500:17760,5000:19240};
+// הוצאות שוטפות ללקוח בתשתית הוט (תעבורת רשת למגה, תחזוקה, חשמל, גבייה מההכנסה, שירות)
+const TX_OPEX={mb:0.0626944444444444,maint:37.925,elec:2.2435897435897436,collect:0.0023076923076923079,svc:3};
+const TX_ISP_COST=0.50875;               // עלות תעבורה חודשית למגה (לקוח סטטיסטי · 50% חו"ל)
+
+let _txHot=[], _txNet=[], _txCell=[];
+function _txAdd(kind){
+  if(kind==='hot')_txHot.push({bw:TX_HOT[0][0],qty:1,extra:0,isp:false,ddos:false});
+  else if(kind==='net')_txNet.push({bw:TX_NET[0][0],qty:1,extra:0,forms:false,isp:false,ddos:false});
+  else _txCell.push({bw:TX_CELL[0][0],qty:1,extra:0,isp:false,ddos:false});
+  _txRenderLines(); _txRender();
+}
+function _txDel(kind,i){
+  (kind==='hot'?_txHot:kind==='net'?_txNet:_txCell).splice(i,1);
+  _txRenderLines(); _txRender();
+}
+function _txSet(kind,i,field,val){
+  const r=(kind==='hot'?_txHot:kind==='net'?_txNet:_txCell)[i]; if(!r)return;
+  r[field]=(field==='qty'||field==='extra')?Math.max(0,_aiNum(val)):val;
+  _txRender();
+}
+function _txRead(){
+  const g=id=>(document.getElementById(id)||{}).value;
+  const ck=id=>!!(document.getElementById(id)||{}).checked;
+  return {client:g('tx-client')||'', name:g('tx-name')||'', level:g('tx-level')||'מת"ל',
+    months:+g('tx-months')||36, promo:ck('tx-promo'), free:_aiNum(g('tx-free')), addr:_aiNum(g('tx-addr')),
+    infra:_aiNum(g('tx-infra')), bom:_aiNum(g('tx-bom')), oneInc:_aiNum(g('tx-oneinc')),
+    oneExp:_aiNum(g('tx-oneexp')), tmp3rd:_aiNum(g('tx-tmp')),
+    hot:_txHot.map(r=>({...r})), net:_txNet.map(r=>({...r})), cell:_txCell.map(r=>({...r}))};
+}
+function _txCalc(v){
+  const L=TX_LEVELS[v.level]||TX_LEVELS['מת"ל'];
+  const months=Math.max(1,+v.months||36);
+  const yi=months>=36?2:months>=24?1:0;         // עמודת המחירון לפי תקופת ההתחייבות
+  let hotRev=0,promo=0,hotMb=0,hotQty=0,optics=0,opticGap=0,socket=0,hotIspMb=0,tenG=0;
+  (v.hot||[]).forEach(r=>{
+    const t=TX_HOT.find(x=>x[0]===r.bw); if(!t)return;
+    const q=Math.max(0,+r.qty||0), mb=t[1];
+    const disc=(L.rank===1&&v.promo)?t[4]:0;
+    const per=t[2][L.i]+(+r.extra||0)+(r.isp?t[3][L.i]:0)+(r.ddos?(TX_DDOS[mb]||0):0)+disc;
+    hotRev+=per*q; promo+=disc*q; hotQty+=q; hotMb+=mb*q;
+    optics+=t[5]*q; opticGap+=(t[5]>0?TX_OPTIC_FULL-t[5]:0)*q;
+    socket+=(TX_SOCKET[mb]||0)*q;
+    if(r.isp)hotIspMb+=mb*q;
+    if(mb>9999)tenG+=q;
+  });
+  let netRev=0,netList=0,netIspMb=0,netQty=0;
+  (v.net||[]).forEach(r=>{
+    const t=TX_NET.find(x=>x[0]===r.bw); if(!t)return;
+    const q=Math.max(0,+r.qty||0), up=t[1];
+    const list=t[3][(r.forms?3:0)+yi];
+    netRev+=(list+(+r.extra||0))*q+(r.isp?t[4][L.rank-1]:0)*q+(r.ddos?(TX_DDOS[up]||0):0)*q;
+    netList+=list*q; netQty+=q;
+    if(r.isp)netIspMb+=up*q;
+  });
+  let cellRev=0,cellList=0,cellIspMb=0,cellQty=0;
+  (v.cell||[]).forEach(r=>{
+    const t=TX_CELL.find(x=>x[0]===r.bw); if(!t)return;
+    const q=Math.max(0,+r.qty||0);
+    const list=t[2][yi];
+    cellRev+=(list+(+r.extra||0))*q+(r.isp?t[4]:0)*q+(r.ddos&&t[1]!=null?(TX_DDOS[t[1]]||0):0)*q;
+    cellList+=list*q; cellQty+=q;
+    if(r.isp)cellIspMb+=t[3]*q;
+  });
+  const monthly=(hotRev-promo)+netRev+cellRev;                 // הכנסה חודשית
+  const free=Math.max(0,+v.free||0);
+  const metro=promo*12;                                        // הנחת Metro complete — 12 חודשים
+  const oneInc=+v.oneInc||0;
+  const termIncome=(months-free)*monthly+oneInc+metro;
+  const opex=hotMb>0?(hotMb*TX_OPEX.mb+TX_OPEX.maint+TX_OPEX.elec+TX_OPEX.collect*hotRev+TX_OPEX.svc):0;
+  const hotIspCost=TX_ISP_COST*hotIspMb;
+  const netIspCost=TX_ISP_COST*(netIspMb+cellIspMb);
+  const rent=netList/1.15+cellList/1.2;                        // שכירות צד ג' (ללא העמסה)
+  const install=Math.max(0,+v.addr||0)*TX_INSTALL;
+  const invest=(+v.infra||0)-opticGap+(+v.bom||0);             // השקעה ישירה
+  const netInvest=invest+install+(+v.oneExp||0)+(+v.tmp3rd||0)+socket-oneInc;
+  const incAvg=(monthly*(months-free)+metro)/months;           // הכנסה שוטפת ממוצעת
+  const hotAvg=hotRev*(months-free)/months;                    // תשתית הוט בלבד
+  const expAvg=opex+rent+netIspCost+hotIspCost;
+  const hotExp=opex+hotIspCost;
+  const profit=incAvg-expAvg, hotProfit=hotAvg-hotExp;
+  const pmi=incAvg?profit/incAvg:0, hotPmi=hotAvg?hotProfit/hotAvg:0;
+  let roiM=0;
+  if(profit>0&&netInvest<=0)roiM=1;
+  else if(profit>TX_RATE_M*netInvest&&netInvest>0){
+    const x=profit/(profit-TX_RATE_M*netInvest);
+    roiM=Math.max(1,Math.floor(Math.log(x)/Math.log(1+TX_RATE_M)+1));
+  }
+  // בקרת אישור כלכלי — בדיוק לפי תנאי המודל
+  const errs=[];
+  if(free>L.free)errs.push('חודשי חינם מעבר למותר ל'+v.level+' (מקסימום '+L.free+')');
+  if(!roiM||roiM>L.minRoi*months)errs.push(roiM?('ROI ארוך מהמותר — '+roiM+' חודשים מול '+Math.round(L.minRoi*months)):'ההשקעה לא מוחזרת בתקופת ההתחייבות');
+  if(hotAvg>0&&hotPmi<L.minPmi)errs.push('PMI תשתית הוט נמוך מהמותר — '+Math.round(hotPmi*100)+'% מול '+Math.round(L.minPmi*100)+'%');
+  if((+v.infra||0)<optics)errs.push('מחיר תשתית לא תקין — נמוך מעלות האופטיקה ('+fmt(Math.round(optics))+')');
+  const warn=(tenG>0&&(+v.bom||0)<10000)?'חובה להזין עלות BOM לקווי 10G':'';
+  return {months,free,hotRev,promo,hotQty,hotMb,optics,opticGap,socket,hotIspMb,tenG,
+    netRev,netList,netQty,cellRev,cellList,cellQty,monthly,metro,termIncome,
+    opex,rent,hotIspCost,netIspCost,install,invest,netInvest,incAvg,hotAvg,expAvg,hotExp,
+    profit,hotProfit,pmi,hotPmi,roiM,errs,warn,approved:errs.length===0,level:v.level,
+    minRoi:L.minRoi,minPmi:L.minPmi,maxFree:L.free};
+}
+
+// ── חלון המחשבון ──
+function openTxCalc(clientId,potIdx){
+  const old=document.getElementById('tx-popup'); if(old)old.remove();
+  let draft=null;
+  if(clientId!=null){
+    const c=(D.clients||[]).find(x=>x.id==clientId);
+    const p=c&&Array.isArray(c.potential)?c.potential[potIdx]:null;
+    if(p&&p.txCalc)draft=p.txCalc;
+    window._txCtx={clientId:clientId,potIdx:potIdx};
+  }else window._txCtx={};
+  _txHot=draft&&Array.isArray(draft.hot)?draft.hot.map(r=>({...r})):[{bw:TX_HOT[0][0],qty:1,extra:0,isp:false,ddos:false}];
+  _txNet=draft&&Array.isArray(draft.net)?draft.net.map(r=>({...r})):[];
+  _txCell=draft&&Array.isArray(draft.cell)?draft.cell.map(r=>({...r})):[];
+  const num=(id,lbl,val,hint)=>`<div>
+      <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">${lbl}${hint?` <span style="font-weight:400;opacity:.8">${hint}</span>`:''}</label>
+      <input id="${id}" type="number" inputmode="numeric" value="${val}" oninput="_txRender()" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none;direction:ltr;text-align:left"></div>`;
+  const el=document.createElement('div');
+  el.id='tx-popup';
+  el.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.78);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
+  el.onclick=function(ev){ if(ev.target===el)el.remove(); };
+  el.innerHTML=`<div style="background:linear-gradient(135deg,#101525,#0a0e1c);border:1px solid rgba(6,214,160,.32);border-radius:16px;max-width:620px;width:100%;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.65);animation:cardIn .25s ease;max-height:94vh;overflow-y:auto;direction:rtl" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+      <div style="font-size:15px;font-weight:900;color:#06d6a0">📡 מחשבון תמסורת — הוט וצד ג'</div>
+      <button onclick="document.getElementById('tx-popup').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:11px">מחירון לפי דרג האישור ותקופת ההתחייבות · הוצאות שוטפות, שכירות צד ג' והשקעה נטו · בקרת PMI ו-ROI מול תנאי האישור</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px">
+      <div>
+        <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">🏢 שם הלקוח <span style="font-weight:400;opacity:.8">(לשמירה וסגירה)</span></label>
+        <input id="tx-client" list="co-list" value="${esc((draft&&draft.client)||'')}" placeholder="שם הלקוח" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none;direction:rtl;text-align:right">
+      </div>
+      <div>
+        <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">🏷️ שם העסקה</label>
+        <input id="tx-name" value="${esc((draft&&draft.name)||'')}" placeholder="למשל: תמסורת סניפים" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none;direction:rtl;text-align:right">
+      </div>
+      <div>
+        <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">✍️ דרג אישור</label>
+        <select id="tx-level" onchange="_txRender()" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none">${Object.keys(TX_LEVELS).map(k=>`<option ${draft&&draft.level===k?'selected':''}>${k}</option>`).join('')}</select>
+      </div>
+      <div>
+        <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">📆 תקופת התחייבות</label>
+        <select id="tx-months" onchange="_txRender()" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none">${[12,24,36].map(m=>`<option value="${m}" ${(draft?draft.months:36)==m?'selected':''}>${m} חודשים</option>`).join('')}</select>
+      </div>
+    </div>
+    <div id="tx-lines"></div>
+    <div style="font-size:11px;font-weight:800;color:var(--text2);margin:13px 0 6px">💵 נתונים כספיים</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:9px">
+      ${num('tx-addr','כתובות בתשתית הוט',(draft?draft.addr:0)||0,'× ₪1,000 התקנה')}
+      ${num('tx-infra','עלות תשתית ₪',(draft?draft.infra:0)||0,'טופס תשתיות')}
+      ${num('tx-bom','עלות BOM ₪',(draft?draft.bom:0)||0,'חובה ב-10G')}
+      ${num('tx-oneinc','הכנסה חד-פעמית ₪',(draft?draft.oneInc:0)||0,'התקנות')}
+      ${num('tx-oneexp','הוצאה חד-פעמית ₪',(draft?draft.oneExp:0)||0)}
+      ${num('tx-tmp','הוצאת צד ג׳ זמנית ₪',(draft?draft.tmp3rd:0)||0)}
+      ${num('tx-free','חודשי חינם',(draft?draft.free:0)||0)}
+      <div style="grid-column:span 2;display:flex;align-items:flex-end;padding-bottom:5px">
+        <label style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text2);cursor:pointer">
+          <input type="checkbox" id="tx-promo" ${draft&&draft.promo?'checked':''} onchange="_txRender()" style="width:auto;margin:0"> מבצע סוף שנה <span style="color:var(--text3);font-size:10px">(מת"ל בלבד)</span>
+        </label>
+      </div>
+    </div>
+    <div id="tx-out"></div>
+    <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap">
+      <button class="btn btnp" onclick="_txSaveToPlan()" style="font-size:12px">📋 שמור לתוכנית העבודה</button>
+      <button class="btn" onclick="_txSaveCalc()" style="font-size:12px">💾 שמור ללקוח</button>
+      <button class="btn btn-excel" onclick="_txExport()" style="font-size:12px">📥 Excel</button>
+      <button class="btn btns" onclick="document.getElementById('tx-popup').remove()" style="font-size:12px">סגור</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  if(draft){
+    const s=(id,val)=>{const e=document.getElementById(id); if(e)e.value=val;};
+    s('tx-level',draft.level||'מת"ל'); s('tx-months',draft.months||36);
+  }
+  _txRenderLines(); _txRender();
+}
+// טבלאות הקווים — נבנות מחדש רק בהוספה/מחיקה, כדי שהקלדה בשדה לא תאבד מיקוד
+function _txRenderLines(){
+  const host=document.getElementById('tx-lines'); if(!host)return;
+  const chk=(kind,i,f,on,lbl)=>`<label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:var(--text2);cursor:pointer;white-space:nowrap"><input type="checkbox" ${on?'checked':''} onchange="_txSet('${kind}',${i},'${f}',this.checked)" style="width:auto;margin:0">${lbl}</label>`;
+  const qty=(kind,i,val)=>`<input type="number" inputmode="numeric" value="${val}" oninput="_txSet('${kind}',${i},'qty',this.value)" style="width:46px;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:3px 5px;color:var(--text);font-family:inherit;font-size:11.5px;outline:none;direction:ltr;text-align:center">`;
+  const extra=(kind,i,val)=>`<input type="number" inputmode="numeric" value="${val}" oninput="_txSet('${kind}',${i},'extra',this.value)" title="תוספת הכנסה לקו" style="width:62px;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:3px 5px;color:var(--text);font-family:inherit;font-size:11.5px;outline:none;direction:ltr;text-align:center">`;
+  const bw=(kind,i,list,cur)=>`<select onchange="_txSet('${kind}',${i},'bw',this.value)" style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:3px 5px;color:var(--text);font-family:inherit;font-size:11.5px;outline:none;width:auto;min-width:96px;max-width:150px">${list.map(t=>`<option ${t[0]===cur?'selected':''}>${t[0]}</option>`).join('')}</select>`;
+  const del=(kind,i)=>`<button class="btn btns btnd" onclick="_txDel('${kind}',${i})" title="הסר" style="font-size:10px;padding:2px 7px">🗑</button>`;
+  const grp=(title,clr,kind,rows,body,cnt)=>`<div style="border:1px solid ${clr}33;border-radius:11px;padding:9px 10px;margin-bottom:8px;background:${clr}0a">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${rows.length?'7px':'0'}">
+        <div style="font-size:11.5px;font-weight:800;color:${clr}">${title} <span style="font-weight:400;color:var(--text3)">(${cnt} קווים)</span></div>
+        <button class="btn btns" onclick="_txAdd('${kind}')" style="font-size:10.5px;border-color:${clr};color:${clr}">+ קו</button>
+      </div>
+      ${rows.length?`<div style="display:flex;flex-direction:column;gap:5px">${body}</div>`:''}
+    </div>`;
+  const hotBody=_txHot.map((r,i)=>`<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+      ${bw('hot',i,TX_HOT,r.bw)}${qty('hot',i,r.qty)}${extra('hot',i,r.extra)}
+      ${chk('hot',i,'isp',r.isp,'ISP')}${chk('hot',i,'ddos',r.ddos,'DDOS')}${del('hot',i)}</div>`).join('');
+  const netBody=_txNet.map((r,i)=>`<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+      ${bw('net',i,TX_NET,r.bw)}${qty('net',i,r.qty)}${extra('net',i,r.extra)}
+      ${chk('net',i,'forms',r.forms,'טפסים')}${chk('net',i,'isp',r.isp,'ISP')}${chk('net',i,'ddos',r.ddos,'DDOS')}${del('net',i)}</div>`).join('');
+  const cellBody=_txCell.map((r,i)=>`<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+      ${bw('cell',i,TX_CELL,r.bw)}${qty('cell',i,r.qty)}${extra('cell',i,r.extra)}
+      ${chk('cell',i,'isp',r.isp,'ISP')}${chk('cell',i,'ddos',r.ddos,'DDOS')}${del('cell',i)}</div>`).join('');
+  const sum=a=>a.reduce((s,r)=>s+Math.max(0,+r.qty||0),0);
+  host.innerHTML=`<div style="font-size:11px;font-weight:800;color:var(--text2);margin:4px 0 6px">🔌 קווים <span style="font-weight:400;color:var(--text3);font-size:10px">— רוחב פס · כמות · תוספת הכנסה לקו</span></div>`
+    +grp('📶 תשתית הוט','#06d6a0','hot',_txHot,hotBody,sum(_txHot))
+    +grp('🔗 צד ג׳ — הוט נט','#4cc9f0','net',_txNet,netBody,sum(_txNet))
+    +grp('📱 צד ג׳ — סלקום','#a78bfa','cell',_txCell,cellBody,sum(_txCell));
+}
+function _txRender(){
+  const out=document.getElementById('tx-out'); if(!out)return;
+  const v=_txRead(), r=_txCalc(v);
+  window._txLast={v,r};
+  const tile=(lbl,val,clr,sub)=>`<div style="background:rgba(255,255,255,.03);border:1px solid ${clr}33;border-radius:9px;padding:7px 9px">
+      <div style="font-size:9.5px;color:var(--text3);font-weight:700">${lbl}</div>
+      <div style="font-size:16px;font-weight:900;color:${clr}">${val}</div>
+      ${sub?`<div style="font-size:9px;color:var(--text3);margin-top:1px">${sub}</div>`:''}</div>`;
+  const row=(l,val,clr)=>`<div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;padding:2px 0"><span style="color:var(--text3)">${l}</span><b style="color:${clr||'var(--text2)'};direction:ltr">${val}</b></div>`;
+  out.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:7px;margin-bottom:9px">
+      ${tile('הכנסה חודשית','₪'+fmt(Math.round(r.monthly)),'#06d6a0',(r.hotQty+r.netQty+r.cellQty)+' קווים')}
+      ${tile('הכנסה לתקופה','₪'+fmt(Math.round(r.termIncome)),'var(--gold)',r.months+' חודשים'+(r.free?' · '+r.free+' חינם':''))}
+      ${tile('רווחיות שוטפת','₪'+fmt(Math.round(r.profit)),r.profit>0?'var(--teal)':'#e63946','לחודש')}
+      ${tile('PMI כולל',Math.round(r.pmi*100)+'%','#4cc9f0','PMI הוט '+Math.round(r.hotPmi*100)+'% (מינ׳ '+Math.round(r.minPmi*100)+'%)')}
+      ${tile('השקעה נטו','₪'+fmt(Math.round(r.netInvest)),'#f4a261','לחישוב ROI')}
+      ${tile('ROI',r.roiM?r.roiM+' ח׳':'—',(!r.roiM||r.roiM>r.minRoi*r.months)?'#e63946':'var(--teal)','מותר עד '+Math.round(r.minRoi*r.months)+' ח׳')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+      <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:8px 10px">
+        <div style="font-size:10px;font-weight:800;color:var(--text2);margin-bottom:4px">📈 הכנסה</div>
+        ${row('תשתית הוט','₪'+fmt(Math.round(r.hotRev)))}
+        ${row('צד ג׳ הוט נט','₪'+fmt(Math.round(r.netRev)))}
+        ${row('צד ג׳ סלקום','₪'+fmt(Math.round(r.cellRev)))}
+        ${r.promo?row('מבצע סוף שנה','₪'+fmt(Math.round(r.promo)),'#f4a261'):''}
+        ${row('ממוצע שוטף','₪'+fmt(Math.round(r.incAvg)),'var(--teal)')}
+      </div>
+      <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:8px 10px">
+        <div style="font-size:10px;font-weight:800;color:var(--text2);margin-bottom:4px">📉 הוצאה והשקעה</div>
+        ${row('הפעלה שוטפת','₪'+fmt(Math.round(r.opex)))}
+        ${row('תעבורת ISP','₪'+fmt(Math.round(r.hotIspCost+r.netIspCost)))}
+        ${row('שכירות צד ג׳','₪'+fmt(Math.round(r.rent)))}
+        ${row('התקנה + שקע חומר','₪'+fmt(Math.round(r.install+r.socket)))}
+        ${row('אופטיקה (זיכוי)','₪'+fmt(Math.round(-r.opticGap)),'var(--teal)')}
+      </div>
+    </div>
+    <div style="border:1px solid ${r.approved?'rgba(6,214,160,.4)':'rgba(230,57,70,.45)'};background:${r.approved?'rgba(6,214,160,.08)':'rgba(230,57,70,.07)'};border-radius:10px;padding:9px 11px">
+      <div style="font-size:12px;font-weight:900;color:${r.approved?'var(--teal)':'#e63946'};margin-bottom:${r.errs.length||r.warn?'5px':'0'}">
+        ${r.approved?'✅ מאושר כלכלית':'⛔ לא מאושר כלכלית'} <span style="font-size:10px;font-weight:600;color:var(--text3)">· דרג ${esc(r.level)}</span></div>
+      ${r.errs.map(e=>`<div style="font-size:10.5px;color:#e63946;line-height:1.6">• ${esc(e)}</div>`).join('')}
+      ${r.warn?`<div style="font-size:10.5px;color:#f4a261;line-height:1.6">⚠️ ${esc(r.warn)}</div>`:''}
+      ${r.approved?`<div style="font-size:10.5px;color:var(--text2)">נדרש אישור כתוב של ${esc(r.level)}</div>`:''}
+    </div>`;
+}
+function _txPayload(){
+  const {v,r}=(window._txLast||{v:_txRead(),r:null});
+  const rr=r||_txCalc(v);
+  return {client:v.client,name:v.name,level:v.level,months:v.months,promo:v.promo,free:v.free,addr:v.addr,
+    infra:v.infra,bom:v.bom,oneInc:v.oneInc,oneExp:v.oneExp,tmp3rd:v.tmp3rd,
+    hot:v.hot,net:v.net,cell:v.cell,
+    monthly:Math.round(rr.monthly),termIncome:Math.round(rr.termIncome),profit:Math.round(rr.profit),
+    pmi:Math.round(rr.pmi*100),hotPmi:Math.round(rr.hotPmi*100),netInvest:Math.round(rr.netInvest),
+    roiM:rr.roiM,approved:rr.approved,ts:Date.now()};
+}
+function _txLabel(v){
+  const n=(v.hot||[]).length+(v.net||[]).length+(v.cell||[]).length;
+  return (v.name||'').trim()||('תמסורת · '+n+' סוגי קווים');
+}
+function _txEnsureClient(name){
+  let c=findClientByName(name);
+  if(!c)c=dbInsert('clients',{name:name,contact:'',phone:'',email:'',address:'',status:'לקוח פעיל',genNotes:'',potential:[]});
+  return c;
+}
+function _txSaveCalc(){
+  const v=_txRead();
+  if(!v.client.trim()){ showToast('⚠️ יש להזין שם לקוח כדי לשמור','warn'); return; }
+  const c=_txEnsureClient(v.client.trim());
+  if(!Array.isArray(c.txCalcs))c.txCalcs=[];
+  c.txCalcs.push({id:'tx'+Date.now(),date:nd(),label:_txLabel(v),closed:false,..._txPayload()});
+  c._mts=Date.now(); dbUpdate('clients',c.id,c); saveAll(); rAll();
+  showToast('💾 חישוב התמסורת נשמר בכרטיס הלקוח','ok');
+}
+function _txSaveToPlan(){
+  const v=_txRead();
+  if(!v.client.trim()){ showToast('⚠️ יש להזין שם לקוח כדי לשמור לתוכנית','warn'); return; }
+  const c=_txEnsureClient(v.client.trim());
+  if(!Array.isArray(c.potential))c.potential=[];
+  const pay=_txPayload(), label=_txLabel(v);
+  const ctx=window._txCtx||{};
+  let idx=(ctx.clientId==c.id&&ctx.potIdx!=null)?ctx.potIdx:c.potential.findIndex(p=>p&&p.txCalc);
+  if(idx<0||!c.potential[idx]){
+    c.potential.push({product:label,productType:'תמסורת',status:'בתהליך',priority:'גבוהה',
+      estimatedValue:pay.termIncome,targetDate:'',contactBy:'',notes:'',txCalc:pay});
+    idx=c.potential.length-1;
+  }else{
+    const p=c.potential[idx];
+    p.product=label; p.productType='תמסורת'; p.estimatedValue=pay.termIncome; p.txCalc=pay;
+  }
+  window._txCtx={clientId:c.id,potIdx:idx};
+  c._mts=Date.now(); dbUpdate('clients',c.id,c); saveAll(); rAll();
+  showToast('📋 החישוב נשמר לתוכנית העבודה — אפשר לחזור אליו ולשנות','ok');
+}
+function _txExport(){
+  const {v,r}=(window._txLast||{v:_txRead(),r:null});
+  const rr=r||_txCalc(v);
+  const L=[];
+  L.push(['מחשבון תמסורת — הוט וצד ג׳']);
+  L.push(['לקוח',v.client||'–','עסקה',_txLabel(v)]);
+  L.push(['דרג אישור',v.level,'תקופת התחייבות',v.months+' חודשים']);
+  L.push([]);
+  L.push(['תשתית','רוחב פס','כמות','תוספת לקו','ISP','DDOS','טפסים']);
+  (v.hot||[]).forEach(x=>L.push(['תשתית הוט',x.bw,x.qty,x.extra,x.isp?'כן':'לא',x.ddos?'כן':'לא','–']));
+  (v.net||[]).forEach(x=>L.push(['צד ג׳ הוט נט',x.bw,x.qty,x.extra,x.isp?'כן':'לא',x.ddos?'כן':'לא',x.forms?'כן':'לא']));
+  (v.cell||[]).forEach(x=>L.push(['צד ג׳ סלקום',x.bw,x.qty,x.extra,x.isp?'כן':'לא',x.ddos?'כן':'לא','–']));
+  L.push([]);
+  L.push(['הכנסה חודשית',Math.round(rr.monthly)]);
+  L.push(['  תשתית הוט',Math.round(rr.hotRev)]);
+  L.push(['  צד ג׳ הוט נט',Math.round(rr.netRev)]);
+  L.push(['  צד ג׳ סלקום',Math.round(rr.cellRev)]);
+  L.push(['מבצע סוף שנה',Math.round(rr.promo)]);
+  L.push(['חודשי חינם',rr.free]);
+  L.push(['הכנסה לכל התקופה',Math.round(rr.termIncome)]);
+  L.push(['הכנסה שוטפת ממוצעת',Math.round(rr.incAvg)]);
+  L.push([]);
+  L.push(['הוצאה שוטפת ממוצעת',Math.round(rr.expAvg)]);
+  L.push(['  הפעלה שוטפת',Math.round(rr.opex)]);
+  L.push(['  תעבורת ISP',Math.round(rr.hotIspCost+rr.netIspCost)]);
+  L.push(['  שכירות צד ג׳',Math.round(rr.rent)]);
+  L.push(['רווחיות שוטפת',Math.round(rr.profit)]);
+  L.push([]);
+  L.push(['עלות תשתית',Math.round(v.infra)]);
+  L.push(['אופטיקה מתוקננת',Math.round(rr.optics)]);
+  L.push(['זיכוי פער אופטיקה',Math.round(-rr.opticGap)]);
+  L.push(['עלות BOM',Math.round(v.bom)]);
+  L.push(['התקנה',Math.round(rr.install)]);
+  L.push(['שקע חומר',Math.round(rr.socket)]);
+  L.push(['השקעה נטו לחישוב ROI',Math.round(rr.netInvest)]);
+  L.push([]);
+  L.push(['PMI כולל',Math.round(rr.pmi*100)+'%']);
+  L.push(['PMI תשתית הוט',Math.round(rr.hotPmi*100)+'%','מינימום',Math.round(rr.minPmi*100)+'%']);
+  L.push(['ROI בחודשים',rr.roiM||'לא מוחזר','מותר עד',Math.round(rr.minRoi*rr.months)]);
+  L.push(['תוצאה',rr.approved?'מאושר כלכלית':'לא מאושר כלכלית']);
+  rr.errs.forEach(e=>L.push(['  חריגה',e]));
+  dlCSV(L.map(row=>row.map(_csvCell).join(',')).join('\n'),'תמסורת_'+((v.client||'חישוב').replace(/[\\/:*?"<>|]/g,''))+'_'+nd()+'.csv');
+  showToast('📥 הקובץ ירד — נפתח באקסל','ok');
+}
+
 function rWorkPlan(){
   const priF=(document.getElementById('wp-pri-filter')||{}).value||'';
   const stF=(document.getElementById('wp-status-filter')||{}).value||'';
@@ -13734,7 +14160,7 @@ function rWorkPlan(){
       <td style="text-align:center;color:var(--text3)">${isThisM?'<span class="badge bb" style="font-size:8px;padding:1px 6px">🎯</span>':'↳'}<span style="display:none">${esc(p.clientName||'')}</span></td>
       <td style="white-space:nowrap;font-size:11px">${esc(p.productType||'–')}</td>
       <td style="font-weight:600">${esc(p.product||'–')}</td>
-      <td class="nb">${_cellSpan('potential',pid,'estimatedValue',p.estimatedValue?fmt(+p.estimatedValue):'–','num')}${p.roi&&p.roi.payback?`<div style="font-size:9px;font-weight:700;color:${p.roi.payback<=(p.roi.months||0)?'var(--teal)':'#e63946'};margin-top:2px;white-space:nowrap" title="החזר השקעה ${p.roi.payback} חודשים · ROI ${p.roi.roiPct}%">🧮 החזר ${p.roi.payback}ח'</div>`:''}${p.eqCalc?`<div style="font-size:9px;font-weight:700;color:#4cc9f0;margin-top:2px;white-space:nowrap" title="מחשבון ציוד שמור · עלות ${fmt(p.eqCalc.cost)} · רווח ${fmt(p.eqCalc.profit)} · PMI ${p.eqCalc.pmi}%">🖥️ ציוד · PMI ${p.eqCalc.pmi}%</div>`:''}</td>
+      <td class="nb">${_cellSpan('potential',pid,'estimatedValue',p.estimatedValue?fmt(+p.estimatedValue):'–','num')}${p.roi&&p.roi.payback?`<div style="font-size:9px;font-weight:700;color:${p.roi.payback<=(p.roi.months||0)?'var(--teal)':'#e63946'};margin-top:2px;white-space:nowrap" title="החזר השקעה ${p.roi.payback} חודשים · ROI ${p.roi.roiPct}%">🧮 החזר ${p.roi.payback}ח'</div>`:''}${p.eqCalc?`<div style="font-size:9px;font-weight:700;color:#4cc9f0;margin-top:2px;white-space:nowrap" title="מחשבון ציוד שמור · עלות ${fmt(p.eqCalc.cost)} · רווח ${fmt(p.eqCalc.profit)} · PMI ${p.eqCalc.pmi}%">🖥️ ציוד · PMI ${p.eqCalc.pmi}%</div>`:''}${p.txCalc?`<div style="font-size:9px;font-weight:700;color:#06d6a0;margin-top:2px;white-space:nowrap" title="מחשבון תמסורת שמור · חודשי ${fmt(p.txCalc.monthly)} · PMI ${p.txCalc.pmi}% · ROI ${p.txCalc.roiM||'—'} ח׳${p.txCalc.approved?'':' · לא מאושר'}">📡 תמסורת · PMI ${p.txCalc.pmi}%${p.txCalc.approved?'':' ⛔'}</div>`:''}</td>
       <td><select style="font-size:10px;padding:2px 4px;border-radius:6px;min-width:70px" onchange="updatePotentialPriority('${p.clientId}',${p.potIdx},this.value)">${priOpts(p.priority)}</select></td>
       <td style="font-size:10px;white-space:nowrap">${_cellSpan('potential',pid,'targetDate',fmtDate(p.targetDate),'date')}</td>
       <td>${dH}</td>
@@ -13745,6 +14171,7 @@ function rWorkPlan(){
         ${(()=>{const ph=(D.clients.find(x=>x.id==p.clientId)||{}).phone;return ph?`<button class="btn btns" onclick="callClient('${p.clientId}')" title="חייג ${esc(ph)}" style="border-color:#4cc9f0;color:#4cc9f0">📞</button><button class="btn btns" onclick="waClient('${p.clientId}')" title="וואטסאפ ${esc(ph)}" style="border-color:#25D366;color:#25D366">💬</button> `:'';})()}
         <button class="btn btns" onclick="openRoiCalc('${p.clientId}',${p.potIdx})" title="מחשבון החזר השקעה" style="border-color:#a78bfa;color:#a78bfa">🧮</button>
         <button class="btn btns" onclick="openEquipCalc('${p.clientId}',${p.potIdx})" title="${p.eqCalc?'פתח את מחשבון הציוד השמור':'מחשבון OTC ציוד'}" style="border-color:#4cc9f0;color:#4cc9f0">🖥️${p.eqCalc?'✓':''}</button>
+        <button class="btn btns" onclick="openTxCalc('${p.clientId}',${p.potIdx})" title="${p.txCalc?'פתח את מחשבון התמסורת השמור':'מחשבון תמסורת'}" style="border-color:#06d6a0;color:#06d6a0">📡${p.txCalc?'✓':''}</button>
         <button class="btn btns" onclick="openClientModal('${p.clientId}')" title="ערוך כרטיס לקוח">✏️</button>
         <button class="btn btns btnd" onclick="removePotential('${p.clientId}',${p.potIdx})" title="מחק">🗑</button>
       </td>
