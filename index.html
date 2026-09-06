@@ -5489,13 +5489,153 @@ function _recentFirst(list,table){
   const out=list.slice(); out.unshift(out.splice(i,1)[0]); return out;
 }
 // מסמן ויזואלית את השורה השמורה בטבלה שכבר עוברה רינדור
+// ═══ סינון בכותרות הטבלה (כמו באקסל) ═══
+// לחיצה על ▾ בכותרת פותחת את רשימת הערכים שקיימים בפועל באותה עמודה; הסינון פועל על
+// הטבלה המוצגת, מצטבר בין עמודות, נשמר בין רינדורים, ומעדכן את שורת הסיכום שמתחת לטבלה.
+const _HDR_TABLES={ltb:'עסקאות',stb:'עסקאות',ttb:'מכרזים',ldtb:'הפצות',sdtb:'הפצות',
+  svctb:'שכר',eqtb:'שכר',mtb:'פגישות',tsktb:'משימות',wptb:'תוכנית עבודה'};
+let _hdrF={};                       // {tbId:{colIndex:[ערכים נבחרים]}}
+let _hdrPanel=null;
+function _hdrCells(tbId){
+  const tb=document.getElementById(tbId); if(!tb)return null;
+  const table=tb.closest('table'); if(!table)return null;
+  const ths=[...(table.querySelector('thead')||{querySelectorAll:()=>[]}).querySelectorAll('th')];
+  return {tb,table,ths};
+}
+function _hdrIsDivider(tr){ return tr.classList.contains('mdiv')||(tr.children.length===1&&tr.children[0].hasAttribute('colspan')); }
+function _hdrRows(tb){ return [...tb.querySelectorAll(':scope>tr')].filter(tr=>!tr.hasAttribute('data-hdr-empty')); }
+function _hdrText(tr,ci){ const td=tr.children[ci]; return td?td.textContent.replace(/\s+/g,' ').trim():''; }
+// עמודות שאין טעם לסנן לפיהן — תיבת סימון, פעולות, כותרת ריקה
+function _hdrEligible(th,ci){
+  if(!th||th.classList.contains('cb-th'))return false;
+  const t=th.textContent.replace(/\s+/g,' ').trim();
+  return !!t && t!=='פעולות' && t!=='⚡';
+}
+function _hdrClose(){ if(_hdrPanel){_hdrPanel.remove();_hdrPanel=null;} }
+document.addEventListener('mousedown',e=>{ if(_hdrPanel&&!_hdrPanel.contains(e.target)&&!(e.target.closest&&e.target.closest('.hdr-f')))_hdrClose(); },true);
+window.addEventListener('resize',_hdrClose);
+// מוסיף כפתור סינון לכל כותרת מתאימה, ומסמן עמודות שכבר מסוננות
+function _hdrAttach(tbId){
+  const c=_hdrCells(tbId); if(!c)return;
+  const act=_hdrF[tbId]||{};
+  c.ths.forEach((th,ci)=>{
+    const old=th.querySelector('.hdr-f'); if(old)old.remove();
+    if(!_hdrEligible(th,ci))return;
+    const on=Array.isArray(act[ci])&&act[ci].length;
+    const b=document.createElement('span');
+    b.className='hdr-f'; b.textContent=on?'▼':'▾';
+    b.title=on?'מסונן — לחץ לשינוי':'סינון לפי עמודה זו';
+    b.style.cssText='cursor:pointer;margin-inline-start:4px;font-size:9px;opacity:'+(on?'1':'.5')
+      +';color:'+(on?'var(--teal)':'inherit')+';user-select:none';
+    b.onclick=ev=>{ ev.stopPropagation(); ev.preventDefault(); _hdrOpen(tbId,ci,b); };
+    th.appendChild(b);
+  });
+}
+function _hdrOpen(tbId,ci,anchor){
+  const c=_hdrCells(tbId); if(!c)return;
+  if(_hdrPanel&&_hdrPanel._k===tbId+':'+ci){ _hdrClose(); return; }
+  _hdrClose();
+  const rows=_hdrRows(c.tb).filter(tr=>!_hdrIsDivider(tr));
+  const vals=[...new Set(rows.map(tr=>_hdrText(tr,ci)||'(ריק)'))].sort((a,b)=>a.localeCompare(b,'he'));
+  const sel=new Set(_hdrF[tbId]&&_hdrF[tbId][ci]?_hdrF[tbId][ci]:vals);
+  const p=document.createElement('div'); _hdrPanel=p; p._k=tbId+':'+ci;
+  p.style.cssText='position:fixed;z-index:2000000;background:#0a0d18;border:1px solid rgba(200,169,110,.34);'
+    +'border-radius:10px;box-shadow:0 16px 48px rgba(0,0,0,.78);padding:8px;min-width:210px;max-width:300px;direction:rtl';
+  p.innerHTML=`<input class="hf-q" placeholder="חיפוש ערך…" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:7px;padding:5px 8px;color:var(--text);font-family:inherit;font-size:11.5px;outline:none;direction:rtl;text-align:right;margin-bottom:6px">
+    <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);padding:3px 2px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:4px"><input type="checkbox" class="hf-all" style="width:auto;margin:0">בחר הכל</label>
+    <div class="hf-list" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:2px"></div>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <button class="btn btnp hf-ok" style="font-size:10.5px;flex:1">החל</button>
+      <button class="btn btns hf-clr" style="font-size:10.5px">נקה</button>
+    </div>`;
+  const list=p.querySelector('.hf-list');
+  const draw=q=>{ list.innerHTML='';
+    vals.filter(v=>!q||v.toLowerCase().includes(q)).forEach(v=>{
+      const l=document.createElement('label');
+      l.style.cssText='display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text);padding:2px;cursor:pointer';
+      const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=sel.has(v); cb.value=v;
+      cb.style.cssText='width:auto;margin:0';
+      cb.onchange=()=>{ cb.checked?sel.add(v):sel.delete(v); p.querySelector('.hf-all').checked=(sel.size===vals.length); };
+      l.appendChild(cb); l.appendChild(document.createTextNode(v)); list.appendChild(l);
+    });
+  };
+  draw('');
+  p.querySelector('.hf-all').checked=(sel.size===vals.length);
+  p.querySelector('.hf-all').onchange=e=>{ sel.clear(); if(e.target.checked)vals.forEach(v=>sel.add(v));
+    draw(p.querySelector('.hf-q').value.trim().toLowerCase()); };
+  p.querySelector('.hf-q').oninput=e=>draw(e.target.value.trim().toLowerCase());
+  p.querySelector('.hf-ok').onclick=()=>{
+    _hdrF[tbId]=_hdrF[tbId]||{};
+    if(sel.size===vals.length)delete _hdrF[tbId][ci]; else _hdrF[tbId][ci]=[...sel];
+    _hdrClose(); _hdrApply(tbId); _hdrAttach(tbId);
+  };
+  p.querySelector('.hf-clr').onclick=()=>{
+    if(_hdrF[tbId])delete _hdrF[tbId][ci];
+    _hdrClose(); _hdrApply(tbId); _hdrAttach(tbId);
+  };
+  document.body.appendChild(p);
+  const r=anchor.getBoundingClientRect(), pr=p.getBoundingClientRect();
+  let top=r.bottom+4, left=r.left-pr.width+r.width;
+  if(top+pr.height>innerHeight-6)top=Math.max(6,r.top-pr.height-4);
+  if(left<6)left=6; if(left+pr.width>innerWidth-6)left=Math.max(6,innerWidth-pr.width-6);
+  p.style.top=top+'px'; p.style.left=left+'px';
+}
+// החלת הסינון על הטבלה המוצגת — מצטבר בין עמודות, כולל הסתרת מפרידים שהתרוקנו
+function _hdrApply(tbId){
+  const c=_hdrCells(tbId); if(!c)return;
+  const f=_hdrF[tbId]||{}, cols=Object.keys(f).filter(k=>Array.isArray(f[k])&&f[k].length);
+  const rows=_hdrRows(c.tb);
+  let shown=0, hidden=0;
+  rows.forEach(tr=>{ if(_hdrIsDivider(tr))return;
+    const hit=cols.every(ci=>f[ci].includes(_hdrText(tr,+ci)||'(ריק)'));
+    tr.style.display=hit?'':'none';
+    hit?shown++:hidden++;
+  });
+  for(let i=0;i<rows.length;i++){ if(!_hdrIsDivider(rows[i]))continue;
+    let vis=false;
+    for(let j=i+1;j<rows.length&&!_hdrIsDivider(rows[j]);j++){ if(rows[j].style.display!=='none'){vis=true;break;} }
+    rows[i].style.display=vis?'':'none';
+  }
+  const old=c.tb.querySelector('tr[data-hdr-empty]'); if(old)old.remove();
+  if(cols.length&&!shown){
+    const tr=document.createElement('tr'); tr.setAttribute('data-hdr-empty','1');
+    const td=document.createElement('td');
+    td.colSpan=Math.max(1,c.ths.length);
+    td.style.cssText='padding:18px;text-align:center;color:var(--text3);font-size:12px';
+    td.textContent='אין שורות התואמות לסינון העמודות — ';
+    const a=document.createElement('span');
+    a.textContent='נקה סינון';
+    a.style.cssText='color:var(--teal);cursor:pointer;text-decoration:underline';
+    a.onclick=()=>_hdrClear(tbId);
+    td.appendChild(a); tr.appendChild(td);
+    c.tb.appendChild(tr);
+  }
+  _hdrBanner(tbId,cols.length,hidden);
+}
+// שורת חיווי מעל הטבלה: כמה עמודות מסוננות וכמה שורות הוסתרו
+function _hdrBanner(tbId,nCols,hidden){
+  const c=_hdrCells(tbId); if(!c)return;
+  const id='hdrf-note-'+tbId;
+  let el=document.getElementById(id);
+  if(!nCols){ if(el)el.remove(); return; }
+  if(!el){ el=document.createElement('div'); el.id=id;
+    el.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(6,214,160,.09);border:1px solid rgba(6,214,160,.35);border-radius:9px;padding:6px 11px;margin:0 0 7px;font-size:11px;color:var(--text2);direction:rtl';
+    const host=c.table.closest('.tscroll')||c.table;
+    host.parentNode.insertBefore(el,host);
+  }
+  el.innerHTML=`🔎 <b style="color:var(--teal)">סינון עמודות פעיל</b> · ${nCols} עמודות · ${hidden} שורות מוסתרות
+    <button class="btn btns" onclick="_hdrClear('${tbId}')" style="font-size:10px;margin-inline-start:auto">✖ נקה סינון</button>`;
+}
+function _hdrClear(tbId){ delete _hdrF[tbId]; _hdrApply(tbId); _hdrAttach(tbId); }
+function _hdrRefreshAll(){ try{ Object.keys(_HDR_TABLES).forEach(id=>{ if(document.getElementById(id)){ _hdrAttach(id); _hdrApply(id); } }); }catch(e){} }
+
 const _RECENT_TABLES={ltb:'deals',stb:'deals',ttb:'tenders',ldtb:'dists',sdtb:'dists',
   svctb:'salary',eqtb:'salary',mtb:'meetings',tsktb:'tasks'};
 function _hiliteAll(){ try{ Object.keys(_RECENT_TABLES).forEach(id=>_hiliteRecent(id,_RECENT_TABLES[id])); }catch(e){} }
 (function _wrapRenderersForRecent(){
-  const wrap=()=>['rDeals','rTenders','rDists','rSalary','rMeetings','rTasks'].forEach(n=>{
+  const wrap=()=>['rDeals','rTenders','rDists','rSalary','rMeetings','rTasks','rWorkPlan'].forEach(n=>{
     const f=window[n]; if(typeof f!=='function'||f._recentWrapped)return;
-    const g=function(){ const out=f.apply(this,arguments); try{_hiliteAll();}catch(e){} return out; };
+    const g=function(){ const out=f.apply(this,arguments); try{_hiliteAll();}catch(e){} try{_hdrRefreshAll();}catch(e){} return out; };
     g._recentWrapped=true; window[n]=g;
   });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wrap); else wrap();
@@ -5678,7 +5818,7 @@ function nav(s){
   const el=document.getElementById('nv-'+s);if(el)el.classList.add('active');
   const fns={dashboard:rDash,alerts:rAlerts,deals:rDeals,tenders:rTenders,dists:rDists,salary:rSalary,meetings:rMeetings,tasks:rTasks,inbox:rInbox,workplan:rWorkPlan,export:updateExportCounts,clients:rClients};
   if(fns[s])fns[s]();
-  _hiliteAll();
+  _hiliteAll(); _hdrRefreshAll();
   setTimeout(initDragScrolls,100);
 }
 function swTab(el,tabsId,t1,t2,t3,t4){
