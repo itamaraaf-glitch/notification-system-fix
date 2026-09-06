@@ -450,6 +450,9 @@ input[type=text],input[type=date],input[type=number],select,textarea{
 }
 input:focus,select:focus,textarea:focus{border-color:rgba(200,169,110,.55);box-shadow:0 0 0 3px rgba(200,169,110,.1),inset 0 1px 0 rgba(255,255,255,.06)}
 .srch{min-width:130px;max-width:200px}
+/* השורה שנשמרה לאחרונה — עולה לראש הטבלה ומסומנת עד שנשמרת אחרת */
+tr.row-recent>td{background:rgba(6,214,160,.075)}
+tr.row-recent>td:last-child{box-shadow:inset -3px 0 0 var(--teal)}
 /* סינון בכותרת המסך: הרוחב הגלובלי 100% של select/תיבת הבחירה דחף כל תיבה לשורה נפרדת ופירק את שורת הכלים */
 .shdr select,.shdr .cs-trigger{width:auto;max-width:200px}
 /* dropdown options: black text on white — fallback for any native popup */
@@ -5461,8 +5464,54 @@ function nextDealNum(){
 function _hasCloudCfg(){ try{ const c=localStorage.getItem(FB_CFG_KEY); if(!c)return false; const o=JSON.parse(c); return !!(o&&o.databaseURL); }catch(e){ return false; } }
 function emptyData(){return{deals:[],tenders:[],dists:[],salary:[],meetings:[],clients:[],tasks:[],inbox:[],archivedDeals:[],archivedTenders:[],archivedDists:[],archivedSalary:[],archivedMeetings:[],lastCycleMonth:'',goals:{deals:15000,dists:14000,sal:15000,salEq:30000,dealsEq:30000,distsEq:30000},contractTerms:{},_deletedIds:{}};}
 // noSave=true משמש בפעולות בכמות (ייבוא) — הכנסה בלי saveAll לכל שורה; הקורא שומר פעם אחת בסוף.
-function dbInsert(table,row,noSave){row.id=genId();row._mts=Date.now();D[table].push(row);if(!noSave)saveAll();return row;}
-function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0)D[table][i]={...D[table][i],...row,_mts:Date.now()};saveAll();}
+// ═══ "מה ששמרת עכשיו — ראשון ברשימה" ═══
+// אחרי כל שמירה (כולל שמירת טיוטה) השורה עולה לראש הטבלה שלה ומסומנת, כדי שלא צריך
+// לחפש אותה בין עשרות שורות. הסימון נשמר לזמן קצוב ואינו חלק מהנתונים ואינו מסונכרן.
+const _RECENT_KEY='cem_recent_row', _RECENT_TTL=45*60*1000;
+let _recentRows={};
+try{ const j=JSON.parse(localStorage.getItem(_RECENT_KEY)||'{}');
+     if(j&&typeof j==='object'&&!Array.isArray(j))_recentRows=j; }catch(e){}
+function _pinRecent(table,id){
+  if(!table||id==null)return;
+  _recentRows[table]={id:String(id),ts:Date.now()};
+  try{ localStorage.setItem(_RECENT_KEY,JSON.stringify(_recentRows)); }catch(e){}
+}
+function _recentId(table){
+  const e=_recentRows[table]; if(!e||e.id==null)return null;
+  if(Date.now()-e.ts>_RECENT_TTL)return null;
+  return String(e.id);
+}
+// מעביר את השורה שנשמרה זה עתה לראש הרשימה — בלי לשנות את סדר שאר השורות
+function _recentFirst(list,table){
+  const id=_recentId(table); if(!id||!Array.isArray(list))return list;
+  const i=list.findIndex(x=>x&&String(x.id)===id);
+  if(i<=0)return list;
+  const out=list.slice(); out.unshift(out.splice(i,1)[0]); return out;
+}
+// מסמן ויזואלית את השורה השמורה בטבלה שכבר עוברה רינדור
+const _RECENT_TABLES={ltb:'deals',stb:'deals',ttb:'tenders',ldtb:'dists',sdtb:'dists',
+  svctb:'salary',eqtb:'salary',mtb:'meetings',tsktb:'tasks'};
+function _hiliteAll(){ try{ Object.keys(_RECENT_TABLES).forEach(id=>_hiliteRecent(id,_RECENT_TABLES[id])); }catch(e){} }
+(function _wrapRenderersForRecent(){
+  const wrap=()=>['rDeals','rTenders','rDists','rSalary','rMeetings','rTasks'].forEach(n=>{
+    const f=window[n]; if(typeof f!=='function'||f._recentWrapped)return;
+    const g=function(){ const out=f.apply(this,arguments); try{_hiliteAll();}catch(e){} return out; };
+    g._recentWrapped=true; window[n]=g;
+  });
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wrap); else wrap();
+})();
+function _hiliteRecent(tbId,table){
+  const id=_recentId(table); if(!id)return;
+  const tb=document.getElementById(tbId); if(!tb)return;
+  const q="'"+id+"'", q2='"'+id+'"';
+  for(const tr of tb.querySelectorAll('tr')){
+    if(tr.classList.contains('mdiv'))continue;
+    const h=tr.innerHTML;
+    if(h.indexOf(q)>=0||h.indexOf(q2)>=0){ tr.classList.add('row-recent'); break; }
+  }
+}
+function dbInsert(table,row,noSave){row.id=genId();row._mts=Date.now();D[table].push(row);_pinRecent(table,row.id);if(!noSave)saveAll();return row;}
+function dbUpdate(table,id,row){const i=D[table].findIndex(x=>x.id==id);if(i>=0){D[table][i]={...D[table][i],...row,_mts:Date.now()};_pinRecent(table,id);}saveAll();}
 // ===== GLOBAL UNDO (for accidental deletes in any section) =====
 let _undoStack=[];
 function pushUndo(label){
@@ -5629,6 +5678,7 @@ function nav(s){
   const el=document.getElementById('nv-'+s);if(el)el.classList.add('active');
   const fns={dashboard:rDash,alerts:rAlerts,deals:rDeals,tenders:rTenders,dists:rDists,salary:rSalary,meetings:rMeetings,tasks:rTasks,inbox:rInbox,workplan:rWorkPlan,export:updateExportCounts,clients:rClients};
   if(fns[s])fns[s]();
+  _hiliteAll();
   setTimeout(initDragScrolls,100);
 }
 function swTab(el,tabsId,t1,t2,t3,t4){
@@ -6778,10 +6828,10 @@ function rDeals(){
     const tbId=ty==='long'?'ltb':'stb',ftId=ty==='long'?'lft':'sft';
     const items=_applyPri(D.deals.filter(d=>d.ty===ty),'deals','deal');
     const sk=ty==='long'?'deals-long':'deals-short';
-    const carries=items.filter(d=>(d.date||'').substring(0,7)<curM&&d.st!=='נסגר');
-    const newThis=items.filter(d=>(d.date||'').substring(0,7)>=curM&&d.st!=='נסגר');
-    const closedThis=items.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=curM);
-    const pendingArch=items.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<curM);
+    const carries=_recentFirst(items.filter(d=>(d.date||'').substring(0,7)<curM&&d.st!=='נסגר'),'deals');
+    const newThis=_recentFirst(items.filter(d=>(d.date||'').substring(0,7)>=curM&&d.st!=='נסגר'),'deals');
+    const closedThis=_recentFirst(items.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)>=curM),'deals');
+    const pendingArch=_recentFirst(items.filter(d=>d.st==='נסגר'&&(d.date||'').substring(0,7)<curM),'deals');
     const mkRow=d=>{
       const p=pri(d,'deal');
       const ib=d.inf&&d.inf.includes('הוט')?`<span class="badge bb">HOT</span>`:d.inf==='365'?`<span class="badge bgr">365</span>`:`<span class="badge bgr">${esc(d.inf||'–')}</span>`;
@@ -7931,7 +7981,7 @@ function addSelectedFromRadar(){
 function rTenders(){
   updatePriChipCounts('sec-tenders',D.tenders,'ten');
   const t=nd();
-  const _tn=_applyPri(D.tenders,'tenders','ten'); // רשימה מסוננת לפי הדחיפות הפעילה
+  const _tn=_recentFirst(_applyPri(D.tenders,'tenders','ten'),'tenders'); // רשימה מסוננת לפי הדחיפות הפעילה
   document.getElementById('ttb').innerHTML=_tn.map(tn=>{
     const p=pri(tn,'ten');
     const sb2=tn.submitted==='כן'?'<span class="badge bg">הוגשה ✓</span>':tn.submitted==='בתהליך'?'<span class="badge by">בתהליך</span>':'<span class="badge br">לא</span>';
@@ -8150,7 +8200,7 @@ function rDists(){
   }
   ['long','short'].forEach(ty=>{
     const tbId=ty==='long'?'ldtb':'sdtb',ftId=ty==='long'?'ldft':'sdft';
-    const items=_applyPri(D.dists.filter(d=>d.ty===ty),'dists','dist').filter(d=>_matchDistStatus(d,window._distStatusFilter));const t=nd();
+    const items=_recentFirst(_applyPri(D.dists.filter(d=>d.ty===ty),'dists','dist').filter(d=>_matchDistStatus(d,window._distStatusFilter)),'dists');const t=nd();
     const sk=ty==='long'?'dists-long':'dists-short';
     const mkRow=d=>{
       const p=pri(d,'dist');
@@ -8262,8 +8312,8 @@ function rSalary(){
   ['service','equipment'].forEach(ty=>{
     const tbId=ty==='service'?'svctb':'eqtb',ftId=ty==='service'?'svcft':'eqft';
     // פרויקטים שנדחו לחודש עתידי שוקעים לתחתית הרשימה — כך העבודה הרלוונטית לחודש בולטת למעלה
-    const items=_applyPri(D.salary.filter(s=>s.ty===ty),'salary','sal')
-      .slice().sort((a,b)=>(_salDeferred(a)?1:0)-(_salDeferred(b)?1:0));
+    const items=_recentFirst(_applyPri(D.salary.filter(s=>s.ty===ty),'salary','sal')
+      .slice().sort((a,b)=>(_salDeferred(a)?1:0)-(_salDeferred(b)?1:0)),'salary');
     const sk=ty==='service'?'salary-service':'salary-equip';
     document.getElementById(tbId).innerHTML=items.map(s=>{
       const pct=s.tr?Math.round(((s.cl2||0)/s.tr)*100):0,pc=pct>=100?'var(--teal)':pct>=50?'#f4a261':'#e63946',p=pri(s,'sal');
@@ -8513,10 +8563,10 @@ function rMeetings(){
   const held=heldThisMonth(),pct=Math.round((held/MEETING_GOAL)*100),exp=Math.round((MEETING_GOAL/wd)*wdp);
   document.getElementById('mkrow').innerHTML=`<div class="kc g"><div class="lb">התקיימו</div><div class="vl">${held}</div><div class="sb">מתוך ${MEETING_GOAL}</div></div><div class="kc"><div class="lb">% יעד</div><div class="vl">${pct}%</div></div><div class="kc y"><div class="lb">צפי עד היום</div><div class="vl">${exp}</div><div class="sb">${held>=exp?'✅ בקצב':'⚠ פיגור'}</div></div><div class="kc ${held>=MEETING_GOAL?'g':'r'}"><div class="lb">נדרש</div><div class="vl">${Math.max(0,MEETING_GOAL-held)}</div></div>`;
   const todayStr=nd();
-  const sorted=[...D.meetings].sort((a,b)=>{
+  const sorted=_recentFirst([...D.meetings].sort((a,b)=>{
     const da=(a.dt||'')+(a.time||''), db2=(b.dt||'')+(b.time||'');
     return da<db2?-1:da>db2?1:0;
-  });
+  }),'meetings');
   document.getElementById('mtb').innerHTML=sorted.map((m,i)=>{
     const isPast=m.dt<todayStr&&m.dt;
     const isToday=m.dt===todayStr;
@@ -8629,6 +8679,7 @@ function rTasks(){
   });
   const prBadge=p=>p==='גבוהה'?'<span class="badge br">🔴 גבוהה</span>':p==='נמוכה'?'<span class="badge bg">🟢 נמוכה</span>':'<span class="badge by">🟠 בינונית</span>';
   const tb=document.getElementById('tsktb');
+  rows=_recentFirst(rows,'tasks');
   if(tb)tb.innerHTML=rows.map((t,i)=>{
     const isToday=t.dt===todayStr, isOverdue=t.dt&&t.dt<todayStr&&t.st!=='הושלם', done=t.st==='הושלם';
     const rowStyle=done?'opacity:.55;':isToday?'background:rgba(240,114,182,.06);':isOverdue?'background:rgba(230,57,70,.05);':'';
@@ -13133,6 +13184,7 @@ function _eqSaveToPlan(){
       priority:'בינונית',status:'בתהליך',targetDate:'',notes:'טיוטת מחשבון ציוד',eqCalc:payload});
     window._eqCtx={clientId:cl.id,potIdx:cl.potential.length-1};
   }
+  _pinRecent('potential',cl.id+'|'+window._eqCtx.potIdx);
   cl._mts=Date.now(); dbUpdate('clients',cl.id,cl); saveAll();
   if(currentSec==='workplan')rWorkPlan();
   showToast('📋 נשמר לתוכנית העבודה — אפשר לחזור ולערוך בכל עת','ok');
@@ -13635,6 +13687,7 @@ function _roiSaveToPlan(){
       priority:'בינונית',status:'בתהליך',targetDate:'',notes:'טיוטת מחשבון החזר השקעה',roi:payload});
     window._roiCtx={clientId:cl.id,potIdx:cl.potential.length-1};
   }
+  _pinRecent('potential',cl.id+'|'+window._roiCtx.potIdx);
   cl._mts=Date.now(); dbUpdate('clients',cl.id,cl); saveAll();
   if(currentSec==='workplan')rWorkPlan();
   showToast('📋 נשמר לתוכנית העבודה — אפשר לחזור ולערוך בכל עת','ok');
@@ -14183,6 +14236,7 @@ function _txSaveToPlan(){
     p.product=label; p.productType='תמסורת'; p.estimatedValue=pay.termIncome; p.txCalc=pay;
   }
   window._txCtx={clientId:c.id,potIdx:idx};
+  _pinRecent('potential',c.id+'|'+idx);
   c._mts=Date.now(); dbUpdate('clients',c.id,c); saveAll(); rAll();
   showToast('📋 החישוב נשמר לתוכנית העבודה — אפשר לחזור אליו ולשנות','ok');
 }
@@ -14339,13 +14393,22 @@ function rWorkPlan(){
     return g;
   });
   groupArr.sort((a,b)=>{ if(a.bestPri!==b.bestPri)return a.bestPri-b.bestPri; return (a.name||'').localeCompare(b.name||''); });
+  // מוצר שנשמר זה עתה (כולל טיוטת מחשבון) עולה לראש הרשימה — יחד עם הלקוח שלו
+  const _pinPot=_recentId('potential');
+  if(_pinPot){
+    const has=g=>g.items.some(it=>it.clientId+'|'+it.potIdx===_pinPot);
+    const gi=groupArr.findIndex(has);
+    if(gi>0)groupArr.unshift(groupArr.splice(gi,1)[0]);
+    if(gi>=0){ const g=groupArr[0], ii=g.items.findIndex(it=>it.clientId+'|'+it.potIdx===_pinPot);
+      if(ii>0)g.items.unshift(g.items.splice(ii,1)[0]); }
+  }
   const rowHtml=p=>{
     const pid=p.clientId+'|'+p.potIdx;   // מזהה לעריכה-בשורה: המוצר יושב בתוך כרטיס הלקוח
     let dH='–';
     if(p.targetDate&&p.status!=='נסגר'){const d=db(nd(),p.targetDate);dH=d<0?`<b style="color:#e63946">עבר ${Math.abs(d)}י</b>`:`<b style="color:${d<=7?'#f4a261':'var(--teal)'}">${d}י</b>`;}
     const rc=p.priority==='גבוהה'?'pr':p.priority==='בינונית'?'po':'pg';
     const isThisM=p.targetDate&&p.targetDate.substring(0,7)===curM&&p.status!=='נסגר';
-    return`<tr class="${rc}"${isThisM?' style="background:rgba(76,201,240,.05)"':''}>
+    return`<tr class="${rc}${pid===_pinPot?' row-recent':''}"${isThisM?' style="background:rgba(76,201,240,.05)"':''}>
       <td style="text-align:center;color:var(--text3)">${isThisM?'<span class="badge bb" style="font-size:8px;padding:1px 6px">🎯</span>':'↳'}<span style="display:none">${esc(p.clientName||'')}</span></td>
       <td style="white-space:nowrap;font-size:11px">${esc(p.productType||'–')}</td>
       <td style="font-weight:600">${esc(p.product||'–')}</td>
@@ -15264,7 +15327,7 @@ function _potRef(id){
 function _commitCell(table,id,field,nv){
   if(table==='potential'){
     const ref=_potRef(id); if(!ref)return;
-    ref.p[field]=nv; ref.c._mts=Date.now(); saveAll();
+    ref.p[field]=nv; ref.c._mts=Date.now(); _pinRecent('potential',id); saveAll();
     showToast('✓ עודכן — כל המסכים סונכרנו','ok');
     rAllBatched(); return;
   }
