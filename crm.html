@@ -17486,7 +17486,7 @@ function refreshEdges(){} // no-op, kept so nav() calls don't throw
     const r = anchor.getBoundingClientRect();
     panel = document.createElement('div');
     panel.style.cssText =
-      'position:fixed;z-index:99999;max-height:300px;overflow-y:auto;'+
+      'position:fixed;z-index:2000000;max-height:300px;overflow-y:auto;'+
       'background:#0a0d18;border:1px solid rgba(200,169,110,.34);border-radius:9px;'+
       'box-shadow:0 16px 48px rgba(0,0,0,.78);padding:5px;'+
       'min-width:'+Math.max(r.width,130)+'px;direction:rtl';
