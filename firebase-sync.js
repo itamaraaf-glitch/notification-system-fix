@@ -2,6 +2,7 @@
 /**Firebase Sync - Bridge between Firebase and AI Agent*/
 
 const sqlite3 = require('sqlite3');
+const { ensureSchema } = require('./db-schema');
 const EventEmitter = require('events');
 
 // Firebase SDK (client-side compatible in Node)
@@ -22,11 +23,11 @@ class FirebaseSync extends EventEmitter {
   initDatabase(dbPath = 'notifications.db') {
     return new Promise((resolve, reject) => {
       this.db = new sqlite3.Database(dbPath, (err) => {
-        if (err) reject(err);
-        else {
-          this.createTablesIfNeeded();
-          resolve();
-        }
+        if (err) { reject(err); return; }
+        // המבנה המשותף נוצר תמיד, כדי שהמערכת תעבוד גם בלי צד הפייתון
+        ensureSchema(this.db)
+          .then(() => { this.createTablesIfNeeded(); resolve(); })
+          .catch(reject);
       });
     });
   }
@@ -303,10 +304,22 @@ class FirebaseSync extends EventEmitter {
 
 // CLI Usage
 if (require.main === module) {
-  // Example Firebase config - user should provide their own
-  const firebaseConfig = {
-    databaseURL: process.env.FIREBASE_DATABASE_URL || 'https://your-project-default-rtdb.firebaseio.com'
-  };
+  // כתובת מסד הנתונים מגיעה מהסביבה בלבד. קודם היה כאן ברירת-מחדל מדומה
+  // (your-project-...), והסנכרון "הצליח" לכאורה ואז נכשל ב-403 כל 30 שניות.
+  // עדיף להגיד את האמת פעם אחת ולצאת בשקט.
+  const dbUrl = process.env.FIREBASE_DATABASE_URL || process.env.FIREBASE_DB_URL || '';
+  if (!dbUrl || /your-project/i.test(dbUrl)) {
+    console.log('ℹ️  סנכרון Firebase מדולג — לא הוגדרה כתובת מסד נתונים.');
+    console.log('');
+    console.log('   להפעלה, הרץ עם הכתובת שלך:');
+    console.log('     FIREBASE_DATABASE_URL="https://<הפרויקט-שלך>-default-rtdb.firebaseio.com" npm run firebase:sync');
+    console.log('');
+    console.log('   את הכתובת מוצאים ב-Firebase Console → Realtime Database → כתובת המסד.');
+    console.log('   כל שאר המערכת (דשבורד, סוכן, ייצוא) עובדת גם בלי זה, על הנתונים המקומיים.');
+    process.exit(0);
+  }
+
+  const firebaseConfig = { databaseURL: dbUrl.replace(/\/+$/, '') };
 
   const sync = new FirebaseSync(firebaseConfig);
 

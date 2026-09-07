@@ -2,6 +2,7 @@
 
 const ExcelJS = require('exceljs');
 const sqlite3 = require('sqlite3');
+const { ensureSchema } = require('./db-schema');
 const path = require('path');
 
 class ExcelExportService {
@@ -12,8 +13,8 @@ class ExcelExportService {
   getDb() {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(this.dbPath, (err) => {
-        if (err) reject(err);
-        else resolve(db);
+        if (err) { reject(err); return; }
+        ensureSchema(db).then(() => resolve(db)).catch(reject);
       });
     });
   }

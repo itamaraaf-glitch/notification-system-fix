@@ -2,6 +2,7 @@
 /**AI autonomous agent - analyzes, learns, and improves over time*/
 
 const sqlite3 = require('sqlite3');
+const { ensureSchema } = require('./db-schema');
 const path = require('path');
 const { AdvancedAIAnalyzer } = require('./ai_advanced_analyzer_wrapper');
 const EventEmitter = require('events');
@@ -252,12 +253,13 @@ class NotificationAIAgent extends EventEmitter {
     };
   }
 
-  // Database helper
+  // Database helper. The schema is ensured on every open so a JavaScript-only
+  // run never hits a missing learning table (see db-schema.js).
   getDb() {
     return new Promise((resolve, reject) => {
       const db = new sqlite3.Database(this.dbPath, (err) => {
-        if (err) reject(err);
-        else resolve(db);
+        if (err) { reject(err); return; }
+        ensureSchema(db).then(() => resolve(db)).catch(reject);
       });
     });
   }

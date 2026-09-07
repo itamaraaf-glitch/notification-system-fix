@@ -2,6 +2,7 @@
 /**Test data generator for notifications database*/
 
 const sqlite3 = require('sqlite3');
+const { ensureSchema } = require('./db-schema');
 const path = require('path');
 
 const dbPath = path.join(__dirname, 'notifications.db');
@@ -13,53 +14,16 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 
   console.log('✅ Connected to notifications.db');
-  initializeTables();
+  // כל הטבלאות — כולל טבלאות הלמידה — נוצרות מראש, כך שהסוכן לא ייפול על טבלה חסרה
+  ensureSchema(db).then(initializeTables).catch(e => {
+    console.error('❌ Schema error:', e.message);
+    process.exit(1);
+  });
 });
 
+// המבנה מגיע מ-db-schema.js (מקור אחד לכל הרכיבים) — כאן רק ממשיכים להזנת הנתונים
 function initializeTables() {
-  // Create tables if they don't exist
-  const queries = [
-    `CREATE TABLE IF NOT EXISTS notifications (
-      id TEXT PRIMARY KEY,
-      entity_type TEXT,
-      entity_id TEXT,
-      severity TEXT,
-      title TEXT,
-      message TEXT,
-      is_read INTEGER DEFAULT 0,
-      is_spam INTEGER DEFAULT 0,
-      analysis_score REAL,
-      category TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      firebase_id TEXT UNIQUE,
-      synced_at DATETIME
-    )`,
-
-    `CREATE TABLE IF NOT EXISTS firebase_sync (
-      id INTEGER PRIMARY KEY,
-      firebase_id TEXT UNIQUE,
-      local_id TEXT,
-      status TEXT,
-      last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`,
-
-    `CREATE INDEX IF NOT EXISTS idx_firebase_id ON notifications(firebase_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_entity ON notifications(entity_type, entity_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_severity ON notifications(severity)`
-  ];
-
-  let completed = 0;
-  queries.forEach(query => {
-    db.run(query, (err) => {
-      if (err && !err.message.includes('already exists')) {
-        console.error('❌ Database error:', err);
-      }
-      completed++;
-      if (completed === queries.length) {
-        insertTestData();
-      }
-    });
-  });
+  insertTestData();
 }
 
 function insertTestData() {

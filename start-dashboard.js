@@ -240,6 +240,16 @@ API Endpoints:
 
 Press Ctrl+C to stop server
 `);
+  // הדשבורד מציג את הסוכן שהוא עצמו מריץ. בלי הפעלה אוטומטית הדף נראה ריק גם
+  // כשסוכן אחר רץ בטרמינל אחר — שני תהליכים נפרדים. AUTO_START=0 מבטל.
+  if (process.env.AUTO_START !== '0') {
+    try {
+      agent.startProactive();
+      console.log('🟢 הסוכן הופעל אוטומטית — הדשבורד יציג נתונים חיים');
+    } catch (e) {
+      console.error('⚠️ הפעלת הסוכן נכשלה:', e.message);
+    }
+  }
 });
 
 // Graceful shutdown

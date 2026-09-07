@@ -13,7 +13,10 @@
     "ai-agent:proactive": "node ai-proactive-agent.js",
     "ai-agent:proactive:daemon": "nohup node ai-proactive-agent.js > ai-agent-proactive.log 2>&1 &",
     "firebase:sync": "node firebase-sync.js",
-    "firebase:sync:daemon": "nohup node firebase-sync.js > firebase-sync.log 2>&1 &"
+    "firebase:sync:daemon": "nohup node firebase-sync.js > firebase-sync.log 2>&1 &",
+    "test:py": "python3 -m unittest discover -p \"test_*.py\" -v",
+    "test:all": "npm test && npm run test:py",
+    "demo": "node test-data-generator.js && node start-dashboard.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.70.0",
