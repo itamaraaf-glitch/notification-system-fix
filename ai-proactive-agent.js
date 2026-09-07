@@ -18,6 +18,33 @@ class ProactiveAIAgent extends NotificationAIAgent {
 
     this.decisions = [];
     this.actions = [];
+    this.logs = [];
+    this.maxLogs = 100;
+    this.lastSituation = null;
+    this.startTime = Date.now();
+  }
+
+  // Add log entry
+  addLog(level, message) {
+    const timestamp = new Date().toISOString();
+    this.logs.push({ timestamp, level, message });
+    if (this.logs.length > this.maxLogs) {
+      this.logs.shift();
+    }
+    console.log(`[${level}] ${message}`);
+  }
+
+  // Get current status
+  getStatus() {
+    return {
+      isRunning: this.isRunning,
+      uptime: Date.now() - this.startTime,
+      situation: this.lastSituation,
+      recentDecisions: this.decisions.slice(-10),
+      recentActions: this.actions.slice(-10),
+      logs: this.logs.slice(-20),
+      stats: this.stats
+    };
   }
 
   // Phase 1: Analyze situation
@@ -308,31 +335,48 @@ class ProactiveAIAgent extends NotificationAIAgent {
   // Full proactive cycle
   async runProactiveCycle() {
     this.emit('proactive-cycle-start', { timestamp: new Date().toISOString() });
+    this.addLog('info', '🔄 התחיל מחזור יוזם');
 
     try {
       // 1. Analyze current situation
       const situation = await this.analyzeSituation();
+      this.lastSituation = situation;
+      this.addLog('info', `📊 מצב: ${situation.criticalCount} קריטיים, ${situation.highCount} גבוהים`);
       this.emit('situation-analyzed', situation);
 
       // 2. Make autonomous decisions
       const decisions = await this.makeDecisions(situation);
       this.emit('decisions-made', { count: decisions.length, decisions });
 
+      if (decisions.length > 0) {
+        this.addLog('info', `🧠 ${decisions.length} החלטות: ${decisions.map(d => d.type).join(', ')}`);
+        this.decisions.push(...decisions.map(d => ({ ...d, timestamp: new Date().toISOString() })));
+        if (this.decisions.length > 50) {
+          this.decisions = this.decisions.slice(-50);
+        }
+      }
+
       // 3. Execute decisions
       if (decisions.length > 0) {
         const results = await this.executeDecisions(decisions);
         this.emit('actions-executed', { count: results.length, results });
+        this.actions.push(...results.map(r => ({ ...r, timestamp: new Date().toISOString() })));
+        if (this.actions.length > 50) {
+          this.actions = this.actions.slice(-50);
+        }
       }
 
       // 4. Run standard cycle
       await this.runCycle();
 
+      this.addLog('info', '✅ מחזור יוזם הושלם');
       this.emit('proactive-cycle-complete', {
         decisionsCount: decisions.length,
         timestamp: new Date().toISOString()
       });
 
     } catch (error) {
+      this.addLog('error', `❌ שגיאה: ${error.message}`);
       this.emit('error', { phase: 'proactive-cycle', error: error.message });
     }
   }
