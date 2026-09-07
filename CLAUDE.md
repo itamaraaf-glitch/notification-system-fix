@@ -15,19 +15,30 @@ The agent and radar share a single codebase (`agent/core/`) — one implementati
 ## Key Commands
 
 ```bash
-# Run all tests (agent + tender radar)
-npm test
+# Testing
+npm test                     # All tests (agent + tender radar)
+npm run test:agent          # 115 agent tests only
 
-# Run agent tests only (115 tests against shared core)
-npm run test:agent
-
-# Run the web scraping agent directly
+# Web Scraping Agent
 node agent/run.js --list                      # List defined watches
 node agent/run.js --watch=<id> --probe        # Test connectivity (no save)
 node agent/run.js --watch=<id> --audit        # Trace where items failed (no save)
 node agent/run.js --watch=<id> --dry-run      # Full scan, print only
 node agent/run.js --watch=<id>                # Full scan + save
 node agent/run.js --watch=<id> --source=<id>  # Scan single source
+
+# AI Excel Export
+npm run export-server       # Start export API server (http://localhost:3000/export.html)
+
+# AI Autonomous Agent (standard)
+npm run ai-agent            # Single run with real-time output
+npm run ai-agent:daemon     # Start background service
+
+# AI Proactive Agent (decision-making)
+npm run ai-agent:proactive             # Single run
+npm run ai-agent:proactive:daemon     # Start background service
+node ai-proactive-agent.js status     # Check daemon status
+node ai-proactive-agent.js stop       # Stop daemon
 ```
 
 For CI/local development without network access, use **Actions → `agent`** to run from GitHub.
@@ -138,46 +149,112 @@ This project uses feature branches with merge commits. The designated branch for
 
 ## AI-Powered Notification System
 
+### Core AI Analyzer (Python)
 **Enhanced Notification Management** (`notification_system_ai.py`, `ai_notification_analyzer.py`):
 
 The AI module adds Claude-powered analysis to notifications:
 
 - `AINotificationAnalyzer` — Classifies notifications by urgency (0-1 score), category (urgent/action_required/informational/etc.), detects spam
 - `AISmartNotificationManager` — Extends base manager with AI filtering, high-priority views, category-based grouping
+- `AdvancedAIAnalyzer` — Adds feedback learning, trend detection, anomaly detection, context-aware analysis
 - Supports batch analysis and graceful degradation if API fails
 - Optional (enable_ai=True/False); base system works without it
 
-**Usage Example:**
-```python
-from notification_system_ai import AISmartNotificationManager
+### Excel Export System (`export-server.js`, `export.html`)
+Dynamic report generation with 3 report types:
+- **Notifications Report** — Full details with filtering by entity, severity, date
+- **Entity Trends** — Analysis by entity with severity metrics
+- **Severity Breakdown** — Distribution by severity level
 
-manager = AISmartNotificationManager(db_path="notif.db", enable_ai=True)
-manager.register_entity("deals", "deal_123")
+Run with: `npm run export-server` then open `http://localhost:3000/export.html`
 
-notif_id, analysis = manager.add_notification_with_ai_analysis(
-    title="New deal",
-    message="High-value opportunity for Client X",
-    severity="HIGH",
-    entity_type="deals",
-    entity_id="deal_123"
-)
+### Autonomous AI Agents (Node.js)
 
-# Get only critical notifications
-high_priority = manager.get_high_priority_notifications(severity_threshold=0.7)
+#### 1. Standard Agent (`ai-agent.js`)
+Self-directed notification analysis agent:
+- Analyzes new notifications in batches
+- Auto-learns from high-confidence predictions
+- Detects anomalies (volume spikes, high-severity clusters, volatility)
+- Tracks learning metrics and accuracy improvement
+- Event-driven architecture for integration
 
-# Group by AI-determined category
-by_category = manager.get_notifications_by_category()
-
-# Separate signal from noise
-important, spam = manager.filter_noise()
+**Commands:**
+```bash
+npm run ai-agent              # Single run
+node ai-agent-daemon.js start # Background service
+node ai-agent-daemon.js status
+node ai-agent-daemon.js stop
 ```
 
-**Testing AI Components:**
+#### 2. Proactive Agent (`ai-proactive-agent.js`)
+Advanced agent that makes autonomous decisions and takes action:
+- **Escalation** — Alerts management on 5+ critical alerts
+- **Investigation** — Generates anomaly reports when 3+ anomalies detected
+- **Retrain** — Requests user feedback when accuracy drops below 70%
+- **Auto-Process** — Handles routine low-priority alerts independently
+- **Recovery** — Restarts itself if not running
+
+**Commands:**
+```bash
+npm run ai-agent:proactive              # Single run
+npm run ai-agent:proactive:daemon      # Background service
+node ai-proactive-agent.js status      # Check status
+```
+
+**Decision Flow:**
+1. Analyze situation (critical count, anomalies, accuracy)
+2. Make autonomous decisions based on thresholds
+3. Execute decisions (escalate, investigate, retrain, auto-process)
+4. Run standard analysis cycle
+
+**Usage Example (Node.js):**
+```javascript
+const ProactiveAIAgent = require('./ai-proactive-agent');
+
+const agent = new ProactiveAIAgent({
+  escalationThreshold: 0.8,
+  decisionInterval: 60000 // Decisions every minute
+});
+
+agent.on('decisions-made', (data) => {
+  console.log(`Made ${data.count} decisions`);
+  data.decisions.forEach(d => console.log(`  • ${d.type}: ${d.reason}`));
+});
+
+agent.on('action-taken', (result) => {
+  console.log(`Executed: ${result.action}`);
+});
+
+agent.startProactive();
+```
+
+### Key Features Across All AI Systems
+
+✅ **Autonomous** — Run without user intervention  
+✅ **Learning** — Improve from feedback and patterns  
+✅ **Proactive** — Make decisions and take action independently  
+✅ **Event-Driven** — Easy integration with other systems  
+✅ **Production-Ready** — Daemon mode, logging, health checks  
+✅ **Configurable** — Adjust thresholds and intervals per environment  
+
+### Testing AI Components
+
+Python tests:
 ```bash
 python -m pytest test_ai_notification_system.py
+python -m unittest test_ai_advanced_analyzer -v
 ```
 
-Tests use mocks to avoid API calls. Mocking `anthropic.Anthropic` patches Claude calls.
+Node.js tests (built-in):
+- Agent uses event emission for validation
+- No external dependencies required for core functionality
+- SQLite database provides persistent state
+
+### Documentation
+
+- `AI_AGENT_GUIDE.md` — Autonomous AI agent guide
+- `PROACTIVE_AGENT_GUIDE.md` — Proactive decision-making guide
+- `EXPORT_GUIDE.md` — Excel export system guide
 
 ## Development Notes
 
