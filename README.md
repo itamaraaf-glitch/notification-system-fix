@@ -1,132 +1,256 @@
-# 🔔 מערכת התראות חכמה ומשופרת
+# 🤖 סוכן AI - מערכת התראות חכמה
 
-## 📋 תיאור הפרויקט
+מערכת ניתוח וניהול התראות בהנעת AI עם שלוש יכולות עיקריות:
 
-מערכת התראות מתקדמת שפותחה עבור CRM של HOT Business (itamaroshrit.netlify.app) לפתרון בעיית ההתראות התקועות על נושאים שנמחקו.
-
-## 🚨 הבעיה שנפתרה
-
-במערכת המקורית התגלתה בעיה חמורה:
-- 32 התראות תקועות על לקוחות שנמחקו
-- התראות לא התעדכנו בעד לשינויים במערכת
-- אין ניקוי אוטומטי של התראות תקועות
-- חוסר סנכרון בין מודולים שונים
-
-## ✨ התכונות החדשות
-
-### 🧠 בינה מלאכותית לניהול התראות
-- ניתוח חכם של התראות
-- זיהוי אוטומטי של התראות תקועות
-- למידה מהתנהגות המשתמשים
-
-### 🔄 ניקוי אוטומטי
-- בדיקה כל שעה של התראות תקועות
-- מחיקה אוטומטית של התראות על נישאים שנמחקו
-- ארכוב של התראות ישנות
-
-### ⚡ ביצועים משופרים
-- מטמון חכם למהירות גבוהה
-- עיבוד מקבילי של התראות
-- ממשק API מהיר ויעיל
-
-### 📊 דאשבורד מתקדם
-- ויזואליזציה של התראות
-- גרפים בזמן אמת
-- דוחות מפורטים
-
-## 🛠️ טכנולוגיות
-
-- **Backend**: Python 3.9+ with FastAPI
-- **Database**: SQLAlchemy with PostgreSQL/SQLite
-- **Cache**: Redis
-- **Real-time**: WebSockets
-- **Frontend**: React/Vue.js (אופציונלי)
-
-## 🚀 התקנה מהירה
-
-```bash
-# שכפול הפרויקט
-git clone https://github.com/itamaraaf-glitch/notification-system-fix.git
-cd notification-system-fix
-
-# התקנת תלויות
-pip install -r requirements.txt
-
-# הפעלת המערכת
-python main.py
-```
-
-## 📈 שיפורים במערכת
-
-### לפני השיפור:
-❌ 32 התראות תקועות
-❌ אין ניקוי אוטומטי
-❌ חוסר סנכרון
-❌ ביצועים איטיים
-
-### אחרי השיפור:
-✅ 0 התראות תקועות
-✅ ניקוי אוטומטי כל שעה
-✅ סנכרון מושלם
-✅ ביצועים מהירים פי 10
-
-## 🔧 שימוש
-
-```python
-from notification_system import SmartNotificationManager
-
-# יצירת מנהל התראות
-manager = SmartNotificationManager()
-
-# הוספת התראה חדשה
-manager.add_notification(
-    title="עסקה חדשה",
-    message="עסקה חדשה עם לקוח X",
-    severity="🟠 WARNING",
-    entity_type="deals",
-    entity_id="deal_123"
-)
-
-# ניקוי אוטומטי
-manager.cleanup_orphaned_notifications()
-```
-
-## 📡 ראדאר מכרזים
-
-איתור אוטומטי של מכרזים ציבוריים בישראל בחמישה תחומים: **תקשורת, ציוד תקשורת, אבטחת מידע, IT ובינה מלאכותית**.
-הסריקה רצה פעם ביום, מסננת לפי טקסונומיית מילות מפתח בעברית, ופותחת Issue עם המכרזים
-החדשים — כך שהם מגיעים למייל אוטומטית.
-
-- **הממשק**: [`tenders.html`](tenders.html) — סינון לפי נושא, סוג פרסום ומגזר (רשויות מקומיות / מוסדות אקדמיים / ממשלה), ספירת ימים למועד ההגשה, וייצוא ישר לטבלת המכרזים ב-CRM
-- **בתוך ה-CRM**: לשונית **📡 ראדאר מכרזים** במסך המכרזים — אותם ממצאים, עם הוספה ישירה לטבלה
-- **תיעוד מלא**: [`tenders/README.md`](tenders/README.md)
-- **כוונון**: מילות מפתח ומקורות ב-[`tenders/config/`](tenders/config/)
-
-## 🕸️ סוכן רשת
-
-הליבה שסורקת אתרים, מגלה בעצמה עמודי רשימה, מתאימה מונחים בעברית ומנהלת
-היסטוריה — כמסגרת שאפשר להפנות לכל נושא, לא רק למכרזים. **משימת מעקב חדשה היא
-קובץ JSON, לא קוד.**
-
-הליבה הופקה מראדאר המכרזים והראדאר צורך אותה משם, כך שיש מימוש אחד ולא שניים;
-115 בדיקות הראדאר רצות מול הקוד המשותף ותופסות כל שינוי שישבור אותו.
-
-```bash
-node agent/run.js --list                 # אילו משימות מוגדרות
-node agent/run.js --watch=<id> --probe   # מי נענה ומי חוסם. לא שומר.
-node agent/run.js --watch=<id> --audit   # איפה נפל כל פריט. לא שומר.
-```
-
-- **תיעוד מלא**: [`agent/README.md`](agent/README.md)
-- **תבנית להעתקה**: [`agent/watches/example.watch.json`](agent/watches/example.watch.json) — כל שדה עם הסבר
-- **הרצה מ-Actions**: לשונית **Actions** → `agent` → **Run workflow**
-
-## 📞 תמיכה
-
-לשאלות ותמיכה: itamar@hotbusiness.com
+1. **🧠 ניתוח AI** — סיווג ודיוק עם Claude AI
+2. **🤖 סוכן אוטונומי** — למידה והשתפרות מתוך משוב
+3. **🎯 סוכן יוזם** — החלטות אוטונומיות וביצוע פעולות
 
 ---
 
-**פותח עבור**: HOT Business CRM System  
-**אתר**: https://itamaroshrit.netlify.app  
-**גרסה**: 2.0.0
+## 🚀 התחלה מהירה
+
+### דשבורד בשתי שניות
+
+```bash
+npm run dashboard
+```
+
+פתח: **http://localhost:3000/ai-dashboard.html**
+
+זה הכל! דשבורד בזמן אמת + API + יצוא דוחות.
+
+---
+
+## 🎯 שלוש המערכות
+
+### 1. 🧠 ניתוח AI (Autonomous Agent)
+
+**מה:** מנתח התראות עם Claude API, למידה מתוך משוב, גילוי חריגויות
+
+```bash
+npm run ai-agent           # ניתוח חד-פעמי
+npm run ai-agent:daemon    # שירות רקע
+```
+
+**עיקרי:**
+- סווג התראות לפי דחיפות (0-1)
+- קטגוריה (דחוף, פעולה נדרשת, וכו')
+- גילוי spam
+- ניתוח עיצורים בתאריכים
+
+### 2. 🤖 סוכן יוזם (Proactive Agent)
+
+**מה:** קובל החלטות אוטונומיות בהתאם למצב
+
+```bash
+npm run ai-agent:proactive           # ריצה חד-פעמית
+npm run ai-agent:proactive:daemon    # שירות רקע
+```
+
+**החלטות אוטונומיות:**
+- 🚨 **Escalate** — כ- קריטיים > 5
+- 📊 **Investigate** — כאשר חריגויות > 3
+- 🧠 **Retrain** — כאשר דיוק < 70%
+- ⚙️ **Auto-Process** — עיבוד נמוכים (מערכת יציבה)
+
+### 3. 📊 דשבורד בזמן אמת (Dashboard)
+
+**מה:** ממשק בזמן אמת לניטור וביצוע בקרה
+
+```bash
+npm run dashboard
+```
+
+**מכיל:**
+- 📈 מדדים בזמן אמת
+- 🧠 החלטות אחרונות
+- ✅ פעולות שבוצעו
+- 📋 לוגים חי
+- 🎮 כפתורי בקרה (Start/Stop)
+
+---
+
+## 📊 מדדים וניטור
+
+### סטטיסטיקות
+- **התראות שנותחו** — כמה עברו ניתוח AI
+- **משובים שנלמדו** — כמה משוב נאסף
+- **חריגויות** — כמה דפוסים חריגים
+- **דיוק** — כמה נכון ניתחנו
+
+### מצב המערכת
+- **קריטיים בשעה** — התראות HIGH בשעה האחרונה
+- **גבוהים בשעה** — התראות MEDIUM בשעה האחרונה
+- **חריגויות** — ספירה של חריגויות מזוהות
+- **מצב בריאות** — סטטוס כללי
+
+### חלטות & פעולות
+- רשימת החלטות אוטונומיות
+- רשימת פעולות שבוצעו
+- לוגים בזמן אמת של כל המחדשים
+
+---
+
+## 🔧 API Endpoints
+
+### ניטור
+
+| Endpoint | תיאור |
+|----------|-------|
+| `GET /api/agent/status` | מצב מלא + לוגים |
+| `GET /api/agent/metrics` | מדדים עיקריים |
+| `GET /api/agent/decisions` | החלטות אחרונות |
+| `GET /api/agent/actions` | פעולות שבוצעו |
+| `GET /api/agent/logs?limit=20` | לוגים עם limit |
+
+### בקרה
+
+| Endpoint | תיאור |
+|----------|-------|
+| `POST /api/agent/start` | הפעל סוכן |
+| `POST /api/agent/stop` | עצור סוכן |
+
+### יצוא
+
+| Endpoint | תיאור |
+|----------|-------|
+| `POST /api/export` | יצור דוח (JSON body) |
+| `GET /api/export/:type` | דוח עם query params |
+
+---
+
+## 📁 מבנה הפרויקט
+
+```
+notification-system-fix/
+├── 📊 Dashboard & API
+│   ├── ai-dashboard.html          # דשבורד בזמן אמת
+│   ├── start-dashboard.js         # שרת מאומת
+│   ├── export-server.js           # שרת export (legacy)
+│   └── DASHBOARD_GUIDE.md         # תיעוד מלא
+│
+├── 🧠 AI Agents
+│   ├── ai-agent.js                # סוכן ניתוח (autonomous)
+│   ├── ai-proactive-agent.js      # סוכן יוזם (proactive)
+│   ├── ai-advanced-analyzer.js    # ניתוח מתקדם (Python)
+│   ├── AI_AGENT_GUIDE.md          # תיעוד
+│   └── PROACTIVE_AGENT_GUIDE.md   # תיעוד
+│
+├── 📈 Export & Reports
+│   ├── excel-export-service.js    # שירות יצוא
+│   ├── export.html                # UI ליצוא
+│   └── EXPORT_GUIDE.md            # תיעוד
+│
+├── 🕷️ Web Scraping Agent (Optional)
+│   ├── agent/                     # framework סורק
+│   ├── tenders/                   # יישום - מכרזים
+│   └── agent/README.md            # תיעוד
+│
+└── 📚 Documentation
+    ├── CLAUDE.md                  # להנדסה
+    ├── QUICKSTART.md              # התחלה מהירה
+    ├── README.md                  # זה הקובץ
+    └── package.json               # Dependencies & scripts
+```
+
+---
+
+## 💻 Scripts
+
+```bash
+# 🚀 התחלה
+npm run dashboard              # דשבורד + API (התחלה מהירה)
+npm run export-server          # Export בלבד
+
+# 🧠 סוכנים
+npm run ai-agent              # ניתוח חד-פעמי
+npm run ai-agent:daemon       # שירות רקע (ניתוח)
+npm run ai-agent:proactive    # החלטות חד-פעמיות
+npm run ai-agent:proactive:daemon  # שירות יוזם
+
+# 🧪 בדיקות
+npm test                      # כל הבדיקות
+npm run test:agent           # בדיקות סוכן (115)
+
+# 🕷️ Web Scraping
+npm run agent                # סורק אתרים (optional)
+```
+
+---
+
+## 📖 תיעוד מלא
+
+- **QUICKSTART.md** — התחלה בשתי שניות
+- **DASHBOARD_GUIDE.md** — דשבורד + API מלא
+- **AI_AGENT_GUIDE.md** — סוכן ניתוח
+- **PROACTIVE_AGENT_GUIDE.md** — החלטות אוטונומיות
+- **EXPORT_GUIDE.md** — יצוא דוחות
+- **CLAUDE.md** — ההנדסה (למפתחים)
+
+---
+
+## 🎬 דוגמה: זרימה מלאה
+
+```bash
+# Terminal 1: דשבורד
+npm run dashboard
+
+# Terminal 2: טעינת נתונים
+npm run ai-agent
+
+# ב-Browser:
+# 1. פתח http://localhost:3000/ai-dashboard.html
+# 2. לחץ 🟢 הפעל
+# 3. צפה בלוגים ומדדים בזמן אמת
+# 4. ראה החלטות אוטונומיות
+```
+
+---
+
+## 🔑 תכונות עיקריות
+
+✅ **AI-Powered** — Claude API לניתוח סמנטי  
+✅ **Autonomous** — לימוד ושיפור רציף  
+✅ **Proactive** — החלטות עצמאיות וביצוע  
+✅ **Real-time** — דשבורד בזמן אמת  
+✅ **API-First** — זמין לשיתוף פעולה  
+✅ **Export** — דוחות Excel דינמיים  
+✅ **Logging** — ניטור מלא של כל אירוע  
+
+---
+
+## 🛠️ Requirements
+
+- **Node.js 18+**
+- **npm 9+**
+- **SQLite3** (npm package included)
+- **Anthropic API key** (for AI features)
+
+---
+
+## 🚀 שדרוג בעתיד
+
+- [ ] WebSocket support (real-time push)
+- [ ] Historical data persistence
+- [ ] Admin panel for thresholds
+- [ ] Slack/Email escalations
+- [ ] User feedback UI
+- [ ] Decision override capability
+- [ ] Performance analytics
+
+---
+
+## 📞 עזרה
+
+בעיות? ראה את **QUICKSTART.md** לתיקונים נפוצים.
+
+---
+
+**מוכן להתחיל? הרץ:** `npm run dashboard`
+
+ואז פתח: **http://localhost:3000/ai-dashboard.html** 🎉
+
+---
+
+*Built with ❤️ for HOT Business CRM*
