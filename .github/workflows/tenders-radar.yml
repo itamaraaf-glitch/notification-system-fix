@@ -5,8 +5,12 @@ name: tenders-radar
 
 on:
   schedule:
-    # 06:10 שעון ישראל (קיץ), ראשון–חמישי — לפני תחילת יום העבודה
-    - cron: '10 3 * * 0-4'
+    # 18:00 שעון ישראל, כל יום. cron של GitHub הוא UTC בלבד ואינו יודע על שעון
+    # קיץ, ולכן cron יחיד היה נודד בשעה פעמיים בשנה. שתי השעות מכסות את שני
+    # המצבים — 15:00 UTC בשעון קיץ ו-16:00 UTC בחורף — ומשימת השומר מוודאת
+    # שרק אחת מהן ממשיכה: זו שבה השעה בירושלים היא באמת 18.
+    - cron: '0 15 * * *'
+    - cron: '0 16 * * *'
   workflow_dispatch:
     inputs:
       source:
@@ -39,7 +43,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # שומר שעון: מריץ רק כשהשעה בירושלים היא 18. הפעלה ידנית עוברת תמיד.
+  clock:
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.check.outputs.go }}
+    steps:
+      - id: check
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "go=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          hour=$(TZ=Asia/Jerusalem date +%H)
+          if [ "$hour" = "18" ]; then
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=false" >> "$GITHUB_OUTPUT"
+            echo "השעה בירושלים היא $hour ולא 18 — הריצה הזו מדולגת" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   scan:
+    needs: clock
+    if: needs.clock.outputs.go == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 50
     steps:
