@@ -8,7 +8,9 @@
     "agent": "node agent/run.js",
     "export-server": "node export-server.js",
     "ai-agent": "node ai-agent.js",
-    "ai-agent:daemon": "nohup node ai-agent.js > ai-agent.log 2>&1 &"
+    "ai-agent:daemon": "nohup node ai-agent.js > ai-agent.log 2>&1 &",
+    "ai-agent:proactive": "node ai-proactive-agent.js",
+    "ai-agent:proactive:daemon": "nohup node ai-proactive-agent.js > ai-agent-proactive.log 2>&1 &"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.70.0",
