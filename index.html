@@ -5623,10 +5623,13 @@ function _rowsSync(tb,which){
     rows[i].style.display=vis?'':'none';
   }
   if(which){
+    const total=rows.filter(tr=>!_hdrIsDivider(tr)).length;
+    const of=anyFiltered?` <span style="color:#f4a261">(מתוך ${total})</span>`:'';
     const sum=document.getElementById(which==='dist'?'dist-detail-sum':'deal-detail-sum');
     if(sum)sum.innerHTML=which==='dist'
-      ? `· ${n} הפצות · שווי ${fmt(sumVal)}${anyFiltered?' <span style="color:#f4a261">(מסונן)</span>':''}`
-      : `· ${n} עסקאות · חודשי ${fmt(sumVal)}${sumOt?' · OTC '+fmt(sumOt):''}${anyFiltered?' <span style="color:#f4a261">(מסונן)</span>':''}`;
+      ? `· ${n} הפצות${of} · שווי ${fmt(sumVal)}`
+      : `· ${n} עסקאות${of} · חודשי ${fmt(sumVal)}${sumOt?' · OTC '+fmt(sumOt):''}`;
+    try{ _detailChips(which); }catch(e){}
   }
   return n;
 }
@@ -5654,13 +5657,21 @@ function _hdrOpen(tbId,ci,anchor){
   if(_hdrPanel&&_hdrPanel._k===tbId+':'+ci){ _hdrClose(); return; }
   _hdrClose();
   const rows=_hdrRows(c.tb).filter(tr=>!_hdrIsDivider(tr));
-  const vals=[...new Set(rows.map(tr=>_hdrText(tr,ci)||'(ריק)'))].sort((a,b)=>a.localeCompare(b,'he'));
+  const num=v=>{ const t=String(v).replace(/[₪,\s]/g,''); return (t&&/^-?\d+(\.\d+)?%?$/.test(t))?parseFloat(t):null; };
+  const raw=[...new Set(rows.map(tr=>_hdrText(tr,ci)||'(ריק)'))];
+  const nums=raw.filter(v=>num(v)!==null);
+  // עמודת מספרים ממוינת כמספרים (₪360 לפני ₪1,100), עמודת טקסט לפי א-ב
+  const vals=(nums.length>=Math.max(2,raw.length-2))
+    ? raw.slice().sort((a,b)=>{ const x=num(a),y=num(b);
+        if(x===null&&y===null)return String(a).localeCompare(String(b),'he');
+        if(x===null)return -1; if(y===null)return 1; return x-y; })
+    : raw.slice().sort((a,b)=>String(a).localeCompare(String(b),'he'));
   const sel=new Set(_hdrF[tbId]&&_hdrF[tbId][ci]?_hdrF[tbId][ci]:vals);
   const p=document.createElement('div'); _hdrPanel=p; p._k=tbId+':'+ci;
   p.style.cssText='position:fixed;z-index:2000000;background:#0a0d18;border:1px solid rgba(200,169,110,.34);'
     +'border-radius:10px;box-shadow:0 16px 48px rgba(0,0,0,.78);padding:8px;min-width:210px;max-width:300px;direction:rtl';
   p.innerHTML=`<input class="hf-q" placeholder="חיפוש ערך…" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:7px;padding:5px 8px;color:var(--text);font-family:inherit;font-size:11.5px;outline:none;direction:rtl;text-align:right;margin-bottom:6px">
-    <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);padding:3px 2px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:4px"><input type="checkbox" class="hf-all" style="width:auto;margin:0">בחר הכל</label>
+    <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);padding:3px 2px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:4px"><input type="checkbox" class="hf-all" style="width:auto;margin:0">בחר הכל <span class="hf-cnt" style="color:var(--text3);font-size:10px"></span></label>
     <div class="hf-list" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:2px"></div>
     <div style="display:flex;gap:6px;margin-top:8px">
       <button class="btn btnp hf-ok" style="font-size:10.5px;flex:1">החל</button>
@@ -5668,7 +5679,10 @@ function _hdrOpen(tbId,ci,anchor){
     </div>`;
   const list=p.querySelector('.hf-list');
   const draw=q=>{ list.innerHTML='';
-    vals.filter(v=>!q||v.toLowerCase().includes(q)).forEach(v=>{
+    const shownVals=vals.filter(v=>!q||v.toLowerCase().includes(q));
+    const cnt=p.querySelector('.hf-cnt');
+    if(cnt)cnt.textContent='('+shownVals.length+' מתוך '+vals.length+' ערכים)';
+    shownVals.forEach(v=>{
       const l=document.createElement('label');
       l.style.cssText='display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text);padding:2px;cursor:pointer';
       const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=sel.has(v); cb.value=v;
@@ -5679,8 +5693,11 @@ function _hdrOpen(tbId,ci,anchor){
   };
   draw('');
   p.querySelector('.hf-all').checked=(sel.size===vals.length);
-  p.querySelector('.hf-all').onchange=e=>{ sel.clear(); if(e.target.checked)vals.forEach(v=>sel.add(v));
-    draw(p.querySelector('.hf-q').value.trim().toLowerCase()); };
+  p.querySelector('.hf-all').onchange=e=>{
+    const q=p.querySelector('.hf-q').value.trim().toLowerCase();
+    const shownVals=vals.filter(v=>!q||v.toLowerCase().includes(q));
+    shownVals.forEach(v=>{ e.target.checked?sel.add(v):sel.delete(v); });
+    draw(q); };
   p.querySelector('.hf-q').oninput=e=>draw(e.target.value.trim().toLowerCase());
   p.querySelector('.hf-ok').onclick=()=>{
     _hdrF[tbId]=_hdrF[tbId]||{};
@@ -5736,10 +5753,50 @@ function _hdrBanner(tbId,nCols,hidden){
     const host=c.table.closest('.tscroll')||c.table;
     host.parentNode.insertBefore(el,host);
   }
-  el.innerHTML=`🔎 <b style="color:var(--teal)">סינון עמודות פעיל</b> · ${nCols} עמודות · ${hidden} שורות מוסתרות
-    <button class="btn btns" onclick="_hdrClear('${tbId}')" style="font-size:10px;margin-inline-start:auto">✖ נקה סינון</button>`;
+  const f=_hdrF[tbId]||{};
+  const chips=Object.keys(f).filter(ci=>Array.isArray(f[ci])&&f[ci].length).map(ci=>{
+    const v=f[ci].length<=2?f[ci].join(', '):f[ci].length+' ערכים';
+    return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:var(--teal);background:rgba(6,214,160,.12);border:1px solid rgba(6,214,160,.4);border-radius:11px;padding:2px 9px;white-space:nowrap">${esc(_hdrColName(tbId,ci))}: ${esc(v)}<span onclick="_hdrClearCol('${tbId}',${ci})" title="הסר סינון זה" style="cursor:pointer;font-weight:900;opacity:.8">✖</span></span>`; }).join('');
+  el.innerHTML=`🔎 <b style="color:var(--teal)">סינון פעיל</b> ${chips} <span style="color:var(--text3)">· ${hidden} שורות מוסתרות</span>
+    <button class="btn btns" onclick="_hdrClear('${tbId}')" style="font-size:10px;margin-inline-start:auto">✖ נקה הכול</button>`;
 }
 function _hdrClear(tbId){ delete _hdrF[tbId]; _hdrApply(tbId); _hdrAttach(tbId); }
+function _hdrClearCol(tbId,ci){ if(_hdrF[tbId])delete _hdrF[tbId][ci]; _hdrApply(tbId); _hdrAttach(tbId); }
+function _hdrColName(tbId,ci){
+  const c=_hdrCells(tbId); if(!c)return 'עמודה';
+  const th=c.ths[+ci]; return th?th.textContent.replace(/[▾▼]/g,'').replace(/\s+/g,' ').trim():'עמודה';
+}
+// שבבי הסינון הפעיל בחלון הפירוט — שורת הסינון והעמודות יחד, כל אחד עם ניקוי משלו
+function _detailChips(which){
+  const ov=document.getElementById(which==='dist'?'dist-detail-ov':'deal-detail-ov'); if(!ov)return;
+  const host=ov.querySelector('.det-chips'); if(!host)return;
+  const tbId=which==='dist'?'dist-detail-tb':'deal-detail-tb';
+  const gv=c=>{ const e=ov.querySelector(c); return e?String(e.value||'').trim():''; };
+  const chips=[];
+  const chip=(lbl,val,fn)=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:#f4a261;background:rgba(244,162,97,.13);border:1px solid rgba(244,162,97,.45);border-radius:11px;padding:2px 9px;white-space:nowrap">${esc(lbl)}: ${esc(val)}<span onclick="${fn}" title="הסר סינון זה" style="cursor:pointer;font-weight:900;opacity:.8">✖</span></span>`;
+  if(gv('.df-q'))chips.push(chip('חיפוש',gv('.df-q'),`_detailClearOne('${which}','q')`));
+  if(gv('.df-st'))chips.push(chip('סטטוס',gv('.df-st'),`_detailClearOne('${which}','st')`));
+  if(gv('.df-mo'))chips.push(chip('חודש',_moLabel(gv('.df-mo')),`_detailClearOne('${which}','mo')`));
+  const f=_hdrF[tbId]||{};
+  Object.keys(f).forEach(ci=>{ if(!Array.isArray(f[ci])||!f[ci].length)return;
+    const v=f[ci].length<=2?f[ci].join(', '):f[ci].length+' ערכים';
+    chips.push(chip(_hdrColName(tbId,ci),v,`_hdrClearCol('${tbId}',${ci})`)); });
+  host.innerHTML=chips.length
+    ? `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 14px 7px"><span style="font-size:10.5px;color:var(--text3);font-weight:700">סינון פעיל:</span>${chips.join('')}<button class="btn btns" onclick="_detailClearAll('${which}')" style="font-size:10px">✖ נקה הכול</button></div>`
+    : '';
+}
+function _detailClearOne(which,what){
+  const ov=document.getElementById(which==='dist'?'dist-detail-ov':'deal-detail-ov'); if(!ov)return;
+  const el=ov.querySelector(what==='q'?'.df-q':what==='st'?'.df-st':'.df-mo');
+  if(el){ el.value=''; if(el._csTrigger)el._csTrigger._sync(); }
+  _detailFilter(el||ov,which);
+}
+function _detailClearAll(which){
+  const tbId=which==='dist'?'dist-detail-tb':'deal-detail-tb';
+  delete _hdrF[tbId]; _hdrAttach(tbId);
+  _detailClearFilter(which);
+  _hdrApply(tbId);
+}
 function _hdrRefreshAll(){ try{ Object.keys(_HDR_TABLES).forEach(id=>{ if(document.getElementById(id)){ _hdrAttach(id); _hdrApply(id); } }); }catch(e){} }
 
 const _RECENT_TABLES={ltb:'deals',stb:'deals',ttb:'tenders',ldtb:'dists',sdtb:'dists',
@@ -8401,6 +8458,7 @@ function showDealGroupDetail(which){
       <button onclick="closeDealDetail()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
     ${_detailFilterBar('deal',list,d=>d.st,d=>d.date)}
+    <div class="det-chips"></div>
     <div style="overflow:auto;padding:4px 8px 10px">
       <table style="width:100%;border-collapse:collapse">
         <thead><tr style="color:var(--text3);font-size:10px;text-align:right;text-transform:uppercase;letter-spacing:.4px">
@@ -8450,6 +8508,7 @@ function showDistGroupDetail(which){
       <button onclick="closeDistDetail()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
     </div>
     ${_detailFilterBar('dist',list,d=>d.st,d=>d.dt)}
+    <div class="det-chips"></div>
     <div style="overflow:auto;padding:4px 8px 10px">
       <table style="width:100%;border-collapse:collapse">
         <thead><tr style="color:var(--text3);font-size:10px;text-align:right;text-transform:uppercase;letter-spacing:.4px">
