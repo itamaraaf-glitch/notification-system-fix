@@ -30,6 +30,17 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
  * לקוח HTTP קטן. כל משימה מקבלת מופע משלה, כך שתקרות הזמן והנימוס שלה אינן
  * משפיעות על משימה אחרת שרצה באותו תהליך.
  */
+/**
+ * "fetch failed" הוא כל מה ש-undici מוסר על כשל רשת, והסיבה האמיתית — DNS,
+ * אישור פג תוקף, חיבור שנסגר — יושבת ב-cause. בלי לצרף אותה, עשרה מקורות
+ * שנופלים מסיבות שונות נראים בדוח כתקלה אחת, ואי אפשר לדעת מה לתקן.
+ */
+function withCause(err) {
+  const code = err && err.cause && (err.cause.code || err.cause.message);
+  if (code && err.message === 'fetch failed') err.message = `fetch failed (${code})`;
+  return err;
+}
+
 function createClient(opts = {}) {
   const cfg = { ...DEFAULTS, ...opts };
   // הכתובת הסופית של כל הבאה, אחרי הפניות
@@ -66,7 +77,7 @@ function createClient(opts = {}) {
         clearTimeout(timer);
       }
     }
-    throw lastErr;
+    throw withCause(lastErr);
   }
 
   const finalUrlOf = url => finalUrls.get(url) || url;

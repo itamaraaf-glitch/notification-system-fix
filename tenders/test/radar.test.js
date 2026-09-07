@@ -819,6 +819,78 @@ test('מועד שההעשרה מילאה שורד את הסריקה הבאה', (
   assert.strictEqual(merged.find(r => r.id === 'x').deadlineAt, '2026-09-30');
 });
 
+// תיקון נוסחת המזהה ניתק את ההכרעות שנשמרו: מכרז שאושר צנח מהראדאר, ומכרזים
+// שנדחו חזרו לרשימת הבדיקה. המפתח לפי מזהה אינו מספיק — צריך גיבוי לפי הכתובת
+// ולפי הכותרת, כי הן אלה שמזהות את המכרז לאורך זמן.
+test('הכרעה שמורה נמצאת גם כשהמזהה השתנה', () => {
+  const decisions = {
+    'מזהה-ישן-א': { relevant: true, topic: 'it', title: 'מערך שליטה ובקרה על פינוי פסולת',
+                    url: 'https://n.org.il/f/rfi.pdf', source: 'cluster-x' },
+    'מזהה-ישן-ב': { relevant: false, topic: '', title: 'קול קורא לירידי מתנות לחג' }
+  };
+  const look = R.decisionLookup(decisions);
+
+  // לפי מזהה, כשהוא לא השתנה
+  assert.strictEqual(look({ id: 'מזהה-ישן-ב', title: 'משהו אחר' }).relevant, false);
+  // לפי כתובת, כשהמזהה השתנה
+  const byUrl = look({ id: 'מזהה-חדש', source: 'cluster-x', url: 'https://n.org.il/f/rfi.pdf/', title: 'כותרת אחרת' });
+  assert.strictEqual(byUrl && byUrl.relevant, true, 'הכתובת מזהה את המכרז');
+  // לפי כותרת, כשגם הכתובת אינה שמורה (הכרעות ותיקות)
+  const byTitle = look({ id: 'מזהה-חדש-2', source: 'muni-y', url: 'https://y.muni.il/b/9',
+                         title: 'קול קורא לירידי מתנות לחג' });
+  assert.strictEqual(byTitle && byTitle.relevant, false, 'הכותרת היא הגיבוי האחרון');
+  // מכרז שלא הוכרע נשאר בלי הכרעה
+  assert.strictEqual(look({ id: 'ז', source: 'muni-y', url: 'https://y.muni.il/b/10', title: 'מכרז אחר לגמרי' }), undefined);
+
+  // הכותרת נשמרת חתוכה ל-120 תווים, ולכן כותרת ארוכה יותר חייבת להימצא לפי
+  // תחילית — אחרת ההכרעה עליה דולפת והמועמד חוזר לרשימה בכל סריקה
+  const ארוכה = 'קול קורא להגשת הצעות להיכלל במאגר מועמדות לכהונה בתפקיד: דירקטור/ית מטעם הציבור בתאגיד';
+  const cut = R.decisionLookup({ x: { relevant: false, topic: '', title: ארוכה.slice(0, 120) } });
+  assert.ok(cut({ id: 'ט', title: ארוכה + ' החברה להשבת מי קולחין דרום השרון בע"מ' }),
+    'כותרת שנחתכה באחסון עדיין נמצאת');
+
+  // כותרת שחוזרת בשתי הכרעות סותרות אינה מפתח — עדיף לשאול שוב מלהחיל ניחוש
+  const clashing = R.decisionLookup({
+    a: { relevant: true, topic: 'it', title: 'מסמכי המכרז' },
+    b: { relevant: false, topic: '', title: 'מסמכי המכרז' }
+  });
+  assert.strictEqual(clashing({ id: 'ח', title: 'מסמכי המכרז' }), undefined);
+});
+
+// תיקון נוסחת המזהה ייצר כפילות: הרשומה הישנה שרדה בהיסטוריה עד שתתיישן, החדשה
+// הצטרפה לצידה, ואותו מכרז הופיע פעמיים ברשימה. האיחוד הוא לפי הכתובת, כי היא
+// זו שמזהה את המכרז גם כשהמזהה משתנה תחתיו.
+test('אותה כתובת בשני מזהים מתאחדת לרשומה אחת', () => {
+  const old = { id: 'ישן', source: 'muni-x', title: 'מכרז לאספקת ציוד תקשורת',
+                url: 'https://x.muni.il/bids/455/', score: 3,
+                deadlineAt: '2026-10-01', deadlineFrom: 'detail',
+                firstSeen: '2026-08-24', lastSeen: '2026-09-02' };
+  const neu = { id: 'חדש', source: 'muni-x', title: 'מכרז לאספקת ציוד תקשורת',
+                url: 'https://x.muni.il/bids/455', score: 3,
+                deadlineAt: '', firstSeen: '2026-09-03', lastSeen: '2026-09-03' };
+
+  const out = R.dedupeByUrl([old, neu]);
+  assert.strictEqual(out.length, 1, 'קו נטוי מסיים אינו כתובת אחרת');
+  assert.strictEqual(out[0].id, 'חדש', 'המזהה החדש הוא זה ששורד');
+  assert.strictEqual(out[0].firstSeen, '2026-08-24', 'התווית "חדש" לא משקרת');
+  assert.strictEqual(out[0].deadlineAt, '2026-10-01', 'המועד שנשלף פעם לא אובד באיחוד');
+
+  // ובאותה סריקה: דף רשימה מצמיד לאותו קישור גם את הכותרת וגם את "שם מכרז: …"
+  const same = R.dedupeByUrl([
+    { id: 'א', source: 'muni-y', title: 'שם מכרז: מכרז פומבי לעבודות חשמל',
+      url: 'https://y.muni.il/b/42', lastSeen: '2026-09-03', score: 2 },
+    { id: 'ב', source: 'muni-y', title: 'מכרז פומבי לעבודות חשמל',
+      url: 'https://y.muni.il/b/42', lastSeen: '2026-09-03', score: 2 }
+  ]);
+  assert.strictEqual(same.length, 1);
+  assert.strictEqual(same[0].title, 'מכרז פומבי לעבודות חשמל', 'הכותרת הנקייה גוברת');
+
+  // כתובות שונות באותו מקור אינן מתאחדות
+  assert.strictEqual(R.dedupeByUrl([old, { ...neu, url: 'https://x.muni.il/bids/456' }]).length, 2);
+  // ואותה כתובת בשני מקורות היא שני פרסומים
+  assert.strictEqual(R.dedupeByUrl([old, { ...neu, source: 'muni-z' }]).length, 2);
+});
+
 // מנהל הרכש הממשלתי הוא מקור אחד שמפרסם עבור כל משרדי הממשלה, ולכן אי אפשר
 // לנטרל משרד בודד על ידי נטרול המקור. ההבחנה היחידה היא שדה הגוף המפרסם.
 test('סינון לפי גוף מפרסם משאיר רק את המשרדים שברשימה', () => {
@@ -1024,4 +1096,95 @@ test('תווי בקרה מטקסט PDF אינם נשמרים בכותרת', () =
   const [a] = R.harvestAnchors(html, 'https://x.org.il/bids');
   assert.strictEqual(a.title, 'מכרז לאספקת ציוד תקשורת לרשויות החברות בהן');
   assert.ok(!/[\u0000-\u001F]/.test(a.title), 'אין תווי בקרה');
+});
+
+/* ─────────── שימוש חוזר בכתובת עמוד המכרזים שהתגלתה ─────────── */
+
+// מקור discover עולה שתי בקשות בכל ריצה: דף הבית, ואז עמוד המכרזים שנמצא בו.
+// הכתובת כמעט אף פעם לא משתנה, והסורק כבר שמר אותה תחת discovered — ופשוט לא
+// קרא אותה. בסריקה שבה 25 אתרים החזירו 403 אחרי סריקות תכופות, פחות בקשות
+// לאותם שרתים הוא לא רק מהירות.
+test('כתובת שהתגלתה נוסה שוב, בלי לכפול ובלי לגעת במקורות אחרים', () => {
+  const learned = new Map([['a', ['https://a.muni.il/bids']]]);
+  const day = '2026-08-27';
+
+  const added = R.withLearnedTendersUrls({ id: 'a', kind: 'discover', home: 'https://a.muni.il/' }, learned, day);
+  assert.deepStrictEqual(added.tendersUrls, ['https://a.muni.il/bids']);
+  assert.strictEqual(added.learnedUrls, 1);
+
+  // רמז שהוגדר ביד נשאר ראשון — הוא מתוחזק וגובר על מה שנלמד
+  const both = R.withLearnedTendersUrls(
+    { id: 'a', kind: 'discover', tendersUrls: ['https://a.muni.il/hand'] }, learned, day);
+  assert.deepStrictEqual(both.tendersUrls, ['https://a.muni.il/hand', 'https://a.muni.il/bids']);
+
+  // אותה כתובת אינה נוספת פעמיים
+  const dup = R.withLearnedTendersUrls(
+    { id: 'a', kind: 'discover', tendersUrls: ['https://a.muni.il/bids'] }, learned, day);
+  assert.deepStrictEqual(dup.tendersUrls, ['https://a.muni.il/bids']);
+  assert.strictEqual(dup.learnedUrls, undefined);
+
+  // מקור שאינו discover אינו מושפע
+  const html = R.withLearnedTendersUrls({ id: 'a', kind: 'html', urls: ['u'] }, learned, day);
+  assert.strictEqual(html.tendersUrls, undefined);
+
+  // ומקור בלי היסטוריה נשאר כמו שהוא
+  const none = R.withLearnedTendersUrls({ id: 'zz', kind: 'discover' }, learned, day);
+  assert.strictEqual(none.tendersUrls, undefined);
+});
+
+// עמוד שזז חייב להתגלות מחדש, אבל לא כל המקורות באותו יום — אחרת הרענון מחזיר
+// בדיוק את ספייק הבקשות שבגללו נוספה השמירה.
+test('הרענון מבוזר: כל מקור פעם בשבוע, ולא כולם יחד', () => {
+  const ids = Array.from({ length: 60 }, (_, i) => 'muni-src-' + i);
+  const dayOf = i => new Date(Date.UTC(2026, 7, 26 + i)).toISOString().slice(0, 10);
+
+  // כל מקור מתרענן בדיוק פעם אחת בכל שבעה ימים
+  for (const id of ids.slice(0, 12)) {
+    const hits = [0, 1, 2, 3, 4, 5, 6].filter(i => !R.learnedIsFresh(id, dayOf(i))).length;
+    assert.strictEqual(hits, 1, `${id} מתרענן בדיוק פעם בשבוע`);
+  }
+
+  // והפיזור אינו מנוון: ביום בודד לא מתרעננים כולם ולא אף אחד
+  const perDay = [0, 1, 2, 3, 4, 5, 6].map(i => ids.filter(id => !R.learnedIsFresh(id, dayOf(i))).length);
+  assert.strictEqual(perDay.reduce((a, b) => a + b, 0), ids.length, 'כל מקור נספר פעם אחת בשבוע');
+  assert.ok(Math.max(...perDay) < ids.length / 2,
+    `אין יום שבו מתרענן חצי מהמקורות (${perDay.join(',')})`);
+});
+
+/* ─────────── יציבות המזהה ─────────── */
+
+// המזהה בלע מספר מכרז מחלון ההקשר, וההקשר בולע את שכניו בדף רשימה — כך שהמספר
+// היה לעיתים של הפריט שאחריו, והשתנה בין סריקות כשתוכן הדף זז. נצפה בפועל:
+// "קולות קוראים / RFI" של מועצת אזור קיבל שלושה מזהים שונים בשלושה ימים, אותו
+// מקור ואותה כתובת. מזהה שאינו יציב שובר שלושה דברים בשקט: הכרעות ה-AI אינן
+// נדבקות והפריט חוזר לנצח, firstSeen מתאפס, ומחיקה של המשתמש חוזרת.
+test('המזהה יציב גם כשחלון ההקשר משתנה בין סריקות', () => {
+  const src = { id: 'muni-azor', name: 'מועצת אזור', allTenders: false, keepUndated: true };
+  // כותרת ניטרלית בכוונה: הבדיקה בוחנת יציבות מזהה, לא את שער הניווט
+  const mk = context => R.buildRecord(
+    { title: 'מכרז פומבי לאספקת ריהוט משרדי למועצה', url: 'https://www.azor.muni.il/bids/', context },
+    src, KW, { near: true });
+
+  const a = mk('מכרז פומבי 12/2026 לאספקת ריהוט . קולות קוראים . עוד');
+  const b = mk('מכרז פומבי 3/2027 לגינון . קולות קוראים . עוד');
+  const c = mk('');
+  assert.ok(a && b && c, 'הרשומות נבנות');
+  assert.strictEqual(a.id, b.id, 'שכן אחר בהקשר אינו משנה את המזהה');
+  assert.strictEqual(a.id, c.id, 'היעדר הקשר אינו משנה את המזהה');
+
+  // מספר המכרז לתצוגה עדיין מושלם מההקשר — שם זו רק השלמת מידע
+  assert.strictEqual(a.tenderNumber, '12/2026');
+  assert.strictEqual(c.tenderNumber, '');
+
+  // ומספר שכן בכותרת עצמה כן מזהה, ויציב מול הקשר משתנה
+  const own = ctx => R.buildRecord(
+    { title: "מכרז פומבי 7/2026 לאספקת ציוד תקשורת ומתגים", url: 'https://x.muni.il/a', context: ctx },
+    src, KW);
+  assert.strictEqual(own('מכרז 99/2020 של שכן').id, own('הקשר אחר').id);
+  assert.strictEqual(own('').tenderNumber, '7/2026');
+
+  // שני מכרזים שונים באותו מקור עדיין מקבלים מזהים שונים
+  const t1 = own('');
+  const t2 = R.buildRecord({ title: 'מכרז פומבי 8/2026 לאספקת מתגים ונתבים', url: 'https://x.muni.il/a', context: '' }, src, KW);
+  assert.notStrictEqual(t1.id, t2.id);
 });

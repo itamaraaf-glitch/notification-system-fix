@@ -20,7 +20,7 @@ const path = require('path');
 const { ymd, daysBetween, sleep, decodeEntities, stripTags, normKey, hashId } = require('../../agent/core/text');
 const { classify, termRegex } = require('../../agent/core/match');
 const { parseDateNear, dateFromUrl, dateAfterHint: dateAfterHintCore, yearFromSerial, BINARY_URL_RE } = require('../../agent/core/dates');
-const { registrableDomain, sameSite, isSiteRoot, lastPathSegment, sameUrl, sectionParent, shortUrl } = require('../../agent/core/urls');
+const { registrableDomain, sameSite, isSiteRoot, lastPathSegment, sameUrl, normUrl, sectionParent, shortUrl } = require('../../agent/core/urls');
 const { harvestAnchors, pickTag, pickLink } = require('../../agent/core/harvest');
 const { createClient, withDeadline } = require('../../agent/core/net');
 const { findSectionLinks, compileVocab, demotedOnly } = require('../../agent/core/discover');
@@ -114,7 +114,9 @@ const NAV_TITLE_RE = new RegExp([
   '^\\s*מכרזים\\s*(פעילים|קודמים|ארכיון)\\s*$',
   '^\\s*מחלקת\\s',
   '^\\s*ל?ארכיון\\s*מכרזים',
-  '^\\s*דיון\\s'
+  '^\\s*דיון\\s',
+  // תווית קטגוריה ולא פרסום: "קולות קוראים / RFI" חזר בכל סריקה
+  '^\\s*קולות\\s*קוראים\\s*(\\/|$)'
 ].join('|'));
 function isNavTitle(title) {
   return NAV_TITLE_RE.test(String(title || ''));
@@ -527,9 +529,17 @@ async function main() {
   const previous = readJson(path.join(DATA_DIR, 'tenders.json'), { tenders: [] });
   const prevById = new Map((previous.tenders || []).map(t => [t.id, t]));
 
+  // כתובות עמוד המכרזים שהתגלו בריצה הקודמת — נוסו לפני גילוי מחדש מדף הבית
+  const learned = new Map((previous.sources || [])
+    .filter(s => s.ok && Array.isArray(s.discovered) && s.discovered.length)
+    .map(s => [s.id, s.discovered]));
+
   const sources = (cfg.sources || []).filter(s => s.enabled !== false)
     .filter(s => !ONLY_SOURCE || s.id === ONLY_SOURCE)
-    .map(s => expandSearchUrls(s, kw));
+    .map(s => expandSearchUrls(s, kw))
+    .map(s => withLearnedTendersUrls(s, learned, today));
+  const reused = sources.filter(s => s.learnedUrls).length;
+  if (reused) console.error(`↻ ${reused} מקורות מנסים קודם את עמוד המכרזים שהתגלה בריצה הקודמת`);
 
   const status = [];
   const found = new Map();
@@ -625,8 +635,12 @@ async function main() {
   }
   // מועמדים לבדיקה: רק כאלה שאפשר להגיש אליהם. בלי הסינון הזה הרשימה מתמלאת
   // בארכיון של כל מכרזי הגינון והבנייה מכל המקורות, ואין בה שום ערך.
+  // ההשוואה היא על הכתובת ולא רק על המזהה: מכרז שנכנס לראדאר יכול להופיע ברשימת
+  // המועמדים תחת כותרת אחרת של אותו קישור, ואז הוא היה מוצג בשני המקומות
   const inRadar = new Set(merged.map(t => t.id));
-  const nearAll = [...nearMisses.values()].filter(r => !inRadar.has(r.id));
+  const radarUrls = new Set(merged.map(t => t.source + '|' + normUrl(t.url || '')));
+  const nearAll = dedupeByUrl([...nearMisses.values()]
+    .filter(r => !inRadar.has(r.id) && !radarUrls.has(r.source + '|' + normUrl(r.url || ''))));
   const nearActionable = nearAll.filter(isActionable);
   // הקרוב להיסגר קודם: הרשימה חתוכה בתקרה, וחבל לחתוך דווקא את מה שנסגר מחר.
   // מכרז בלי מועד יורד לסוף — אי אפשר לדעת כמה הוא דחוף.
@@ -652,20 +666,21 @@ async function main() {
   // ריצה, ובלעדיהן כל מכרז שסקירת ה-AI אישרה היה נעלם בסריקה הבאה.
   const aiStore = readJson(path.join(DATA_DIR, 'ai-decisions.json'), { decisions: {} });
   const aiDec = aiStore.decisions || {};
+  const decisionOf = decisionLookup(aiDec);
   let restored = 0;
-  for (const [id, d] of Object.entries(aiDec)) {
-    const cand = nearMisses.get(id);
-    if (!cand || inRadar.has(id)) continue;
+  for (const cand of nearMisses.values()) {
+    const d = decisionOf(cand);
+    if (!d || inRadar.has(cand.id)) continue;
     if (!d.relevant || !kw.topics[d.topic] || !isActionable(cand)) continue;
     const { near, ...rec } = cand;
     merged.push({ ...rec, topics: [d.topic], aiMatched: true, aiReviewer: d.reviewer || 'api', aiReason: d.reason || '' });
-    inRadar.add(id);
+    inRadar.add(cand.id);
     restored++;
   }
   if (restored) console.error(`\n🤖 ${restored} מכרזים הוחזרו מהכרעות AI שמורות`);
 
   // מועמד שכבר הוכרע — לחיוב או לשלילה — אינו מוצג שוב ברשימת הבדיקה
-  const nearFinal = nearList.filter(r => !aiDec[r.id] && !inRadar.has(r.id));
+  const nearFinal = nearList.filter(r => !decisionOf(r) && !inRadar.has(r.id));
 
   const payload = {
     generatedAt: new Date().toISOString(),
@@ -1357,6 +1372,40 @@ function publisherAllowed(publisher, source) {
   return true;
 }
 
+/**
+ * שימוש חוזר בכתובת עמוד המכרזים שהתגלתה בריצה הקודמת.
+ *
+ * מקור `discover` עולה שתי בקשות בכל ריצה: דף הבית, ואז עמוד המכרזים שנמצא בו.
+ * הכתובת הזו כמעט אף פעם לא משתנה — הסורק כבר שומר אותה תחת `discovered`,
+ * ופשוט לא קרא אותה. השימוש בה חוסך בקשה אחת לכל מקור כזה (32 מתוך 66 מקורות
+ * ביום), וזה לא רק מהירות: בסריקה הזו 25 אתרים החזירו 403 אחרי שהרצנו סריקות
+ * תכופות: פחות בקשות לאותם שרתים הוא הדבר הנכון כלפיהם.
+ *
+ * הכתובת נוספת אחרי הרמזים שהוגדרו ביד, כך שרמז מתוחזק גובר עליה, ואם היא לא
+ * נענית הגילוי מדף הבית ממשיך כרגיל — עמוד שזז מתקן את עצמו.
+ */
+const LEARNED_REFRESH_DAYS = 7;
+function learnedIsFresh(sourceId, todayYmd) {
+  // רענון מבוזר: לכל מקור יום קבוע משלו בשבוע, כדי שלא כל המקורות יתגלו מחדש
+  // באותו יום ויחזירו את הספייק שאותו באנו למנוע
+  const day = Math.floor(Date.parse(todayYmd + 'T00:00:00Z') / 86400000);
+  if (!Number.isFinite(day)) return true;
+  // הסיפא ולא התחילית: hashId של מזהים דומים ("muni-a", "muni-b") מתחיל באותם
+  // בייטים, ולכן תחילית נותנת פיזור גרוע — נמדד 2 מתוך 70 ביום במקום 10
+  const seed = parseInt(hashId(String(sourceId)).slice(-6), 16) || 0;
+  return (day + seed) % LEARNED_REFRESH_DAYS !== 0;
+}
+
+function withLearnedTendersUrls(source, learned, todayYmd) {
+  if (source.kind !== 'discover' || !learned) return source;
+  const urls = learned.get(source.id) || [];
+  if (!urls.length || !learnedIsFresh(source.id, todayYmd)) return source;
+  const have = new Set(source.tendersUrls || []);
+  const add = urls.filter(u => u && !have.has(u));
+  if (!add.length) return source;
+  return { ...source, tendersUrls: [...(source.tendersUrls || []), ...add], learnedUrls: add.length };
+}
+
 function buildRecord(item, source, kw, opts = {}) {
   const haystack = `${item.title} ${item.summary || ''} ${item.context || ''}`;
   const titleAndSummary = `${item.title} ${item.summary || ''}`;
@@ -1398,9 +1447,18 @@ function buildRecord(item, source, kw, opts = {}) {
   const publisher = item.publisher || extractPublisher(item.context) || source.name;
   if (!publisherAllowed(publisher, source)) return reject(opts, 'גוף מפרסם שאינו נסרק', publisher);
 
-  const tenderNumber = extractTenderNumber(titleAndSummary) || extractTenderNumber(item.context || '');
+  // מספר המכרז לתצוגה יכול לבוא גם מההקשר — שם זו רק השלמת מידע.
+  const ownNumber = extractTenderNumber(titleAndSummary);
+  const tenderNumber = ownNumber || extractTenderNumber(item.context || '');
   const host = (() => { try { return new URL(item.url).host; } catch (_) { return source.id; } })();
-  const id = hashId(source.id + '|' + (tenderNumber || normKey(item.title)) + '|' + host);
+
+  // **המזהה נבנה רק ממה ששייך לפריט עצמו.** חלון ההקשר בולע את שכניו בדף רשימה,
+  // ולכן מספר מכרז שנשלף ממנו הוא לעיתים של הפריט שאחריו — והוא משתנה בין
+  // סריקות כשתוכן הדף זז. נצפה בפועל: "קולות קוראים / RFI" של מועצת אזור קיבל
+  // שלושה מזהים שונים בשלושה ימים, אותו מקור ואותה כתובת. מזהה שאינו יציב שובר
+  // שלושה דברים בשקט — הכרעות ה-AI אינן נדבקות והפריט חוזר לנצח, firstSeen
+  // מתאפס והתווית "חדש" משקרת, ומחיקה של המשתמש חוזרת בסריקה הבאה.
+  const id = hashId(source.id + '|' + (ownNumber || normKey(item.title)) + '|' + host);
 
   // סדר העדפה לתאריך הפרסום: מה שהדף אמר, ואם אין — נתיב הקובץ, ואם גם אין —
   // השנה שבמספר המכרז. בלי החוליה האחרונה פרסום בלי שום תאריך נראה "טרי" לנצח.
@@ -1465,6 +1523,68 @@ function keepEnriched(prev, rec) {
   return merged;
 }
 
+/**
+ * שתי רשומות על אותה כתובת הן אותו מכרז, גם כשהמזהים שונים. זה קורה כשנוסחת
+ * המזהה משתנה: הרשומה הישנה שורדת בהיסטוריה עד שהיא מתיישנת, והחדשה מצטרפת
+ * לצידה — ואותו מכרז מוצג פעמיים. האיחוד שומר את הרשומה שנראתה לאחרונה, ומושך
+ * ממנה firstSeen המוקדם ביותר כדי שהתווית "חדש" לא תשקר, ואת השדות המועשרים
+ * כדי שמועד ההגשה שנשלף פעם לא יאבד באיחוד.
+ */
+/**
+ * איתור ההכרעה של מועמד. המפתח בקובץ הוא המזהה, אבל המזהה יכול להשתנות תחת
+ * אותו מכרז כשנוסחתו מתוקנת — וכשזה קרה, מכרז שאושר צנח מהראדאר ומכרז שנדחה
+ * חזר לרשימת הבדיקה. לכן יש שתי דרכי גיבוי: הכתובת, שנשמרת בהכרעות חדשות,
+ * והכותרת המנורמלת, שנשמרת מאז ומעולם. כותרת שחוזרת בשתי הכרעות סותרות אינה
+ * מפתח — היא מושמטת, ואז נדרשת הכרעה מחדש במקום להחיל את הראשונה שנמצאה.
+ */
+function decisionLookup(decisions) {
+  // הכותרת נשמרת בהכרעה חתוכה ל-120 תווים, ולכן ההשוואה היא על תחילית קצרה
+  // ממנה. בלי זה, כותרות ארוכות — "קול קורא להגשת הצעות להיכלל במאגר מועמדות
+  // לכהונה בתפקיד: דירקטור/ית…" — לא נמצאו, וההכרעה עליהן דלפה
+  const titleKey = t => normKey(t || '').slice(0, 80);
+  const byUrl = new Map();
+  const byTitle = new Map();
+  const titleClash = new Set();
+  for (const d of Object.values(decisions)) {
+    if (d.url) byUrl.set((d.source || '') + '|' + normUrl(d.url), d);
+    const key = titleKey(d.title);
+    if (!key) continue;
+    const seen = byTitle.get(key);
+    if (seen && (seen.relevant !== d.relevant || seen.topic !== d.topic)) titleClash.add(key);
+    byTitle.set(key, d);
+  }
+  return (rec) => {
+    if (decisions[rec.id]) return decisions[rec.id];
+    const byUrlHit = byUrl.get((rec.source || '') + '|' + normUrl(rec.url || ''));
+    if (byUrlHit) return byUrlHit;
+    const key = titleKey(rec.title);
+    return (key && !titleClash.has(key)) ? byTitle.get(key) : undefined;
+  };
+}
+
+function dedupeByUrl(records) {
+  // הרשומה שנראתה לאחרונה גוברת; בתיקו — הניקוד, ואז הכותרת הקצרה, כי דפי רשימה
+  // מצמידים לאותה כתובת גם "מכרז פומבי ל…" וגם "שם מכרז: מכרז פומבי ל…"
+  const better = (a, b) => {
+    const la = a.lastSeen || '', lb = b.lastSeen || '';
+    if (la !== lb) return la > lb;
+    if ((a.score || 0) !== (b.score || 0)) return (a.score || 0) > (b.score || 0);
+    return String(a.title || '').length <= String(b.title || '').length;
+  };
+  const byKey = new Map();
+  for (const rec of records) {
+    const key = rec.source + '|' + normUrl(rec.url || rec.id);
+    const prev = byKey.get(key);
+    if (!prev) { byKey.set(key, rec); continue; }
+    const [keep, drop] = better(prev, rec) ? [prev, rec] : [rec, prev];
+    const merged = keepEnriched(drop, keep);
+    const seen = [keep.firstSeen, drop.firstSeen].filter(Boolean).sort();
+    if (seen.length) merged.firstSeen = seen[0];
+    byKey.set(key, merged);
+  }
+  return [...byKey.values()];
+}
+
 function mergeWithHistory(current, prevById, activeSources, kw) {
   const out = new Map();
 
@@ -1512,7 +1632,7 @@ function mergeWithHistory(current, prevById, activeSources, kw) {
     out.set(id, prev);
   }
 
-  return [...out.values()].sort((a, b) => {
+  return dedupeByUrl([...out.values()]).sort((a, b) => {
     // פתוחים עם דדליין קרוב קודם, אחר כך לפי ניקוד רלוונטיות
     const da = a.deadlineAt ? daysBetween(today, a.deadlineAt) : null;
     const db = b.deadlineAt ? daysBetween(today, b.deadlineAt) : null;
@@ -1550,8 +1670,8 @@ if (require.main === module) {
 }
 
 module.exports = {
-  classify, dropReason, DROP_LABELS, looksLikeTender, isNavTitle, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, withHealth, pageTitle, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
-  extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, publisherAllowed, summarize,
+  classify, dropReason, DROP_LABELS, looksLikeTender, isNavTitle, looksLikeTenderUrl, detectKind, KIND_LABELS, extractStatus, isClosedStatus, isActionable, extractPublisher, harvestAnchors, findTenderLinks, TENDER_PATH_RE, expandSearchUrls, sameSite, sameUrl, isSiteRoot, lastPathSegment, tenderSectionParent, jobsOnly, registrableDomain, probeSources, auditSources, withHealth, pageTitle, withLearnedTendersUrls, learnedIsFresh, sourceBudget, withDeadline, adapterDiscover, adapterHtml, enrichDeadlines, parseDateNear, dateAfterHint, dateFromUrl, yearFromTenderNumber, BINARY_URL_RE,
+  extractTenderNumber, buildRecord, mergeWithHistory, keepEnriched, dedupeByUrl, decisionLookup, publisherAllowed, summarize,
   normKey, hashId, stripTags, decodeEntities, daysBetween,
   DEADLINE_HINTS, PUBLISH_HINTS
 };

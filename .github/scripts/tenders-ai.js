@@ -196,6 +196,10 @@ async function main() {
       topic: d.relevant ? d.topic : '',
       reason: String(d.reason || '').slice(0, 120),
       title: d.rec.title.slice(0, 120),
+      // הכתובת נשמרת כדי שההכרעה תשרוד שינוי בנוסחת המזהה — המזהה הוא מפתח
+      // נוח, אבל הכתובת היא זו שמזהה את המכרז לאורך זמן
+      url: d.rec.url || '',
+      source: d.rec.source || '',
       reviewer: REVIEWER,
       at: today()
     };
