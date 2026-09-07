@@ -146,7 +146,22 @@ This project uses feature branches with merge commits. The designated branch for
 3. Push to the assigned branch
 4. Do NOT create a PR unless explicitly asked
 
-## AI-Powered Notification System
+## AI-Powered Notification System with Firebase Integration
+
+## Firebase Connection
+
+**firebase-sync.js** — Bidirectional bridge between Firebase and SQLite:
+- Polls Firebase Realtime Database for new notifications
+- Syncs to local SQLite database
+- Updates Firebase with AI analysis results
+- Configurable sync interval (default: 30 seconds)
+
+**Setup:**
+```bash
+FIREBASE_DATABASE_URL="https://your-project-rtdb.firebaseio.com" npm run firebase:sync
+```
+
+See **FIREBASE_SETUP.md** for complete integration guide.
 
 ### Core AI Analyzer (Python)
 **Enhanced Notification Management** (`notification_system_ai.py`, `ai_notification_analyzer.py`):
