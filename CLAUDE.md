@@ -27,8 +27,9 @@ node agent/run.js --watch=<id> --dry-run      # Full scan, print only
 node agent/run.js --watch=<id>                # Full scan + save
 node agent/run.js --watch=<id> --source=<id>  # Scan single source
 
-# AI Excel Export
-npm run export-server       # Start export API server (http://localhost:3000/export.html)
+# AI Notification System & Dashboard
+npm run dashboard           # Start dashboard + API + export (http://localhost:3000/ai-dashboard.html)
+npm run export-server       # Start export API server only (http://localhost:3000/export.html)
 
 # AI Autonomous Agent (standard)
 npm run ai-agent            # Single run with real-time output
@@ -36,9 +37,7 @@ npm run ai-agent:daemon     # Start background service
 
 # AI Proactive Agent (decision-making)
 npm run ai-agent:proactive             # Single run
-npm run ai-agent:proactive:daemon     # Start background service
-node ai-proactive-agent.js status     # Check daemon status
-node ai-proactive-agent.js stop       # Stop daemon
+npm run ai-agent:proactive:daemon      # Start background service
 ```
 
 For CI/local development without network access, use **Actions → `agent`** to run from GitHub.

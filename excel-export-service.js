@@ -1,4 +1,4 @@
-"""Excel export service for creating dynamic reports from notification data."""
+// Excel export service for creating dynamic reports from notification data
 
 const ExcelJS = require('exceljs');
 const sqlite3 = require('sqlite3');
