@@ -8545,7 +8545,16 @@ function rDists(){
     const sk=ty==='long'?'dists-long':'dists-short';
     const mkRow=d=>{
       const p=pri(d,'dist');
-      let days='–';if(d.dt){const diff=db(d.dt,t);const col=d.st!=='הושלם'&&diff>7?'#e63946':diff>3?'#f4a261':'var(--teal)';days=`<b style="color:${col}">${diff}י</b>`;}
+      // הושלם → משך ההפצה בפועל (מהיציאה להפצה ועד המסירה); אחרת — כמה זמן היא פתוחה
+      let days='–';
+      if(d.dt){
+        const done=d.st==='הושלם'&&d.doneAt;
+        const diff=done?Math.abs(db(d.dt,d.doneAt)):db(d.dt,t);
+        const col=done?'var(--teal)':diff>7?'#e63946':diff>3?'#f4a261':'var(--teal)';
+        const tip=(d.dealDate?'נפתחה העסקה '+fmtDate(d.dealDate)+' · ':'')+'יצאה להפצה '+fmtDate(d.dt)
+                 +(done?' · נמסרה ללקוח '+fmtDate(d.doneAt):'');
+        days=`<b style="color:${col}" title="${esc(tip)}"${done?` onclick="event.stopPropagation();showDistDoneSummary('${d.id}')" style="cursor:pointer;color:var(--teal);text-decoration:underline dotted"`:''}>${done?'✅ ':''}${diff}י</b>`;
+      }
       const chk=SEL[sk]&&SEL[sk].has(d.id)?'checked':'';
       const mgr=MANAGERS.find(m=>m.name===(d.hd||''));
       const _recip=(mgr?mgr.name:'')+(d.hp?(mgr?' + ':'')+d.hp:'');
@@ -15686,6 +15695,9 @@ function _commitCell(table,id,field,nv){
   if(table==='deals'){ const d2=(D.deals||[]).find(d=>d.id===id);
     if(field==='st'&&nv==='נסגר'&&d2){ try{syncDealToClient(d2);syncDealToSalary(d2);syncDealToDist(d2);saveAll();}catch(e){} } }
   else if(table==='dists'){ const d2=(D.dists||[]).find(x=>x.id===id);
+    if(field==='st'){ const was=!!(d2&&d2.doneAt); _distStampDone(id,nv);
+      if(nv==='הושלם'&&!was){ try{syncDistToClient(D.dists.find(x=>x.id===id));}catch(e){}
+        setTimeout(()=>showDistDoneSummary(id),140); } }
     // אם ההפצה משותפת בקישור מעקב — מפרסמים מחדש בשקט כדי שהלקוח יראה תמיד עדכני
     if(d2&&d2._trackTok){ try{_publishTrackAndMark(d2);}catch(e){} } }
   else if(table==='salary'){ const s2=(D.salary||[]).find(x=>x.id===id);
@@ -15879,7 +15891,9 @@ function syncDealToDist(deal,silent){
     ad:'',
     inc:deal.mv||0,
     eq:deal.ot||0,
-    dt:deal.date||nd(),
+    dt:nd(),                 // תאריך ההפצה = היום שבו נסגרה העסקה ועברה לביצוע
+    dealDate:deal.date||'',  // תאריך פתיחת העסקה — נשמר כדי לראות את משך המו"מ
+    closedAt:nd(),
     st:'ממתין להפצה',
     ty:deal.ty||'long',
     ptype:deal.ptype||'',
@@ -15927,7 +15941,9 @@ function saveDist(){
   if(EI){dbUpdate('dists',EI,row);savedDist=D.dists.find(x=>x.id==EI);}else{savedDist=dbInsert('dists',row);}
   // סנכרון שלבים לפי הסטטוס — רק כשהמשתמש שינה את הסטטוס בטופס (כדי לא לדרוס שלבים שקודמו בגרף)
   if(savedDist&&_wasEdit&&_oldStatus!==null&&row.st!==_oldStatus){ _distSyncStagesFromStatus(savedDist); dbUpdate('dists',savedDist.id,{stages:savedDist.stages}); }
-  if(savedDist&&savedDist.st==='הושלם')syncDistToClient(savedDist);
+  if(savedDist)_distStampDone(savedDist.id,savedDist.st);
+  if(savedDist&&savedDist.st==='הושלם'){ syncDistToClient(savedDist);
+    if(!_wasEdit||_oldStatus!=='הושלם')setTimeout(()=>showDistDoneSummary(savedDist.id),160); }
   if(savedDist&&syncDistToSalary(savedDist))toast('🔗 מספר הפרויקט סונכרן לפרויקטי שכר','ok');
   closeM('mdist');rAll();
   const _hasClient = !!(savedDist && (String(savedDist.cle||'').trim() || String(savedDist.cl||'').trim()));
@@ -15954,14 +15970,61 @@ function _promptSendTrack(dist, changed){
 }
 // קידום סטטוס הפצה בלחיצה: ממתין להפצה → בהתקנה → הושלם → (מתחיל מחדש). בעיה → בהתקנה.
 // מסנכרן ללקוח בהשלמה ומזכיר לשלוח עדכון מעקב — בדיוק כמו שמירה מהמודאל.
+// חותמת סיום + סיכום פרויקט כשההפצה מגיעה ל"הושלם" — מתחילת המו"מ ועד מסירת המוצר
+function _distStampDone(id,st){
+  const d=(D.dists||[]).find(x=>x.id==id); if(!d)return null;
+  if(st==='הושלם'){ if(!d.doneAt){ d.doneAt=nd(); dbUpdate('dists',id,{doneAt:d.doneAt}); } return d; }
+  if(d.doneAt){ delete d.doneAt; dbUpdate('dists',id,{doneAt:''}); }   // נפתח מחדש — החותמת יורדת
+  return null;
+}
+function showDistDoneSummary(id){
+  const d=(D.dists||[]).find(x=>x.id==id); if(!d)return;
+  const start=d.dt||d.closedAt||'', deal=d.dealDate||'', done=d.doneAt||nd();
+  const days=(a,b)=>(a&&b)?Math.abs(db(a,b)):null;
+  const inDist=days(start,done), inNeg=days(deal,start), total=days(deal,done);
+  const old=document.getElementById('dist-done-ov'); if(old)old.remove();
+  const row=(l,v,clr)=>v==null?'':`<div style="display:flex;justify-content:space-between;gap:12px;font-size:11.5px;padding:3px 0"><span style="color:var(--text3)">${l}</span><b style="color:${clr||'var(--text2)'};direction:ltr">${v}</b></div>`;
+  const el=document.createElement('div'); el.id='dist-done-ov';
+  el.style.cssText='position:fixed;inset:0;background:rgba(4,7,18,.78);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px';
+  el.onclick=ev=>{ if(ev.target===el)el.remove(); };
+  el.innerHTML=`<div style="background:linear-gradient(135deg,#101525,#0a0e1c);border:1px solid rgba(6,214,160,.4);border-radius:16px;max-width:420px;width:100%;padding:18px;box-shadow:0 12px 40px rgba(0,0,0,.65);direction:rtl" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+      <div style="font-size:15px;font-weight:900;color:var(--teal)">✅ סיכום פרויקט — המוצר נמסר ללקוח</div>
+      <button onclick="document.getElementById('dist-done-ov').remove()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="font-size:12px;font-weight:800;color:var(--text);margin:8px 0 2px">${esc(d.co||'—')}${d.no?' · פרויקט '+esc(d.no):''}</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px">${esc(d.so||'')}${d.ad?' · '+esc(d.ad):''}</div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:9px 12px;margin-bottom:9px">
+      ${row('📅 נפתחה העסקה',deal?fmtDate(deal):'—')}
+      ${row('🚀 יצאה להפצה',start?fmtDate(start):'—','#4cc9f0')}
+      ${row('✅ נמסר ללקוח',fmtDate(done),'var(--teal)')}
+    </div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:9px 12px;margin-bottom:9px">
+      ${row('משך המו״מ',inNeg==null?'—':inNeg+' ימים')}
+      ${row('משך ההפצה',inDist==null?'—':inDist+' ימים','#f4a261')}
+      ${row('סה״כ מפתיחה למסירה',total==null?'—':total+' ימים','var(--gold)')}
+    </div>
+    <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:9px 12px">
+      ${row('הכנסה חודשית',fmt(d.inc),'var(--teal)')}
+      ${row('ציוד / OTC',fmt(d.eq),'#4cc9f0')}
+      ${row('מטפל',esc(d.hd||'—'))}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap">
+      <button class="btn btnp" onclick="document.getElementById('dist-done-ov').remove()" style="font-size:12px">סגור</button>
+      <button class="btn" onclick="document.getElementById('dist-done-ov').remove();openM('dist','${d.id}')" style="font-size:12px">✏️ פתח את ההפצה</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+}
 function advanceDistStatus(id){
   const d=(D.dists||[]).find(x=>x.id==id); if(!d)return;
   const flow={'ממתין להפצה':'בהתקנה','בהתקנה':'הושלם','בעיה':'בהתקנה','הושלם':'ממתין להפצה'};
   const next=flow[d.st]||'בהתקנה';
   d.st=next; _distSyncStagesFromStatus(d); // הסטטוס → שלבים
   dbUpdate('dists',id,{st:d.st,stages:d.stages});
+  _distStampDone(id,next);
   const nd2=D.dists.find(x=>x.id==id);
-  if(next==='הושלם'&&nd2)syncDistToClient(nd2);
+  if(next==='הושלם'&&nd2){ syncDistToClient(nd2); setTimeout(()=>showDistDoneSummary(id),120); }
   rAllBatched();
   showToast('📦 סטטוס ההפצה עודכן ל"'+next+'"','ok');
   const hasClient=!!(nd2&&(String(nd2.cle||'').trim()||String(nd2.cl||'').trim()));
