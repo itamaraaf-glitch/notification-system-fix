@@ -4,15 +4,18 @@
 const NotificationAIAgent = require('./ai-agent');
 const sqlite3 = require('sqlite3');
 const EventEmitter = require('events');
+const { loadRules } = require('./ai-config');
 
 class ProactiveAIAgent extends NotificationAIAgent {
   constructor(config = {}) {
     super(config);
+    // הכללים שלפיהם הסוכן מחליט — ברירות מחדל, ai-config.json, משתני סביבה, ואז config
+    this.rules = loadRules(config.rules || {});
     this.proactiveConfig = {
       escalationThreshold: config.escalationThreshold || 0.8,      // דרוג בעיות גבוהות
       autoResponseThreshold: config.autoResponseThreshold || 0.75,  // תגובה אוטומטית
       emergencyThreshold: config.emergencyThreshold || 0.9,         // חירום
-      decisionInterval: config.decisionInterval || 60000,           // החלטות כל דקה
+      decisionInterval: config.decisionInterval || this.rules.decisionIntervalMs,
       ...config
     };
 
@@ -22,6 +25,9 @@ class ProactiveAIAgent extends NotificationAIAgent {
     this.maxLogs = 100;
     this.lastSituation = null;
     this.startTime = Date.now();
+    // האם המצב היוזם הופעל במפורש. בלי זה כל הרצה בודדת של מחזור "מגלה" סוכן
+    // שאינו רץ, מחליטה לשקם אותו, ומדליקה טיימרים שאיש לא ביקש.
+    this.shouldBeRunning = false;
   }
 
   // Add log entry
@@ -59,14 +65,16 @@ class ProactiveAIAgent extends NotificationAIAgent {
       actions: []
     };
 
+    let db;
     try {
-      const db = await this.getDb();
+      db = await this.getDb();
 
       // Get critical alerts
       const critical = await new Promise((resolve, reject) => {
         db.all(
           `SELECT COUNT(*) as count FROM notifications
-           WHERE severity = 'HIGH' AND created_at > datetime('now', '-1 hour')`,
+           WHERE severity = 'HIGH' AND created_at > datetime('now', ?)`,
+          [`-${this.rules.situationWindowHours} hours`],
           (err, rows) => {
             if (err) reject(err);
             else resolve(rows[0]?.count || 0);
@@ -80,7 +88,8 @@ class ProactiveAIAgent extends NotificationAIAgent {
       const high = await new Promise((resolve, reject) => {
         db.all(
           `SELECT COUNT(*) as count FROM notifications
-           WHERE severity = 'MEDIUM' AND created_at > datetime('now', '-1 hour')`,
+           WHERE severity = 'MEDIUM' AND created_at > datetime('now', ?)`,
+          [`-${this.rules.situationWindowHours} hours`],
           (err, rows) => {
             if (err) reject(err);
             else resolve(rows[0]?.count || 0);
@@ -90,12 +99,13 @@ class ProactiveAIAgent extends NotificationAIAgent {
 
       situation.highCount = high;
 
-      db.close();
-
       return situation;
     } catch (error) {
       this.emit('error', { phase: 'situation-analysis', error: error.message });
       return situation;
+    } finally {
+      // חובה גם בנתיב השגיאה — אחרת נשאר חיבור פתוח בכל מחזור שנכשל
+      if (db) db.close();
     }
   }
 
@@ -104,18 +114,18 @@ class ProactiveAIAgent extends NotificationAIAgent {
     const decisions = [];
 
     // Decision 1: Escalation needed?
-    if (situation.criticalCount > 5) {
+    if (situation.criticalCount > this.rules.criticalEscalationCount) {
       decisions.push({
         type: 'escalate',
         priority: 'high',
-        reason: `${situation.criticalCount} critical alerts in last hour`,
+        reason: `${situation.criticalCount} critical alerts in last ${this.rules.situationWindowHours}h`,
         action: 'escalate_to_management',
-        recipients: ['manager@company.com', 'team@company.com']
+        recipients: this.rules.escalationRecipients
       });
     }
 
     // Decision 2: Anomaly response
-    if (situation.anomalies.length > 3) {
+    if (situation.anomalies.length > this.rules.anomalyInvestigationCount) {
       decisions.push({
         type: 'investigate',
         priority: 'medium',
@@ -126,17 +136,17 @@ class ProactiveAIAgent extends NotificationAIAgent {
     }
 
     // Decision 3: Accuracy improvement
-    if (situation.accuracy < 0.7) {
+    if (situation.accuracy < this.rules.minAccuracy) {
       decisions.push({
         type: 'retrain',
         priority: 'low',
-        reason: `Accuracy below 70%: ${(situation.accuracy * 100).toFixed(1)}%`,
+        reason: `Accuracy below ${(this.rules.minAccuracy * 100).toFixed(0)}%: ${(situation.accuracy * 100).toFixed(1)}%`,
         action: 'request_feedback_loop'
       });
     }
 
     // Decision 4: Auto-categorize low-priority
-    if (situation.criticalCount === 0 && situation.highCount < 3) {
+    if (situation.criticalCount === 0 && situation.highCount < this.rules.stableHighCount) {
       decisions.push({
         type: 'auto_process',
         priority: 'low',
@@ -145,8 +155,9 @@ class ProactiveAIAgent extends NotificationAIAgent {
       });
     }
 
-    // Decision 5: Health check
-    if (!this.isRunning) {
+    // Decision 5: Health check — רק אם המצב היוזם הופעל והטיימר נפל,
+    // ולא כשמריצים מחזור יחיד ביודעין
+    if (this.shouldBeRunning && !this.isRunning) {
       decisions.push({
         type: 'recovery',
         priority: 'critical',
@@ -232,12 +243,11 @@ class ProactiveAIAgent extends NotificationAIAgent {
       db.all(
         'SELECT DISTINCT entity_type, entity_id FROM notifications',
         (err, rows) => {
-          db.close();
           if (err) reject(err);
           else resolve(rows || []);
         }
       );
-    });
+    }).finally(() => db.close());
 
     const report = {
       timestamp: new Date().toISOString(),
@@ -298,14 +308,20 @@ class ProactiveAIAgent extends NotificationAIAgent {
     const results = await this.batch_analyze(notifications);
     let processed = 0;
 
-    for (const [notif, analysis] of results) {
-      if (!analysis.is_spam && analysis.severity_score < 0.5) {
-        // Auto-mark as read
-        const db = await this.getDb();
-        db.run('UPDATE notifications SET is_read = 1 WHERE id = ?', [notif.id], () => {
-          db.close();
-        });
-        processed++;
+    // חיבור אחד לכל האצווה, ונסגר פעם אחת — קודם נפתח חיבור לכל שורה
+    const toMark = results
+      .filter(([, analysis]) => !analysis.is_spam && analysis.severity_score < 0.5)
+      .map(([notif]) => notif.id);
+    if (toMark.length) {
+      const db = await this.getDb();
+      try {
+        await Promise.all(toMark.map((id) => new Promise((resolve, reject) => {
+          db.run('UPDATE notifications SET is_read = 1 WHERE id = ?', [id],
+            (err) => (err ? reject(err) : resolve()));
+        })));
+        processed = toMark.length;
+      } finally {
+        db.close();
       }
     }
 
@@ -389,6 +405,7 @@ class ProactiveAIAgent extends NotificationAIAgent {
     }
 
     this.isRunning = true;
+    this.shouldBeRunning = true;
     this.emit('start-proactive', { config: this.proactiveConfig });
 
     // Initial run
@@ -402,11 +419,17 @@ class ProactiveAIAgent extends NotificationAIAgent {
   }
 
   stopProactive() {
+    this.shouldBeRunning = false;
     if (!this.isRunning) return;
 
     this.isRunning = false;
     if (this.proactiveInterval) {
       clearInterval(this.proactiveInterval);
+      this.proactiveInterval = null;
+    }
+    // גם הטיימרים של סוכן הבסיס נעצרים, אחרת התהליך לא מסיים
+    if (typeof this.stop === 'function') {
+      try { this.stop(); } catch (e) { /* אין מה לעצור */ }
     }
 
     this.emit('stop-proactive', { stats: this.stats });

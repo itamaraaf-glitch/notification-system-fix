@@ -67,9 +67,37 @@ FIREBASE_DATABASE_URL="https://<הפרויקט-שלך>-default-rtdb.firebaseio.c
 ## בדיקות
 
 ```bash
-npm test          # 178 בדיקות JavaScript (סוכן הרשת + ראדאר המכרזים)
+npm test          # 230 בדיקות JavaScript — סוכן הרשת, ראדאר המכרזים ומערכת ה-AI
+npm run test:ai   # רק מערכת ה-AI (52): מבנה, כללי החלטה, ייצוא ו-API הדשבורד
 npm run test:py   # 17 בדיקות פייתון (מנהל ההתראות + מנתח ה-AI)
-npm run test:all  # שתיהן
+npm run test:all  # הכול
+```
+
+הבדיקות של ה-AI רצות בלי רשת ובלי מפתחות, על מסדי נתונים זמניים.
+
+---
+
+## כללי ההחלטה של הסוכן
+
+מוגדרים ב-`ai-config.js` וניתנים לשינוי בלי לגעת בקוד — דרך `ai-config.json`
+בשורש, דרך משתני סביבה, או בקריאה ליוצר הסוכן.
+
+| כלל | ברירת מחדל | משתנה סביבה |
+|---|---|---|
+| הסלמה מעל כמות התראות חמורות | 5 | `AI_CRITICAL_ESCALATION_COUNT` |
+| חקירה מעל כמות חריגויות | 3 | `AI_ANOMALY_INVESTIGATION_COUNT` |
+| בקשת משוב מתחת לדיוק | 0.7 | `AI_MIN_ACCURACY` |
+| "מצב יציב" עד כמות התראות גבוהות | 3 | `AI_STABLE_HIGH_COUNT` |
+| חלון הזמן לבדיקת מצב (שעות) | 1 | `AI_SITUATION_WINDOW_HOURS` |
+| מרווח בין מחזורים (מילישניות) | 30000 | `AI_DECISION_INTERVAL_MS` |
+| נמעני הסלמה | *(ריק)* | `AI_ESCALATION_RECIPIENTS` |
+
+נמעני ההסלמה ריקים בכוונה — הסלמה בלי נמען צריכה להיראות כפער, לא להישלח
+לכתובת לדוגמה.
+
+```bash
+AI_CRITICAL_ESCALATION_COUNT=3 AI_ESCALATION_RECIPIENTS="me@x.co.il" npm run dashboard
+AI_DB_PATH=/path/to/other.db npm run dashboard    # מסד נתונים אחר
 ```
 
 ---

@@ -7,8 +7,12 @@ const ProactiveAIAgent = require('./ai-proactive-agent');
 const path = require('path');
 
 const app = express();
-const exportService = new ExcelExportService();
+// מסד הנתונים ניתן להחלפה דרך AI_DB_PATH — קודם היה קבוע, ולכן אי אפשר היה
+// להריץ מופע שני או לבדוק את השרת מול מסד נתונים נפרד
+const DB_PATH = process.env.AI_DB_PATH || 'notifications.db';
+const exportService = new ExcelExportService(DB_PATH);
 let agent = new ProactiveAIAgent({
+  dbPath: DB_PATH,
   decisionInterval: 30000,
   batchSize: 20
 });
@@ -226,6 +230,7 @@ app.listen(PORT, () => {
 ╚════════════════════════════════════════════╝
 
 🌐 שרת דשבורד: http://localhost:${PORT}
+🗄️  מסד נתונים:  ${DB_PATH}
 📊 דשבורד:     http://localhost:${PORT}/ai-dashboard.html
 📁 ייצוא:      http://localhost:${PORT}/export.html
 
