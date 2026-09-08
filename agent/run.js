@@ -68,6 +68,24 @@ function loadWatch(idOrPath) {
     throw new Error('למשימה אין טקסונומיה עם topics');
   }
 
+  // `taxonomyTopics` מצמצם טקסונומיה משותפת לתת־קבוצת נושאים. זו החלופה
+  // להעתקת קובץ הטקסונומיה: העתק שני נראה תמים ביום שנוצר, ומתחיל לסטות
+  // מהמקור בעדכון הראשון — בדיוק התקלה שהמאגר הזה כבר תיעד. מילות השלילה
+  // נשארות במלואן, כי הן אינן משויכות לנושא ומקזזות את כולם.
+  if (Array.isArray(watch.taxonomyTopics) && watch.taxonomyTopics.length) {
+    const missing = watch.taxonomyTopics.filter(t => !watch.taxonomy.topics[t]);
+    if (missing.length) {
+      throw new Error(`taxonomyTopics מפנה לנושאים שאינם בטקסונומיה: ${missing.join(', ')}`);
+    }
+    const wanted = new Set(watch.taxonomyTopics);
+    watch.taxonomy = {
+      ...watch.taxonomy,
+      topics: Object.fromEntries(
+        Object.entries(watch.taxonomy.topics).filter(([id]) => wanted.has(id))
+      )
+    };
+  }
+
   // המקורות יכולים לשבת בקובץ נפרד, כדי שכמה משימות יחלקו רשימת מקורות אחת
   // במקום להעתיק אותה. `sourcesKey` הוא השדה שבתוכו יושב המערך.
   if (watch.sourcesFile) {
