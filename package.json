@@ -3,7 +3,7 @@
   "private": true,
   "description": "CRM + סוכן רשת (agent/) + ראדאר מכרזים. הסורק והסוכן חסרי תלויות; החבילה נדרשת רק לסקירת ה-AI האופציונלית.",
   "scripts": {
-    "test": "node --test tenders/test/*.test.js agent/test/*.test.js",
+    "test": "node --test tenders/test/*.test.js agent/test/*.test.js test/*.test.js",
     "test:agent": "node --test agent/test/*.test.js",
     "agent": "node agent/run.js",
     "export-server": "node export-server.js",
@@ -16,7 +16,8 @@
     "firebase:sync:daemon": "nohup node firebase-sync.js > firebase-sync.log 2>&1 &",
     "test:py": "python3 -m unittest discover -p \"test_*.py\" -v",
     "test:all": "npm test && npm run test:py",
-    "demo": "node test-data-generator.js && node start-dashboard.js"
+    "demo": "node test-data-generator.js && node start-dashboard.js",
+    "test:ai": "node --test test/*.test.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.70.0",
