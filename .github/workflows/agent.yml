@@ -1,20 +1,24 @@
-# סוכן רשת — הרצה ידנית של משימת מעקב (watch) מתוך agent/watches/.
+# סוכן רשת — הרצת משימת מעקב (watch) מתוך agent/watches/.
 #
-# למה ידנית ולא מתוזמן: אין כרגע משימה מופעלת. משימה נכנסת לתזמון רק אחרי
-# שהמקורות שלה **נמדדו** — probe מדווח מי נענה ומי חוסם, ו-audit מראה איפה נופל
-# כל פריט. כתובת משוערת שלא נענתה אינה "אתר חוסם" אלא לרוב כתובת שגויה, ושתי
-# המסקנות נראות זהות בלוג; במאגר הזה הבלבול הזה כבר סיווג שש רשויות כחוסמות
-# כשהדומיין פשוט היה שגוי. הריצה כאן היא הדרך למדוד, כי לסביבת הפיתוח המקומית
-# אין גישת רשת החוצה.
-#
-# להוספת תזמון: מפעילים את המשימה (enabled: true) ומוסיפים כאן schedule.
+# **מתוזמן** למשימת התקשורת, ו**ידני** לכל השאר. משימה נכנסת לתזמון רק אחרי
+# שהמקורות שלה נמדדו: probe מדווח מי נענה ומי חוסם, audit מראה איפה נופל כל
+# פריט, ו-dry-run מראה מה ייכנס בפועל. כתובת משוערת שלא נענתה אינה "אתר חוסם"
+# אלא לרוב כתובת שגויה, ושתי המסקנות נראות זהות בלוג — במאגר הזה הבלבול הזה
+# כבר סיווג שש רשויות כחוסמות כשהדומיין פשוט היה שגוי. הריצה כאן היא הדרך
+# למדוד, כי לסביבת הפיתוח המקומית אין גישת רשת החוצה.
 name: agent
 
 on:
+  schedule:
+    # 07:10 שעון ישראל (קיץ), ראשון–חמישי — שעה אחרי ראדאר המכרזים.
+    # ההיסט מכוון: שתי המערכות סורקות את mr.gov.il, וסריקה בו־זמנית מאותן
+    # כתובות IP של GitHub Actions היא בדיוק הקצב שגרם ל-17 רשויות להחזיר 403
+    # אחרי שעבדו ארבעים דקות קודם.
+    - cron: '10 4 * * 0-4'
   workflow_dispatch:
     inputs:
       watch:
-        description: 'מזהה המשימה מתוך agent/watches/ (למשל: tenders). ריק = הצגת הרשימה בלבד.'
+        description: 'מזהה המשימה מתוך agent/watches/ (למשל: telecom). ריק = הצגת הרשימה בלבד.'
         required: false
         default: ''
       mode:
@@ -36,7 +40,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: agent-${{ inputs.watch }}
+  group: agent-${{ inputs.watch || 'telecom' }}
   cancel-in-progress: false
 
 jobs:
@@ -49,16 +53,35 @@ jobs:
       - name: בדיקות ליבת הסוכן
         run: npm run test:agent
 
+      # בהרצה מתוזמנת אין inputs, ולכן ברירות המחדל נקבעות כאן במקום אחד.
+      # בלי זה כל תנאי בהמשך היה צריך לדעת בעצמו מה קורה בתזמון.
+      - name: מה מריצים
+        id: cfg
+        env:
+          IN_WATCH: ${{ inputs.watch }}
+          IN_MODE: ${{ inputs.mode }}
+          IN_SOURCE: ${{ inputs.source }}
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "watch=telecom" >> "$GITHUB_OUTPUT"
+            echo "mode=scan"     >> "$GITHUB_OUTPUT"
+            echo "source="       >> "$GITHUB_OUTPUT"
+          else
+            echo "watch=$IN_WATCH"   >> "$GITHUB_OUTPUT"
+            echo "mode=$IN_MODE"     >> "$GITHUB_OUTPUT"
+            echo "source=$IN_SOURCE" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: המשימות המוגדרות
-        if: inputs.watch == ''
+        if: steps.cfg.outputs.watch == ''
         run: node agent/run.js --list | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: הרצת המשימה
-        if: inputs.watch != ''
+        if: steps.cfg.outputs.watch != ''
         env:
-          WATCH: ${{ inputs.watch }}
-          MODE: ${{ inputs.mode }}
-          SOURCE: ${{ inputs.source }}
+          WATCH: ${{ steps.cfg.outputs.watch }}
+          MODE: ${{ steps.cfg.outputs.mode }}
+          SOURCE: ${{ steps.cfg.outputs.source }}
         run: |
           args="--watch=$WATCH"
           [ -n "$SOURCE" ] && args="$args --source=$SOURCE"
@@ -71,7 +94,9 @@ jobs:
 
       # נשמר רק במצב scan — probe, audit ו-dry-run אינם כותבים דבר מלכתחילה
       - name: שמירת התוצאות במאגר
-        if: inputs.watch != '' && inputs.mode == 'scan'
+        if: steps.cfg.outputs.watch != '' && steps.cfg.outputs.mode == 'scan'
+        env:
+          WATCH: ${{ steps.cfg.outputs.watch }}
         run: |
           if git diff --quiet -- agent/data; then
             echo "אין שינוי בנתוני הסוכן — אין מה לשמור"
@@ -80,7 +105,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add agent/data
-          git commit -m "סוכן רשת: עדכון נתוני ${{ inputs.watch }} ($(date -u +%Y-%m-%d))"
+          git commit -m "סוכן רשת: עדכון נתוני $WATCH ($(date -u +%Y-%m-%d))"
           for attempt in 1 2 3 4; do
             if git push origin "HEAD:${GITHUB_REF_NAME}"; then exit 0; fi
             echo "הדחיפה נכשלה — ניסיון $attempt"
