@@ -8,6 +8,79 @@
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <script>if(window.top!==window.self){try{window.top.location=window.self.location;}catch(e){document.documentElement.style.display='none';}}</script>
+<script>
+/* ── שכבת חוסן: לכידת שגיאות שלא נתפסו ─────────────────────────────────────
+   בלי זה שגיאה אחת באמצע רינדור עוצרת את השורה הבאה ומשאירה מסך ריק או כפתור
+   שלא מגיב — בלי שום הסבר. זה בדיוק מה שנראה מבחוץ כמו "מערכת משובשת".
+   כאן כל שגיאה נרשמת ליומן מתמשך, מוצגת הודעה קצרה עם כפתור העתקה, ואפשר
+   להעתיק את היומן גם ידנית (Alt+E או _errCopy() במסוף) כדי לשלוח אותו הלאה.
+   נטען ראשון בכוונה — כדי שיתפוס גם שגיאות שקורות לפני שהמערכת נבנתה. */
+(function(){
+  const MAX=40, KEY='cem_err_log', WINDOW_MS=60000, MAX_TOASTS=3;
+  let log=[];
+  try{ const s=JSON.parse(localStorage.getItem(KEY)||'[]'); if(Array.isArray(s)) log=s.slice(-MAX); }catch(e){}
+  let lastMsg='', lastTs=0, shown=[];
+  const persist=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(log)); }catch(e){} };
+
+  function record(kind,msg,where,stack){
+    const now=Date.now(), text=String(msg==null?'שגיאה':msg).slice(0,300);
+    // אותה שגיאה בלולאה (rAF/interval) לא מציפה את היומן ולא את המסך
+    if(text===lastMsg && now-lastTs<3000) return false;
+    lastMsg=text; lastTs=now;
+    log.push({t:new Date().toISOString(), sec:(window.currentSec||''), kind, msg:text,
+      where:String(where||'').slice(0,200),
+      stack:String(stack||'').split('\n').slice(0,4).map(s=>s.trim()).join(' | ').slice(0,500)});
+    if(log.length>MAX) log=log.slice(-MAX);
+    persist();
+    return true;
+  }
+  function announce(){
+    const now=Date.now();
+    shown=shown.filter(t=>now-t<WINDOW_MS);
+    if(shown.length>=MAX_TOASTS) return;   // תקלה חוזרת לא הופכת את המסך לקיר הודעות
+    shown.push(now);
+    const m='⚠️ תקלה זמנית — הפעולה לא הושלמה. הנתונים שלך לא נפגעו.';
+    try{
+      if(typeof showToastWithAction==='function') showToastWithAction(m,'העתק פרטים',window._errCopy);
+      else if(typeof showToast==='function') showToast(m,'err');
+    }catch(e){}
+  }
+
+  window.addEventListener('error',function(ev){
+    // כשל טעינת משאב (תמונה/סקריפט) מגיע לאותו אירוע אבל אינו שגיאת קוד
+    if(ev && ev.target && ev.target!==window && ev.target.tagName) return;
+    if(record('error', ev.message, (ev.filename||'')+':'+(ev.lineno||0), ev.error&&ev.error.stack)) announce();
+  },true);
+  window.addEventListener('unhandledrejection',function(ev){
+    const r=ev.reason;
+    if(record('promise', (r&&r.message)||r, '', r&&r.stack)) announce();
+  });
+
+  window._errLog   = ()=>log.slice();
+  window._errClear = ()=>{ log=[]; lastMsg=''; persist(); return 'היומן נוקה'; };
+  window._errText  = ()=>log.length
+    ? log.map(e=>`[${e.t}] ${e.kind} @${e.sec||'—'}\n  ${e.msg}\n  ${e.where}\n  ${e.stack}`).join('\n\n')
+    : 'אין שגיאות רשומות.';
+  window._errCopy  = function(){
+    const txt=window._errText();
+    const done=()=>{ try{ if(typeof showToast==='function') showToast('יומן השגיאות הועתק','ok'); }catch(e){} };
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText) return navigator.clipboard.writeText(txt).then(done,fallback);
+    }catch(e){}
+    fallback();
+    function fallback(){
+      try{
+        const ta=document.createElement('textarea');
+        ta.value=txt; ta.style.cssText='position:fixed;top:-1000px;opacity:0';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); done();
+      }catch(e){ console.log(txt); }
+    }
+  };
+  document.addEventListener('keydown',function(e){
+    if(e.altKey && (e.key==='e'||e.key==='E')){ e.preventDefault(); window._errCopy(); }
+  });
+})();
+</script>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -5981,16 +6054,9 @@ function _initPriFilters(){ document.querySelectorAll('.pf-slot').forEach(s=>{ i
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',_initPriFilters); else _initPriFilters();
 
 // ===== NAVIGATION =====
-function nav(s){
-  document.querySelectorAll('.sec').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.ni').forEach(x=>x.classList.remove('active'));
-  document.getElementById('sec-'+s).classList.add('active');
-  const el=document.getElementById('nv-'+s);if(el)el.classList.add('active');
-  const fns={dashboard:rDash,alerts:rAlerts,deals:rDeals,tenders:rTenders,dists:rDists,salary:rSalary,meetings:rMeetings,tasks:rTasks,inbox:rInbox,workplan:rWorkPlan,export:updateExportCounts,clients:rClients};
-  if(fns[s])fns[s]();
-  _hiliteAll(); _hdrRefreshAll();
-  setTimeout(initDragScrolls,100);
-}
+// nav() עצמו מוגדר בבלוק הניווט הקולנועי בתחתית הקובץ. הייתה כאן גרסה ישנה
+// ופשוטה שנדרסה על ידו — כלומר כל תיקון שנעשה בה לא השפיע על כלום. הוסרה כדי
+// שלא יהיו שתי הגדרות לאותה פונקציה.
 function swTab(el,tabsId,t1,t2,t3,t4){
   document.getElementById(tabsId).querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
@@ -18077,7 +18143,9 @@ function nav(s){
   const outSec = document.getElementById('sec-'+currentSec);
   const inSec  = document.getElementById('sec-'+s);
   // הגנה: שם מסך לא קיים (טעות בקישור) לא יקרוס ולא ישאיר מסך ריק — פשוט מתעלמים
-  if(!inSec||!outSec){ console.warn('nav: unknown section',s); return; }
+  // חשוב: משחררים את הנעילה לפני היציאה. בלעדי זה שם-מסך שגוי אחד היה משאיר
+  // את navBusy דלוק לתמיד — וכל הניווט במערכת מפסיק להגיב עד רענון.
+  if(!inSec||!outSec){ console.warn('nav: unknown section',s); navBusy=false; _navPending=null; return; }
 
   // Trigger wipe overlay
   const wipe = document.getElementById('cin-wipe');
@@ -18113,12 +18181,18 @@ function nav(s){
       dists:rDists, salary:rSalary, meetings:rMeetings, tasks:rTasks, inbox:rInbox,
       workplan:rWorkPlan, export:updateExportCounts, clients:rClients
     };
-    if(renders[s]) renders[s]();
+    // רינדור נכשל לא מבטל את המעבר: המסך עדיין נפתח, הניווט נשאר חי, והשגיאה
+    // נרשמת ליומן. קודם, חריגה כאן דילגה על שחרור navBusy והקפיאה את כל הניווט.
+    try{ if(renders[s]) renders[s](); }
+    catch(err){
+      console.error('nav: render failed for',s,err);
+      try{ window.dispatchEvent(new ErrorEvent('error',{message:'רינדור המסך "'+s+'" נכשל: '+(err&&err.message||err),error:err})); }catch(e){}
+    }
     setTimeout(initDragScrolls, 60);
     currentSec = s;
     // זוכרים את המסך הנוכחי — כדי שרענון/עדכון גרסה/חזרה לאפליקציה לא יקפיצו ללוח הבקרה
     try{sessionStorage.setItem('cem_sec',s);}catch(e){}
-    if(window.refreshEdges) window.refreshEdges();
+    try{ if(window.refreshEdges) window.refreshEdges(); }catch(e){ console.warn('refreshEdges',e); }
 
     // Two rAFs: flush the "none" transition, then animate in
     requestAnimationFrame(()=>{
