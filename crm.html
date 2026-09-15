@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- ── אבטחה: מדיניות אבטחת תוכן (CSP) — חוסמת טעינת קוד ושליחת נתונים לכל שרת שאינו ברשימה המאושרת ── -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://api.qrserver.com https://images.higgs.ai; media-src 'self'; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://api.anthropic.com https://generativelanguage.googleapis.com http://localhost:* ws://localhost:*; frame-src https://*.firebaseio.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://api.qrserver.com https://images.higgs.ai; media-src 'self'; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://api.anthropic.com https://generativelanguage.googleapis.com https://boi.org.il https://www.boi.org.il https://api.frankfurter.app http://localhost:* ws://localhost:*; frame-src https://*.firebaseio.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <!-- אבטחה: בלי דליפת כתובות לאתרים חיצוניים, ובלי אינדוקס במנועי חיפוש -->
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow, noarchive">
@@ -13425,6 +13425,142 @@ function renderWorkPlanPlan(all){
         ${a.btn?`<button class="btn btnp" onclick="${a.btn.fn}" style="font-size:10.5px;white-space:nowrap;flex:0 0 auto">${a.btn.l}</button>`:''}</div>`).join('')}</div></div>`:''}
   </div>`;
 }
+// ═══ 💱 שער הדולר היציג — המרת עלויות מדולר לשקל בכל המחשבונים ═══════════════
+// ספקים מצטטים בדולר, והמודלים הכלכליים כולם בשקלים. כאן נשמר שער אחד לכל
+// המערכת, מתעדכן מבנק ישראל (השער היציג) ונשמר מקומית — כדי שהמחשבון יעבוד גם
+// בלי רשת ובלי שיוצג שער מומצא. ההמרה מתבצעת ברגע קריאת השדות בלבד: החישוב,
+// השמירה, סגירת העסקה והייצוא נשארים תמיד בשקלים, כך שאין דרך ששער יתגנב
+// לתוך נתוני העסקה ויישמר שם.
+const FX_KEY='cem_fx_usd';
+const FX_DEFAULT=3.7;                  // ברירת מחדל עד שמתקבל שער אמיתי — מסומנת ככזו
+const FX_FRESH_MS=6*3600*1000;         // רענון אוטומטי לכל היותר אחת ל-6 שעות
+const FX_SRC={boi:'שער יציג · בנק ישראל',market:'שער שוק — אינו השער היציג',
+              manual:'שער שהוזן ידנית',default:'ברירת מחדל — טרם עודכן'};
+let _fxBusy=false;
+
+function fxState(){
+  try{ const s=JSON.parse(localStorage.getItem(FX_KEY)||'null');
+       if(s&&isFinite(+s.rate)&&+s.rate>0)
+         return {rate:+s.rate,date:s.date||'',src:FX_SRC[s.src]?s.src:'manual',ts:+s.ts||0};
+  }catch(e){}
+  return {rate:FX_DEFAULT,date:'',src:'default',ts:0};
+}
+function fxRate(){ return fxState().rate; }
+function _fxStore(rate,date,src){
+  const s={rate:Math.round(+rate*10000)/10000,date:date||nd(),src,ts:Date.now()};
+  try{ localStorage.setItem(FX_KEY,JSON.stringify(s)); }catch(e){}
+  return s;
+}
+// בנק ישראל — המקור הרשמי לשער היציג
+async function _fxFromBoi(){
+  const r=await fetch('https://boi.org.il/PublicApi/GetExchangeRate?key=USD',{cache:'no-store'});
+  if(!r.ok)throw new Error('בנק ישראל השיב '+r.status);
+  const j=await r.json();
+  const rate=(+j.currentExchangeRate)/(+j.unit||1);
+  if(!isFinite(rate)||rate<=0)throw new Error('תשובה לא תקינה מבנק ישראל');
+  return {rate,date:String(j.lastUpdate||'').slice(0,10),src:'boi'};
+}
+// גיבוי בלבד, ומסומן במפורש כלא-יציג — עדיף שער שוק מתועד על שער ישן בלי ידיעה
+async function _fxFromMarket(){
+  const r=await fetch('https://api.frankfurter.app/latest?from=USD&to=ILS');
+  if(!r.ok)throw new Error('שער שוק השיב '+r.status);
+  const j=await r.json();
+  const rate=+(j.rates&&j.rates.ILS);
+  if(!isFinite(rate)||rate<=0)throw new Error('תשובת שער שוק לא תקינה');
+  return {rate,date:j.date||nd(),src:'market'};
+}
+async function fxRefresh(force){
+  const cur=fxState();
+  if(_fxBusy)return cur;
+  // שער שהוזן ידנית לא נדרס מאחורי הגב — רק לחיצה מפורשת על ↻ מחליפה אותו
+  if(!force && (cur.src==='manual' || (cur.src!=='default' && Date.now()-cur.ts<FX_FRESH_MS))) return cur;
+  _fxBusy=true;
+  if(force)fxBarRefreshAll('…');
+  try{
+    let got=null;
+    for(const fn of [_fxFromBoi,_fxFromMarket]){
+      try{ got=await fn(); break; }catch(e){ console.warn('fx:',e&&e.message); }
+    }
+    if(!got){
+      if(force)showToast('⚠️ לא ניתן לעדכן שער כרגע — בתוקף השער האחרון: '+cur.rate.toFixed(4)+' ₪','warn');
+      return cur;
+    }
+    const s=_fxStore(got.rate,got.date,got.src);
+    if(force)showToast('💱 שער עודכן: '+s.rate.toFixed(4)+' ₪ לדולר ('+FX_SRC[s.src]+')','ok');
+    return s;
+  } finally { _fxBusy=false; fxBarRefreshAll(); fxRerenderAll(); }
+}
+
+// שדות העלות שניתן להזין בדולר. הכנסות מהלקוח נשארות תמיד בשקלים — הן לא מצוטטות בדולר.
+const FX_FIELDS={ eq:['eq-cost','eq-lic','eq-inst','eq-supp'],
+                  roi:['roi-inv','roi-cost'],
+                  tx:['tx-infra','tx-bom','tx-oneexp','tx-tmp'] };
+const FX_RENDER={ eq:'_eqRender', roi:'_roiRender', tx:'_txRender' };
+window._fxCur=window._fxCur||{};
+function fxCur(scope){ return _fxCur[scope]==='USD'?'USD':'ILS'; }
+function fxSym(scope){ return fxCur(scope)==='USD'?'$':'₪'; }
+function fxIsUsd(scope){ return fxCur(scope)==='USD'; }
+/** ממיר ערך שדה למטבע החישוב (₪). זו הנקודה היחידה שבה הדולר הופך לשקל. */
+function fxToIls(scope,n){ return fxIsUsd(scope) ? (+n||0)*fxRate() : (+n||0); }
+function fxRerender(scope){ try{ const f=window[FX_RENDER[scope]]; if(typeof f==='function')f(); }catch(e){} }
+function fxRerenderAll(){ Object.keys(FX_RENDER).forEach(fxRerender); }
+
+function fxBarRefresh(scope,busy){
+  const b=document.getElementById('fx-bar-'+scope);
+  if(b)b.innerHTML=_fxBarInner(scope,b.dataset.accent||'#f4a261',busy);
+}
+function fxBarRefreshAll(busy){ Object.keys(FX_FIELDS).forEach(s=>fxBarRefresh(s,busy)); }
+function _fxBarInner(scope,accent,busy){
+  const s=fxState(), usd=fxIsUsd(scope);
+  const inp='background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:7px;padding:4px 7px;color:var(--text);font-family:inherit;font-size:11.5px;outline:none';
+  return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <span style="font-size:10px;font-weight:800;color:${accent}">💱 מטבע העלויות</span>
+      <select onchange="fxSetCur('${scope}',this.value)" style="${inp};width:86px">
+        <option value="ILS" ${usd?'':'selected'}>₪ שקל</option>
+        <option value="USD" ${usd?'selected':''}>$ דולר</option>
+      </select>
+      <input id="fx-rate-${scope}" type="number" step="0.0001" min="0.0001" value="${s.rate.toFixed(4)}"
+        onchange="fxSetManual('${scope}',this.value)" title="שער ₪ לדולר — ניתן לעריכה ידנית"
+        style="${inp};width:80px;direction:ltr;text-align:left">
+      <button onclick="fxRefresh(true)" title="עדכן את השער היציג מבנק ישראל"
+        style="background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:7px;color:${accent};font-size:12px;cursor:pointer;padding:3px 8px;line-height:1.2">${busy==='…'?'⏳':'↻'}</button>
+      <span style="font-size:9px;color:var(--text3)">${esc(FX_SRC[s.src]||'')}${s.date?' · '+fmtDate(s.date):''}</span>
+    </div>
+    ${usd?`<div style="font-size:9.5px;color:${accent};margin-top:5px;line-height:1.5">שדות העלות מוזנים ב-$ ומומרים ל-₪ לפי השער שלמעלה. התוצאה, השמירה והייצוא — תמיד בשקלים.</div>`:''}`;
+}
+function fxBar(scope,accent){
+  return `<div id="fx-bar-${scope}" data-accent="${accent}" style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:9px;padding:7px 9px;margin-bottom:9px">${_fxBarInner(scope,accent)}</div>`;
+}
+/** החלפת מטבע ממירה את מה שכבר הוקלד, כדי שהמשמעות של המספרים לא תשתנה בשקט. */
+function fxSetCur(scope,val){
+  const to=val==='USD'?'USD':'ILS';
+  if(fxCur(scope)===to)return;
+  const r=fxRate();
+  const conv=n=>{ const x=+n||0; return Math.round((to==='USD'?x/r:x*r)*100)/100; };
+  (FX_FIELDS[scope]||[]).forEach(id=>{ const e=document.getElementById(id); if(e&&e.value!=='')e.value=conv(e.value); });
+  // _roiSites מוגדר ב-let ולכן אינו קיים על window — הפנייה ישירה, אחרת ההמרה מדלגת עליו בשקט
+  if(scope==='roi'){ try{ if(Array.isArray(_roiSites))_roiSites.forEach(st=>{ st.cost=conv(st.cost); }); }catch(e){} }
+  _fxCur[scope]=to;
+  document.querySelectorAll('.fxsym-'+scope).forEach(e=>e.textContent=fxSym(scope));
+  fxBarRefresh(scope);
+  if(scope==='roi'){ try{_roiRenderSites();_roiSyncTotals();}catch(e){} }
+  fxRerender(scope);
+}
+function fxSetManual(scope,val){
+  const r=_aiNum(val);
+  if(!isFinite(r)||r<=0){ showToast('⚠️ שער לא תקין — נשמר השער הקודם','warn'); fxBarRefreshAll(); return; }
+  _fxStore(r,nd(),'manual');
+  fxBarRefreshAll(); fxRerenderAll();
+}
+/** תווית המטבע בתוך שם שדה — מתחלפת יחד עם הבורר, כדי שלא יישאר "₪" על שדה דולרי. */
+function fxLbl(scope,txt){ return txt+' <span class="fxsym-'+scope+'">'+fxSym(scope)+'</span>'; }
+/** שורת ההמרה בתוצאה — כמה דולרים הוזנו, לפי איזה שער, ומה יצא. בלעדיה אי אפשר לבדוק את המספר. */
+function fxNote(scope,ils){
+  if(!fxIsUsd(scope))return '';
+  const s=fxState(), usd=Math.round((+ils||0)/s.rate*100)/100;
+  return `<div style="font-size:10.5px;color:#f4a261;margin-top:6px;line-height:1.6">💱 <b>הומר מדולר:</b> $${usd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} × ${s.rate.toFixed(4)} = ${fmt(Math.round(+ils||0))} <span style="color:var(--text3)">(${esc(FX_SRC[s.src]||'')}${s.date?' · '+fmtDate(s.date):''})</span></div>`;
+}
+
 // ===== 🖥️ מחשבון OTC ציוד — מודל עסקאות ציוד מלא (לפי מחשבון ה-OTC הארגוני) =====
 // פריסת תשלומים בריבית שנתית 10%, אחוז העמסה, דמי שירות חודשיים לפי מדרגת עלות,
 // והחזרי PMI/ROI מהוונים — כולל בקרת אישורים (אחוז העמסה מינימלי ופריסה מקסימלית לפי מאשר העסקה).
@@ -13508,7 +13644,9 @@ function _eqDelDeal(i){ _eqDeals.splice(i,1); _eqRenderDeals(); }
 function _eqLoadDeal(i){
   const d=_eqDeals[i]; if(!d)return; const v=d.v;
   const set=(id,val)=>{const e=document.getElementById(id); if(e)e.value=val;};
-  set('eq-name',d.name); set('eq-cost',v.cost); set('eq-lic',v.lic); set('eq-inst',v.inst); set('eq-supp',v.supp);
+  // העסקה שמורה בשקלים; אם המסך כרגע בדולר — מציגים אותה בדולר, אחרת המספר משנה משמעות
+  const back=n=>fxIsUsd('eq')?Math.round((+n||0)/fxRate()*100)/100:(+n||0);
+  set('eq-name',d.name); set('eq-cost',back(v.cost)); set('eq-lic',back(v.lic)); set('eq-inst',back(v.inst)); set('eq-supp',back(v.supp));
   set('eq-survey',v.survey?'כן':'לא'); set('eq-waive',v.waived?'כן':'לא');
   set('eq-markup',Math.round(v.markup*10000)/100); set('eq-pays',v.pays); set('eq-years',v.years);
   set('eq-approver',v.approver);
@@ -13662,7 +13800,8 @@ function _eqCloseDeal(){
 function _eqRead(){
   const g=id=>_aiNum((document.getElementById(id)||{}).value||0);
   const s=id=>(document.getElementById(id)||{}).value||'';
-  return {cost:g('eq-cost'),lic:g('eq-lic'),inst:g('eq-inst'),supp:g('eq-supp'),
+  const c=id=>fxToIls('eq',g(id));   // עלויות הספק — מומרות לשקל כאן, פעם אחת
+  return {cost:c('eq-cost'),lic:c('eq-lic'),inst:c('eq-inst'),supp:c('eq-supp'),
           survey:s('eq-survey')==='כן', markup:g('eq-markup')/100, pays:g('eq-pays')||1,
           years:g('eq-years'), approver:s('eq-approver'), waived:s('eq-waive')==='כן'};
 }
@@ -13692,6 +13831,7 @@ function _eqRender(){
       <div>💰 <b>הלקוח משלם:</b> ${fmt(r.monthlyOtcR)} × ${r.pays} תשלומים${r.svcFee?` + דמ"ש ${fmt(r.svcFee)} × ${r.agMonths} חודשים`:''}</div>
       <div>📉 <b>עלות לספק:</b> ${fmt(r.cost)} · <b>הכנסה מהוונת:</b> ${fmt(Math.round(r.revenuePV))} · <b>רווח:</b> <span style="color:${r.grossProfit>0?'var(--teal)':'#e63946'}">${fmt(Math.round(r.grossProfit))}</span></div>
       <div>⏱️ <b>העלות מכוסה אחרי:</b> ${roiTxt}${r.pays>1?` (ריבית שנתית ${Math.round(EQ_ANNUAL_RATE*100)}%)`:''}</div>
+      ${fxNote('eq',v.cost+v.lic+v.inst+v.supp)}
     </div>`;
 }
 function _eqSummaryText(){
@@ -13763,6 +13903,9 @@ function _eqExport(){
   }catch(e){ showToast('⚠️ שגיאה בייצוא','warn'); }
 }
 function openEquipCalc(clientId,potIdx){
+  // המחשבון נפתח תמיד בשקלים: טיוטות שמורות הן בשקלים, ולכן פתיחה בדולר
+  // הייתה מציגה מספר שקלי כאילו הוא דולרי. בחירת $ היא פעולה מכוונת בכל פתיחה.
+  _fxCur['eq']='ILS'; try{fxRefresh(false).catch(()=>{});}catch(e){}
   const old=document.getElementById('eq-popup'); if(old)old.remove();
   // טעינת טיוטה שמורה מתוכנית העבודה (אם נפתח משורה) — כולל כל העסקאות והלקוח
   let draft=null;
@@ -13799,11 +13942,12 @@ function openEquipCalc(clientId,potIdx){
       </div>
     </div>
     <div style="font-size:10px;font-weight:800;color:#f4a261;letter-spacing:.5px;margin-bottom:6px">💸 עלויות לספק</div>
+    ${fxBar('eq','#f4a261')}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px">
-      ${num('eq-cost','עלות ציוד',0)}
-      ${num('eq-lic','עלות רישוי / אחריות',0)}
-      ${num('eq-inst','עלות התקנה / משלוח',0)}
-      ${num('eq-supp','עלות שירות ותמיכה',0)}
+      ${num('eq-cost',fxLbl('eq','עלות ציוד'),0)}
+      ${num('eq-lic',fxLbl('eq','עלות רישוי / אחריות'),0)}
+      ${num('eq-inst',fxLbl('eq','עלות התקנה / משלוח'),0)}
+      ${num('eq-supp',fxLbl('eq','עלות שירות ותמיכה'),0)}
       ${sel('eq-survey','נדרש סקר אתר (₪'+EQ_SURVEY_COST+')',['לא','כן'],'לא')}
       ${sel('eq-waive','הלקוח ויתר על שירות',['לא','כן'],'לא')}
     </div>
@@ -13893,8 +14037,9 @@ function _roiSyncTotals(){
   if(note)note.style.display=on?'':'none';
   // עדכון שורת הסיכום בלבד (בלי לבנות מחדש את השדות — כדי לא לאבד מיקוד תוך כדי הקלדה)
   const foot=document.getElementById('roi-sites-foot');
+  // סכום האתרים מוצג במטבע שבו הוקלד; כשהוא בדולר מוצג גם השווי בשקלים כדי שלא יהיה ספק
   if(foot)foot.innerHTML=`<span style="color:var(--text2)">סה"כ ${_roiSites.length} אתרים</span>`
-    +`<span style="color:#a78bfa">${fmt(t.cost)} · ${t.qty} קווים</span>`;
+    +`<span style="color:#a78bfa">${fxIsUsd('roi')?('$'+t.cost.toLocaleString('en-US')+' ≈ '+fmt(Math.round(fxToIls('roi',t.cost)))):fmt(t.cost)} · ${t.qty} קווים</span>`;
   _roiRender();
 }
 function _roiRenderSites(){
@@ -13905,7 +14050,7 @@ function _roiRenderSites(){
       style="width:${w};box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:7px;padding:5px 8px;color:var(--text);font-family:inherit;font-size:11.5px;outline:none;${f==='name'?'direction:rtl;text-align:right':'direction:ltr;text-align:left'}">`;
   box.innerHTML=(_roiSites.length?`
     <div style="display:grid;grid-template-columns:1fr 92px 62px 28px;gap:5px;font-size:9.5px;color:var(--text3);font-weight:700;margin-bottom:3px">
-      <span>שם האתר</span><span>עלות תשתית ₪</span><span>קווים</span><span></span></div>
+      <span>שם האתר</span><span>עלות תשתית ${fxSym('roi')}</span><span>קווים</span><span></span></div>
     ${_roiSites.map((s,i)=>`<div style="display:grid;grid-template-columns:1fr 92px 62px 28px;gap:5px;margin-bottom:4px;align-items:center">
       ${inp(i,'name',s.name,'אתר '+(i+1),'100%')}
       ${inp(i,'cost',s.cost,'0','100%')}
@@ -13919,7 +14064,9 @@ function _roiRenderSites(){
 }
 function _roiRead(){
   const g=id=>_aiNum((document.getElementById(id)||{}).value||0);
-  return {inv:g('roi-inv'),upfront:g('roi-upfront'),rev:g('roi-rev'),cost:g('roi-cost'),months:g('roi-months'),qty:g('roi-qty')||1};
+  // ההשקעה והעלות השוטפת הן צד הספק — הן שמומרות. ההכנסה מהלקוח תמיד בשקלים.
+  return {inv:fxToIls('roi',g('roi-inv')),upfront:g('roi-upfront'),rev:g('roi-rev'),
+          cost:fxToIls('roi',g('roi-cost')),months:g('roi-months'),qty:g('roi-qty')||1};
 }
 function _roiRender(){
   const box=document.getElementById('roi-out'); if(!box)return;
@@ -13960,10 +14107,14 @@ function _roiRender(){
       <span>תחילת ההתקשרות</span>${r.months?`<span>${r.months} חודשים</span>`:''}
     </div>
     <div style="font-size:12.5px;font-weight:800;color:${r.vc};margin-bottom:4px">${esc(r.verdict)}</div>
-    ${be&&r.months&&isFinite(r.payback)&&r.payback<=r.months?`<div style="font-size:11px;color:var(--text2)">נקודת איזון משוערת: <b>${fmtDate(be)}</b> · מכאן ואילך ${fmt(r.net)} רווח נקי בחודש</div>`:''}`;
+    ${be&&r.months&&isFinite(r.payback)&&r.payback<=r.months?`<div style="font-size:11px;color:var(--text2)">נקודת איזון משוערת: <b>${fmtDate(be)}</b> · מכאן ואילך ${fmt(r.net)} רווח נקי בחודש</div>`:''}
+    ${fxNote('roi',v.inv)}`;
 }
 // פתיחת המחשבון. עם clientId+potIdx — נטען מהמוצר הפוטנציאלי, והתוצאה נשמרת אליו בחזרה.
 function openRoiCalc(clientId,potIdx){
+  // המחשבון נפתח תמיד בשקלים: טיוטות שמורות הן בשקלים, ולכן פתיחה בדולר
+  // הייתה מציגה מספר שקלי כאילו הוא דולרי. בחירת $ היא פעולה מכוונת בכל פתיחה.
+  _fxCur['roi']='ILS'; try{fxRefresh(false).catch(()=>{});}catch(e){}
   const old=document.getElementById('roi-popup'); if(old)old.remove();
   let p=null;
   if(clientId!=null){ const c=(D.clients||[]).find(x=>x.id==clientId); if(c&&Array.isArray(c.potential))p=c.potential[potIdx]||null; }
@@ -13997,12 +14148,13 @@ function openRoiCalc(clientId,potIdx){
       </div>
       <div id="roi-sites"></div>
     </div>
+    ${fxBar('roi','#a78bfa')}
     <div id="roi-derived-note" style="display:none;font-size:9.5px;color:#a78bfa;margin-bottom:4px">↓ מחושב אוטומטית מסכום האתרים</div>
-    ${f('roi-inv','💰 עלות התשתית / ההשקעה','','(סה"כ — ציוד, התקנה, חיווט)')}
-    ${f('roi-upfront','🧾 תשלום חד-פעמי מהלקוח','','(השתתפות הלקוח בהקמה)')}
+    ${f('roi-inv',fxLbl('roi','💰 עלות התשתית / ההשקעה'),'','(סה"כ — ציוד, התקנה, חיווט)')}
+    ${f('roi-upfront','🧾 תשלום חד-פעמי מהלקוח','','₪ — השתתפות הלקוח בהקמה')}
     ${f('roi-qty','🔢 כמות (קווים / יחידות)','','מכפיל את הסכומים החודשיים')}
     ${f('roi-rev','📈 הכנסה חודשית מהלקוח','','₪ לחודש — לקו אחד')}
-    ${f('roi-cost','📉 עלות חודשית שוטפת','','לקו אחד (ספק, תחזוקה)')}
+    ${f('roi-cost',fxLbl('roi','📉 עלות חודשית שוטפת'),'','לקו אחד (ספק, תחזוקה)')}
     ${f('roi-months','📅 תקופת התקשרות','','בחודשים')}
     <div id="roi-out" style="margin:12px 0 10px"></div>
     <button class="btn btnp" onclick="_roiSaveToPlan()" style="width:100%;font-size:12.5px;background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:900;margin-top:4px" title="שומר כטיוטה בתוכנית העבודה — בלי לעדכן לקוח/הפצה/שכר">📋 שמור לתוכנית העבודה (טיוטה)</button>
@@ -14300,8 +14452,8 @@ function _txRead(){
   const ck=id=>!!(document.getElementById(id)||{}).checked;
   return {client:g('tx-client')||'', name:g('tx-name')||'', level:g('tx-level')||'מת"ל',
     months:+g('tx-months')||36, promo:ck('tx-promo'), free:_aiNum(g('tx-free')), addr:_aiNum(g('tx-addr')),
-    infra:_aiNum(g('tx-infra')), bom:_aiNum(g('tx-bom')), oneInc:_aiNum(g('tx-oneinc')),
-    oneExp:_aiNum(g('tx-oneexp')), tmp3rd:_aiNum(g('tx-tmp')),
+    infra:fxToIls('tx',_aiNum(g('tx-infra'))), bom:fxToIls('tx',_aiNum(g('tx-bom'))), oneInc:_aiNum(g('tx-oneinc')),
+    oneExp:fxToIls('tx',_aiNum(g('tx-oneexp'))), tmp3rd:fxToIls('tx',_aiNum(g('tx-tmp'))),
     hot:_txHot.map(r=>({...r})), net:_txNet.map(r=>({...r})), cell:_txCell.map(r=>({...r}))};
 }
 function _txCalc(v){
@@ -14399,6 +14551,9 @@ function _txCalc(v){
 
 // ── חלון המחשבון ──
 function openTxCalc(clientId,potIdx){
+  // המחשבון נפתח תמיד בשקלים: טיוטות שמורות הן בשקלים, ולכן פתיחה בדולר
+  // הייתה מציגה מספר שקלי כאילו הוא דולרי. בחירת $ היא פעולה מכוונת בכל פתיחה.
+  _fxCur['tx']='ILS'; try{fxRefresh(false).catch(()=>{});}catch(e){}
   const old=document.getElementById('tx-popup'); if(old)old.remove();
   let draft=null;
   if(clientId!=null){
@@ -14443,13 +14598,14 @@ function openTxCalc(clientId,potIdx){
     </div>
     <div id="tx-lines"></div>
     <div style="font-size:11px;font-weight:800;color:var(--text2);margin:13px 0 6px">💵 נתונים כספיים</div>
+    ${fxBar('tx','#06d6a0')}
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:9px">
       ${num('tx-addr','כתובות בתשתית הוט',(draft?draft.addr:0)||0,'× ₪1,000 התקנה')}
-      ${num('tx-infra','עלות תשתית ₪',(draft?draft.infra:0)||0,'טופס תשתיות')}
-      ${num('tx-bom','עלות BOM ₪',(draft?draft.bom:0)||0,'חובה ב-10G')}
+      ${num('tx-infra',fxLbl('tx','עלות תשתית'),(draft?draft.infra:0)||0,'טופס תשתיות')}
+      ${num('tx-bom',fxLbl('tx','עלות BOM'),(draft?draft.bom:0)||0,'חובה ב-10G')}
       ${num('tx-oneinc','הכנסה חד-פעמית ₪',(draft?draft.oneInc:0)||0,'התקנות')}
-      ${num('tx-oneexp','הוצאה חד-פעמית ₪',(draft?draft.oneExp:0)||0)}
-      ${num('tx-tmp','הוצאת צד ג׳ זמנית ₪',(draft?draft.tmp3rd:0)||0)}
+      ${num('tx-oneexp',fxLbl('tx','הוצאה חד-פעמית'),(draft?draft.oneExp:0)||0)}
+      ${num('tx-tmp',fxLbl('tx','הוצאת צד ג׳ זמנית'),(draft?draft.tmp3rd:0)||0)}
       ${num('tx-free','חודשי חינם',(draft?draft.free:0)||0)}
       <div style="grid-column:span 2;display:flex;align-items:flex-end;padding-bottom:5px">
         <label style="display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text2);cursor:pointer">
@@ -14614,6 +14770,7 @@ function _txRender(){
       ${r.errs.map(e=>`<div style="font-size:10.5px;color:#e63946;line-height:1.6">• ${esc(e)}</div>`).join('')}
       ${r.warn?`<div style="font-size:10.5px;color:#f4a261;line-height:1.6">⚠️ ${esc(r.warn)}</div>`:''}
       ${r.approved?`<div style="font-size:10.5px;color:var(--text2)">נדרש אישור כתוב של ${esc(r.level)}</div>`:''}
+      ${fxNote('tx',(v.infra||0)+(v.bom||0)+(v.oneExp||0)+(v.tmp3rd||0))}
     </div>`;
 }
 function _txPayload(){
