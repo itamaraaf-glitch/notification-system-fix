@@ -1,0 +1,62 @@
+name: שער הדולר היציג
+
+# בנק ישראל מפרסם את השער היציג בסביבות 15:15 שעון ישראל בימי עסקים.
+# רצים אחרי זה, ובנוסף בבוקר — כדי שמי שנכנס בבוקר יקבל שער עדכני גם אם
+# הריצה של אתמול נכשלה. ניתן גם להריץ ידנית מלשונית Actions.
+on:
+  schedule:
+    - cron: '30 13 * * 0-4'   # 16:30 שעון ישראל (חורף), ימים א׳–ה׳
+    - cron: '0 5 * * 0-4'     #  8:00 שעון ישראל (חורף), ימים א׳–ה׳
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fx-rate
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: משיכת השער מבנק ישראל
+        id: fetch
+        run: node .github/scripts/fetch-fx.js
+
+      - name: שמירת השער במאגר
+        run: |
+          # --porcelain ולא git diff: בריצה הראשונה הקובץ עדיין לא במעקב,
+          # ו-git diff על קובץ לא-מנוהל מדווח "אין שינוי" ומדלג על השמירה
+          if [ -z "$(git status --porcelain -- fx-rate.json)" ]; then
+            echo "אין שינוי בשער — אין מה לשמור"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add fx-rate.json
+          git commit -m "שער יציג: $(node -e "console.log(require('./fx-rate.json').rate)") ₪ לדולר ($(node -e "console.log(require('./fx-rate.json').date)"))"
+          for attempt in 1 2 3 4; do
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then exit 0; fi
+            echo "הדחיפה נכשלה — ניסיון $attempt"
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            sleep $((2 ** attempt))
+          done
+          echo "::error::דחיפת שער הדולר נכשלה"
+          exit 1
+
+      - name: סיכום
+        if: always()
+        run: |
+          if [ -f fx-rate.json ]; then
+            echo "### 💱 שער הדולר היציג" >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat fx-rate.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi

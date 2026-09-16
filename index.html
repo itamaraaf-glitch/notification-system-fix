@@ -13451,6 +13451,17 @@ function _fxStore(rate,date,src){
   try{ localStorage.setItem(FX_KEY,JSON.stringify(s)); }catch(e){}
   return s;
 }
+// המקור הראשון: קובץ שנמשך מבנק ישראל על ידי GitHub Actions ונשמר במאגר.
+// הוא מאותו מקור (same-origin) ולכן תמיד נגיש — בלי CORS, בלי חריגי CSP, וגם
+// כשהרשת הארגונית חוסמת את boi.org.il. פנייה ישירה לבנק ישראל נשארת כגיבוי.
+async function _fxFromFile(){
+  const r=await fetch('./fx-rate.json?t='+Math.floor(Date.now()/3600000),{cache:'no-store'});
+  if(!r.ok)throw new Error('fx-rate.json '+r.status);
+  const j=await r.json();
+  const rate=+j.rate;
+  if(!isFinite(rate)||rate<=0)throw new Error('fx-rate.json — שער לא תקין');
+  return {rate,date:j.date||'',src:j.src==='market'?'market':'boi'};
+}
 // בנק ישראל — המקור הרשמי לשער היציג
 async function _fxFromBoi(){
   const r=await fetch('https://boi.org.il/PublicApi/GetExchangeRate?key=USD',{cache:'no-store'});
@@ -13478,7 +13489,7 @@ async function fxRefresh(force){
   if(force)fxBarRefreshAll('…');
   try{
     let got=null;
-    for(const fn of [_fxFromBoi,_fxFromMarket]){
+    for(const fn of [_fxFromFile,_fxFromBoi,_fxFromMarket]){
       try{ got=await fn(); break; }catch(e){ console.warn('fx:',e&&e.message); }
     }
     if(!got){
@@ -13524,8 +13535,9 @@ function _fxBarInner(scope,accent,busy){
         style="${inp};width:80px;direction:ltr;text-align:left">
       <button onclick="fxRefresh(true)" title="עדכן את השער היציג מבנק ישראל"
         style="background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:7px;color:${accent};font-size:12px;cursor:pointer;padding:3px 8px;line-height:1.2">${busy==='…'?'⏳':'↻'}</button>
-      <span style="font-size:9px;color:var(--text3)">${esc(FX_SRC[s.src]||'')}${s.date?' · '+fmtDate(s.date):''}</span>
+      <span style="font-size:9px;color:${s.src==='default'?'#e63946':'var(--text3)'};font-weight:${s.src==='default'?'800':'400'}">${esc(FX_SRC[s.src]||'')}${s.date?' · '+fmtDate(s.date):''}</span>
     </div>
+    ${s.src==='default'?`<div style="font-size:9.5px;color:#e63946;margin-top:5px;line-height:1.5">השער עדיין לא נמשך. לחץ ↻, או הקלד את השער בשדה — הוא נשמר ולא נדרס.</div>`:''}
     ${usd?`<div style="font-size:9.5px;color:${accent};margin-top:5px;line-height:1.5">שדות העלות מוזנים ב-$ ומומרים ל-₪ לפי השער שלמעלה. התוצאה, השמירה והייצוא — תמיד בשקלים.</div>`:''}`;
 }
 function fxBar(scope,accent){
