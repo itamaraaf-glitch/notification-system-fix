@@ -100,6 +100,42 @@ test('dateAfterHint מחזיר מועד שחלף כשאין אחר, כדי שי�
   assert.strictEqual(dateAfterHint('להגשה עד 13.6.2024', hints, '2026-08-25'), '2024-06-13');
 });
 
+// הכיוון ההפוך של אותו כלל. שורה בדף רשימה שמועדה חלף זה עתה, והשורה שאחריה
+// נבלעה באותו חלון הקשר: קודם "העדפת מועד שטרם חלף" גנבה לשורה הראשונה את
+// המועד של שכנתה, כלומר מכרז סגור הוצג כפתוח ועם תאריך של מכרז אחר.
+test('dateAfterHint לא גונב מועד משורה שכנה כשהמועד של הפריט עצמו חלף זה עתה', () => {
+  const hints = /(מועד\s*אחרון\s*להגשה)/;
+  const ctx = 'מכרז 14/2026 מועד אחרון להגשה 15/09/2026 · מכרז 15/2026 מועד אחרון להגשה 20/09/2026';
+  assert.strictEqual(dateAfterHint(ctx, hints, '2026-09-16'), '2026-09-15',
+    'המועד של השורה עצמה חלף אתמול — הוא עדיין שלה');
+  assert.strictEqual(dateAfterHint(ctx, hints, '2026-09-14'), '2026-09-15',
+    'וכשהוא עוד לא חלף, על אחת כמה וכמה');
+});
+
+test('dateAfterHint עובר לשכן רק כשהמועד הראשון ישן מהותית', () => {
+  const hints = /(להגשה\s*עד)/;
+  const ctx = 'ישן להגשה עד 01/01/2026 · פתוח להגשה עד 01/06/2026';
+  // 89 יום אחרי — עדיין "נסגר לאחרונה", המועד נשאר של הפריט
+  assert.strictEqual(dateAfterHint(ctx, hints, '2026-03-31'), '2026-01-01');
+  // 91 יום אחרי — ישן מדי מכדי להיות שלו כשיש מועד פתוח באותו חלון
+  assert.strictEqual(dateAfterHint(ctx, hints, '2026-04-02'), '2026-06-01');
+});
+
+// חוסן מפני ריקבון: הבדיקות לעיל קובעות "היום" במפורש, אבל הפיקסצ'רים של
+// הראדאר מחזיקים תאריכים קבועים. כאן נבדק ההיגיון מול היום האמיתי, כדי שכשל
+// לא ייווצר רק מחלוף הזמן.
+test('dateAfterHint יציב מול חלוף הזמן — מועד עתידי תמיד מנצח מועד ישן שלפניו', () => {
+  const hints = /(להגשה\s*עד)/;
+  const day = 86400000;
+  const fmt = t => new Date(t).toISOString().slice(0, 10);
+  const dmy = t => { const s = fmt(t).split('-'); return `${s[2]}/${s[1]}/${s[0]}`; };
+  const longAgo = Date.now() - 400 * day, soon = Date.now() + 30 * day;
+  assert.strictEqual(dateAfterHint(`להגשה עד ${dmy(longAgo)} · להגשה עד ${dmy(soon)}`, hints), fmt(soon));
+  const justClosed = Date.now() - 2 * day;
+  assert.strictEqual(dateAfterHint(`להגשה עד ${dmy(justClosed)} · להגשה עד ${dmy(soon)}`, hints), fmt(justClosed),
+    'מועד שחלף לפני יומיים הוא של הפריט, לא של השכן');
+});
+
 test('dateFromUrl קורא שנה וחודש מנתיב וורדפרס', () => {
   assert.strictEqual(dateFromUrl('https://x.org.il/wp-content/uploads/2026/02/a.pdf'), '2026-02-15');
   assert.strictEqual(dateFromUrl('https://x.muni.il/bids/12'), '');
