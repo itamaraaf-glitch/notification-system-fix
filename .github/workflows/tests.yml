@@ -3,10 +3,15 @@
 # עד עכשיו הבדיקות רצו רק כחלק מריצת הראדאר היומית, כלומר אחרי שהקוד כבר
 # ב-main. מעכשיו PR מקבל חיווי אמיתי לפני המיזוג.
 #
-# אין כאן npm ci בכוונה: הסוכן והראדאר חסרי תלויות חיצוניות, והבדיקות
-# משתמשות ב-node:test המובנה בלבד. התלות היחידה בחבילה (@anthropic-ai/sdk)
-# נדרשת רק לסקירת ה-AI האופציונלית, שאינה נבדקת כאן. התקנה מיותרת רק מוסיפה
-# זמן ונקודת כשל ברשת.
+# שתי משימות בכוונה, ולא אחת:
+#
+# הסוכן והראדאר חסרי תלויות חיצוניות ורצים על node:test בלבד — להתקין עבורם
+# חבילות זה רק זמן ונקודת כשל ברשת. לכן `core` רץ בלי התקנה, מהר, ותמיד.
+#
+# מערכת ה-AI, לעומתם, דורשת sqlite3/express/exceljs. כשהיא נוספה ל-`npm test`
+# בלי שהותקנו התלויות, ה-CI נפל על "Cannot find module 'sqlite3'" בכל דחיפה
+# ל-main — חמש פעמים ברצף — בזמן שמקומית הכול היה ירוק כי node_modules קיים.
+# כאן היא מקבלת משימה משלה עם npm ci, וכשל בהתקנה לא מסתיר את מצב הליבה.
 name: tests
 
 on:
@@ -23,7 +28,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  core:
+    name: סוכן הרשת וראדאר המכרזים
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -34,5 +40,35 @@ jobs:
         with:
           node-version: '20'
 
-      - name: בדיקות — סוכן הרשת וראדאר המכרזים
-        run: npm test
+      - name: בדיקות ליבה — בלי תלויות חיצוניות
+        run: node --test tenders/test/*.test.js agent/test/*.test.js
+
+  ai:
+    name: מערכת ההתראות AI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: התקנת תלויות
+        run: npm ci
+
+      - name: בדיקות AI — מבנה, כללי החלטה, ייצוא ו-API הדשבורד
+        run: npm run test:ai
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # הבדיקות עוטפות את ה-API ב-@patch("anthropic.Anthropic"), ולכן החבילה
+      # חייבת להיות ניתנת לייבוא — גם בלי מפתח וגם בלי שום קריאה החוצה.
+      - name: התקנת תלות פייתון
+        run: pip install -r requirements.txt
+
+      - name: בדיקות פייתון — מנהל ההתראות ומנתח ה-AI
+        run: npm run test:py
