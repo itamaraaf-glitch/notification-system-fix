@@ -45,6 +45,27 @@ function isNavTitle(title, gate) {
 }
 
 /**
+ * תבנית הכתובת שתקפה למקור הזה.
+ *
+ * מקור יכול להגדיר `urlPattern` משלו (או `linkPattern`, השם שקובץ המקורות של
+ * הראדאר משתמש בו) והיא גוברת על זו של המשימה. זה נדרש כשכתובות הפריטים באתר
+ * אחד אינן מכילות מילה מזהה: במנהל הרכש הממשלתי כתובת מכרז היא
+ * `/ilgstorefront/he/p/4000620724`. תבנית כזו ברמת המשימה הייתה מרפה את השער
+ * בכל שאר המקורות; ברמת המקור היא חלה רק במקום שבו היא נכונה.
+ */
+const SOURCE_RX = new Map();
+function sourceUrlPattern(source, gate) {
+  const src = source.urlPattern || source.linkPattern;
+  if (!src) return gate.urlPattern;
+  if (src instanceof RegExp) return src;
+  if (!SOURCE_RX.has(src)) {
+    // תבנית לא תקינה בתצורה אינה מפילה את הריצה — נופלים לתבנית של המשימה
+    try { SOURCE_RX.set(src, new RegExp(src, 'i')); } catch (_) { SOURCE_RX.set(src, null); }
+  }
+  return SOURCE_RX.get(src) || gate.urlPattern;
+}
+
+/**
  * האם הפריט נוסח כמו מה שהמשימה מחפשת.
  * `allItems: true` על המקור מדלג על הדרישה — לדף שכולו פרסומים מהסוג הנכון.
  */
@@ -54,8 +75,9 @@ function passesGate(item, source, gate) {
   if (String(item.title || '').length < gate.minTitleLen) return false;
   if (source.allItems) {
     if (!gate.phrases.length) return true;
+    const urlRe = sourceUrlPattern(source, gate);
     return gate.phrases.some(p => termRegex(p).test(text))
-      || !!(gate.urlPattern && gate.urlPattern.test(item.url || ''));
+      || !!(urlRe && urlRe.test(item.url || ''));
   }
   if (!gate.phrases.length) return true;
   return gate.phrases.some(p => termRegex(p).test(text));
@@ -215,7 +237,7 @@ function summarize(records, today) {
 }
 
 module.exports = {
-  compileGate, compileDateHints, passesGate, isNavTitle, buildRecord,
+  compileGate, compileDateHints, passesGate, isNavTitle, buildRecord, sourceUrlPattern,
   extractDates, recordId, timeDropReason, ageDate, sortRecords, summarize,
   DROP_LABELS
 };

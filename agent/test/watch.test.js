@@ -353,3 +353,79 @@ test('פרופיל המכרזים טוען את המקורות והשער מקב
   assert.ok(w.gate.phrases.includes('מכרז'), 'ניסוחי השער נטענים מהטקסונומיה עצמה');
   assert.strictEqual(w.enabled, false, 'פרופיל ייחוס — הראדאר עצמו הוא מסלול הייצור');
 });
+
+/* ───────────────────────── צמצום טקסונומיה ותבנית ברמת המקור ───────────────────────── */
+
+test('taxonomyTopics מצמצם טקסונומיה משותפת, ומשאיר את מילות השלילה', () => {
+  const w = loadWatch('telecom');
+  assert.deepStrictEqual(Object.keys(w.taxonomy.topics).sort(), ['equipment', 'infosec', 'telecom']);
+  assert.ok((w.taxonomy.negative || []).length > 50,
+    'מילות השלילה אינן משויכות לנושא ומקזזות את כולם — הן חייבות לשרוד את הצמצום');
+});
+
+test('taxonomyTopics שמפנה לנושא שאינו קיים נכשל במפורש', () => {
+  const file = path.join(__dirname, 'fixtures', 'bad-topics.watch.json');
+  fs.writeFileSync(file, JSON.stringify({
+    id: 'bad', name: 'x',
+    taxonomy: { minScore: 3, topics: { a: { label: 'A', terms: [['x', 5]] } } },
+    taxonomyTopics: ['a', 'no-such-topic'],
+    sources: []
+  }), 'utf8');
+  try {
+    assert.throws(() => loadWatch(file), /no-such-topic/,
+      'טעות כתיב בשם נושא חייבת להיכשל בקול, לא להשאיר טקסונומיה ריקה בשקט');
+  } finally {
+    fs.unlinkSync(file);
+  }
+});
+
+test('urlPattern של מקור חל רק עליו, ולא מרפה את השער בשאר המקורות', () => {
+  const gate = compileGate({ phrases: ['מכרז'] });
+  const item = { title: 'אספקת ציוד לרשת המשרד', url: 'https://mr.gov.il/ilgstorefront/he/p/4000620724' };
+
+  const withPattern = { allItems: true, urlPattern: '/ilgstorefront/[a-z]{2}/p/\\d+' };
+  assert.ok(passesGate(item, withPattern, gate),
+    'במנהל הרכש כתובת המכרז היא מזהה מספרי — בלי התבנית מכרזים אמיתיים נדחים');
+
+  const without = { allItems: true };
+  assert.ok(!passesGate(item, without, gate),
+    'אותה כותרת במקור אחר נדחית — התבנית אינה גלובלית');
+});
+
+test('linkPattern מתקבל כשם נרדף, כדי שמקור מקובץ הראדאר יעבוד כמו שהוא', () => {
+  const gate = compileGate({ phrases: ['מכרז'] });
+  const item = { title: 'אספקת ציוד לרשת', url: 'https://mr.gov.il/ilgstorefront/he/p/123' };
+  assert.ok(passesGate(item, { allItems: true, linkPattern: '/ilgstorefront/[a-z]{2}/p/\\d+' }, gate));
+});
+
+test('תבנית לא תקינה בתצורה אינה מפילה את הריצה', () => {
+  const gate = compileGate({ phrases: ['מכרז'] });
+  const item = { title: 'מכרז לאספקת ציוד', url: 'https://x.il/1' };
+  assert.doesNotThrow(() => passesGate(item, { allItems: true, urlPattern: '([' }, gate));
+});
+
+test('משימת התקשורת חופפת לראדאר באתר אחד בלבד — מנהל הרכש', () => {
+  const w = loadWatch('telecom');
+  const radar = require('../../tenders/config/sources.json').sources;
+
+  // החפיפה שחשובה היא ברמת האתר ולא ברמת המזהה: מזהה שונה על אותו דומיין
+  // עדיין שולח בקשה כפולה לאותו שרת. `mr-gov-telecom` הוא בדיוק המקרה הזה.
+  const hosts = src => new Set(
+    [].concat(src.urls || [], src.home || [])
+      .map(u => { try { return new URL(u).host; } catch (_) { return ''; } })
+      .filter(Boolean)
+  );
+  const radarHosts = new Set();
+  radar.filter(s => s.enabled !== false).forEach(s => hosts(s).forEach(h => radarHosts.add(h)));
+
+  const active = w.sources.filter(s => s.enabled !== false);
+  assert.ok(active.length, 'צריכים להיות מקורות פעילים');
+
+  const overlapping = [...new Set(active.flatMap(s => [...hosts(s)].filter(h => radarHosts.has(h))))];
+  assert.deepStrictEqual(overlapping, ['mr.gov.il'],
+    'חפיפת התעבורה המותרת היא מנהל הרכש בלבד — שם ההגבלה על המפרסם היא כל הסיפור. ' +
+    'כל אתר נוסף שנסרק פעמיים שובר את כלל הנימוס: ' + overlapping.join(', '));
+
+  assert.strictEqual(w.enabled, true,
+    'מופעלת אחרי מדידה מ-Actions: 3/3 מקורות נענו, 5 מכרזים פתוחים מתוך 751 קישורים');
+});

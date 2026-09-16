@@ -1,0 +1,171 @@
+{
+  "id": "telecom",
+  "name": "מכרזי תקשורת, ציוד ואבטחת מידע",
+  "description": "המקורות הממשלתיים שראדאר המכרזים אינו סורק — מצומצם לשלושת הנושאים הקרובים לליבת העסק.",
+  "enabled": true,
+  "_whyThisExists": [
+    "ראדאר המכרזים מחזיק 4 מכרזים בסך הכול, אחד מהם תקשורת. הסיבה אינה",
+    "הטקסונומיה אלא התצורה: מנהל הרכש מוגבל שם ל\"משרד התחבורה\" בלבד, וארבעה",
+    "מקורות ממשלתיים מנוטרלים — שתי החלטות של המשתמש.",
+    "",
+    "המשימה הזו מכסה בדיוק את מה שהראדאר לא מכסה, ורק בשלושת הנושאים הקרובים",
+    "לליבת העסק. כך מכרזי תקשורת מכל המשרדים חוזרים לזרום, בלי לפתוח מחדש",
+    "מכרזי IT ובינה מלאכותית מכל משרדי הממשלה בראדאר.",
+    "",
+    "חפיפת תעבורה: רק מנהל הרכש נסרק בשני המקומות. שאר המקורות כאן מנוטרלים",
+    "בראדאר, ולכן אינם מקבלים בקשה כפולה."
+  ],
+  "_statusNote": "הופעלה אחרי מדידה מ-Actions (07/09/2026): probe — 3 מתוך 3 מקורות נענו; audit — 751 קישורים, 5 נכנסו; dry-run — 5 מכרזים פתוחים, 3 תקשורת ו-2 אבטחת מידע.",
+  "taxonomy": "tenders/config/keywords.json",
+  "_taxonomyNote": "הטקסונומיה המשותפת עם הראדאר, מצומצמת לשלושה נושאים. אין כאן העתק שיסטה מהמקור — חידוד מונחים בראדאר משפיע גם כאן.",
+  "taxonomyTopics": [
+    "telecom",
+    "equipment",
+    "infosec"
+  ],
+  "gate": {
+    "_comment": "ניסוחי המכרז נטענים מהטקסונומיה עצמה, כדי שלא תהיינה שתי רשימות שיסטו זו מזו.",
+    "phrases": {
+      "from": "tenderGate"
+    },
+    "_navBlockComment": "תווית ניווט אומרת רק \"מכרזים\" ועוד מילה מנהלית; כותרת של מכרז אמיתי אומרת מה נרכש.",
+    "navBlock": "^\\\\s*ועד(ת|ות)\\\\s*(ה)?מכרזים|^\\\\s*מכרזי\\\\s*(ה)?(עירייה|עיריה|מועצה|חברה|רשות)|^\\\\s*מכרזים\\\\s*[ו,]|לתשלום\\\\s*עבור|לחצו\\\\s*כאן|טופס\\\\s*בקשה|חופש\\\\s*המידע|רישום\\\\s*למאגר|מאגר\\\\s*נותני\\\\s*שירות|^\\\\s*הצעות\\\\s*ומכרזים|נציגי?(\\\\/ו)?ת?\\\\s*ציבור|ועדות?\\\\s*בחינה|^\\\\s*מכרזי\\\\s*ספקים|^\\\\s*מכרזים\\\\s*(פעילים|קודמים|ארכיון)\\\\s*$|^\\\\s*מחלקת\\\\s|^\\\\s*ל?ארכיון\\\\s*מכרזים|^\\\\s*דיון\\\\s"
+  },
+  "discovery": {
+    "_comment": "רלוונטי רק אם יתווסף מקור discover. כרגע כל המקורות הם html עם כתובת ידועה.",
+    "text": "(מכרז|מיכרז|michraz|tenders?)",
+    "url": "(tender|michraz|bids?|rfp|rfq|מכרז)",
+    "path": "\\/(bids?|michrazim|mihrazim|tenders?|michraz|tender)(\\/|$|\\?)",
+    "exact": "^\\s*מכרזים\\s*$",
+    "active": "(פעילים|פתוחים|נוכחיים|חדשים)",
+    "archive": "(תוצאות|ארכיון|שהסתיימו|שנסגרו|קודמים|היסטורי|זוכ(ה|ים)|פרוטוקול|archive|results|protocol)",
+    "demote": "(דרושים|משרות|קריירה|כוח\\s*אדם|jobs?|careers?|vacanc)",
+    "demoteUnless": "(מכרז|מיכרז|michraz|tender)",
+    "sectionParent": "(מכרז|מיכרז|michraz|tender)"
+  },
+  "dates": {
+    "deadlineHints": "(מועד\\s*אחרון|תאריך\\s*אחרון|להגשה\\s*עד|מועד\\s*ההגשה|מועד\\s*הגשה|תום\\s*המועד|נעילת|סגירת\\s*המכרז|הגשה\\s*עד)",
+    "publishHints": "(תאריך\\s*פרסום|פורסם\\s*ב|מועד\\s*פרסום|תאריך\\s*הפרסום)",
+    "updatedHints": "(תאריך\\s*עדכון\\s*אחרון|עדכון\\s*אחרון|עודכן\\s*ב)",
+    "serialPattern": "(?:מכרז|הליך|פנייה|פניה)[^\\d\\n]{0,25}(\\d{1,4}\\s*[\\/\\-]\\s*\\d{2,4})"
+  },
+  "retention": {
+    "_comment": "ברשות שדות התעופה ובאתרים חלק מהפרסומים הם התקשרויות בלי מועד. keepUndated שומר אותם ומציג בלי מועד, במקום למחוק מקור שלם.",
+    "keepUndated": true,
+    "keepDays": 45,
+    "maxAgeDays": 365,
+    "deadlineGraceDays": 14
+  },
+  "limits": {
+    "maxPerSource": 60,
+    "parallel": 3,
+    "politeDelayMs": 900,
+    "timeoutMs": 15000,
+    "retries": 1
+  },
+  "sources": [
+    {
+      "id": "mr-gov-telecom",
+      "name": "מנהל הרכש הממשלתי — תקשורת, ציוד ואבטחה",
+      "category": "ממשלה",
+      "kind": "html",
+      "enabled": true,
+      "allItems": true,
+      "_note": "המקור היחיד שנסרק גם בראדאר. שם הוא מוגבל ל\"משרד התחבורה\"; כאן אין הגבלת מפרסם, אבל הטקסונומיה מצומצמת לשלושה נושאים.",
+      "_urlPatternReason": "כתובות המכרזים כאן אינן מכילות מילה מזהה אלא מזהה מספרי (/ilgstorefront/he/p/4000620724), ולכן השער הכללי היה דוחה מכרזים אמיתיים.",
+      "urlPattern": "/ilgstorefront/[a-z]{2}/p/\\d+",
+      "home": "https://mr.gov.il/ilgstorefront/he/",
+      "urls": [
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%AA%D7%A7%D7%A9%D7%95%D7%A8%D7%AA",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%A6%D7%99%D7%95%D7%93%20%D7%AA%D7%A7%D7%A9%D7%95%D7%A8%D7%AA",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%AA%D7%A7%D7%A9%D7%95%D7%91",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%98%D7%9C%D7%A4%D7%95%D7%A0%D7%99%D7%94",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%9E%D7%A8%D7%9B%D7%96%D7%99%D7%94",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%A1%D7%99%D7%91%D7%99%D7%9D%20%D7%90%D7%95%D7%A4%D7%98%D7%99%D7%99%D7%9D",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%90%D7%99%D7%A0%D7%98%D7%A8%D7%A0%D7%98",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%9E%D7%AA%D7%92%D7%99%D7%9D",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%A0%D7%AA%D7%91%D7%99%D7%9D",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%AA%D7%A9%D7%AA%D7%99%D7%95%D7%AA%20%D7%AA%D7%A7%D7%A9%D7%95%D7%A8%D7%AA",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%90%D7%91%D7%98%D7%97%D7%AA%20%D7%9E%D7%99%D7%93%D7%A2",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%A1%D7%99%D7%99%D7%91%D7%A8",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%9E%D7%A6%D7%9C%D7%9E%D7%95%D7%AA%20%D7%90%D7%91%D7%98%D7%97%D7%94",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&text=%D7%9E%D7%91%D7%93%D7%A7%D7%99%20%D7%97%D7%93%D7%99%D7%A8%D7%94",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&page=0",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&page=1",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&page=2",
+        "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER&page=3"
+      ]
+    },
+    {
+      "id": "iaa",
+      "name": "רשות שדות התעופה",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "kind": "html",
+      "enabled": true,
+      "allItems": true,
+      "_note": "נמדד כעובד בראדאר (\"הרבה ממצאים\"), ונוטרל שם לבקשת המשתמש. חלק מהרשומות הן התקשרויות שנחתמו וממילא אין להן מועד.",
+      "home": "https://www.iaa.gov.il/",
+      "urls": [
+        "https://www.iaa.gov.il/he-IL/Tenders/Tenders_List/Pages/default.aspx"
+      ]
+    },
+    {
+      "id": "atarim",
+      "name": "החברה הממשלתית לתיירות (אתרים)",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "kind": "html",
+      "enabled": true,
+      "allItems": true,
+      "_note": "נוטרל בראדאר לבקשת המשתמש, יחד עם מכרזי משרדי הממשלה.",
+      "home": "https://www.atarim.gov.il/",
+      "urls": [
+        "https://www.atarim.gov.il/tenders/"
+      ]
+    },
+    {
+      "id": "gov-il",
+      "name": "מכרזי משרדי הממשלה (gov.il)",
+      "category": "ממשלה",
+      "kind": "html",
+      "enabled": false,
+      "allItems": false,
+      "_disabledReason": "נמדד בראדאר כ-HTTP 403 — חוסם סריקה אוטומטית. מושאר כאן מנוטרל כדי שאפשר יהיה למדוד מחדש עם --probe; אם ייענה, מפעילים.",
+      "home": "https://www.gov.il/",
+      "urls": [
+        "https://www.gov.il/he/departments/topics/tenders-sub/govil-landing-page"
+      ]
+    },
+    {
+      "id": "moin",
+      "name": "משרד הפנים",
+      "category": "ממשלה",
+      "kind": "html",
+      "enabled": false,
+      "allItems": true,
+      "_disabledReason": "נמדד בראדאר כ-HTTP 403 — חוסם סריקה אוטומטית. מושאר כאן מנוטרל למדידה חוזרת.",
+      "home": "https://www.moin.gov.il/",
+      "urls": [
+        "https://www.moin.gov.il/Tenders"
+      ]
+    }
+  ],
+  "output": {
+    "data": "agent/data/telecom.json",
+    "status": "agent/data/telecom.status.json"
+  },
+  "_measured": {
+    "date": "2026-09-07",
+    "probe": "מנהל הרכש 79,082 תווים · רשות שדות התעופה 144,893 · אתרים 293,525",
+    "funnel": {
+      "harvested": 751,
+      "notPhrasedAsTender": 405,
+      "noTopic": 199,
+      "deadlinePassed": 104,
+      "blockedByNegative": 36,
+      "kept": 5
+    },
+    "_deadlinePassedNote": "104 נשירות על מועד שחלף הן העדות שהמקורות האלה כן מפרסמים בתחום — רובם פשוט נסגרו. זו הסיבה שהמשימה שווה את עצמה.",
+    "_precisionNote": "שתיים מהחמש הן התאמות שווא שנצפו במדידה: \"מכירת טלפונים סלולריים\" (המדינה מוכרת ציוד, לא רוכשת) ו\"חוות דעת סביבתיות וסקרי סיכונים\" (נתפס על \"סקרי סיכונים\", שהוא מונח אבטחת מידע). המשתמש בחר להפעיל כך ולסנן בעין — 5 שורות ביום הן רשימה שעוברים עליה. אם הרעש יגדל, מוסיפים מילות שלילה ל-tenders/config/keywords.json.",
+    "sourcesWithNoResults": "רשות שדות התעופה (290 קישורים) ואתרים (8) נענו אך החזירו 0. ב-אתרים 8 קישורים בלבד מרמזים שהרשימה נטענת ב-JavaScript."
+  }
+}
