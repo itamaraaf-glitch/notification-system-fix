@@ -41,7 +41,7 @@ jobs:
           node-version: '20'
 
       - name: בדיקות ליבה — בלי תלויות חיצוניות
-        run: node --test tenders/test/*.test.js agent/test/*.test.js
+        run: npm run test:core
 
   ai:
     name: מערכת ההתראות AI

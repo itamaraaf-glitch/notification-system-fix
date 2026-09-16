@@ -4,6 +4,7 @@
   "description": "CRM + סוכן רשת (agent/) + ראדאר מכרזים. הסורק והסוכן חסרי תלויות; החבילה נדרשת רק לסקירת ה-AI האופציונלית.",
   "scripts": {
     "test": "node --test tenders/test/*.test.js agent/test/*.test.js test/*.test.js",
+    "test:core": "node --test tenders/test/*.test.js agent/test/*.test.js",
     "test:agent": "node --test agent/test/*.test.js",
     "agent": "node agent/run.js",
     "export-server": "node export-server.js",
