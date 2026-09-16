@@ -15019,6 +15019,7 @@ function rWorkPlan(){
         <button class="btn btns" onclick="openRoiCalc('${p.clientId}',${p.potIdx})" title="מחשבון החזר השקעה" style="border-color:#a78bfa;color:#a78bfa">🧮</button>
         <button class="btn btns" onclick="openEquipCalc('${p.clientId}',${p.potIdx})" title="${p.eqCalc?'פתח את מחשבון הציוד השמור':'מחשבון OTC ציוד'}" style="border-color:#4cc9f0;color:#4cc9f0">🖥️${p.eqCalc?'✓':''}</button>
         <button class="btn btns" onclick="openTxCalc('${p.clientId}',${p.potIdx})" title="${p.txCalc?'פתח את מחשבון התמסורת השמור':'מחשבון תמסורת'}" style="border-color:#06d6a0;color:#06d6a0">📡${p.txCalc?'✓':''}</button>
+        ${p.status!=='נסגר'?`<button class="btn btns" onclick="wpToDeal('${p.clientId}',${p.potIdx})" title="${p._dealId?'כבר נפתחה עסקה — פתח אותה':'פתח עסקה מהמוצר הזה, מלאה מראש'}" style="border-color:var(--gold);color:var(--gold)">💼${p._dealId?'✓':''}</button>`:''}
         <button class="btn btns" onclick="openClientModal('${p.clientId}')" title="ערוך כרטיס לקוח">✏️</button>
         <button class="btn btns btnd" onclick="removePotential('${p.clientId}',${p.potIdx})" title="מחק">🗑</button>
       </td>
@@ -15037,6 +15038,74 @@ function rWorkPlan(){
   const ftEl=document.getElementById('wpft');
   if(ftEl)ftEl.innerHTML=`<span class="fi">מוצרים: <b>${all.length}</b></span><span class="fi">שווי פוטנציאלי: <b class="ny">${fmt(totalVal)}</b></span><span class="fi">עדיפות גבוהה: <b style="color:#e63946">${high}</b></span><span class="fi">בתהליך: <b class="nb">${inProg}</b></span><span class="fi">יעד החודש: <b style="color:var(--blue)">${thisMonth}</b></span><span class="fi">נסגרו: <b class="ng">${closed}</b></span>`;
 }
+// ═══ מתוכנית העבודה לעסקאות ═══════════════════════════════════════════════
+// מוצר בפיפליין שמבשיל לעסקה היה צריך להיות מוקלד מחדש ידנית במסך העסקאות,
+// על כל מה שכבר ידוע עליו — לקוח, מוצר, שווי, איש קשר, ומה שיצא מהמחשבונים.
+// כאן הוא נפתח בחלון העסקה החדשה כשהוא כבר מלא, כדי שתאשר ותתקן ולא תקליד.
+// בכוונה נפתח החלון ולא נוצרת עסקה בשקט: השווי בפיפליין הוא הערכה, והמעבר
+// לעסקה הוא הרגע שבו מחליטים מה באמת המספר.
+
+// סוג מוצר בפיפליין → סוג מוצר בעסקה. שמות שאינם ברשימה נשארים ריקים,
+// ואז מסך העסקאות גוזר את הסוג מהשירות כרגיל.
+const WP_PTYPE={'קו תקשורת':'lines','FortiGate':'forti','Cisco':'cisco','HP / Aruba':'hp',
+  'Juniper':'juniper','CYBIZ / אבטחה':'cybiz','Starlink':'starlink','מרכזייה (PBX)':'pbx',
+  'Microsoft 365':'ms365','Helpdesk':'helpdesk','שרתים':'servers'};
+// סטטוס בפיפליין → סטטוס עסקה. "נסגר" אינו ממופה: מוצר סגור לא הופך לעסקה חדשה.
+const WP_DEAL_ST={'ליד חדש':'בטיפול','בתהליך':'בטיפול','הצעה נשלחה':'הוצאת הצעה','ממתין לאישור':'ממתין לתשובה'};
+// שדה "סיכוי" בעסקה הוא select עם ערכים קבועים (1 · 0.99 · 0.75 · 0.5 · 0.25) —
+// ערך שאינו אחד מהם פשוט לא נבחר והשדה נשאר ריק. לכן ממפים לערכים שקיימים בו.
+const WP_DEAL_CH={'גבוהה':'0.75','בינונית':'0.5','נמוכה':'0.25'};
+
+let _wpDealCtx=null;    // המוצר שממנו נפתחה העסקה — לסימון חזרה אחרי שמירה
+
+function wpToDeal(clientId,potIdx){
+  const ref=_potRef(clientId+'|'+potIdx);
+  if(!ref){ showToast('⚠️ המוצר לא נמצא','warn'); return; }
+  const {c,p}=ref;
+  if(p.status==='נסגר'){ showToast('המוצר כבר סגור — אין ממה לפתוח עסקה','info'); return; }
+  // כבר הומר פעם: לא מייצרים כפילות — פותחים את העסקה הקיימת
+  const existing=p._dealId&&(D.deals||[]).find(d=>d.id===p._dealId);
+  if(existing){
+    confirmAct('כבר נפתחה עסקה מהמוצר הזה (#'+(existing.num||'')+' · '+esc(existing.srv||'')+').\nלפתוח אותה לעריכה?',
+      ()=>{ nav('deals'); setTimeout(()=>openM('deal',existing.id),380); },'פתח את העסקה');
+    return;
+  }
+  openM('deal');
+  // אחרי openM ולא לפניו: openM מנקה את ההקשר, כדי שחלון עסקה שנפתח מכל מקום
+  // אחר — או חלון שנסגר בלי לשמור — לא יקשור בטעות את העסקה הבאה למוצר הזה
+  _wpDealCtx={clientId:String(clientId),potIdx:+potIdx};
+  // ממלאים אחרי openM, שמאפס את השדות לערכי ברירת מחדל
+  const set=(id,v)=>{ const e=document.getElementById(id); if(e&&v!=null&&v!=='')e.value=v; };
+  set('dco',c.name||'');
+  set('dcp',c.cp||'');            // ח.פ — לא איש קשר
+  set('dct',c.contact||'');       // "מול מי"
+  set('dsr',[p.productType,p.product].filter(Boolean).join(' – ')||p.product||'');
+  set('dptype',WP_PTYPE[p.productType]||'');
+  set('dst2',WP_DEAL_ST[p.status]||'בטיפול');
+  set('dch',WP_DEAL_CH[p.priority]||'0.5');
+  // המספרים: מה שכבר חושב במחשבונים גובר על ההערכה בפיפליין, כי הוא מבוסס מודל
+  const est=+p.estimatedValue||0;
+  if(p.txCalc&&+p.txCalc.monthly){ set('dmv',Math.round(+p.txCalc.monthly)); set('dv',Math.round(+p.txCalc.monthly)); set('dty','long'); }
+  else if(p.eqCalc){ set('dv',Math.round(+p.eqCalc.customerTotal||est)); set('dotc',Math.round(+p.eqCalc.otc||0)); set('dty','short'); }
+  else if(est){ set('dv',est); }
+  const notes=[p.notes||'', 'מתוכנית העבודה'+(p.targetDate?' · יעד סגירה '+fmtDate(p.targetDate):'')].filter(Boolean).join(' · ');
+  set('dno',notes);
+  try{ renderDealKPI(); }catch(e){}
+  showToast('💼 העסקה מולאה מהמוצר — בדוק ושמור','ok');
+}
+/** אחרי שמירת עסקה שנפתחה מתוכנית העבודה: קושרים אותה למוצר כדי שלא תיווצר פעמיים. */
+function _wpLinkSavedDeal(deal){
+  if(!_wpDealCtx||!deal)return;
+  const ctx=_wpDealCtx; _wpDealCtx=null;
+  const ref=_potRef(ctx.clientId+'|'+ctx.potIdx); if(!ref)return;
+  ref.p._dealId=deal.id;
+  if(deal.st==='נסגר')ref.p.status='נסגר';
+  else if(ref.p.status==='ליד חדש')ref.p.status='בתהליך';
+  ref.c._mts=Date.now();
+  dbUpdate('clients',ref.c.id,ref.c);
+  _pinRecent('deals',deal.id);
+}
+
 // ניקוי סינון תוכנית העבודה (עדיפות + סטטוס) בלחיצה אחת
 function clearWpFilters(){
   const pf=document.getElementById('wp-pri-filter'); if(pf)pf.value='';
@@ -15353,6 +15422,7 @@ function renderDealKPI(){
 }
 function openM(type,id){
   if(typeof closeFab==='function')closeFab();
+  _wpDealCtx=null;              // כל פתיחת חלון מתחילה בלי קשר תלוי לתוכנית העבודה
   EI=id;ET=type;const isNew=!id;
   if(type==='deal'){
     document.getElementById('dtit').textContent=isNew?'עסקה חדשה':'עריכת עסקה';
@@ -15461,7 +15531,7 @@ function openM(type,id){
   initDateHints(document.getElementById('m'+type));
   if(window.csResync) csResync(); // refresh custom dropdown labels with loaded values
 }
-function closeM(id){document.getElementById(id).classList.remove('open');EI=null;ET=null;}
+function closeM(id){document.getElementById(id).classList.remove('open');EI=null;ET=null;if(id==='mdeal')_wpDealCtx=null;}
 
 // ===== BACK-BUTTON / SWIPE-BACK → סוגר חלון-קופץ במקום לצאת מהאפליקציה =====
 // יציבות: לחיצה על "אחורה" (אנדרואיד/מחוות דפדפן) כשמסך-קופץ פתוח סוגרת אותו
@@ -16069,6 +16139,7 @@ function saveDeal(){
     let savedDeal;
     if(EI){dbUpdate('deals',EI,row);savedDeal=D.deals.find(x=>x.id==EI);}
     else{row.num=nextDealNum();savedDeal=dbInsert('deals',row);}
+    if(isNew2)try{_wpLinkSavedDeal(savedDeal);}catch(e){}   // עסקה שנפתחה מתוכנית העבודה — נקשרת למוצר
     if(savedDeal&&savedDeal.st==='נסגר'){
       syncDealToClient(savedDeal);
       syncDealToSalary(savedDeal);
