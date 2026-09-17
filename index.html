@@ -13980,6 +13980,7 @@ function openEquipCalc(clientId,potIdx){
     </div>
     <button class="btn btnp" onclick="_eqSaveToPlan()" style="width:100%;font-size:12.5px;background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:900;margin-top:11px" title="שומר כטיוטה בתוכנית העבודה — בלי לעדכן לקוח/הפצה/שכר">📋 שמור לתוכנית העבודה (טיוטה)</button>
     <button class="btn btnp" onclick="_eqCloseDeal()" style="width:100%;font-size:12.5px;background:#06d6a0;border-color:#06d6a0;color:#0a0e1c;font-weight:900;margin-top:8px">✅ סגור עסקה — סנכרן ללקוח · הפצה · שכר</button>
+    <button class="btn btnp" onclick="calcToDeal('eq')" style="width:100%;font-size:12.5px;background:var(--gold);border-color:var(--gold);color:#0a0e1c;font-weight:900;margin-top:8px" title="פותח עסקה חדשה מלאה מהחישוב — כהזדמנות פתוחה, בלי לסגור">💼 שלח לעסקאות (הזדמנות)</button>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
       <button class="btn btns" onclick="_eqSaveCalc()" style="font-size:12px">💾 שמור בכרטיס הלקוח</button>
       <button class="btn btnp" onclick="_eqExport()" style="font-size:12px;background:#1d6f42;border-color:#1d6f42;color:#fff;font-weight:800">📥 ייצוא Excel</button>
@@ -14171,6 +14172,7 @@ function openRoiCalc(clientId,potIdx){
     <div id="roi-out" style="margin:12px 0 10px"></div>
     <button class="btn btnp" onclick="_roiSaveToPlan()" style="width:100%;font-size:12.5px;background:#a78bfa;border-color:#a78bfa;color:#0a0e1c;font-weight:900;margin-top:4px" title="שומר כטיוטה בתוכנית העבודה — בלי לעדכן לקוח/הפצה/שכר">📋 שמור לתוכנית העבודה (טיוטה)</button>
     <button class="btn btnp" onclick="_roiCloseDeal()" style="width:100%;font-size:12.5px;background:#06d6a0;border-color:#06d6a0;color:#0a0e1c;font-weight:900;margin-top:8px">✅ סגור עסקה — סנכרן ללקוח · הפצה · שכר</button>
+    <button class="btn btnp" onclick="calcToDeal('roi')" style="width:100%;font-size:12.5px;background:var(--gold);border-color:var(--gold);color:#0a0e1c;font-weight:900;margin-top:8px" title="פותח עסקה חדשה מלאה מהחישוב — כהזדמנות פתוחה, בלי לסגור">💼 שלח לעסקאות (הזדמנות)</button>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
       <button class="btn btns" onclick="_roiSaveToClient()" style="font-size:12px">💾 שמור בכרטיס הלקוח</button>
       <button class="btn btnp" onclick="_roiExport()" style="font-size:12px;background:#1d6f42;border-color:#1d6f42;color:#fff;font-weight:800">📥 ייצוא Excel</button>
@@ -14628,6 +14630,7 @@ function openTxCalc(clientId,potIdx){
     <div id="tx-out"></div>
     <div style="display:flex;gap:8px;margin-top:13px;flex-wrap:wrap">
       <button class="btn btnp" onclick="_txSaveToPlan()" style="font-size:12px">📋 שמור לתוכנית העבודה</button>
+      <button class="btn btnp" onclick="calcToDeal('tx')" style="font-size:12px;background:var(--gold);border-color:var(--gold);color:#0a0e1c;font-weight:800" title="פותח עסקה חדשה מלאה מהחישוב — כהזדמנות פתוחה, בלי לסגור">💼 שלח לעסקאות</button>
       <button class="btn" onclick="_txSaveCalc()" style="font-size:12px">💾 שמור ללקוח</button>
       <button class="btn btn-excel" onclick="_txExport()" style="font-size:12px">📥 Excel</button>
       <button class="btn btns" onclick="document.getElementById('tx-popup').remove()" style="font-size:12px">סגור</button>
@@ -15093,6 +15096,77 @@ function wpToDeal(clientId,potIdx){
   try{ renderDealKPI(); }catch(e){}
   showToast('💼 העסקה מולאה מהמוצר — בדוק ושמור','ok');
 }
+// ═══ ממחשבון לעסקה ════════════════════════════════════════════════════════
+// אחרי שחישבת תמחור, העסקה עוד לא נסגרה — אבל היא כבר הזדמנות אמיתית שצריכה
+// להופיע בפיפליין. עד היום היו רק שתי דרכים החוצה מהמחשבון: טיוטה בתוכנית
+// העבודה, או "סגור עסקה" שמסנכרן לקוח/הפצה/שכר כאילו הכול חתום. חסרה הדרך
+// האמצעית — לשלוח לעסקאות כהזדמנות פתוחה, עם המספרים שכבר חושבו.
+//
+// כמו בתוכנית העבודה: נפתח חלון העסקה מלא מראש ולא נוצרת עסקה בשקט, כי זה
+// הרגע להחליט מה באמת נכנס. הסטטוס נפתח כ"בטיפול" ולא כ"נסגר" — בכוונה.
+function calcToDeal(kind){
+  const F={};
+  try{
+    if(kind==='eq'){
+      F.co=_eqClientName();
+      const set=_eqDealSet();
+      if(!set.length||!set.some(d=>d.r.cost)){ showToast('⚠️ מלא עלויות לפני שליחה לעסקאות','warn'); return; }
+      const t=_eqTotals(set);
+      F.srv=set.map(d=>d.name).join(' + ')||'עסקת ציוד';
+      F.v=Math.round(t.customer);          // המחיר ללקוח — הסכום החד-פעמי
+      F.mv=Math.round(t.svc);              // דמ"ש חודשי, אם יש הסכם שירות
+      F.ty='short';
+      const pmi=t.rev?Math.round((1-t.cost/t.rev)*1000)/10:0;
+      F.no='ממחשבון ציוד · עלות '+fmt(Math.round(t.cost))+' · PMI '+pmi+'%';
+    }else if(kind==='roi'){
+      F.co=_roiClientName();
+      const v=_roiRead(), r=_roiCalc(v);
+      if(!r.netInv&&!r.net){ showToast('⚠️ מלא השקעה והכנסה לפני שליחה לעסקאות','warn'); return; }
+      F.srv=_roiLabel();
+      F.mv=Math.round((+v.rev||0)*(r.qty||1));   // מה שהלקוח משלם בחודש, על כל הקווים
+      F.v=F.mv;
+      F.ot=Math.round(+v.upfront||0);
+      F.ty='long'; F.ptype='lines';
+      F.no='ממחשבון החזר השקעה · השקעה '+fmt(r.netInv)
+        +(isFinite(r.payback)?(' · החזר '+Math.ceil(r.payback)+' חודשים'):' · לא מוחזר בתקופה');
+    }else if(kind==='tx'){
+      const p=_txPayload(), v=(window._txLast||{}).v||_txRead();
+      if(!p.monthly){ showToast('⚠️ אין קווים בחישוב — אין מה לשלוח','warn'); return; }
+      F.co=(p.client||'').trim();
+      F.srv=_txLabel(v);
+      F.mv=Math.round(p.monthly); F.v=F.mv;
+      F.ot=Math.round(p.oneInc||0);
+      F.ty='long'; F.ptype='lines';
+      F.no='ממחשבון תמסורת · PMI '+p.pmi+'% · דרג '+(p.level||'')
+        +(p.approved?'':' · ⛔ אינה מאושרת כלכלית');
+    }else return;
+  }catch(e){ console.error('calcToDeal',e); showToast('⚠️ לא ניתן לקרוא את החישוב','warn'); return; }
+
+  if(!F.co){ showToast('⚠️ הזן שם לקוח לפני שליחה לעסקאות','warn');
+    const e=document.getElementById(kind==='eq'?'eq-client':kind==='roi'?'roi-client':'tx-client'); if(e)e.focus(); return; }
+
+  // המחשבון נסגר לפני פתיחת חלון העסקה — שני חלונות זה על זה אינם ניתנים לשימוש
+  const ctx={...(window[kind==='eq'?'_eqCtx':kind==='roi'?'_roiCtx':'_txCtx']||{})};
+  const pop=document.getElementById(kind==='eq'?'eq-popup':kind==='roi'?'roi-popup':'tx-popup');
+  if(pop)pop.remove();
+
+  openM('deal');
+  const set=(id,val)=>{ const e=document.getElementById(id); if(e&&val!=null&&val!=='')e.value=val; };
+  const c=findClientByName(F.co);
+  set('dco',F.co);
+  if(c){ set('dcp',c.cp||''); set('dct',c.contact||''); }
+  set('dsr',F.srv); set('dptype',F.ptype||'');
+  set('dv',F.v||0); set('dmv',F.mv||0); set('dot',F.ot||0);
+  set('dty',F.ty||'long');
+  set('dst2','בטיפול');     // הזדמנות פתוחה — לא "נסגר"
+  set('dch','0.5');
+  set('dno',F.no||'');
+  // נפתח מתוך מוצר בתוכנית העבודה — העסקה תיקשר אליו בשמירה, בדיוק כמו מהפיפליין
+  if(ctx.clientId!=null&&ctx.potIdx!=null)_wpDealCtx={clientId:String(ctx.clientId),potIdx:+ctx.potIdx};
+  try{ renderDealKPI(); }catch(e){}
+  showToast('💼 העסקה מולאה מהמחשבון — בדוק ושמור','ok');
+}
+
 /** אחרי שמירת עסקה שנפתחה מתוכנית העבודה: קושרים אותה למוצר כדי שלא תיווצר פעמיים. */
 function _wpLinkSavedDeal(deal){
   if(!_wpDealCtx||!deal)return;
