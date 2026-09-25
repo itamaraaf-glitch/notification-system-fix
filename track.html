@@ -2,6 +2,10 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
+<!-- אבטחה: הדף הזה נשלח ללקוחות ונפתח מקישור, והיה בלי CSP בכלל. הוא לא טוען שום
+     משאב חיצוני, ופונה רק למסד Firebase — וזה בדיוק מה שמותר כאן. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0b1b5c">
 <title>מעקב הזמנות — HOT Business</title>
@@ -294,7 +298,17 @@
     var all=load().filter(function(x){return orderKey(x)!==k;});
     all.push(rec); save(all); return true;
   }
+  // המקור ה"חי" מגיע מהקישור עצמו (הפרמטר d), כך שקישור מפוברק יכול היה לכוון את
+  // הדף — על הדומיין שלנו — לכל שרת: למשוך ממנו "סטטוס" כרצונו, להציג אותו ללקוח,
+  // ולשמור אותו אצלו כך שיתרענן משם כל 30 שניות. המקור הלגיטימי הוא תמיד מסד
+  // Firebase של המערכת, ולכן רק אליו פונים. הבדיקה כאן משלימה את ה-CSP שבראש הדף,
+  // לדפדפנים שאינם אוכפים אותו, וחלה גם על רשומות שכבר נשמרו ממקור אחר.
+  function trustedDb(u){
+    try{ var x=new URL(u); return x.protocol==='https:' && /(^|\.)firebaseio\.com$|(^|\.)firebasedatabase\.app$/.test(x.hostname); }
+    catch(e){ return false; }
+  }
   function fetchLive(dbBase,id,cb){
+    if(!trustedDb(dbBase)){ cb(null); return; }
     try{
       fetch(liveUrl(dbBase,id),{cache:'no-store'})
         .then(function(r){return r.ok?r.json():null;})
