@@ -6011,7 +6011,10 @@ function pri(item,type){
   return'y';
 }
 function pB(p){const m={r:'br',o:'by',y:'by',g:'bg'};const l={r:'🔴 קריטי',o:'🟠 דחוף',y:'🟡 מעקב',g:'🟢 תקין'};return`<span class="badge ${m[p]}">${l[p]}</span>`;}
-function sB(s){if(['נסגר','הושלם','סגור'].includes(s))return`<span class="badge bg">${s} ✓</span>`;if(['בטיפול','בהתקנה','בתהליך'].includes(s))return`<span class="badge bb">${s}</span>`;if(s==='בעיה')return`<span class="badge br">${s}</span>`;return`<span class="badge by">${s}</span>`;}
+// תג סטטוס. הערך עובר esc: סטטוס לא מגיע רק מרשימה נפתחת — פעולת "הוסף עסקה" של
+// העוזר החכם לוקחת אותו ישירות מפלט המודל, וסנכרון מביא אותו ממכשיר אחר כמות שהוא.
+// ענף ברירת המחדל תופס כל ערך לא מוכר, ולכן היה נקודת הזרקה בכל מסך שמציג סטטוס.
+function sB(s){const t=esc(s==null?'':String(s));if(['נסגר','הושלם','סגור'].includes(s))return`<span class="badge bg">${t} ✓</span>`;if(['בטיפול','בהתקנה','בתהליך'].includes(s))return`<span class="badge bb">${t}</span>`;if(s==='בעיה')return`<span class="badge br">${t}</span>`;return`<span class="badge by">${t}</span>`;}
 function pC(p){return{r:'pr',o:'po',y:'py',g:'pg'}[p];}
 // סינון סטטוס/דחיפות בכל נושא — רינדור מחדש ב-JS לפי הרמות שנבחרו (גם השורות וגם הסכומים)
 function priFilterBar(secId){
