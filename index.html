@@ -4057,6 +4057,18 @@ async function syncFilesNow(){
 // רשת ביטחון: כל דקה מנסה להשלים קבצים חסרים, להעלות חדשים, ולקלוט מיילים נכנסים
 setInterval(()=>{ try{ if(_cloudCfg()&&document.body.classList.contains('logged-in')){ _cloudFilesFetchMissing(); _cloudFilesPush(); if(typeof pollCloudMail==='function')pollCloudMail(true); } }catch(e){} }, 60000);
 
+// ── מחיקה מול שחזור: מי מאוחר יותר מנצח ────────────────────────────────────
+// רישום מחיקה (tombstone) מסונכרן בין המכשירים כאיחוד, ובעבר גבר על הרשומה *תמיד*.
+// זה שבר כל שחזור: משחזרים עסקה שנמחקה בטעות מגיבוי, היא חוזרת, ההודעה אומרת
+// "שוחזר" — והסנכרון הבא מוחק אותה שוב, כי רישום המחיקה הישן כבר נמצא בענן
+// ומתאחד חזרה. אותו דבר קרה לביטול מחיקה ולשחזור מארכיון ברגע שהמחיקה הספיקה
+// להסתנכרן. הכלל עכשיו: מחיקה גוברת רק על גרסה שנשמרה *לפניה*. רשומה שנשמרה
+// אחרי המחיקה — וזה קורה רק כשמחזירים אותה במכוון — מנצחת את המחיקה הישנה.
+// מחיקה רגילה ממשיכה לגבור, כי הגרסה האחרונה של רשומה תמיד קודמת למחיקתה.
+function _delWins(delMap,item){
+  const t=delMap&&item?delMap[String(item.id)]:0;
+  return !!t && (+item._mts||0)<=t;
+}
 // Smart merge: never overwrites local items — merges by ID, keeps newer _mts per item
 function fbMergeRemote(remote){
   // ── יישור קו ──
@@ -4078,7 +4090,7 @@ function fbMergeRemote(remote){
         if(!Array.isArray(D[col]))D[col]=[];
         const have=new Set(D[col].map(x=>String(x.id)));
         const del=_rDel[col]||{};
-        local.forEach(x=>{const id=String(x&&x.id); if(id&&id!=='undefined'&&!have.has(id)&&!del[id])D[col].push(x);});
+        local.forEach(x=>{const id=String(x&&x.id); if(id&&id!=='undefined'&&!have.has(id)&&!_delWins(del,x))D[col].push(x);});
       });
       _buildSyncSnap();
       if(typeof _hydrateBlobs==='function')setTimeout(_reconcileFiles,0); // החזרת בייטי קבצים (מקומית + הורדה מהענן)
@@ -4107,7 +4119,7 @@ function fbMergeRemote(remote){
       const byId=new Map(D[col].map(x=>[String(x.id),x]));
       remote[col].forEach(rItem=>{
         const sid=String(rItem.id);
-        if(myDel[sid])return; // intentionally deleted locally — don't resurrect
+        if(_delWins(myDel,rItem))return; // נמחק כאן אחרי הגרסה הזו — לא מחזירים
         const lItem=byId.get(sid);
         if(!lItem){D[col].push(rItem);changed=true;}
         else if((rItem._mts||0)>(lItem._mts||0)){
@@ -4119,7 +4131,7 @@ function fbMergeRemote(remote){
     // Apply remote deletions to local arrays
     if(Object.keys(myDel).length){
       const before=D[col].length;
-      D[col]=D[col].filter(x=>!myDel[String(x.id)]);
+      D[col]=D[col].filter(x=>!_delWins(myDel,x));
       if(D[col].length!==before)changed=true;
     }
   });
@@ -18114,6 +18126,21 @@ async function openAutoBackups(){
 
   document.getElementById('mbackups').classList.add('open');
 }
+// שחזור במיזוג: מוסיף מהגיבוי רשומות שחסרות עכשיו. הרשומות המוחזרות נחתמות
+// כחדשות ורישום המחיקה המקומי שלהן מוסר — אחרת רישום המחיקה (שכבר בענן)
+// מוחק אותן שוב בסנכרון הבא. החתימה נדרשת במפורש: רשומה משוחזרת זהה לגרסתה
+// שלפני המחיקה, ולכן _stampChanges לא היה מזהה בה שינוי ומשאיר חותמת ישנה.
+function _restoreMergeCols(cols,p){
+  const now=Date.now();
+  cols.forEach(col=>{
+    const curr=D[col]||[];
+    const currIds=new Set(curr.map(x=>String(x.id)));
+    const missing=(p[col]||[]).filter(x=>!currIds.has(String(x.id)));
+    if(!missing.length)return;
+    missing.forEach(x=>{ x._mts=now; if(D._deletedIds&&D._deletedIds[col])delete D._deletedIds[col][String(x.id)]; });
+    D[col]=[...curr,...missing];
+  });
+}
 async function restoreFromDailyIdb(day){
   const dailyList=await idbDailyList();
   const snap=dailyList.find(s=>s.day===day);
@@ -18134,13 +18161,7 @@ async function restoreFromDailyIdb(day){
         D.lastCycleMonth=p.lastCycleMonth||'';
         D._deletedIds={};
       }else{
-        allCols.forEach(col=>{
-          const curr=D[col]||[];
-          const bk=p[col]||[];
-          const currIds=new Set(curr.map(x=>String(x.id)));
-          const missing=bk.filter(x=>!currIds.has(String(x.id)));
-          if(missing.length)D[col]=[...curr,...missing];
-        });
+        _restoreMergeCols(allCols,p);
         if(!D.goals||!Object.keys(D.goals).length)D.goals=p.goals||{};
         D._deletedIds=D._deletedIds||p._deletedIds||{};
       }
@@ -18180,13 +18201,7 @@ async function restoreFromIdb(ts){
         D._deletedIds={}; // clear so sync doesn't re-delete restored items
       }else{
         // Merge: keep current + add items not present by ID
-        allCols.forEach(col=>{
-          const curr=D[col]||[];
-          const bk=p[col]||[];
-          const currIds=new Set(curr.map(x=>String(x.id)));
-          const missing=bk.filter(x=>!currIds.has(String(x.id)));
-          if(missing.length)D[col]=[...curr,...missing];
-        });
+        _restoreMergeCols(allCols,p);
         if(!D.goals||!Object.keys(D.goals).length)D.goals=p.goals||{};
         D._deletedIds=D._deletedIds||p._deletedIds||{};
       }
