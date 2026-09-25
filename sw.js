@@ -1,4 +1,4 @@
-const CACHE = 'hot-crm-v12';
+const CACHE = 'hot-crm-v13';   // v13: עותק HTML לשימוש לא מקוון — גרסה חדשה כדי שהעובד הקודם יוחלף וינוקה
 const META_CACHE = 'hot-crm-meta';
 const ASSETS = ['./manifest.json', './office-bg.jpg', './mountains-bg.mp4', './icon-192.png', './icon-512.png', './badge-96.png'];
 
@@ -24,18 +24,38 @@ self.addEventListener('fetch', e => {
   let url;
   try { url = new URL(e.request.url); } catch (err) { return; }
   if (url.origin !== self.location.origin) return;
-  // HTML pages: always network — never serve from cache so updates always load
+  // דפי HTML: הרשת קודם, והעותק השמור רק כשהרשת נכשלה.
+  //
+  // בעבר זה היה "רשת בלבד" — כדי שכל דיפלוי יגיע מיד. אבל בלי שום נפילה לעותק,
+  // האפליקציה המותקנת לא נפתחה בכלל בלי חיבור (net::ERR_FAILED): באתר לקוח, במרתף,
+  // בנסיעה. עכשיו, כשיש רשת, מקבלים תמיד את הגרסה החדשה ושומרים ממנה עותק;
+  // כשאין רשת, מקבלים את הגרסה האחרונה שנטענה. הנתונים עצמם יושבים ממילא ב-localStorage.
   if (e.request.mode === 'navigate' ||
       url.pathname.endsWith('.html') ||
       url.pathname.endsWith('/')) {
-    e.respondWith(fetch(e.request));
+    // מפתח אחד לכל דף, בלי פרמטרים: ?fresh=… משתנה בכל רענון כפוי ו-?vchk=… בכל
+    // בדיקת גרסה. בלי נרמול כל טעינה הייתה נשמרת כרשומה נפרדת ושום רשומה לא
+    // הייתה נמצאת כשאין חיבור.
+    const key = url.origin + (url.pathname.endsWith('/') ? url.pathname + 'index.html' : url.pathname);
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res && res.ok && res.type === 'basic') {
+          const copy = res.clone();                      // לפני שהגוף נצרך — ראו למטה
+          caches.open(CACHE).then(c => c.put(key, copy)).catch(() => {});
+        }
+        return res;
+      }).catch(() => caches.match(key).then(hit => hit || Response.error()))
+    );
     return;
   }
   // Same-origin assets: cache-first
   e.respondWith(
     caches.match(e.request).then(cached => {
       const network = fetch(e.request).then(res => {
-        if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+        // השכפול חייב לקרות מיד. בעבר הוא קרה בתוך then של caches.open — אחרי שהתגובה
+        // כבר נמסרה לדף — ואם הדף הספיק להתחיל לקרוא את הגוף, clone() זרק והנכס פשוט
+        // לא נשמר, בשקט.
+        if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {}); }
         return res;
       }).catch(() => cached);
       return cached || network;

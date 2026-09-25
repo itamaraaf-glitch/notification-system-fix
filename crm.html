@@ -462,7 +462,7 @@ td.cb-td{width:32px;padding:4px 8px}
 .fi{font-size:11px;color:var(--text2)}.fi b{color:var(--text)}
 
 /* תא הניתן לעריכה-בשורה — הדגשה בריחוף כדי שיהיה ברור שאפשר ללחוץ לעריכה */
-.ec{transition:background .12s,box-shadow .12s;border-radius:5px}
+.ec{transition:background .12s,box-shadow .12s;border-radius:5px;cursor:pointer;border-bottom:1px dashed rgba(76,201,240,.4);padding-bottom:1px}
 .tscroll td:hover .ec{border-bottom-color:rgba(76,201,240,.75)}
 .ec:hover{background:rgba(76,201,240,.16);box-shadow:0 0 0 1px rgba(76,201,240,.45);border-bottom-color:transparent!important}
 /* אריחי KPI בכרטיס הלקוח — לחיצים, עם הרמה עדינה בריחוף */
@@ -4057,6 +4057,18 @@ async function syncFilesNow(){
 // רשת ביטחון: כל דקה מנסה להשלים קבצים חסרים, להעלות חדשים, ולקלוט מיילים נכנסים
 setInterval(()=>{ try{ if(_cloudCfg()&&document.body.classList.contains('logged-in')){ _cloudFilesFetchMissing(); _cloudFilesPush(); if(typeof pollCloudMail==='function')pollCloudMail(true); } }catch(e){} }, 60000);
 
+// ── מחיקה מול שחזור: מי מאוחר יותר מנצח ────────────────────────────────────
+// רישום מחיקה (tombstone) מסונכרן בין המכשירים כאיחוד, ובעבר גבר על הרשומה *תמיד*.
+// זה שבר כל שחזור: משחזרים עסקה שנמחקה בטעות מגיבוי, היא חוזרת, ההודעה אומרת
+// "שוחזר" — והסנכרון הבא מוחק אותה שוב, כי רישום המחיקה הישן כבר נמצא בענן
+// ומתאחד חזרה. אותו דבר קרה לביטול מחיקה ולשחזור מארכיון ברגע שהמחיקה הספיקה
+// להסתנכרן. הכלל עכשיו: מחיקה גוברת רק על גרסה שנשמרה *לפניה*. רשומה שנשמרה
+// אחרי המחיקה — וזה קורה רק כשמחזירים אותה במכוון — מנצחת את המחיקה הישנה.
+// מחיקה רגילה ממשיכה לגבור, כי הגרסה האחרונה של רשומה תמיד קודמת למחיקתה.
+function _delWins(delMap,item){
+  const t=delMap&&item?delMap[String(item.id)]:0;
+  return !!t && (+item._mts||0)<=t;
+}
 // Smart merge: never overwrites local items — merges by ID, keeps newer _mts per item
 function fbMergeRemote(remote){
   // ── יישור קו ──
@@ -4078,7 +4090,7 @@ function fbMergeRemote(remote){
         if(!Array.isArray(D[col]))D[col]=[];
         const have=new Set(D[col].map(x=>String(x.id)));
         const del=_rDel[col]||{};
-        local.forEach(x=>{const id=String(x&&x.id); if(id&&id!=='undefined'&&!have.has(id)&&!del[id])D[col].push(x);});
+        local.forEach(x=>{const id=String(x&&x.id); if(id&&id!=='undefined'&&!have.has(id)&&!_delWins(del,x))D[col].push(x);});
       });
       _buildSyncSnap();
       if(typeof _hydrateBlobs==='function')setTimeout(_reconcileFiles,0); // החזרת בייטי קבצים (מקומית + הורדה מהענן)
@@ -4107,7 +4119,7 @@ function fbMergeRemote(remote){
       const byId=new Map(D[col].map(x=>[String(x.id),x]));
       remote[col].forEach(rItem=>{
         const sid=String(rItem.id);
-        if(myDel[sid])return; // intentionally deleted locally — don't resurrect
+        if(_delWins(myDel,rItem))return; // נמחק כאן אחרי הגרסה הזו — לא מחזירים
         const lItem=byId.get(sid);
         if(!lItem){D[col].push(rItem);changed=true;}
         else if((rItem._mts||0)>(lItem._mts||0)){
@@ -4119,7 +4131,7 @@ function fbMergeRemote(remote){
     // Apply remote deletions to local arrays
     if(Object.keys(myDel).length){
       const before=D[col].length;
-      D[col]=D[col].filter(x=>!myDel[String(x.id)]);
+      D[col]=D[col].filter(x=>!_delWins(myDel,x));
       if(D[col].length!==before)changed=true;
     }
   });
@@ -5999,7 +6011,10 @@ function pri(item,type){
   return'y';
 }
 function pB(p){const m={r:'br',o:'by',y:'by',g:'bg'};const l={r:'🔴 קריטי',o:'🟠 דחוף',y:'🟡 מעקב',g:'🟢 תקין'};return`<span class="badge ${m[p]}">${l[p]}</span>`;}
-function sB(s){if(['נסגר','הושלם','סגור'].includes(s))return`<span class="badge bg">${s} ✓</span>`;if(['בטיפול','בהתקנה','בתהליך'].includes(s))return`<span class="badge bb">${s}</span>`;if(s==='בעיה')return`<span class="badge br">${s}</span>`;return`<span class="badge by">${s}</span>`;}
+// תג סטטוס. הערך עובר esc: סטטוס לא מגיע רק מרשימה נפתחת — פעולת "הוסף עסקה" של
+// העוזר החכם לוקחת אותו ישירות מפלט המודל, וסנכרון מביא אותו ממכשיר אחר כמות שהוא.
+// ענף ברירת המחדל תופס כל ערך לא מוכר, ולכן היה נקודת הזרקה בכל מסך שמציג סטטוס.
+function sB(s){const t=esc(s==null?'':String(s));if(['נסגר','הושלם','סגור'].includes(s))return`<span class="badge bg">${t} ✓</span>`;if(['בטיפול','בהתקנה','בתהליך'].includes(s))return`<span class="badge bb">${t}</span>`;if(s==='בעיה')return`<span class="badge br">${t}</span>`;return`<span class="badge by">${t}</span>`;}
 function pC(p){return{r:'pr',o:'po',y:'py',g:'pg'}[p];}
 // סינון סטטוס/דחיפות בכל נושא — רינדור מחדש ב-JS לפי הרמות שנבחרו (גם השורות וגם הסכומים)
 function priFilterBar(secId){
@@ -16189,15 +16204,37 @@ function editCell(table,id,field,el,kind,opts){
   if(kind==='select')ctl.addEventListener('change',()=>commit(true));
 }
 // עטיפת span כללית לעריכה מהירה בתוך תא — לכל טבלה
+// ── תא הניתן לעריכה ─────────────────────────────────────────────────────────
+// כל תא נשא בעבר, בתוך ה-HTML, שלושה דברים שחזרו על עצמם בכל אחד מהם: handler
+// לחיצה, סגנון, וטקסט עזרה ארוך — למרות שכל המידע כבר יושב בתכונות data-ec*.
+// שורת עסקה אחת הגיעה ל-6.2KB, ורינדור של 900 עסקאות פירש כ-5.5MB של HTML.
+// עכשיו התא נושא רק את הנתונים: הלחיצה מטופלת במאזין אחד למסמך (_ecDelegate),
+// הסגנון במחלקת .ec, וטקסט העזרה נקבע כשהעכבר מגיע לתא ולא נכתב מראש.
 function _cellSpan(table,id,field,inner,kind){
-  return `<span class="ec" data-ectab="${table}" data-ecid="${esc(id)}" data-ecfield="${field}" data-eckind="${kind||'text'}" onclick="event.stopPropagation();editCell('${table}','${id}','${field}',this,'${kind||'text'}')" title="לחץ לעריכה מהירה · Tab לתא הבא — יתעדכן בכל המסכים" style="cursor:pointer;border-bottom:1px dashed rgba(76,201,240,.4);padding-bottom:1px">${inner}</span>`;
+  return `<span class="ec" data-ectab="${table}" data-ecid="${esc(id)}" data-ecfield="${field}" data-eckind="${kind||'text'}">${inner}</span>`;
 }
+const _EC_HINT='לחץ לעריכה מהירה · Tab לתא הבא — יתעדכן בכל המסכים';
+(function _ecDelegate(){
+  // שלב capture ולא bubble: ה-handler הישן עצר את הלחיצה בתא עצמו, כדי שהשורה
+  // (שלעתים פותחת חלון עריכה) לא תקבל אותה. כאן עוצרים לפני שהיא מגיעה לשורה.
+  document.addEventListener('click',function(ev){
+    const el=ev.target&&ev.target.closest&&ev.target.closest('.ec[data-ecid]');
+    // תא שכבר בעריכה מכיל שדה קלט — לחיצה בתוכו (למשל למיקום הסמן) לא נוגעים בה
+    if(!el||el._editing)return;
+    ev.stopPropagation();
+    editCell(el.dataset.ectab,el.dataset.ecid,el.dataset.ecfield,el,el.dataset.eckind||'text');
+  },true);
+  document.addEventListener('mouseover',function(ev){
+    const el=ev.target&&ev.target.closest&&ev.target.closest('.ec[data-ecid]');
+    if(el&&!el.title)el.title=_EC_HINT;
+  },true);
+})();
 // עטיפות לעסקאות (שמירת ה-onclick היציב של שורת העסקה)
 function editDealCell(id,field,el,kind,opts){ return editCell('deals',id,field,el,kind,opts); }
 function editDealField(id,field,el){ return editCell('deals',id,field,el,'num'); }
 function editDealValue(id,el){ return editCell('deals',id,'v',el,'num'); }
 function _editSpan(id,field,inner,kind,extra){
-  return `<span class="ec" data-ectab="deals" data-ecid="${esc(id)}" data-ecfield="${field}" data-eckind="${kind||'text'}" onclick="event.stopPropagation();editDealCell('${id}','${field}',this,'${kind||'text'}')" title="לחץ לעריכה מהירה · Tab לתא הבא — יתעדכן בכל המסכים" style="cursor:pointer;border-bottom:1px dashed rgba(76,201,240,.4);padding-bottom:1px;${extra||''}">${inner}</span>`;
+  return `<span class="ec" data-ectab="deals" data-ecid="${esc(id)}" data-ecfield="${field}" data-eckind="${kind||'text'}"${extra?` style="${extra}"`:''}>${inner}</span>`;
 }
 function _editNumCell(id,field,val,cls){
   return `<td class="${cls||''}">${_editSpan(id,field,fmt(val),'num')}</td>`;
@@ -18092,6 +18129,21 @@ async function openAutoBackups(){
 
   document.getElementById('mbackups').classList.add('open');
 }
+// שחזור במיזוג: מוסיף מהגיבוי רשומות שחסרות עכשיו. הרשומות המוחזרות נחתמות
+// כחדשות ורישום המחיקה המקומי שלהן מוסר — אחרת רישום המחיקה (שכבר בענן)
+// מוחק אותן שוב בסנכרון הבא. החתימה נדרשת במפורש: רשומה משוחזרת זהה לגרסתה
+// שלפני המחיקה, ולכן _stampChanges לא היה מזהה בה שינוי ומשאיר חותמת ישנה.
+function _restoreMergeCols(cols,p){
+  const now=Date.now();
+  cols.forEach(col=>{
+    const curr=D[col]||[];
+    const currIds=new Set(curr.map(x=>String(x.id)));
+    const missing=(p[col]||[]).filter(x=>!currIds.has(String(x.id)));
+    if(!missing.length)return;
+    missing.forEach(x=>{ x._mts=now; if(D._deletedIds&&D._deletedIds[col])delete D._deletedIds[col][String(x.id)]; });
+    D[col]=[...curr,...missing];
+  });
+}
 async function restoreFromDailyIdb(day){
   const dailyList=await idbDailyList();
   const snap=dailyList.find(s=>s.day===day);
@@ -18112,13 +18164,7 @@ async function restoreFromDailyIdb(day){
         D.lastCycleMonth=p.lastCycleMonth||'';
         D._deletedIds={};
       }else{
-        allCols.forEach(col=>{
-          const curr=D[col]||[];
-          const bk=p[col]||[];
-          const currIds=new Set(curr.map(x=>String(x.id)));
-          const missing=bk.filter(x=>!currIds.has(String(x.id)));
-          if(missing.length)D[col]=[...curr,...missing];
-        });
+        _restoreMergeCols(allCols,p);
         if(!D.goals||!Object.keys(D.goals).length)D.goals=p.goals||{};
         D._deletedIds=D._deletedIds||p._deletedIds||{};
       }
@@ -18158,13 +18204,7 @@ async function restoreFromIdb(ts){
         D._deletedIds={}; // clear so sync doesn't re-delete restored items
       }else{
         // Merge: keep current + add items not present by ID
-        allCols.forEach(col=>{
-          const curr=D[col]||[];
-          const bk=p[col]||[];
-          const currIds=new Set(curr.map(x=>String(x.id)));
-          const missing=bk.filter(x=>!currIds.has(String(x.id)));
-          if(missing.length)D[col]=[...curr,...missing];
-        });
+        _restoreMergeCols(allCols,p);
         if(!D.goals||!Object.keys(D.goals).length)D.goals=p.goals||{};
         D._deletedIds=D._deletedIds||p._deletedIds||{};
       }
