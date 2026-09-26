@@ -3474,6 +3474,7 @@ function doLogout(){
   _resetLoginUI();
   // Clean up Firebase listener to prevent memory/connection leaks
   if(typeof _fbRef!=='undefined'&&_fbRef){try{_fbRef.off();}catch(e){}_fbRef=null;}
+  if(typeof _fbConnRef!=='undefined'&&_fbConnRef){try{_fbConnRef.off();}catch(e){}_fbConnRef=null;_fbOnline=null;_fbDirty=false;}
   if(typeof _fbDB!=='undefined'){_fbDB=null;}
   if(typeof _fbListening!=='undefined'){_fbListening=false;}
   if(typeof _fbPushTimer!=='undefined'&&_fbPushTimer){clearTimeout(_fbPushTimer);_fbPushTimer=null;}
@@ -3849,6 +3850,8 @@ function checkBackupAge(){
 // ===== FIREBASE CLOUD SYNC =====
 const FB_CFG_KEY='cem_fb_config';
 let _fbDB=null,_fbRef=null,_fbListening=false,_fbApplying=false,_fbPushTimer=null;
+// מצב החיבור לפי Firebase עצמו (.info/connected), ושמירה שנדחתה בזמן ניתוק
+let _fbOnline=null,_fbDirty=false,_fbConnRef=null;
 let _lastSyncTs=0;
 
 // ═══ הצפנה מקצה-לקצה של הסנכרון (AES-256-GCM) ═══
@@ -4072,6 +4075,26 @@ function _delWins(delMap,item){
   const t=delMap&&item?delMap[String(item.id)]:0;
   return !!t && (+item._mts||0)<=t;
 }
+// ── האם במכשיר הזה יש משהו שחסר בענן? ────────────────────────────────────
+// כל דחיפה כותבת את כל המטען, ולכן שני מכשירים ששמרו בהפרש של שניות דרסו זה את זה
+// בענן: המכשיר השני מיזג אצלו את מה שהגיע, אבל אף אחד לא החזיר לענן את מה שנדרס —
+// עסקה שנשמרה במחשב נעלמה מהענן ומהמובייל עד השמירה הבאה במחשב (ובתקציר הבוקר
+// שקורא מהענן). אחרי כל מיזוג בודקים: רשומה שאין בענן, גרסה חדשה יותר משלנו,
+// מחיקה שהענן לא מכיר או הגדרות חדשות יותר — ואז דוחפים את המאוחד. הבדיקה משתמשת
+// באותם כללים כמו המיזוג עצמו, כך שכל דחיפה רק מוסיפה מידע והמכשירים מתכנסים.
+function _localAhead(r){
+  if(!r)return false;
+  if((D._baseline||0)!==(r._baseline||0))return false;   // יישור קו מטופל בנפרד
+  if((D._metaMts||0)>(r._metaMts||0))return true;
+  const lDel=D._deletedIds||{},rDel=r._deletedIds||{};
+  for(const col in lDel){const m=lDel[col]||{},rm=rDel[col]||{};for(const id in m)if(!(rm[id]>=m[id]))return true;}
+  for(const col of SYNC_COLS){
+    const L=Array.isArray(D[col])?D[col]:[];if(!L.length)continue;
+    const R=new Map((Array.isArray(r[col])?r[col]:[]).map(x=>[String(x&&x.id),+(x&&x._mts)||0]));
+    for(const x of L){const id=String(x&&x.id);if(!R.has(id)||(+x._mts||0)>R.get(id))return true;}
+  }
+  return false;
+}
 // Smart merge: never overwrites local items — merges by ID, keeps newer _mts per item
 function fbMergeRemote(remote){
   // ── יישור קו ──
@@ -4110,9 +4133,12 @@ function fbMergeRemote(remote){
   const cols=SYNC_COLS; // כולל טבלאות ארכיון — סגירת חודש במחשב מגיעה גם למובייל
   if(!D._deletedIds)D._deletedIds={};
   const rDel=remote._deletedIds||{};
-  // Merge deletion maps (union)
+  // Merge deletion maps (union). לכל מזהה נשמרת המחיקה המאוחרת מבין השתיים: Object.assign
+  // העתיק את ערך הענן גם כשהוא ישן יותר. מחיקה ← שחזור ← מחיקה שוב, ומכשיר אחר שכתב
+  // לפני שהמחיקה השנייה עלתה — והמחיקה השנייה הוחלפה בראשונה, שקודמת לשחזור, והעסקה חזרה.
   Object.keys(rDel).forEach(col=>{
-    if(rDel[col]){if(!D._deletedIds[col])D._deletedIds[col]={};Object.assign(D._deletedIds[col],rDel[col]);}
+    if(rDel[col]){if(!D._deletedIds[col])D._deletedIds[col]={};const m=D._deletedIds[col];
+      for(const id in rDel[col]){const t=+rDel[col][id]||0;if(!(m[id]>=t))m[id]=t;}}
   });
   let changed=false;
   cols.forEach(col=>{
@@ -4173,7 +4199,7 @@ function fbStatus(state){
 
 // Force-pull latest data from cloud (merge, never overwrite)
 async function fbForcePull(){
-  if(_ssUrl){await ssPoll();showToast('✅ עודכן מהענן','ok');return;}
+  if(_ssUrl){await ssPoll(true);showToast('✅ עודכן מהענן','ok');return;}
   if(!_fbRef){showToast('⚠️ אין חיבור ענן מוגדר — לחץ על ⚡ בסרגל העליון','warn');return;}
   showToast('🔄 מושך נתונים מהענן...','info');
   _fbRef.once('value',async snap=>{
@@ -4269,6 +4295,15 @@ async function fbInit(){
     const path='crm/'+hash.substring(0,32);
     _fbRef=_fbDB.ref(path);
     fbStatus('connecting');
+    // בזמן ניתוק, Firebase שומר כל set() בתור ומריץ אותו כשהרשת חוזרת — כתיבה עיוורת
+    // של כל המטען, שדורסת את כל מה שמכשירים אחרים שמרו בינתיים. לכן בזמן ניתוק לא
+    // כותבים; מסמנים, ואחרי החיבור (כשהגרסה מהשרת כבר מוזגה) דוחפים את המאוחד.
+    if(_fbConnRef){try{_fbConnRef.off();}catch(e){}}
+    _fbConnRef=_fbDB.ref('.info/connected');
+    _fbConnRef.on('value',s=>{
+      _fbOnline=!!s.val();
+      if(_fbOnline&&_fbDirty)setTimeout(()=>{if(_fbOnline&&_fbDirty){_fbDirty=false;fbPush();}},1500);
+    });
     _fbRef.on('value',async snap=>{
       const remote=snap.val();
       const parsed=await cloudExtract(remote);
@@ -4284,6 +4319,8 @@ async function fbInit(){
         _lastSyncTs=Date.now();
         if(changed){_syncRender();showToast('🔄 עודכן מהענן – נתונים חדשים הגיעו','ok');}
       }finally{_fbApplying=false;}
+      // מכשיר אחר כתב את כל המטען ודרס משהו שנשמר כאן — מחזירים לענן את המאוחד
+      if(_fbDirty||_localAhead(parsed)){_fbDirty=false;fbPush();}
       fbStatus('connected');
       _fbListening=true;
       if(!_republishTracksDone){ _republishTracksDone=true; setTimeout(()=>{try{_republishAllTracks();}catch(e){}},1800); }
@@ -4299,6 +4336,7 @@ function fbPush(){
     // SAFETY: never push empty data to cloud
     const totalRec=DATA_COLS.reduce((s,c)=>s+(D[c]||[]).length,0);
     if(totalRec===0){console.warn('fbPush blocked: D is empty');return;}
+    if(_fbOnline===false){_fbDirty=true;fbStatus('error');return;}   // ראו .info/connected ב-fbInit
     // לפני דחיפה: אם בענן יש יישור קו חדש משלנו — לא דורסים אותו אלא מאמצים
     try{
       const snap=await _fbRef.child('_baseline').once('value');
@@ -4485,21 +4523,9 @@ async function ssInit(dbUrl,syncCode){
     _ssUrl=url;
     _fbListening=true;
     const plainInit=await cloudExtract(remote);
-    if(plainInit){
-      const remoteTs=remote._ts||0;
-      const localTs=parseInt(localStorage.getItem('cem_sync_ts')||'0');
-      // יישור קו חדש בענן נמשך תמיד — גם אם חותמת הזמן המקומית "עדכנית"
-      if(remoteTs>localTs+500||(plainInit._baseline||0)>(D._baseline||0)){
-        _fbApplying=true;
-        try{
-          const changed=fbMergeRemote(plainInit);
-          _saveLS();
-          localStorage.setItem('cem_sync_ts',String(Math.max(remoteTs,localTs)));
-          _lastSyncTs=Date.now();
-          if(changed){_syncRender();showToast('🔄 עודכן מהענן – נתונים חדשים','ok');}
-        }finally{_fbApplying=false;}
-      }
-    }
+    _ssSeenTs=(remote&&remote._ts)||null;
+    // מה שנשמר כאן בזמן שהאפליקציה הייתה סגורה או בלי רשת — עולה לענן מיד בפתיחה
+    if(plainInit&&_ssApply(remote,plainInit,'🔄 עודכן מהענן – נתונים חדשים'))ssPush();
     fbStatus('connected');
     showToast('✅ מחובר לענן! סנכרון אוטומטי פעיל','ok');
     setTimeout(()=>{try{_republishAllTracks();}catch(e){}},1500); // קישורי המעקב שכבר נשלחו — כעת חיים
@@ -4514,54 +4540,89 @@ async function ssInit(dbUrl,syncCode){
   }
 }
 
-async function ssPoll(){
+// חותמת _ts של הגרסה בענן שכבר מוזגה כאן או נכתבה מכאן (undefined = עוד לא נקראה)
+let _ssSeenTs;
+// מיזוג מטען מהענן לתוך המכשיר ורישום הגרסה שנראתה. מחזיר true כשבמכשיר יש משהו
+// שחסר בענן — ואז הקורא דוחף את המאוחד.
+//
+// בעבר מיזגנו רק כש-_ts בענן גדול ב-500ms לפחות מחותמת הדחיפה האחרונה *שלנו*. אלה
+// שעונים של שני מכשירים שונים: שמירה מהמובייל חצי שנייה אחרי המחשב (או מטלפון
+// שהשעון שלו מפגר) לא נקלטה בכלל. המיזוג עצמו בטוח לחזרה (כל רשומה לפי _mts),
+// ולכן ממזגים בכל פעם שהגרסה בענן השתנתה — בלי להשוות שעונים.
+function _ssApply(remote,plain,toast){
+  _fbApplying=true;
+  try{
+    const changed=fbMergeRemote(plain);
+    _saveLS();
+    const localTs=parseInt(localStorage.getItem('cem_sync_ts')||'0');
+    localStorage.setItem('cem_sync_ts',String(Math.max(remote._ts||0,localTs)));
+    _lastSyncTs=Date.now();
+    if(changed){_syncRender();if(toast)showToast(toast,'ok');}
+  }finally{_fbApplying=false;}
+  _ssSeenTs=remote._ts||null;
+  return _localAhead(plain);
+}
+const _ssTsUrl=()=>_ssUrl.replace(/\.json$/,'/_ts.json');
+async function ssPoll(force){
   if(!_ssUrl||_fbApplying||_ssPollActive)return;
   _ssPollActive=true;
+  let ahead=false;
   try{
+    // בדיקה זולה קודם: רק חותמת הזמן (כ-13 בתים). בעבר כל בדיקה, כל 30 שניות בכל מכשיר
+    // פתוח, הורידה את כל המטען — כ-600KB בנפח של שנה, ~70MB לשעה למכשיר. בשני מכשירים
+    // ביום עבודה זה עובר את 10GB החודשיים של התוכנית החינמית של Firebase, ואז הסנכרון
+    // פשוט נעצר עד סוף החודש. עכשיו מורידים את המטען רק כשמשהו באמת השתנה.
+    if(force!==true&&_ssSeenTs!==undefined){
+      const rt=await fetch(_ssTsUrl());
+      if(!rt.ok)return;
+      if((await rt.json())===_ssSeenTs)return;
+    }
     const r=await fetch(_ssUrl);
     if(!r.ok)return;
     const remote=await r.json();
     const plainPoll=await cloudExtract(remote);
-    if(!plainPoll)return;
-    const remoteTs=remote._ts||0;
-    const localTs=parseInt(localStorage.getItem('cem_sync_ts')||'0');
-    // יישור קו חדש בענן נמשך תמיד — גם אם חותמת הזמן המקומית "עדכנית"
-    if(remoteTs>localTs+500||(plainPoll._baseline||0)>(D._baseline||0)){
-      _fbApplying=true;
-      try{
-        const changed=fbMergeRemote(plainPoll);
-        _saveLS();
-        localStorage.setItem('cem_sync_ts',String(Math.max(remoteTs,localTs)));
-        _lastSyncTs=Date.now();
-        if(changed){_syncRender();showToast('🔄 עודכן מהענן','ok');}
-      }finally{_fbApplying=false;}
-    }
+    if(!plainPoll){_ssSeenTs=(remote&&remote._ts)||null;return;}
+    ahead=_ssApply(remote,plainPoll,'🔄 עודכן מהענן');
   }catch(e){console.warn('ssPoll:',e);}
   finally{
     _ssPollActive=false;
-    // העלאה שנכשלה (אופליין וכו') — ניסיון חוזר אחרי שמשכנו את העדכונים מהענן
-    if(_ssDirty&&navigator.onLine)_ssPushNow();
+    // העלאה שנכשלה (אופליין וכו'), או מכשיר אחר שדרס שינוי שלנו — דוחפים את המאוחד
+    if((_ssDirty||ahead)&&navigator.onLine)_ssPushNow();
   }
 }
 
-let _ssPushTimer=null,_ssDirty=false;
+let _ssPushTimer=null,_ssDirty=false,_ssPushing=false,_ssAgain=false;
 function ssPush(){
   if(!_ssUrl)return;
   clearTimeout(_ssPushTimer);
   _ssPushTimer=setTimeout(_ssPushNow,800);
 }
 async function _ssPushNow(){
-  if(!_ssUrl||_fbApplying)return;
+  if(!_ssUrl)return;
+  if(_fbApplying){_ssDirty=true;return;}   // באמצע מיזוג — הבדיקה הבאה תדחוף (לא נאבד)
+  if(_ssPushing){_ssAgain=true;return;}   // דחיפה בדרך — עוד אחת תצא מיד אחריה
   // SAFETY: never push empty data to cloud — protects against sync bugs
   const mainCols=DATA_COLS;
   const totalRec=mainCols.reduce((s,c)=>s+(D[c]||[]).length,0);
   if(totalRec===0){console.warn('ssPush blocked: D is empty, refusing to overwrite cloud data');return;}
-  // לפני דחיפה: אם בענן יש יישור קו חדש משלנו — לא דורסים אותו אלא מאמצים
+  _ssPushing=true;
+  try{await _ssPushOnce();}
+  finally{_ssPushing=false;if(_ssAgain){_ssAgain=false;ssPush();}}
+}
+async function _ssPushOnce(){
+  // מיזוג לפני כתיבה: הכתיבה מחליפה את כל המטען בענן. אם מכשיר אחר כתב מאז שקראנו
+  // (חותמת הזמן בענן אינה זו שראינו) — קודם ממזגים את מה שהוא כתב, ורק אז כותבים.
+  // בלי זה, עסקה שנשמרה במחשב נמחקה מהענן כשהמובייל שמר תוך 30 השניות שעד הבדיקה
+  // הבאה שלו. יישור קו חדש בענן מאומץ בתוך המיזוג (fbMergeRemote), כמו קודם.
   try{
-    const rb=await fetch(_ssUrl.replace(/\.json$/,'/_baseline.json'));
-    if(rb.ok){
-      const remoteBase=await rb.json();
-      if((remoteBase||0)>(D._baseline||0)){console.warn('ssPush skipped: newer baseline in cloud, adopting');_ssDirty=false;ssPoll();return;}
+    const rt=await fetch(_ssTsUrl());
+    if(rt.ok&&(await rt.json())!==_ssSeenTs){
+      const r=await fetch(_ssUrl);
+      if(r.ok){
+        const remote=await r.json();
+        const plain=await cloudExtract(remote);
+        if(plain)_ssApply(remote,plain,'🔄 עודכן מהענן');
+      }
     }
   }catch(e){}
   const ts=Date.now();
@@ -4571,6 +4632,7 @@ async function _ssPushNow(){
     if(!r.ok)throw new Error('HTTP '+r.status);
     // חותמת הסנכרון נכתבת רק אחרי הצלחה — אחרת העלאה שנכשלה חוסמת משיכות עתידיות
     localStorage.setItem('cem_sync_ts',String(ts));
+    _ssSeenTs=ts;
     _lastSyncTs=Date.now();
     _ssDirty=false;
     fbStatus('connected');
@@ -5404,6 +5466,7 @@ function clearFBSync(){
   if(!confirm('לנתק את הסנכרון ולמחוק את הגדרות הענן?'))return;
   if(_fbRef){try{_fbRef.off();}catch(e){}_fbRef=null;}
   _fbDB=null;_fbListening=false;
+  if(_fbConnRef){try{_fbConnRef.off();}catch(e){}_fbConnRef=null;_fbOnline=null;_fbDirty=false;}
   if(_ssTimer){clearInterval(_ssTimer);_ssTimer=null;}_ssUrl=null;
   localStorage.removeItem(FB_CFG_KEY);
   localStorage.removeItem('cem_sync_ts');

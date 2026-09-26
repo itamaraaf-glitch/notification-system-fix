@@ -161,6 +161,9 @@ details.panel summary::-webkit-details-marker{display:none}
 details.panel summary::after{content:'▾';margin-inline-start:auto;color:var(--text3);transition:transform .2s}
 details.panel[open] summary::after{transform:rotate(180deg)}
 details.panel summary+*{margin-top:13px}
+/* טבלה רחבה נגללת בתוך המסגרת שלה. בלי זה, בטלפון טבלת המקורות (7 עמודות) מתחה את
+   הדף ל-847px והדפדפן הקטין את כל העמוד כדי שייכנס — כל הטקסט והכפתורים יצאו זעירים. */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
 table{width:100%;border-collapse:collapse;font-size:11.5px}
 th,td{text-align:right;padding:7px 9px;border-bottom:1px solid rgba(45,64,112,.5)}
 th{font-size:10.5px;color:var(--text3);font-weight:600;text-transform:none}
@@ -184,6 +187,8 @@ tbody tr:last-child td{border-bottom:none}
 }
 .mlink:hover{transform:translateY(-2px);border-color:var(--gold);color:var(--gold2);text-decoration:none}
 .mlink small{display:block;font-size:9.5px;color:var(--text3);margin-top:2px}
+/* "דף הבית" יושב בתוך קישור החיפוש: באצבע, פספוס של 11px נוחת על החיפוש במקום על דף הבית */
+@media (pointer:coarse){.mlink small span[data-home]{display:inline-block;padding:8px 6px;margin:-8px 0}}
 
 /* ── סרגל בחירה צף ── */
 .selbar{
@@ -211,6 +216,15 @@ footer{text-align:center;font-size:10.5px;color:var(--text3);margin-top:26px;lin
   .kpi .vl{font-size:22px}
   .flabel{min-width:auto}
   .card{border-right-width:3px}
+  /* בטלפון הכותרת נשברת לשלוש שורות — צמודה למעלה היא הסתירה כשליש מהמסך בכל גלילה */
+  header{position:static}
+  /* סרגל הבחירה: ב-left:50% הוא קיבל רק חצי מרוחב המסך ונערם למגדל של ארבעה כפתורים
+     שכיסה את הכרטיסים. בטלפון — ברוחב מלא, שני כפתורים בשורה */
+  .selbar{left:10px;right:10px;bottom:10px;transform:translateY(130%);
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;padding:10px}
+  .selbar.on{transform:translateY(0)}
+  .selbar span{grid-column:1/-1;text-align:center}
+  .selbar .btn{justify-content:center;text-align:center}
 }
 </style>
 </head>
@@ -815,7 +829,7 @@ function renderSources(){
   $('srcsum').textContent = `— ${ok} פעילים${bad ? `, ${bad} נכשלו` : ''}`;
   if(bad) $('srcpanel').open = true;
 
-  $('srctable').innerHTML = `
+  $('srctable').innerHTML = `<div class="tw">
     <table>
       <thead><tr><th>מקור</th><th>קטגוריה</th><th>מצב</th><th>נסרקו</th><th>רלוונטיים</th><th>הערה</th><th></th></tr></thead>
       <tbody>${srcs.map(s => {
@@ -830,7 +844,7 @@ function renderSources(){
           <td>${link ? `<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">חיפוש ידני ↗</a>` : ''}</td>
         </tr>`;
       }).join('')}</tbody>
-    </table>
+    </table></div>
     <p style="font-size:10.5px;color:var(--text3);margin-top:10px;line-height:1.7">
       מקור שנכשל או שמחזיר 0 תוצאות הוא לרוב אתר שנבנה כיישום JavaScript ולכן אינו נסרק אוטומטית.
       הקישור "חיפוש ידני" פותח את דף המכרזים שלו לבדיקה, ואפשר להחליף או להוסיף מקורות בקובץ
@@ -891,8 +905,10 @@ function renderAuthorities(){
     // הדרך היציבה ביותר לנחות על עמוד המכרזים בלחיצה אחת.
     const vf = authVerified(a.note);
     const tip = (a.note ? a.note + ' · ' : '') + (vf ? 'חיפוש ממוקד באתר' : 'הכתובת לא אומתה — חיפוש לפי שם הרשות');
-    // קישור "דף הבית" מוצג רק כשהכתובת אומתה: על כתובת משוערת הוא מוביל לשגיאת דפדפן
-    const home = vf ? ` · <span onclick="event.preventDefault();event.stopPropagation();window.open('${esc(u)}','_blank','noopener')" style="text-decoration:underline;cursor:pointer">דף הבית</span>` : ' · לפי שם';
+    // קישור "דף הבית" מוצג רק כשהכתובת אומתה: על כתובת משוערת הוא מוביל לשגיאת דפדפן.
+    // הכתובת עוברת ב-data-home ולא בתוך קוד ה-onclick: שם &#39; מפוענח חזרה לגרש לפני
+    // שהקוד רץ, וכתובת עם גרש הייתה פורצת מהמחרוזת.
+    const home = vf ? ` · <span data-home="${esc(u)}" onclick="event.preventDefault();event.stopPropagation();window.open(this.dataset.home,'_blank','noopener')" style="text-decoration:underline;cursor:pointer">דף הבית</span>` : ' · לפי שם';
     return `<a class="mlink" href="${esc(tendersSearchUrl(u, a.name, a.note))}" target="_blank" rel="noopener noreferrer"
        data-n="${esc(a.name + ' ' + (a.note || ''))}"
        title="${esc(tip)}">${esc(a.name)}
