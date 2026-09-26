@@ -13,13 +13,12 @@ let agent = new ProactiveAIAgent({
   batchSize: 20
 });
 
+const { secure, HOST } = require('./server-security');
+const PORT = process.env.PORT || 3000;
+
 app.use(express.json());
+secure(app, PORT);   // לפני הגשת הקבצים — ראו server-security.js
 app.use(express.static('.'));
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  next();
-});
 
 // Parse filters from query params
 function parseFilters(query) {
@@ -178,8 +177,7 @@ app.get('/api/agent/logs', (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
   console.log(`\n🚀 Server running on port ${PORT}`);
   console.log(`\nExport endpoints:`);
   console.log(`  POST /api/export - create custom report`);

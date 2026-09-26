@@ -17,13 +17,12 @@ let agent = new ProactiveAIAgent({
   batchSize: 20
 });
 
+const { secure, HOST } = require('./server-security');
+const PORT = process.env.PORT || 3000;
+
 app.use(express.json());
+secure(app, PORT);   // לפני הגשת הקבצים — ראו server-security.js
 app.use(express.static('.'));
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  next();
-});
 
 // ============ EXPORT ENDPOINTS ============
 app.post('/api/export', async (req, res) => {
@@ -222,8 +221,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, HOST, () => {
   console.log(`
 ╔════════════════════════════════════════════╗
 ║           🤖 סוכן AI - דשבורד              ║
