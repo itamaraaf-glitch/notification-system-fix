@@ -4687,13 +4687,23 @@ function checkUrlSyncImport(){
     // אבטחה: קישור sync_import מפנה את הסנכרון לענן שבקישור. תוקף עלול לשלוח קישור
     // שמפנה את הנתונים לענן שלו. לכן מציגים את כתובת היעד ומזהירים לפני החלה, ובמיוחד
     // כשזה מחליף הגדרות קיימות — כדי שהמשתמש יוכל לזהות ניסיון חטיפה.
-    let host='(כתובת לא תקינה)';
-    try{host=new URL(c.databaseURL).host;}catch(e){host=String(c.databaseURL||'').slice(0,60);}
+    let host='';
+    try{const u=new URL(c.databaseURL);if(u.protocol==='https:'&&/(^|\.)(firebaseio\.com|firebasedatabase\.app)$/i.test(u.hostname))host=u.host;}catch(e){}
+    if(!host){showToast('⚠️ קישור הסנכרון אינו תקין — לא בוצע שינוי','warn');return;}
     const existing=localStorage.getItem(FB_CFG_KEY);
+    // קישור לא מחליף סנכרון קיים. ענן של תוקף נראה בדיוק כמו שלנו
+    // (xxx-default-rtdb.firebaseio.com), ולחיצת "חבר" אחת הייתה שולחת אליו מעתה את כל
+    // הנתונים — מוצפנים בקוד שהתוקף עצמו בחר. קישור אמיתי משמש לחיבור מכשיר חדש;
+    // מי שרוצה להחליף ענן מנתק קודם בהגדרות הסנכרון, בכוונה.
+    if(existing){
+      let same=false;
+      try{const o=JSON.parse(existing);same=o.databaseURL===c.databaseURL&&(o.syncCode||'hot-crm')===(c.syncCode||'hot-crm');}catch(e){}
+      setTimeout(()=>showToast(same?'✅ המכשיר כבר מחובר לסנכרון הזה':'⚠️ המכשיר כבר מחובר לסנכרון אחר — קישור לא יכול להחליף אותו. כדי לעבור, נתק קודם בהגדרות הסנכרון.',same?'ok':'warn'),1500);
+      return;
+    }
     setTimeout(()=>{
       confirmAct(
         '⚠️ קישור זה מבקש לחבר את הסנכרון שלך לענן בכתובת: '+host+'. '+
-        (existing?'שים לב — פעולה זו תחליף את הגדרות הסנכרון הקיימות שלך! ':'')+
         'חבר רק אם אתה מזהה את הכתובת ובוטח במקור הקישור.',
         async()=>{
           localStorage.setItem(FB_CFG_KEY,decoded);
@@ -5185,14 +5195,23 @@ async function installApp(){
 }
 
 // ═══ בודק אבטחת ענן: מזהה בסיס נתונים פתוח, מנחה לנעילה ומוודא שבוצעה ═══
+// track/<טוקן>: דף המעקב של הלקוח. בגרסה הקודמת של החוקים הנתיב הזה לא הופיע, ולכן מי
+// שנעל את הענן לפי ההנחיה איבד בשקט את העדכון החי בקישורי המעקב (נשארה רק תמונת-המצב).
+// הטוקן אקראי (128 ביט) ואי אפשר לרשום את התיקייה — רק מי שמחזיק קישור רואה את השורה שלו.
+// newData.exists(): מי שמכיר נתיב יכול עדיין לכתוב, אבל לא למחוק את כל הנתונים בפקודה
+// אחת. דריסה בזבל נדחית ממילא בפענוח, והמכשירים מחזירים את הנתונים בדחיפה הבאה.
+// תיבת המיילים היא החריג היחיד — מיילים נמחקים ממנה אחרי קליטה.
 const CLOUD_RULES_JSON=`{
   "rules": {
     "crm": {
-      "$syncId": { ".read": true, ".write": true }
+      "$syncId": { ".read": true, ".write": "newData.exists()" }
+    },
+    "track": {
+      "$tok": { ".read": "$tok.length >= 16", ".write": "$tok.length >= 16 && newData.exists()" }
     },
     "$restPath": {
       ".read": "$restPath.beginsWith('cem_hot_')",
-      ".write": "$restPath.beginsWith('cem_hot_')"
+      ".write": "$restPath.beginsWith('cem_hot_') && (newData.exists() || $restPath.beginsWith('cem_hot_mail_'))"
     }
   }
 }`;

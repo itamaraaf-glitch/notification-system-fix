@@ -72,6 +72,9 @@ jobs:
       # נשמר רק במצב scan — probe, audit ו-dry-run אינם כותבים דבר מלכתחילה
       - name: שמירת התוצאות במאגר
         if: inputs.watch != '' && inputs.mode == 'scan'
+        # קלט ידני עובר כמשתנה סביבה ולא משובץ בפקודת ה-shell — טקסט עם $( ) או גרש לא יורץ
+        env:
+          WATCH: ${{ inputs.watch }}
         run: |
           if git diff --quiet -- agent/data; then
             echo "אין שינוי בנתוני הסוכן — אין מה לשמור"
@@ -80,7 +83,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add agent/data
-          git commit -m "סוכן רשת: עדכון נתוני ${{ inputs.watch }} ($(date -u +%Y-%m-%d))"
+          git commit -m "סוכן רשת: עדכון נתוני $WATCH ($(date -u +%Y-%m-%d))"
           for attempt in 1 2 3 4; do
             if git push origin "HEAD:${GITHUB_REF_NAME}"; then exit 0; fi
             echo "הדחיפה נכשלה — ניסיון $attempt"

@@ -94,7 +94,10 @@ jobs:
       # מצב אבחון: מריץ רק את ההדפסה ומדלג על שמירה ודיווח
       - name: אבחון מקור
         if: inputs.debug != ''
-        run: node .github/scripts/tenders-fetch.js --debug="${{ inputs.debug }}" | tee -a "$GITHUB_STEP_SUMMARY"
+        # קלט ידני עובר כמשתנה סביבה ולא משובץ בפקודת ה-shell — טקסט עם $( ) או גרש לא יורץ
+        env:
+          IN_DEBUG: ${{ inputs.debug }}
+        run: node .github/scripts/tenders-fetch.js --debug="$IN_DEBUG" | tee -a "$GITHUB_STEP_SUMMARY"
 
       # מדידת נגישות: בקשה אחת לכל מקור, בלי סריקה, בלי שמירה ובלי דיווח
       - name: מפתח הרשויות המקומיות
@@ -103,15 +106,19 @@ jobs:
 
       - name: ביקורת משפך
         if: inputs.audit != ''
-        run: node .github/scripts/tenders-fetch.js --audit="${{ inputs.audit }}" | tee -a "$GITHUB_STEP_SUMMARY"
+        env:
+          IN_AUDIT: ${{ inputs.audit }}
+        run: node .github/scripts/tenders-fetch.js --audit="$IN_AUDIT" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: מדידת נגישות מקורות
         if: inputs.probe != ''
+        env:
+          IN_PROBE: ${{ inputs.probe }}
         run: |
-          if [ "${{ inputs.probe }}" = "all" ]; then
+          if [ "$IN_PROBE" = "all" ]; then
             node .github/scripts/tenders-fetch.js --probe | tee -a "$GITHUB_STEP_SUMMARY"
           else
-            node .github/scripts/tenders-fetch.js --probe="${{ inputs.probe }}" | tee -a "$GITHUB_STEP_SUMMARY"
+            node .github/scripts/tenders-fetch.js --probe="$IN_PROBE" | tee -a "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: סריקת מקורות המכרזים
