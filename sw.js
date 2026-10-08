@@ -1,4 +1,4 @@
-const CACHE = 'hot-crm-v13';   // v13: עותק HTML לשימוש לא מקוון — גרסה חדשה כדי שהעובד הקודם יוחלף וינוקה
+const CACHE = 'hot-crm-v14';   // v14: תקציר הרקע כולל גם משימות שוטפות (לא רק פגישות)
 const META_CACHE = 'hot-crm-meta';
 const ASSETS = ['./manifest.json', './office-bg.jpg', './mountains-bg.mp4', './icon-192.png', './icon-512.png', './badge-96.png'];
 
@@ -109,12 +109,19 @@ async function digestFromBackup() {
     const D = JSON.parse(snaps[snaps.length - 1].data);
     const mtgs = (D.meetings || []).filter(m => m.dt === today && m.hl !== 'מבוטל')
       .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    // משימות שוטפות: פתוחות להיום + משימות שעבר זמנן ולא הושלמו
+    const tOpen = (D.tasks || []).filter(t => t && t.st !== 'הושלם');
+    const tToday = tOpen.filter(t => t.dt === today).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    const tOver = tOpen.filter(t => t.dt && t.dt < today).length;
     // רק אחרי 07:00 בבוקר מקומי
     if (new Date().getHours() < 7) return;
     await meta.put('/digest-' + today, new Response('1'));
-    const body = mtgs.length
-      ? '📅 ' + mtgs.length + ' פגישות היום: ' + mtgs.map(m => (m.time ? m.time + ' – ' : '') + (m.cl || '')).join(', ') + '\nפתח את המערכת לפרטים ולהתראות'
-      : '📅 אין פגישות ביומן היום — פתח את המערכת להתראות ומשימות';
+    const lines = [mtgs.length
+      ? '📅 ' + mtgs.length + ' פגישות היום: ' + mtgs.map(m => (m.time ? m.time + ' – ' : '') + (m.cl || '')).join(', ')
+      : '📅 אין פגישות ביומן היום'];
+    if (tToday.length || tOver) lines.push('✅ ' + (tToday.length ? tToday.length + ' משימות היום' + (tOver ? ' · ' : '') : '') + (tOver ? tOver + ' באיחור' : '') + (tToday.length ? ': ' + tToday.map(t => (t.time ? t.time + ' – ' : '') + (t.t || '')).join(', ') : ''));
+    lines.push('פתח את המערכת לפרטים ולהתראות');
+    const body = lines.join('\n');
     await self.registration.showNotification('📣 תקציר בוקר — HOT CRM', {
       body, tag: 'daily-digest', dir: 'rtl', lang: 'he',
       icon: './icon-192.png', badge: './badge-96.png'

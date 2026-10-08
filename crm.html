@@ -2272,7 +2272,7 @@ body.logged-in #ai-fab{display:flex}
   <!-- 🔔 התראות מחוץ למערכת -->
   <div class="tw" style="margin-top:16px;padding:16px 18px;border-top:3px solid #f4a261">
     <div style="font-size:13px;font-weight:800;color:#f4a261;margin-bottom:4px">🔔 התראות מחוץ למערכת</div>
-    <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:12px">תקציר בוקר יומי + תזכורת לפני כל פגישה — כהתראות מערכת בטלפון ובמחשב, בלי להיכנס למערכת. עובד כשהדפדפן פתוח ברקע; באנדרואיד עם האפליקציה המותקנת — גם כשהיא סגורה.</div>
+    <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:12px">תקציר בוקר יומי + תזכורת לפני כל פגישה ומשימה — כהתראות מערכת בטלפון ובמחשב, בלי להיכנס למערכת. עובד כשהדפדפן פתוח ברקע; באנדרואיד עם האפליקציה המותקנת — גם כשהיא סגורה.</div>
     <div id="notify-panel" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"></div>
   </div>
 </div>
@@ -5276,7 +5276,7 @@ function openCloudLockWizard(){
 
 // ═══ התראות מחוץ למערכת: תקציר בוקר + תזכורות פגישה כהתראות מערכת ═══
 const NOTIFY_CFG_KEY='cem_notify_cfg';
-function notifyCfg(){try{return Object.assign({on:false,hour:'08:30',meetRem:true,remMin:30},JSON.parse(localStorage.getItem(NOTIFY_CFG_KEY)||'{}'));}catch(e){return{on:false,hour:'08:30',meetRem:true,remMin:30};}}
+function notifyCfg(){try{return Object.assign({on:false,hour:'08:30',meetRem:true,remMin:30,taskRem:true,taskRemMin:30},JSON.parse(localStorage.getItem(NOTIFY_CFG_KEY)||'{}'));}catch(e){return{on:false,hour:'08:30',meetRem:true,remMin:30,taskRem:true,taskRemMin:30};}}
 function saveNotifyCfg(c){localStorage.setItem(NOTIFY_CFG_KEY,JSON.stringify(c));}
 function sysNotify(title,body,tag){
   try{
@@ -5297,7 +5297,7 @@ async function enableNotify(){
   _registerPeriodicDigest();
   _pushSubscribe();
   renderNotifyPanel();
-  sysNotify('🔔 ההתראות פעילות — HOT CRM','מעכשיו תקבל תקציר בוקר ותזכורות פגישות גם כשהמערכת ברקע');
+  sysNotify('🔔 ההתראות פעילות — HOT CRM','מעכשיו תקבל תקציר בוקר ותזכורות לפני פגישות ומשימות גם כשהמערכת ברקע');
   showToast('✅ התראות מחוץ למערכת הופעלו','ok');
 }
 function disableNotify(){const c=notifyCfg();c.on=false;saveNotifyCfg(c);renderNotifyPanel();showToast('🔕 ההתראות כובו','info');}
@@ -5349,9 +5349,14 @@ function _notifyTick(){
       const al=getAlerts();
       const crit=al.filter(x=>x.type==='crit').length,warn=al.filter(x=>x.type==='warn').length;
       const mtgs=D.meetings.filter(m=>m.dt===today&&m.hl!=='מבוטל').sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+      // משימות פתוחות להיום + משימות שעבר זמנן ולא הושלמו (שוטפות) — כמו הפגישות בתקציר
+      const tOpen=(Array.isArray(D.tasks)?D.tasks:[]).filter(t=>t&&t.st!=='הושלם');
+      const tToday=tOpen.filter(t=>t.dt===today).sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+      const tOver=tOpen.filter(t=>t.dt&&t.dt<today).length;
       const lines=[];
       if(crit||warn)lines.push((crit?'🔴 '+crit+' קריטיות':'')+(crit&&warn?' · ':'')+(warn?'🟠 '+warn+' אזהרות':''));
       lines.push(mtgs.length?'📅 '+mtgs.length+' פגישות היום: '+mtgs.map(m=>(m.time?m.time+' ':'')+(m.cl||'')).join(', '):'📅 אין פגישות היום');
+      if(tToday.length||tOver)lines.push('✅ '+(tToday.length?tToday.length+' משימות היום'+(tOver?' · ':''):'')+(tOver?tOver+' באיחור':'')+(tToday.length?': '+tToday.map(t=>(t.time?t.time+' ':'')+(t.t||'')).join(', '):''));
       sysNotify('📣 תקציר בוקר — HOT CRM',lines.join('\n'),'daily-digest');
     }catch(e){}
   }
@@ -5365,6 +5370,19 @@ function _notifyTick(){
       if(diff<=(c.remMin||30)&&diff>-5&&!localStorage.getItem(key)){
         localStorage.setItem(key,'1');
         sysNotify('⏰ פגישה '+(diff>1?'בעוד '+Math.round(diff)+' דק׳':'עכשיו')+' — '+(m.cl||''),m.time+(m.mtype&&m.mtype!=='פגישה'?' · '+m.mtype:'')+(m.no?'\n'+m.no:''),'meet-'+m.id);
+      }
+    });
+  }
+  // תזכורת לפני משימה עם שעה — בדיוק כמו פגישה. משימה בלי שעה מופיעה רק בתקציר הבוקר.
+  if(c.taskRem){
+    (Array.isArray(D.tasks)?D.tasks:[]).forEach(t=>{
+      if(!t||t.dt!==today||!t.time||t.st==='הושלם')return;
+      const p=String(t.time).split(':');const tt=new Date();tt.setHours(+p[0],+p[1]||0,0,0);
+      const diff=(tt-now_)/60000;
+      const key='cem_trem_'+today+'_'+t.id;
+      if(diff<=(c.taskRemMin||30)&&diff>-5&&!localStorage.getItem(key)){
+        localStorage.setItem(key,'1');
+        sysNotify('⏰ משימה '+(diff>1?'בעוד '+Math.round(diff)+' דק׳':'עכשיו')+' — '+(t.t||'משימה'),t.time+(t.cl?' · '+t.cl:'')+(t.no?'\n'+t.no:''),'task-'+t.id);
       }
     });
   }
@@ -5394,7 +5412,7 @@ function maybeAskNotifyPermission(){
         <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:10px">באייפון: לחץ על כפתור השיתוף ← "הוסף למסך הבית" — ואז ההתראות יעבדו מהאפליקציה.</div>
         <button class="btn" onclick="localStorage.setItem('cem_notify_snooze',Date.now());document.getElementById('notify-ask-banner').remove()" style="font-size:11px">הבנתי</button>`
       :`<div style="font-size:13px;font-weight:800;color:#f6ecce;margin-bottom:4px">🔔 קבל התראות ישירות לטלפון</div>
-        <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:10px">תקציר בוקר ותזכורות לפני פגישות — במסך ההתראות של המכשיר, בלי להיכנס למערכת.</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:10px">תקציר בוקר ותזכורות לפני פגישות ומשימות — במסך ההתראות של המכשיר, בלי להיכנס למערכת.</div>
         <div style="display:flex;gap:8px">
           <button class="btn btnp" onclick="enableNotify().then(()=>{const x=document.getElementById('notify-ask-banner');if(x)x.remove();})" style="font-size:12px">🔔 הפעל עכשיו</button>
           <button class="btn" onclick="localStorage.setItem('cem_notify_snooze',Date.now());document.getElementById('notify-ask-banner').remove()" style="font-size:11px;opacity:.8">לא עכשיו</button>
@@ -5422,6 +5440,13 @@ function renderNotifyPanel(){
             <option value="30" ${c.meetRem&&c.remMin===30?'selected':''}>30 דק׳</option>
             <option value="60" ${c.meetRem&&c.remMin===60?'selected':''}>שעה</option>
             <option value="off" ${!c.meetRem?'selected':''}>כבוי</option>
+          </select></label>
+        <label style="font-size:11px;color:var(--text2)">תזכורת לפני משימה:
+          <select onchange="(function(v){const c2=notifyCfg();c2.taskRem=v!=='off';c2.taskRemMin=+v||30;saveNotifyCfg(c2);showToast('⏰ עודכן','ok');})(this.value)" style="padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-family:inherit">
+            <option value="15" ${c.taskRem&&c.taskRemMin===15?'selected':''}>15 דק׳</option>
+            <option value="30" ${c.taskRem&&c.taskRemMin===30?'selected':''}>30 דק׳</option>
+            <option value="60" ${c.taskRem&&c.taskRemMin===60?'selected':''}>שעה</option>
+            <option value="off" ${!c.taskRem?'selected':''}>כבוי</option>
           </select></label>
         <button class="btn" onclick="sysNotify('🔔 התראת ניסיון — HOT CRM','ככה ייראו התקציר והתזכורות שלך');showToast('נשלחה התראת ניסיון','ok')" style="font-size:11px;border-color:#4cc9f0;color:#4cc9f0">🧪 שלח ניסיון</button>`
       :`<button class="btn btnp" onclick="enableNotify()" style="font-size:11px">🔔 הפעל התראות</button>
