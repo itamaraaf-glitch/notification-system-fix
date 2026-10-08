@@ -86,6 +86,11 @@ async function main() {
   const mtgs = (D.meetings || []).filter(m => m.dt === today && m.hl !== 'מבוטל')
     .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
 
+  // משימות שוטפות (פתוחות) — להיום ולמה שעבר זמנו, בדיוק כמו הפגישות
+  const tasksOpen = (D.tasks || []).filter(t => t && t.st !== 'הושלם');
+  const tasksToday = tasksOpen.filter(t => t.dt === today).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  const tasksOverdue = tasksOpen.filter(t => t.dt && t.dt < today);
+
   const nowIL = ilNow();
   const force = !!process.env.FORCE_DIGEST;
   // תזכורות פגישה לטלפון: פגישות שמתחילות בעוד 5–35 דקות (הריצה כל 30 דק׳ — בלי כפילויות)
@@ -97,13 +102,25 @@ async function main() {
       await sendPush('⏰ פגישה בעוד ' + Math.round(diffMin) + ' דק׳ — ' + (m.cl || ''), m.time + (m.no ? '\n' + m.no : ''), 'meet-' + (m.id || m.time));
     }
   }
+  // תזכורות משימה לטלפון: משימות עם שעה שמגיעות בעוד 5–35 דקות (בלי כפילויות)
+  for (const t of tasksToday) {
+    if (!t.time) continue;
+    const [h, mi] = String(t.time).split(':').map(Number);
+    const diffMin = (h + mi / 60 - nowIL) * 60;
+    if (diffMin > 5 && diffMin <= 35) {
+      await sendPush('⏰ משימה בעוד ' + Math.round(diffMin) + ' דק׳ — ' + (t.t || 'משימה'), t.time + (t.cl ? ' · ' + t.cl : '') + (t.no ? '\n' + t.no : ''), 'task-' + (t.id || t.time));
+    }
+  }
   // תקציר בוקר: רק בריצה של חלון 07:00–08:00 (או בהרצה ידנית)
   const morning = nowIL >= 7 && nowIL < 8;
   if (!morning && !force) { console.log('not the morning window — reminders only'); return; }
-  const pushBody = (mtgs.length
+  const pushLines = [mtgs.length
     ? '📅 ' + mtgs.length + ' פגישות היום: ' + mtgs.map(m => (m.time ? m.time + ' ' : '') + (m.cl || '')).join(', ')
-    : '📅 אין פגישות ביומן היום');
-  await sendPush('📣 תקציר בוקר — HOT CRM', pushBody, 'daily-digest');
+    : '📅 אין פגישות ביומן היום'];
+  if (tasksToday.length || tasksOverdue.length) {
+    pushLines.push('✅ ' + (tasksToday.length ? tasksToday.length + ' משימות היום' + (tasksOverdue.length ? ' · ' : '') : '') + (tasksOverdue.length ? tasksOverdue.length + ' באיחור' : '') + (tasksToday.length ? ': ' + tasksToday.map(t => (t.time ? t.time + ' ' : '') + (t.t || '')).join(', ') : ''));
+  }
+  await sendPush('📣 תקציר בוקר — HOT CRM', pushLines.join('\n'), 'daily-digest');
   const tenders = (D.tenders || []).filter(t => t.deadline && t.submitted !== 'כן' &&
     dayDiff(today, t.deadline) >= 0 && dayDiff(today, t.deadline) <= 5);
   const stuckDeals = (D.deals || []).filter(d => d.date && d.st !== 'נסגר' &&
@@ -126,6 +143,7 @@ async function main() {
     L2.push(`## 📣 תקציר בוקר — ${heDate}`);
     L2.push('', '_המאגר ציבורי — התקציר מציג מספרים בלבד; הפרטים המלאים במערכת._', '');
     L2.push(`- 📅 פגישות היום: **${mtgs.length}**${mtgs.length ? ' (ראשונה ב-' + (mtgs[0].time || 'ללא שעה') + ')' : ''}`);
+    if (tasksToday.length || tasksOverdue.length) L2.push(`- ✅ משימות היום: **${tasksToday.length}**${tasksOverdue.length ? ` · ${tasksOverdue.length} באיחור` : ''}`);
     if (tenders.length) L2.push(`- 📋 מכרזים לפני מועד הגשה: **${tenders.length}**`);
     if (stuckDeals.length) L2.push(`- 💼 עסקאות תקועות מעל 3 חודשים: **${stuckDeals.length}**`);
     if (stuckDists.length) L2.push(`- 🚀 פרויקטי הפצה תקועים: **${stuckDists.length}**`);
@@ -141,6 +159,11 @@ async function main() {
   L.push(mtgs.length
     ? mtgs.map(m => `- **${m.time || 'ללא שעה'}** — ${m.cl || ''}${m.mtype && m.mtype !== 'פגישה' ? ` (${m.mtype})` : ''}${m.no ? ` — ${m.no}` : ''}`).join('\n')
     : '- אין פגישות ביומן היום');
+  if (tasksToday.length || tasksOverdue.length) {
+    L.push('', `### ✅ משימות${tasksOverdue.length ? ` (${tasksOverdue.length} באיחור)` : ''}`);
+    if (tasksToday.length) L.push(tasksToday.map(t => `- ${t.time ? `**${t.time}** — ` : ''}${t.t || ''}${t.cl ? ` · ${t.cl}` : ''}${t.pr ? ` [${t.pr}]` : ''}`).join('\n'));
+    if (tasksOverdue.length) L.push(tasksOverdue.slice(0, 8).map(t => `- ⏳ ${t.t || ''}${t.dt ? ` (מאז ${fmtD(t.dt)})` : ''}${t.cl ? ` · ${t.cl}` : ''}`).join('\n'));
+  }
   if (tenders.length) {
     L.push('', '### 📋 מכרזים לפני מועד הגשה');
     L.push(tenders.map(t => `- **${t.name}** — הגשה עד ${fmtD(t.deadline)} (${dayDiff(today, t.deadline)} ימים)${t.amount ? ` | היקף: ${fmtN(t.amount)}` : ''}`).join('\n'));
