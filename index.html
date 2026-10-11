@@ -14738,6 +14738,9 @@ function openTxCalc(clientId,potIdx){
   _txHot=draft&&Array.isArray(draft.hot)?draft.hot.map(r=>({...r})):[{bw:TX_HOT[0][0],qty:1,extra:0,isp:false,ddos:false}];
   _txNet=draft&&Array.isArray(draft.net)?draft.net.map(r=>({...r})):[];
   _txCell=draft&&Array.isArray(draft.cell)?draft.cell.map(r=>({...r})):[];
+  const _rd=draft&&draft.ret;
+  _txRetCur=(_rd&&Array.isArray(_rd.curLines))?_rd.curLines.map(r=>({...r})):[];
+  _txRetNew=(_rd&&Array.isArray(_rd.newLines))?_rd.newLines.map(r=>({...r})):[];
   const num=(id,lbl,val,hint)=>`<div>
       <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">${lbl}${hint?` <span style="font-weight:400;opacity:.8">${hint}</span>`:''}</label>
       <input id="${id}" type="number" inputmode="numeric" value="${val}" oninput="_txRender()" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none;direction:ltr;text-align:left"></div>`;
@@ -14787,24 +14790,27 @@ function openTxCalc(clientId,potIdx){
       </div>
     </div>
     <div id="tx-out"></div>
-    <details id="tx-ret-box" style="margin:11px 0 2px;border:1px solid rgba(167,139,250,.3);border-radius:11px;background:rgba(167,139,250,.05)"${(draft&&draft.ret&&(draft.ret.cur||draft.ret.prod))?' open':''}>
+    <details id="tx-ret-box" style="margin:11px 0 2px;border:1px solid rgba(167,139,250,.3);border-radius:11px;background:rgba(167,139,250,.05)"${(draft&&draft.ret&&(draft.ret.cur||draft.ret.prod||(draft.ret.curLines&&draft.ret.curLines.length)||(draft.ret.newLines&&draft.ret.newLines.length)))?' open':''}>
       <summary style="cursor:pointer;font-size:11.5px;font-weight:800;color:#a78bfa;padding:9px 11px">🔁 מחשבון שימור — מצב קיים מול מצב חדש</summary>
       <div style="padding:2px 11px 11px">
-        <div style="font-size:10px;color:var(--text3);margin-bottom:9px;line-height:1.55">השוואת ההכנסה החודשית מהלקוח לפני ואחרי, ואופציה למוצר חדש שישלים את הפער בשימור. <b style="color:var(--text2)">מצב חדש</b> ריק = ההכנסה מהתמסורת שחושבה למעלה.</div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:9px;line-height:1.55">השוואת ההכנסה החודשית מהלקוח לפני ואחרי, ואופציה למוצר חדש שישלים את הפער בשימור. אפשר להזין סכום חודשי מהיר לכל מצב, או לפרט אותו <b style="color:var(--text2)">קו-אחר-קו</b> (ברגע שיש קווים, הם קובעים). <b style="color:var(--text2)">מצב חדש</b> ריק = ההכנסה מהתמסורת שחושבה למעלה.</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div>
-            <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">💼 מצב קיים <span style="font-weight:400;opacity:.8">₪/חודש — התשלום הנוכחי</span></label>
+            <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">💼 מצב קיים <span style="font-weight:400;opacity:.8">₪/חודש — סכום מהיר</span></label>
             <input id="tx-ret-cur" type="number" inputmode="numeric" value="${(draft&&draft.ret&&draft.ret.cur)||''}" placeholder="0" oninput="_txRetRender()" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none;direction:ltr;text-align:left">
+            <div id="tx-ret-cur-note" style="font-size:9px;color:#4cc9f0;margin-top:2px;min-height:11px"></div>
           </div>
           <div>
             <label style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">
-              <span>🆕 מצב חדש <span style="font-weight:400;opacity:.8">₪/חודש — ההצעה</span></span>
+              <span>🆕 מצב חדש <span style="font-weight:400;opacity:.8">₪/חודש — סכום מהיר</span></span>
               <button onclick="_txRetPull()" title="קח את ההכנסה החודשית מהתמסורת שחושבה למעלה" style="background:rgba(6,214,160,.12);border:1px solid rgba(6,214,160,.4);color:#06d6a0;border-radius:6px;font-size:9.5px;font-weight:700;padding:2px 6px;cursor:pointer">📡 קח מהתמסורת</button>
             </label>
             <input id="tx-ret-new" type="number" inputmode="numeric" value="${(draft&&draft.ret&&draft.ret.new!=null)?draft.ret.new:''}" placeholder="מהתמסורת" oninput="_txRetRender()" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none;direction:ltr;text-align:left">
+            <div id="tx-ret-new-note" style="font-size:9px;color:#06d6a0;margin-top:2px;min-height:11px"></div>
           </div>
         </div>
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:8px">
+        <div id="tx-ret-lines" style="margin-top:9px"></div>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:4px">
           <div>
             <label style="display:block;font-size:10px;color:var(--text3);font-weight:700;margin-bottom:3px">➕ מוצר חדש להשלמת הפער <span style="font-weight:400;opacity:.8">שם (לא חובה)</span></label>
             <input id="tx-ret-prodname" value="${esc((draft&&draft.ret&&draft.ret.prodName)||'')}" placeholder="למשל: אבטחת מידע, קו גיבוי" oninput="_txRetRender()" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none;direction:rtl;text-align:right">
@@ -14830,7 +14836,7 @@ function openTxCalc(clientId,potIdx){
     const s=(id,val)=>{const e=document.getElementById(id); if(e)e.value=val;};
     s('tx-level',draft.level||'מת"ל'); s('tx-months',draft.months||36);
   }
-  _txRenderLines(); _txRender();
+  _txRenderLines(); _txRetRenderLines(); _txRender();
 }
 // טבלאות הקווים — נבנות מחדש רק בהוספה/מחיקה, כדי שהקלדה בשדה לא תאבד מיקוד
 function _txRenderLines(){
@@ -14979,44 +14985,86 @@ function _txRender(){
   _txRetRender();   // מחשבון השימור ניזון מההכנסה החודשית שחושבה כאן (מצב חדש כברירת מחדל)
 }
 // ── מחשבון שימור: מצב קיים מול מצב חדש, עם מוצר חדש להשלמת הפער ──
-// "מצב חדש" ריק = ההכנסה החודשית מהתמסורת שחושבה. הכל חי ולא נוגע במודל האישור הכלכלי.
+// כל מצב ניתן להזנה כסכום חודשי מהיר, או לפירוט קו-אחר-קו. ברגע שיש קווים למצב —
+// הם קובעים את הסכום (הסכום המהיר מתעלם). "מצב חדש" בלי קווים ובלי סכום = ההכנסה
+// מהתמסורת שחושבה. הכל חי ולא נוגע במודל האישור הכלכלי.
+let _txRetCur=[], _txRetNew=[];   // קווי מצב קיים / חדש: {desc,qty,price}
+function _txRetLineSum(a){return (a||[]).reduce((s,r)=>s+Math.max(0,+r.qty||0)*Math.max(0,+r.price||0),0);}
 function _txRetVals(){
   const g=id=>(document.getElementById(id)||{}).value;
   const txMonthly=(window._txLast&&window._txLast.r)?(+window._txLast.r.monthly||0):0;
   const months=Math.max(1,+(g('tx-months'))||36);
-  const cur=Math.max(0,_aiNum(g('tx-ret-cur')));
+  const curFromLines=_txRetCur.length>0, newFromLines=_txRetNew.length>0;
+  const cur=curFromLines?_txRetLineSum(_txRetCur):Math.max(0,_aiNum(g('tx-ret-cur')));
   const newRaw=String(g('tx-ret-new')||'').trim();
-  const neu=newRaw===''?txMonthly:Math.max(0,_aiNum(newRaw));
+  const neu=newFromLines?_txRetLineSum(_txRetNew):(newRaw===''?txMonthly:Math.max(0,_aiNum(newRaw)));
   const prod=Math.max(0,_aiNum(g('tx-ret-prod')));
   const prodName=(g('tx-ret-prodname')||'').trim();
   const gap=cur-neu;              // חיובי = ירידה בהכנסה (פער לשימור) · שלילי = גידול
   const residual=gap-prod;        // הפער שנותר אחרי המוצר החדש
   const retainedPct=cur>0?(neu+prod)/cur:0;
-  return {txMonthly,months,cur,neu,newRaw,prod,prodName,gap,residual,retainedPct};
+  return {txMonthly,months,cur,neu,newRaw,curFromLines,newFromLines,prod,prodName,gap,residual,retainedPct};
 }
 function _txRetPull(){
   const e=document.getElementById('tx-ret-new'); if(!e)return;
   const m=(window._txLast&&window._txLast.r)?Math.round(+window._txLast.r.monthly||0):0;
   e.value=m; _txRetRender();
 }
+// עריכת קווי השימור — נבנים מחדש רק בהוספה/מחיקה, כדי שהקלדה לא תאבד מיקוד
+function _txRetAdd(which){ (which==='cur'?_txRetCur:_txRetNew).push({desc:'',qty:1,price:0}); _txRetRenderLines(); _txRetRender(); }
+function _txRetAddTx(){ const m=(window._txLast&&window._txLast.r)?Math.round(+window._txLast.r.monthly||0):0;
+  _txRetNew.push({desc:'תמסורת (הצעה)',qty:1,price:m}); _txRetRenderLines(); _txRetRender(); }
+function _txRetDel(which,i){ (which==='cur'?_txRetCur:_txRetNew).splice(i,1); _txRetRenderLines(); _txRetRender(); }
+function _txRetSet(which,i,field,val){
+  const r=(which==='cur'?_txRetCur:_txRetNew)[i]; if(!r)return;
+  if(field==='qty'||field==='price')r[field]=Math.max(0,_aiNum(val)); else r[field]=val;
+  _txRetRender();   // רק הסיכום — בלי בנייה מחדש של השורות (שמירת מיקוד)
+}
+function _txRetRenderLines(){
+  const host=document.getElementById('tx-ret-lines'); if(!host)return;
+  const inp=(which,i,f,val,ph,w,dir)=>`<input ${f==='desc'?'':'type="number" inputmode="numeric"'} value="${f==='desc'?esc(val||''):val}" oninput="_txRetSet('${which}',${i},'${f}',this.value)" placeholder="${ph||''}" style="${w};box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:3px 6px;color:var(--text);font-family:inherit;font-size:11.5px;outline:none;direction:${dir||'ltr'};text-align:${dir==='rtl'?'right':'center'}">`;
+  const grp=(which,title,clr,arr,extra)=>{
+    const rows=arr.map((r,i)=>`<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+        ${inp(which,i,'desc',r.desc,'תיאור הקו/המוצר','flex:1;min-width:104px','rtl')}
+        ${inp(which,i,'qty',r.qty,'','width:42px')}<span style="color:var(--text3);font-size:11px">×</span>${inp(which,i,'price',r.price,'₪','width:74px')}
+        <span id="txret-sub-${which}-${i}" style="margin-inline-start:auto;font-size:11px;font-weight:800;color:var(--gold);white-space:nowrap;direction:ltr">—</span>
+        <button class="btn btns btnd" onclick="_txRetDel('${which}',${i})" title="הסר" style="font-size:10px;padding:2px 7px">🗑</button>
+      </div>`).join('');
+    return `<div style="border:1px solid ${clr}33;border-radius:10px;padding:8px 9px;margin-bottom:7px;background:${clr}0a">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${arr.length?'6px':'0'};gap:6px;flex-wrap:wrap">
+          <div style="font-size:11px;font-weight:800;color:${clr}">${title} <span style="font-weight:400;color:var(--text3)">(${arr.length} קווים)</span></div>
+          <div style="display:flex;gap:5px">${extra||''}<button class="btn btns" onclick="_txRetAdd('${which}')" style="font-size:10px;border-color:${clr};color:${clr}">+ קו</button></div>
+        </div>
+        ${arr.length?`<div style="display:flex;flex-direction:column;gap:5px">${rows}</div>`:''}
+      </div>`;
+  };
+  const txBtn=`<button class="btn btns" onclick="_txRetAddTx()" title="הוסף שורת תמסורת לפי ההכנסה שחושבה למעלה" style="font-size:10px;border-color:#06d6a0;color:#06d6a0">📡 תמסורת</button>`;
+  host.innerHTML=grp('cur','💼 קווי מצב קיים','#4cc9f0',_txRetCur,'')+grp('new','🆕 קווי מצב חדש','#06d6a0',_txRetNew,txBtn);
+}
 function _txRetRender(){
   const out=document.getElementById('tx-ret-out'); if(!out)return;
   const d=_txRetVals();
+  const M=_txMoney;
+  // סכום חי לכל שורת קו
+  _txRetCur.forEach((r,i)=>{const e=document.getElementById('txret-sub-cur-'+i);if(e)e.textContent=M(Math.max(0,+r.qty||0)*Math.max(0,+r.price||0));});
+  _txRetNew.forEach((r,i)=>{const e=document.getElementById('txret-sub-new-'+i);if(e)e.textContent=M(Math.max(0,+r.qty||0)*Math.max(0,+r.price||0));});
+  // הערה ליד הסכום המהיר כשהמצב מחושב מקווים
+  const cn=document.getElementById('tx-ret-cur-note'); if(cn)cn.textContent=d.curFromLines?('↙ מחושב מ-'+_txRetCur.length+' קווים = '+M(d.cur)):'';
+  const nn=document.getElementById('tx-ret-new-note'); if(nn)nn.textContent=d.newFromLines?('↙ מחושב מ-'+_txRetNew.length+' קווים = '+M(d.neu)):(d.newRaw===''?('ריק = מהתמסורת ('+M(d.neu)+')'):'');
   if(!d.cur&&!d.neu&&!d.prod){
-    out.innerHTML='<div style="font-size:10.5px;color:var(--text3);background:rgba(255,255,255,.03);border:1px dashed var(--border);border-radius:9px;padding:9px 11px">הזן את ההכנסה החודשית הנוכחית של הלקוח (מצב קיים) כדי לחשב את פער השימור.</div>';
+    out.innerHTML='<div style="font-size:10.5px;color:var(--text3);background:rgba(255,255,255,.03);border:1px dashed var(--border);border-radius:9px;padding:9px 11px">הזן את ההכנסה החודשית הנוכחית של הלקוח (מצב קיים) — כסכום מהיר או קו-אחר-קו — כדי לחשב את פער השימור.</div>';
     return;
   }
-  const M=_txMoney;
   const tile=(lbl,val,clr,sub)=>`<div style="background:rgba(255,255,255,.03);border:1px solid ${clr}33;border-radius:9px;padding:7px 9px">
       <div style="font-size:9.5px;color:var(--text3);font-weight:700">${lbl}</div>
       <div style="font-size:15px;font-weight:900;color:${clr};direction:ltr">${val}</div>
       ${sub?`<div style="font-size:9px;color:var(--text3);margin-top:1px">${sub}</div>`:''}</div>`;
-  const gapForFill=Math.max(0,d.gap);                 // הפער שצריך להשלים (רק ירידה)
-  const closed=d.gap<=0||d.residual<=0;
   const gapClr=d.gap>0?'#e63946':d.gap<0?'var(--teal)':'var(--text2)';
   const gapVal=d.gap>0?'-'+M(d.gap):d.gap<0?'+'+M(-d.gap):M(0);
   const resClr=d.residual>0?'#e63946':'var(--teal)';
   const resVal=d.residual>0?'-'+M(d.residual):d.residual<0?'עודף '+M(-d.residual):M(0);
+  const curSub=d.curFromLines?_txRetCur.length+' קווים':'לחודש';
+  const newSub=d.newFromLines?_txRetNew.length+' קווים':(d.newRaw===''?'מהתמסורת':'הוזן ידנית');
   let verdict;
   if(d.gap<=0){
     verdict={clr:'var(--teal)',bg:'rgba(6,214,160,.08)',bd:'rgba(6,214,160,.4)',
@@ -15033,8 +15081,8 @@ function _txRetRender(){
   }
   out.innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:7px;margin-bottom:9px">
-      ${tile('מצב קיים',M(d.cur),'var(--text2)','לחודש')}
-      ${tile('מצב חדש',M(d.neu),'#06d6a0',d.newRaw===''?'מהתמסורת':'הוזן ידנית')}
+      ${tile('מצב קיים',M(d.cur),'var(--text2)',curSub)}
+      ${tile('מצב חדש',M(d.neu),'#06d6a0',newSub)}
       ${tile('פער שימור',gapVal,gapClr,d.gap>0?'ירידה חודשית':d.gap<0?'גידול':'ללא שינוי')}
       ${tile('מוצר חדש',d.prod?M(d.prod):'—','#a78bfa',d.prodName?esc(d.prodName):'להשלמת הפער')}
       ${tile('פער שנותר',resVal,resClr,d.residual>0?'עדיין חסר':'הושלם')}
@@ -15049,7 +15097,7 @@ function _txRetRender(){
       </div>
       <div style="background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:8px 10px">
         <div style="font-size:10px;font-weight:800;color:var(--text2);margin-bottom:4px">🔎 הרכב המצב החדש</div>
-        <div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;padding:2px 0"><span style="color:var(--text3)">תמסורת (הצעה)</span><b style="direction:ltr">${M(d.neu)}</b></div>
+        <div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;padding:2px 0"><span style="color:var(--text3)">${d.newFromLines?'קווי מצב חדש':'תמסורת (הצעה)'}</span><b style="direction:ltr">${M(d.neu)}</b></div>
         <div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;padding:2px 0"><span style="color:var(--text3)">מוצר חדש${d.prodName?' · '+esc(d.prodName):''}</span><b style="direction:ltr;color:#a78bfa">${M(d.prod)}</b></div>
         <div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;padding:2px 0;border-top:1px solid rgba(255,255,255,.08);margin-top:2px"><span style="color:var(--text2);font-weight:700">סה״כ חודשי חדש</span><b style="direction:ltr;color:#06d6a0">${M(d.neu+d.prod)}</b></div>
       </div>
@@ -15061,8 +15109,10 @@ function _txRetRender(){
 }
 function _txRetPayload(){
   const d=_txRetVals();
-  if(!d.cur&&!d.prod&&d.newRaw==='')return null;   // לא הוזן שימור — לא שומרים
-  return {cur:d.cur||0,new:d.newRaw===''?null:d.neu,prod:d.prod||0,prodName:d.prodName||'',
+  if(!d.cur&&!d.prod&&d.newRaw===''&&!_txRetCur.length&&!_txRetNew.length)return null;   // לא הוזן שימור — לא שומרים
+  return {cur:d.curFromLines?0:d.cur||0,new:(d.newFromLines||d.newRaw==='')?null:d.neu,
+    curLines:_txRetCur.map(r=>({...r})),newLines:_txRetNew.map(r=>({...r})),
+    prod:d.prod||0,prodName:d.prodName||'',
     gap:Math.round(d.gap),residual:Math.round(d.residual),retainedPct:Math.round(d.retainedPct*100)};
 }
 function _txPayload(){
