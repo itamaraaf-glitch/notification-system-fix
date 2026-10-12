@@ -194,7 +194,7 @@ const p = (text, opts = {}) => new Paragraph({
   children: [new TextRun({ text, font: FONT, size: opts.size || 20, bold: !!opts.bold, rightToLeft: true })],
 });
 
-const WIDTHS = [700, 2400, 800, 1900, 9038]; // sums to 14838
+const WIDTHS = [700, 800, 2400, 1900, 9038]; // sums to 14838; order per tender 8.2
 const cell = (paras, i, header = false) => new TableCell({
   width: { size: WIDTHS[i], type: WidthType.DXA },
   borders,
@@ -206,7 +206,7 @@ const lines = (s, opts) => s.split('\n').map(t => p(t, opts));
 
 const headerRow = new TableRow({
   tableHeader: true,
-  children: ['מס"ד', 'המסמך או הנספח', 'עמוד', 'סעיף רלבנטי', 'נוסח השאלה']
+  children: ['מס"ד', 'עמוד', 'המסמך או הנספח אליו מתייחסת ההבהרה', 'סעיף רלבנטי', 'נוסח השאלה']
     .map((h, i) => cell([p(h, { bold: true, align: AlignmentType.CENTER })], i, true)),
 });
 
@@ -231,8 +231,8 @@ const rows = Q.flatMap(([doc, page, clause, text], idx) => {
     cantSplit: true,
     children: [
       ...(j === 0 ? [cellV([p(String(idx + 1), { align: AlignmentType.CENTER })], 0, n)] : []),
-      cell([p(dd)], 1),
-      cell([p(pp, { align: AlignmentType.CENTER })], 2),
+      cell([p(pp, { align: AlignmentType.CENTER })], 1),
+      cell([p(dd)], 2),
       cell([p(cc)], 3),
       ...(j === 0 ? [cellV(text.map(t => p(t)), 4, n)] : []),
     ],
