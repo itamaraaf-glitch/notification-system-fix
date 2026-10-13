@@ -1,5 +1,6 @@
 // שאלות פנימיות למחלקות HOT – מכרז כפר ברא 17/2026 (מסמך פנימי, לא להגשה)
-// הרצה: node internal-questions-build.js <out.docx>
+// הרצה: node internal-questions-build.js <out.docx>            (מסמך מאוחד)
+//        node internal-questions-build.js <out-dir> --split   (קובץ לכל מחלקה)
 const fs = require('fs');
 const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType,
@@ -102,38 +103,72 @@ const cell = (paras, i, fill) => new TableCell({
   children: paras,
 });
 const HEAD = ['מס\'', 'שאלה', 'עמוד / סעיף במכרז', 'למה זה חשוב', 'לאן נכנסת התשובה', 'אחראי', 'תשובה עד'];
-const rows = [new TableRow({ tableHeader: true, children: HEAD.map((h, i) => cell([p(h, { bold: true, align: AlignmentType.CENTER, color: 'FFFFFF' })], i, '1F4E79')) })];
-let n = 0;
-for (const [dept, qs] of DEPTS) {
-  rows.push(new TableRow({ children: [new TableCell({
-    columnSpan: 7, borders, shading: { type: ShadingType.CLEAR, fill: 'D9E2F3', color: 'auto' },
-    margins: { top: 50, bottom: 50, left: 90, right: 90 },
-    width: { size: 14838, type: WidthType.DXA },
-    children: [p(dept, { bold: true, size: 21 })],
-  })] }));
-  for (const [q, ref, why, where] of qs) {
-    n += 1;
-    rows.push(new TableRow({ cantSplit: true, children: [
-      cell([p(String(n), { align: AlignmentType.CENTER })], 0),
-      cell([p(q)], 1), cell([p(ref)], 2), cell([p(why)], 3), cell([p(where)], 4),
-      cell([p('')], 5), cell([p('')], 6),
-    ] }));
-  }
-}
+// מועד תשובה לפי מחלקה: מה שמשפיע על שאלות ההבהרה (19.10) – עד 16.10; תמחור – עד 23.10
+const DUE = {
+  'משפטי': '16.10.2026', 'ביטוח': '16.10.2026', 'ניהול מכרזים ומנהלה': '16.10.2026',
+  'אבטחת מידע ו-SOC': 'ISO: 16.10 | עלויות: 23.10', 'IT מנוהל, מוקד ושטח': 'תנאי סף: 16.10 | עלויות: 23.10',
+};
+const due = dept => DUE[dept] || '23.10.2026';
 const ft = t => new TextRun({ text: t, font: FONT, size: 16, rightToLeft: true });
-const doc = new Document({
-  styles: { default: { document: { run: { font: FONT, size: 19 } } } },
-  sections: [{
-    properties: { page: { size: { width: 11906, height: 16838, orientation: PageOrientation.LANDSCAPE }, margin: { top: 800, bottom: 800, left: 1000, right: 1000 } } },
-    footers: { default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.CENTER, bidirectional: true, children: [
-      ft('פנימי – לא להגשה | עמוד '), new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: 16 }), ft(' מתוך '), new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FONT, size: 16 })] })] }) },
-    children: [
-      p('מסמך פנימי – לא להגשה', { bold: true, color: 'C00000', align: AlignmentType.CENTER }),
-      p("מכרז כפר ברא 17/2026 – שאלות פנימיות למחלקות", { bold: true, size: 28, align: AlignmentType.CENTER, after: 80 }),
-      p('לוח זמנים: תשובות שמשפיעות על שאלות ההבהרה (משפטי, ביטוח, תנאי סף) – עד 16.10.2026, כדי לשלוח הבהרות עד 19.10. תשובות לתמחור – עד 23.10.2026. הגשה: 28.10.2026 בשעה 13:00.', { after: 80 }),
-      p('עמודת "לאן נכנסת התשובה" מפנה לגיליונות ולתאים במודל הכלכלי (מודל_כלכלי_מכרז_17-2026_כפר_ברא.xlsx) או לשאלות ההבהרה.', { after: 160 }),
-      new Table({ width: { size: 14838, type: WidthType.DXA }, columnWidths: WIDTHS, visuallyRightToLeft: true, rows }),
-    ],
-  }],
-});
-Packer.toBuffer(doc).then(b => { fs.writeFileSync(process.argv[2], b); console.log('written', n, 'questions'); });
+
+function buildDoc(depts, title, intro) {
+  const rows = [new TableRow({ tableHeader: true, children: HEAD.map((h, i) => cell([p(h, { bold: true, align: AlignmentType.CENTER, color: 'FFFFFF' })], i, '1F4E79')) })];
+  let n = 0;
+  for (const [dept, qs] of depts) {
+    if (depts.length > 1) {
+      rows.push(new TableRow({ children: [new TableCell({
+        columnSpan: 7, borders, shading: { type: ShadingType.CLEAR, fill: 'D9E2F3', color: 'auto' },
+        margins: { top: 50, bottom: 50, left: 90, right: 90 },
+        width: { size: 14838, type: WidthType.DXA },
+        children: [p(dept, { bold: true, size: 21 })],
+      })] }));
+    }
+    for (const [q, ref, why, where] of qs) {
+      n += 1;
+      rows.push(new TableRow({ cantSplit: true, children: [
+        cell([p(String(n), { align: AlignmentType.CENTER })], 0),
+        cell([p(q)], 1), cell([p(ref)], 2), cell([p(why)], 3), cell([p(where)], 4),
+        cell([p('')], 5), cell([p(due(dept), { align: AlignmentType.CENTER })], 6),
+      ] }));
+    }
+  }
+  const doc = new Document({
+    styles: { default: { document: { run: { font: FONT, size: 19 } } } },
+    sections: [{
+      properties: { page: { size: { width: 11906, height: 16838, orientation: PageOrientation.LANDSCAPE }, margin: { top: 800, bottom: 800, left: 1000, right: 1000 } } },
+      footers: { default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.CENTER, bidirectional: true, children: [
+        ft('פנימי – לא להגשה | עמוד '), new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: 16 }), ft(' מתוך '), new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FONT, size: 16 })] })] }) },
+      children: [
+        p('מסמך פנימי – לא להגשה', { bold: true, color: 'C00000', align: AlignmentType.CENTER }),
+        p(title, { bold: true, size: 28, align: AlignmentType.CENTER, after: 80 }),
+        ...intro.map((t, k) => p(t, { after: k === intro.length - 1 ? 160 : 80 })),
+        new Table({ width: { size: 14838, type: WidthType.DXA }, columnWidths: WIDTHS, visuallyRightToLeft: true, rows }),
+      ],
+    }],
+  });
+  return { doc, n };
+}
+
+const CONTEXT = 'המכרז: מכרז מסגרת 17/2026 של המועצה המקומית כפר ברא – שירותי IT מנוהלים, שרתים מאוחסנים, Microsoft 365, אבטחת מידע, קווי מטרו IPVPN ומרכזיית IP בענן, ל-3 שנים + 2 שנות אופציה. הגשה: 28.10.2026 בשעה 13:00.';
+const MODEL = 'עמודת "לאן נכנסת התשובה" מפנה לגיליונות ולתאים במודל הכלכלי (מודל_כלכלי_מכרז_17-2026_כפר_ברא.xlsx) או לשאלות ההבהרה למועצה. נא למלא תשובה ליד כל שאלה ולהחזיר לצוות המכרז.';
+
+(async () => {
+  const [out, mode] = process.argv.slice(2);
+  if (mode === '--split') {
+    fs.mkdirSync(out, { recursive: true });
+    let k = 0;
+    for (const d of DEPTS) {
+      k += 1;
+      const { doc, n } = buildDoc([d], `מכרז כפר ברא 17/2026 – שאלות למחלקת ${d[0]}`,
+        [CONTEXT, `מועד תשובה: ${due(d[0])}.`, MODEL]);
+      const name = `${String(k).padStart(2, '0')}_${d[0].replace(/[\/\\:*?"<>|,]/g, '').replace(/\s+/g, '_')}.docx`;
+      fs.writeFileSync(`${out}/${name}`, await Packer.toBuffer(doc));
+      console.log(name, n);
+    }
+  } else {
+    const { doc, n } = buildDoc(DEPTS, 'מכרז כפר ברא 17/2026 – שאלות פנימיות למחלקות',
+      ['לוח זמנים: תשובות שמשפיעות על שאלות ההבהרה (משפטי, ביטוח, תנאי סף) – עד 16.10.2026, כדי לשלוח הבהרות עד 19.10. תשובות לתמחור – עד 23.10.2026. הגשה: 28.10.2026 בשעה 13:00.', MODEL]);
+    fs.writeFileSync(out, await Packer.toBuffer(doc));
+    console.log('written', n, 'questions');
+  }
+})();
