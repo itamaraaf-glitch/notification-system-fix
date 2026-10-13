@@ -150,7 +150,7 @@ for i, (n, name, mx, fq, eq, cost, usd, note) in enumerate(base):
     put(ws, f'B{r}', name).alignment = WRAP
     put(ws, f'C{r}', mx, BLUE, ILS)
     put(ws, f'D{r}', fq, BLUE, NUM)
-    put(ws, f'E{r}', eq, BLUE, NUM, YEL if eq != fq else None, 'הנחה – כמות לא ידועה (שאלות הבהרה 6, 39).' if eq != fq else None)
+    put(ws, f'E{r}', eq, BLUE, NUM, YEL if eq != fq else None, 'הנחה – כמות לא ידועה (שאלות הבהרה 6, 40).' if eq != fq else None)
     put(ws, f'F{r}', cost, GREEN if str(cost).startswith('=') else BLUE, ILS2, YEL)
     put(ws, f'G{r}', usd, BLUE, PCT)
     put(ws, f'H{r}', f"=C{r}*(1-{H}$B$4)", fmt=ILS2)
