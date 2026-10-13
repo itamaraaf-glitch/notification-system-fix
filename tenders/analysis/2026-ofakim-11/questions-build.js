@@ -188,10 +188,10 @@ const thin = { style: BorderStyle.SINGLE, size: 4, color: '808080' };
 const borders = { top: thin, bottom: thin, left: thin, right: thin };
 
 const p = (text, opts = {}) => new Paragraph({
-  bidirectional: true,
+  bidirectional: !opts.ltr,
   alignment: opts.align || AlignmentType.RIGHT,
   spacing: { after: opts.after ?? 60 },
-  children: [new TextRun({ text, font: FONT, size: opts.size || 20, bold: !!opts.bold, rightToLeft: true })],
+  children: [new TextRun({ text, font: FONT, size: opts.size || 20, bold: !!opts.bold, rightToLeft: !opts.ltr })],
 });
 
 const WIDTHS = [700, 800, 2400, 1900, 9038]; // sums to 14838; order per tender 8.2
@@ -231,7 +231,7 @@ const rows = Q.flatMap(([doc, page, clause, text], idx) => {
     cantSplit: true,
     children: [
       ...(j === 0 ? [cellV([p(String(idx + 1), { align: AlignmentType.CENTER })], 0, n)] : []),
-      cell([p(pp, { align: AlignmentType.CENTER })], 1),
+      cell([p(pp, { align: AlignmentType.CENTER, ltr: true })], 1),
       cell([p(dd)], 2),
       cell([p(cc)], 3),
       ...(j === 0 ? [cellV(text.map(t => p(t)), 4, n)] : []),
