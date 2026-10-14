@@ -276,6 +276,7 @@ Bid analyses for specific tenders live in `tenders/analysis/<year>-<authority>-<
 - Check threshold conditions against `tenders/playbook/company-profile.md` (certifications and known gaps – e.g. ISO 27001 valid to 2028, **ISO 9001 not held yet**).
 - Follow `tenders/playbook/economic-playbook.md` (scoring math, pricing tactics, checklist, lessons log) and add a lessons-log entry for every tender.
 - Clarification files must match each tender's required format (columns and order) exactly.
+- Internal department questions: **do not include Legal (משפטי) or Insurance (ביטוח) departments** – these always go through the user's tenders department.
 
 ## Development Notes
 
