@@ -270,6 +270,13 @@ Node.js tests (built-in):
 - `PROACTIVE_AGENT_GUIDE.md` — Proactive decision-making guide
 - `EXPORT_GUIDE.md` — Excel export system guide
 
+## Tender Bid Analysis (HOT)
+
+Bid analyses for specific tenders live in `tenders/analysis/<year>-<authority>-<number>/` (clarification questions, economic model, internal questions per department). Before analyzing a new tender:
+- Check threshold conditions against `tenders/playbook/company-profile.md` (certifications and known gaps – e.g. ISO 27001 valid to 2028, **ISO 9001 not held yet**).
+- Follow `tenders/playbook/economic-playbook.md` (scoring math, pricing tactics, checklist, lessons log) and add a lessons-log entry for every tender.
+- Clarification files must match each tender's required format (columns and order) exactly.
+
 ## Development Notes
 
 **Adding a New Watch:**
