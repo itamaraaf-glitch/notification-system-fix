@@ -18031,8 +18031,8 @@ function meetingToICSEvent(m){
   return lines.join('\r\n');
 }
 
-function _buildICS(events){
-  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//HOT Business CRM//IL','CALSCALE:GREGORIAN','METHOD:PUBLISH',...events,'END:VCALENDAR'].join('\r\n');
+function _buildICS(events,method){
+  return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//HOT Business CRM//IL','CALSCALE:GREGORIAN','METHOD:'+(method||'PUBLISH'),...events,'END:VCALENDAR'].join('\r\n');
 }
 
 function _downloadICS(content,filename){
@@ -18133,6 +18133,9 @@ function showCalendarMenu(id,e){
 // כל מועד של המכרז הופך לאירוע יום-שלם ביומן האישי עם שתי התראות —
 // בוקר היום שלפני ובבוקר המועד עצמו — כדי שהמכרז יקפוץ ביומן ולא רק בהתראות המערכת.
 // עובד גם לפני שמירה (קורא מתוך הטופס הפתוח) וגם משורת המכרז (לפי מזהה).
+// היומן האישי של בעל המערכת — מועדי המכרז נוספים ישירות אליו: ב-ICS כהזמנה מאושרת
+// מראש (ORGANIZER+ATTENDEE), וב-Google כצירוף הכתובת כמוזמן.
+const CAL_OWNER_EMAIL='Itamar.venden@hot.net.il';
 function _resolveTender(id){
   if(id&&id!=='new'){const t=D.tenders.find(x=>x.id==id)||(D.archivedTenders||[]).find(x=>x.id==id);if(t)return t;}
   const g=i=>{const el=document.getElementById(i);return el?el.value:'';};
@@ -18165,6 +18168,8 @@ function _tenderICSEvent(t,d){
     'SUMMARY:'+_icsEsc(title),
     'DESCRIPTION:'+_icsEsc(descParts.join('\n')),
     'STATUS:CONFIRMED','CLASS:PRIVATE','TRANSP:TRANSPARENT',
+    'ORGANIZER;CN=HOT Business CRM:mailto:'+CAL_OWNER_EMAIL,
+    'ATTENDEE;CN=יומן איתמר;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=FALSE:mailto:'+CAL_OWNER_EMAIL,
     ...alarm('-PT15H','תזכורת מחר · '+d.label+' – '+name),
     ...alarm('PT9H','היום · '+d.label+' – '+name),
     'END:VEVENT'
@@ -18175,8 +18180,8 @@ function addTenderToCalendar(id){
   const dates=_tenderCalDates(t);
   if(!dates.length){showToast('⚠️ אין מועדים למכרז — מלא מועד שאלות הבהרה / הגשה / קבלת תשובות','warn');return;}
   const fname='מכרז_'+String(t.name||'ללא_שם').replace(/[\s/\\:*?"<>|]/g,'_')+'.ics';
-  _downloadICS(_buildICS(dates.map(d=>_tenderICSEvent(t,d))),fname);
-  showToast('📆 '+dates.length+' מועדי מכרז יוצאו ליומן — עם התראה יום לפני ובבוקר המועד','ok');
+  _downloadICS(_buildICS(dates.map(d=>_tenderICSEvent(t,d)),'REQUEST'),fname);
+  showToast('📆 '+dates.length+' מועדי מכרז ליומן '+CAL_OWNER_EMAIL+' — פתח את הקובץ להוספה, עם התראה יום לפני ובבוקר המועד','ok');
 }
 function addTenderDateToGoogle(id,key){
   const t=_resolveTender(id);
@@ -18184,7 +18189,7 @@ function addTenderDateToGoogle(id,key){
   const day=d.date.replace(/-/g,'');
   const title=d.label+' – '+(t.name||'מכרז')+' | HOT Business';
   const details=[t.proj?'מס׳ פרויקט: '+t.proj:'',t.handler?'מטפל: '+t.handler:'',t.link||'','HOT Business CRM'].filter(Boolean).join('\n');
-  const url='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+encodeURIComponent(day+'/'+_nextDayCompact(d.date))+'&details='+encodeURIComponent(details);
+  const url='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+encodeURIComponent(day+'/'+_nextDayCompact(d.date))+'&details='+encodeURIComponent(details)+'&add='+encodeURIComponent(CAL_OWNER_EMAIL);
   window.open(url,'_blank','noopener,noreferrer');
 }
 function showTenderCalMenu(id,e){
@@ -18197,13 +18202,13 @@ function showTenderCalMenu(id,e){
   menu.id='cal-menu-popup';menu.dataset.mid='tender-'+id;
   menu.style.cssText='position:fixed;background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:6px;z-index:9999;min-width:250px;box-shadow:0 8px 32px rgba(0,0,0,.6);direction:rtl;';
   const btn=(icon,label,fn)=>{const b=document.createElement('button');b.className='cal-menu-btn';b.innerHTML=icon+' '+label;b.onclick=()=>{menu.remove();fn();};return b;};
-  const hdr=document.createElement('div');hdr.style.cssText='font-size:10px;color:var(--text3);padding:4px 10px 2px;font-weight:700';hdr.textContent='מועדי המכרז ליומן (עם התראה)';menu.appendChild(hdr);
+  const hdr=document.createElement('div');hdr.style.cssText='font-size:10px;color:var(--text3);padding:4px 10px 2px;font-weight:700;line-height:1.5';hdr.textContent='מועדי המכרז ליומן '+CAL_OWNER_EMAIL+' (עם התראה)';menu.appendChild(hdr);
   if(!dates.length){
     const none=document.createElement('div');none.style.cssText='font-size:11px;color:var(--text2);padding:6px 10px;line-height:1.5';none.textContent='אין מועדים — מלא מועד שאלות הבהרה / הגשה / קבלת תשובות בכרטיס המכרז';menu.appendChild(none);
   }else{
-    menu.appendChild(btn('📅','כל המועדים – ICS (Apple/Outlook/כל יומן)',()=>addTenderToCalendar(id)));
+    menu.appendChild(btn('📅','כל המועדים ליומן (ICS – Apple/Outlook)',()=>addTenderToCalendar(id)));
     menu.appendChild(document.createElement('hr').cloneNode());menu.lastChild.style.cssText='border:none;border-top:1px solid var(--border);margin:4px 0';
-    const gh=document.createElement('div');gh.style.cssText='font-size:10px;color:var(--text3);padding:2px 10px;font-weight:700';gh.textContent='🔵 Google Calendar — מועד בודד';menu.appendChild(gh);
+    const gh=document.createElement('div');gh.style.cssText='font-size:10px;color:var(--text3);padding:2px 10px;font-weight:700';gh.textContent='🔵 Google Calendar — מועד בודד (מזמין את היומן)';menu.appendChild(gh);
     dates.forEach(d=>menu.appendChild(btn(d.label.split(' ')[0],d.label.replace(/^\S+\s/,'')+' · '+fmtDate(d.date),()=>addTenderDateToGoogle(id,d.key))));
   }
   const el=e.currentTarget||e.target;const rect=el.getBoundingClientRect();
