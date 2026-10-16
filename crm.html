@@ -2562,6 +2562,7 @@ body.logged-in #ai-fab{display:flex}
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
     <button class="btn" onclick="closeM('mtender')">ביטול</button>
     <button class="btn btns" onclick="schedMeetFromTender(EI)" style="border-color:#06d6a0;color:#06d6a0">📅 קבע פגישה</button>
+    <button class="btn btns" onclick="showTenderCalMenu(EI,event)" style="border-color:#a78bfa;color:#a78bfa" title="הוסף מועדי המכרז ליומן עם התראה — שאלות הבהרה / הגשה / קבלת תשובות">📆 הוסף ליומן</button>
     <button class="btn btns" onclick="showTenderTeamMenu(EI,event)" style="border-color:#a78bfa;color:#a78bfa">📧 מייל פנימי</button>
     <button class="btn btns" onclick="showTenderReqMenu(EI,event)" style="border-color:#4cc9f0;color:#4cc9f0">📨 מייל למבקש</button>
     <button class="btn btnp" onclick="saveTender()">שמור מכרז</button>
@@ -8526,7 +8527,7 @@ function rTenders(){
     const lb=tn.linked==='כן'?'<span class="badge bg">כן</span>':'<span class="badge br">לא</span>';
     let qd='–';if(tn.questions){const d=db(t,tn.questions);qd=d>=0?`<b style="color:${d<=2?'#e63946':'#f4a261'}">${d}י</b>`:'<span style="color:#3a4468">עבר</span>';}
     const chk=SEL['tenders']&&SEL['tenders'].has(tn.id)?'checked':'';
-    return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-tenders" ${chk} onchange="toggleSel('tenders','${tn.id}')"></td><td>${pB(p)}</td><td>${sb2}</td><td>${_cellSpan('tenders',tn.id,'qty',(tn.qty||1),'num')}</td><td style="font-size:10px">${fmtDate(tn.pub)}</td><td style="font-weight:600;min-width:120px">${_cellSpan('tenders',tn.id,'name',esc(tn.name||'—'))}</td><td style="font-size:10px">${_cellSpan('tenders',tn.id,'proj',esc(tn.proj||'–'))}</td><td>${(()=>{const u=safeUrl(tn.link);return u?`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer" style="color:#4cc9f0;font-size:10px">🔗</a>`:'–';})()}</td><td style="font-size:10px">${fmtDate(tn.quote)}</td><td>${qd}</td><td>${_cellSpan('tenders',tn.id,'rounds',(tn.rounds||'–'),'num')}</td><td style="font-weight:600;font-size:10px;white-space:nowrap">${(()=>{ if(!tn.deadline)return '<span style="color:var(--text3)">–</span>'; const dl=db(t,tn.deadline); const done=tn.submitted==='כן'||!!tn.result; const col=done?'var(--text3)':dl<0?'#e63946':dl<=3?'#e63946':dl<=7?'#f4a261':'var(--text2)'; const cd=done?'':dl<0?' · פג':dl===0?' · היום!':' · '+dl+'י'; return `<span style="color:${col}">${fmtDate(tn.deadline)}${cd}</span>`; })()}</td><td style="font-size:10px;white-space:nowrap">${(()=>{ const inner=(()=>{ if(!tn.resultsDate)return '–'; const dl=db(t,tn.resultsDate); const pend=tn.submitted==='כן'&&!tn.result; const col=tn.result?'var(--text3)':!pend?'var(--text2)':dl<0?'#e63946':dl<=3?'#f4a261':'var(--text2)'; const cd=pend?(dl<0?' · עבר':dl===0?' · היום!':' · '+dl+'י'):''; return `<span style="color:${col}">${fmtDate(tn.resultsDate)}${cd}</span>`; })(); return _cellSpan('tenders',tn.id,'resultsDate',inner,'date'); })()}</td><td style="font-size:10px">${_cellSpan('tenders',tn.id,'handler',esc(tn.handler||'–'))}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${_cellSpan('tenders',tn.id,'docs',esc(tn.docs||'–'))}</td><td>${lb}</td><td class="nb">${_cellSpan('tenders',tn.id,'amount',fmt(tn.amount),'num')}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${_cellSpan('tenders',tn.id,'notes',esc(tn.notes||'–'))}</td><td style="white-space:nowrap">${(()=>{if(tn.result){const won=tn.result==='זכייה',rc=won?'#06d6a0':'#e63946';return`<span onclick="openM('tender','${tn.id}')" title="${tn.result} — ${fmtDate(tn.resultDate)}" style="cursor:pointer;font-size:9px;font-weight:800;padding:2px 8px;border-radius:12px;background:${rc}18;color:${rc};border:1px solid ${rc}44;white-space:nowrap">${won?'🏆 זכייה':'❌ אי-זכייה'}</span> `;}const sd=tenderStageCount(tn);const hd=tenderHandledCount(tn);const allHandled=hd===TENDER_STAGES.length;const nx=tenderNextStage(tn);const fc=allHandled?'#a78bfa':sd>0?'#f4a261':'var(--text3)';return`<span class="stg-chip" onclick="event.stopPropagation();advanceTenderStage('${tn.id}')" title="${nx?'לחץ לסימון התחנה הבאה שטרם טופלה: '+nx.l+' (ניתן לסמן בכל סדר בגרף)':'כל התחנות טופלו — סמן זכייה/אי-זכייה בגרף'}" style="cursor:pointer;font-size:9px;font-weight:800;padding:2px 8px;border-radius:12px;background:${fc}18;color:${fc};border:1px solid ${fc}44;white-space:nowrap">🗺️ ${sd}/${TENDER_STAGES.length}${allHandled?' 🏁':''}</span> `;})()}<button class="btn btns" onclick="showTenderTeamMenu('${tn.id}',event)" title="מייל פנימי: התנעה / איפיון / משפטית / ביטוח / חתימות" style="border-color:#a78bfa;color:#a78bfa">📧</button> <button class="btn btns" onclick="showTenderReqMenu('${tn.id}',event)" title="מייל למבקש המכרז" style="border-color:#4cc9f0;color:#4cc9f0">📨</button> <button class="btn btns" onclick="schedMeetFromTender('${tn.id}')" title="קבע פגישה למכרז" style="border-color:#06d6a0;color:#06d6a0">📅</button> ${(tn.files&&tn.files.length)?`<button class="btn btns" onclick="rowFilesMenu('tenders','${tn.id}',event)" title="${tn.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${tn.files.length>1?tn.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('tender','${tn.id}')">✏️</button> <button class="btn btns" onclick="archiveRow('tender','${tn.id}')" title="העבר לארכיון" style="border-color:#f4a261;color:#f4a261">📦</button> <button class="btn btns btnd" onclick="dbDelete('tenders','${tn.id}')">🗑</button></td></tr>`;
+    return`<tr class="${pC(p)}" data-pri="${p}"><td class="cb-td"><input type="checkbox" class="cb-item-tenders" ${chk} onchange="toggleSel('tenders','${tn.id}')"></td><td>${pB(p)}</td><td>${sb2}</td><td>${_cellSpan('tenders',tn.id,'qty',(tn.qty||1),'num')}</td><td style="font-size:10px">${fmtDate(tn.pub)}</td><td style="font-weight:600;min-width:120px">${_cellSpan('tenders',tn.id,'name',esc(tn.name||'—'))}</td><td style="font-size:10px">${_cellSpan('tenders',tn.id,'proj',esc(tn.proj||'–'))}</td><td>${(()=>{const u=safeUrl(tn.link);return u?`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer" style="color:#4cc9f0;font-size:10px">🔗</a>`:'–';})()}</td><td style="font-size:10px">${fmtDate(tn.quote)}</td><td>${qd}</td><td>${_cellSpan('tenders',tn.id,'rounds',(tn.rounds||'–'),'num')}</td><td style="font-weight:600;font-size:10px;white-space:nowrap">${(()=>{ if(!tn.deadline)return '<span style="color:var(--text3)">–</span>'; const dl=db(t,tn.deadline); const done=tn.submitted==='כן'||!!tn.result; const col=done?'var(--text3)':dl<0?'#e63946':dl<=3?'#e63946':dl<=7?'#f4a261':'var(--text2)'; const cd=done?'':dl<0?' · פג':dl===0?' · היום!':' · '+dl+'י'; return `<span style="color:${col}">${fmtDate(tn.deadline)}${cd}</span>`; })()}</td><td style="font-size:10px;white-space:nowrap">${(()=>{ const inner=(()=>{ if(!tn.resultsDate)return '–'; const dl=db(t,tn.resultsDate); const pend=tn.submitted==='כן'&&!tn.result; const col=tn.result?'var(--text3)':!pend?'var(--text2)':dl<0?'#e63946':dl<=3?'#f4a261':'var(--text2)'; const cd=pend?(dl<0?' · עבר':dl===0?' · היום!':' · '+dl+'י'):''; return `<span style="color:${col}">${fmtDate(tn.resultsDate)}${cd}</span>`; })(); return _cellSpan('tenders',tn.id,'resultsDate',inner,'date'); })()}</td><td style="font-size:10px">${_cellSpan('tenders',tn.id,'handler',esc(tn.handler||'–'))}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${_cellSpan('tenders',tn.id,'docs',esc(tn.docs||'–'))}</td><td>${lb}</td><td class="nb">${_cellSpan('tenders',tn.id,'amount',fmt(tn.amount),'num')}</td><td style="font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis">${_cellSpan('tenders',tn.id,'notes',esc(tn.notes||'–'))}</td><td style="white-space:nowrap">${(()=>{if(tn.result){const won=tn.result==='זכייה',rc=won?'#06d6a0':'#e63946';return`<span onclick="openM('tender','${tn.id}')" title="${tn.result} — ${fmtDate(tn.resultDate)}" style="cursor:pointer;font-size:9px;font-weight:800;padding:2px 8px;border-radius:12px;background:${rc}18;color:${rc};border:1px solid ${rc}44;white-space:nowrap">${won?'🏆 זכייה':'❌ אי-זכייה'}</span> `;}const sd=tenderStageCount(tn);const hd=tenderHandledCount(tn);const allHandled=hd===TENDER_STAGES.length;const nx=tenderNextStage(tn);const fc=allHandled?'#a78bfa':sd>0?'#f4a261':'var(--text3)';return`<span class="stg-chip" onclick="event.stopPropagation();advanceTenderStage('${tn.id}')" title="${nx?'לחץ לסימון התחנה הבאה שטרם טופלה: '+nx.l+' (ניתן לסמן בכל סדר בגרף)':'כל התחנות טופלו — סמן זכייה/אי-זכייה בגרף'}" style="cursor:pointer;font-size:9px;font-weight:800;padding:2px 8px;border-radius:12px;background:${fc}18;color:${fc};border:1px solid ${fc}44;white-space:nowrap">🗺️ ${sd}/${TENDER_STAGES.length}${allHandled?' 🏁':''}</span> `;})()}<button class="btn btns" onclick="showTenderTeamMenu('${tn.id}',event)" title="מייל פנימי: התנעה / איפיון / משפטית / ביטוח / חתימות" style="border-color:#a78bfa;color:#a78bfa">📧</button> <button class="btn btns" onclick="showTenderReqMenu('${tn.id}',event)" title="מייל למבקש המכרז" style="border-color:#4cc9f0;color:#4cc9f0">📨</button> <button class="btn btns" onclick="schedMeetFromTender('${tn.id}')" title="קבע פגישה למכרז" style="border-color:#06d6a0;color:#06d6a0">📅</button> <button class="btn btns" onclick="showTenderCalMenu('${tn.id}',event)" title="הוסף מועדי המכרז ליומן עם התראה — שאלות הבהרה / הגשה / קבלת תשובות" style="border-color:#a78bfa;color:#a78bfa">📆</button> ${(tn.files&&tn.files.length)?`<button class="btn btns" onclick="rowFilesMenu('tenders','${tn.id}',event)" title="${tn.files.length} קבצים מצורפים" style="border-color:#06d6a0;color:#06d6a0">📎${tn.files.length>1?tn.files.length:''}</button> `:''}<button class="btn btns" onclick="openM('tender','${tn.id}')">✏️</button> <button class="btn btns" onclick="archiveRow('tender','${tn.id}')" title="העבר לארכיון" style="border-color:#f4a261;color:#f4a261">📦</button> <button class="btn btns btnd" onclick="dbDelete('tenders','${tn.id}')">🗑</button></td></tr>`;
   }).join('')||emptyRow(18,'📋',"אין מכרזים","openM('tender',null)");
   const ta=_tn.reduce((s,t)=>s+(t.amount||0),0);
   const tsubmit=_tn.filter(t=>t.submitted==='כן').length;
@@ -18123,6 +18124,90 @@ function showCalendarMenu(id,e){
   const rect=el.getBoundingClientRect();
   const top=Math.min(rect.bottom+4,window.innerHeight-240);
   const right=Math.max(0,window.innerWidth-rect.right);
+  menu.style.top=top+'px';menu.style.right=right+'px';
+  document.body.appendChild(menu);
+  setTimeout(()=>{document.addEventListener('click',function cl(ev){if(!menu.contains(ev.target)){menu.remove();document.removeEventListener('click',cl);}});},80);
+}
+
+// ===== מועדי מכרז ליומן: שאלות הבהרה / הגשה / קבלת תשובות =====
+// כל מועד של המכרז הופך לאירוע יום-שלם ביומן האישי עם שתי התראות —
+// בוקר היום שלפני ובבוקר המועד עצמו — כדי שהמכרז יקפוץ ביומן ולא רק בהתראות המערכת.
+// עובד גם לפני שמירה (קורא מתוך הטופס הפתוח) וגם משורת המכרז (לפי מזהה).
+function _resolveTender(id){
+  if(id&&id!=='new'){const t=D.tenders.find(x=>x.id==id)||(D.archivedTenders||[]).find(x=>x.id==id);if(t)return t;}
+  const g=i=>{const el=document.getElementById(i);return el?el.value:'';};
+  return {id:id||'new',name:g('tn'),proj:g('tp'),link:g('tlk'),questions:g('tqs'),deadline:g('tdl'),resultsDate:g('trd'),handler:g('th'),amount:+g('tam')||0};
+}
+function _tenderCalDates(t){
+  const out=[];
+  if(t.questions)out.push({key:'questions',date:t.questions,label:'📝 מועד אחרון לשאלות הבהרה'});
+  if(t.deadline)out.push({key:'deadline',date:t.deadline,label:'📤 מועד הגשת המכרז'});
+  if(t.resultsDate)out.push({key:'results',date:t.resultsDate,label:'📣 מועד קבלת תשובות'});
+  return out;
+}
+function _nextDayCompact(dt){const nx=new Date(dt);nx.setDate(nx.getDate()+1);return nx.toISOString().split('T')[0].replace(/-/g,'');}
+function _tenderICSEvent(t,d){
+  const uid='hot-crm-tender-'+t.id+'-'+d.key+'@hot-business';
+  const title=d.label+' – '+(t.name||'מכרז')+' | HOT Business';
+  const day=d.date.replace(/-/g,'');
+  const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
+  const descParts=[];
+  if(t.proj)descParts.push('מס׳ פרויקט: '+t.proj);
+  if(t.handler)descParts.push('מטפל: '+t.handler);
+  if(t.amount)descParts.push('היקף: '+fmt(t.amount));
+  if(t.link)descParts.push(t.link);
+  descParts.push('','HOT Business CRM');
+  const alarm=(trig,txt)=>['BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+_icsEsc(txt),'TRIGGER:'+trig,'END:VALARM'];
+  const name=t.name||'מכרז';
+  return [
+    'BEGIN:VEVENT','UID:'+uid,'DTSTAMP:'+stamp,
+    'DTSTART;VALUE=DATE:'+day,'DTEND;VALUE=DATE:'+_nextDayCompact(d.date),
+    'SUMMARY:'+_icsEsc(title),
+    'DESCRIPTION:'+_icsEsc(descParts.join('\n')),
+    'STATUS:CONFIRMED','CLASS:PRIVATE','TRANSP:TRANSPARENT',
+    ...alarm('-PT15H','תזכורת מחר · '+d.label+' – '+name),
+    ...alarm('PT9H','היום · '+d.label+' – '+name),
+    'END:VEVENT'
+  ].join('\r\n');
+}
+function addTenderToCalendar(id){
+  const t=_resolveTender(id);
+  const dates=_tenderCalDates(t);
+  if(!dates.length){showToast('⚠️ אין מועדים למכרז — מלא מועד שאלות הבהרה / הגשה / קבלת תשובות','warn');return;}
+  const fname='מכרז_'+String(t.name||'ללא_שם').replace(/[\s/\\:*?"<>|]/g,'_')+'.ics';
+  _downloadICS(_buildICS(dates.map(d=>_tenderICSEvent(t,d))),fname);
+  showToast('📆 '+dates.length+' מועדי מכרז יוצאו ליומן — עם התראה יום לפני ובבוקר המועד','ok');
+}
+function addTenderDateToGoogle(id,key){
+  const t=_resolveTender(id);
+  const d=_tenderCalDates(t).find(x=>x.key===key);if(!d)return;
+  const day=d.date.replace(/-/g,'');
+  const title=d.label+' – '+(t.name||'מכרז')+' | HOT Business';
+  const details=[t.proj?'מס׳ פרויקט: '+t.proj:'',t.handler?'מטפל: '+t.handler:'',t.link||'','HOT Business CRM'].filter(Boolean).join('\n');
+  const url='https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+encodeURIComponent(day+'/'+_nextDayCompact(d.date))+'&details='+encodeURIComponent(details);
+  window.open(url,'_blank','noopener,noreferrer');
+}
+function showTenderCalMenu(id,e){
+  e.stopPropagation();
+  const t=_resolveTender(id);
+  const prev=document.getElementById('cal-menu-popup');
+  if(prev){prev.remove();if(prev.dataset.mid==='tender-'+id)return;}
+  const dates=_tenderCalDates(t);
+  const menu=document.createElement('div');
+  menu.id='cal-menu-popup';menu.dataset.mid='tender-'+id;
+  menu.style.cssText='position:fixed;background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:6px;z-index:9999;min-width:250px;box-shadow:0 8px 32px rgba(0,0,0,.6);direction:rtl;';
+  const btn=(icon,label,fn)=>{const b=document.createElement('button');b.className='cal-menu-btn';b.innerHTML=icon+' '+label;b.onclick=()=>{menu.remove();fn();};return b;};
+  const hdr=document.createElement('div');hdr.style.cssText='font-size:10px;color:var(--text3);padding:4px 10px 2px;font-weight:700';hdr.textContent='מועדי המכרז ליומן (עם התראה)';menu.appendChild(hdr);
+  if(!dates.length){
+    const none=document.createElement('div');none.style.cssText='font-size:11px;color:var(--text2);padding:6px 10px;line-height:1.5';none.textContent='אין מועדים — מלא מועד שאלות הבהרה / הגשה / קבלת תשובות בכרטיס המכרז';menu.appendChild(none);
+  }else{
+    menu.appendChild(btn('📅','כל המועדים – ICS (Apple/Outlook/כל יומן)',()=>addTenderToCalendar(id)));
+    menu.appendChild(document.createElement('hr').cloneNode());menu.lastChild.style.cssText='border:none;border-top:1px solid var(--border);margin:4px 0';
+    const gh=document.createElement('div');gh.style.cssText='font-size:10px;color:var(--text3);padding:2px 10px;font-weight:700';gh.textContent='🔵 Google Calendar — מועד בודד';menu.appendChild(gh);
+    dates.forEach(d=>menu.appendChild(btn(d.label.split(' ')[0],d.label.replace(/^\S+\s/,'')+' · '+fmtDate(d.date),()=>addTenderDateToGoogle(id,d.key))));
+  }
+  const el=e.currentTarget||e.target;const rect=el.getBoundingClientRect();
+  const top=Math.min(rect.bottom+4,window.innerHeight-300);const right=Math.max(0,window.innerWidth-rect.right);
   menu.style.top=top+'px';menu.style.right=right+'px';
   document.body.appendChild(menu);
   setTimeout(()=>{document.addEventListener('click',function cl(ev){if(!menu.contains(ev.target)){menu.remove();document.removeEventListener('click',cl);}});},80);
