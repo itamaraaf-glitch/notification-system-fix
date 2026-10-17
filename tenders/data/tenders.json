@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-16T18:34:23.278Z",
-  "generatedDate": "2026-10-16",
+  "generatedAt": "2026-10-17T17:41:36.359Z",
+  "generatedDate": "2026-10-17",
   "topics": {
     "telecom": {
       "label": "תקשורת",
@@ -942,7 +942,7 @@
       "unknown": "בלי מועד ובלי סטטוס פעיל במקור",
       "archived": "בלי מועד, והקובץ הועלה לפני יותר משנה"
     },
-    "near": 3
+    "near": 4
   },
   "nearMisses": [
     {
@@ -964,8 +964,8 @@
       "topics": [],
       "score": 0,
       "matched": [],
-      "firstSeen": "2026-10-16",
-      "lastSeen": "2026-10-16",
+      "firstSeen": "2026-10-17",
+      "lastSeen": "2026-10-17",
       "deadlineFrom": ""
     },
     {
@@ -987,8 +987,8 @@
       "topics": [],
       "score": 0,
       "matched": [],
-      "firstSeen": "2026-10-16",
-      "lastSeen": "2026-10-16"
+      "firstSeen": "2026-10-17",
+      "lastSeen": "2026-10-17"
     },
     {
       "id": "1ae21a8284fe2097",
@@ -1008,24 +1008,33 @@
       "topics": [],
       "score": 0,
       "matched": [],
-      "firstSeen": "2026-10-16",
-      "lastSeen": "2026-10-16"
+      "firstSeen": "2026-10-17",
+      "lastSeen": "2026-10-17"
+    },
+    {
+      "id": "a2d01625d5629ed1",
+      "near": true,
+      "title": "מכרז פומבי מס' 2026 / 10: למתן שירותים משפטיים למועצה אזורית דרום השרון",
+      "url": "https://www.dsharon.org.il/bids/bids/495/",
+      "source": "muni-drom-hasharon",
+      "sourceName": "מועצה אזורית דרום השרון",
+      "category": "רשויות מקומיות",
+      "publisher": "מועצה אזורית דרום השרון",
+      "tenderNumber": "2026/10",
+      "publishedAt": "2026-12-31",
+      "keepUndated": true,
+      "kind": "tender",
+      "status": "",
+      "deadlineAt": "",
+      "summary": "",
+      "topics": [],
+      "score": 0,
+      "matched": [],
+      "firstSeen": "2026-10-17",
+      "lastSeen": "2026-10-17"
     }
   ],
   "sources": [
-    {
-      "id": "nta",
-      "name": "נת\"ע – נתיבי תחבורה עירוניים",
-      "category": "תשתיות",
-      "ok": false,
-      "scanned": 0,
-      "count": 0,
-      "error": "www.nta.co.il/tenders/ — HTTP 403",
-      "ms": 1185,
-      "searchUrl": "https://www.nta.co.il/tenders/",
-      "lastOkAt": "",
-      "failingSince": "2026-08-25"
-    },
     {
       "id": "iroads",
       "name": "נתיבי ישראל",
@@ -1034,8 +1043,21 @@
       "scanned": 0,
       "count": 0,
       "error": "www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D — HTTP 403",
-      "ms": 1216,
+      "ms": 1257,
       "searchUrl": "https://www.iroads.co.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/",
+      "lastOkAt": "",
+      "failingSince": "2026-08-25"
+    },
+    {
+      "id": "nta",
+      "name": "נת\"ע – נתיבי תחבורה עירוניים",
+      "category": "תשתיות",
+      "ok": false,
+      "scanned": 0,
+      "count": 0,
+      "error": "www.nta.co.il/tenders/ — HTTP 403",
+      "ms": 1280,
+      "searchUrl": "https://www.nta.co.il/tenders/",
       "lastOkAt": "",
       "failingSince": "2026-08-25"
     },
@@ -1046,10 +1068,10 @@
       "ok": true,
       "scanned": 0,
       "count": 0,
-      "ms": 1665,
+      "ms": 1868,
       "warn": "",
       "searchUrl": "https://www.iec.co.il/content/suppliers/tenders-and-decisions/tenders/active-tenders",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "transisrael",
@@ -1059,7 +1081,7 @@
       "scanned": 0,
       "count": 0,
       "error": "www.transisrael.co.il/Tenders — HTTP 403",
-      "ms": 1118,
+      "ms": 1064,
       "searchUrl": "https://www.transisrael.co.il/Tenders?currentView=1",
       "lastOkAt": "",
       "failingSince": "2026-08-25"
@@ -1071,13 +1093,13 @@
       "ok": true,
       "scanned": 201,
       "count": 0,
-      "ms": 2376,
+      "ms": 2770,
       "warn": "",
       "discovered": [
         "https://www.haifa.muni.il/city-and-muni/legaladvice/contracts-and-tenders/"
       ],
       "searchUrl": "https://www.haifa.muni.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "tlv",
@@ -1086,10 +1108,10 @@
       "ok": true,
       "scanned": 639,
       "count": 0,
-      "ms": 2847,
+      "ms": 3377,
       "warn": "",
       "searchUrl": "https://www.tel-aviv.gov.il/AuctionAndCareers/Pages/AuctionAndCareers.aspx",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "muni-nes-ziona",
@@ -1098,13 +1120,28 @@
       "ok": true,
       "scanned": 852,
       "count": 0,
-      "ms": 1336,
+      "ms": 2856,
       "warn": "",
       "discovered": [
         "https://www.nzc.org.il/bids/"
       ],
       "searchUrl": "https://www.nzc.org.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
+    },
+    {
+      "id": "muni-drom-hasharon",
+      "name": "מועצה אזורית דרום השרון",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 634,
+      "count": 2,
+      "ms": 1582,
+      "warn": "",
+      "discovered": [
+        "https://www.dsharon.org.il/bids/#bids_3"
+      ],
+      "searchUrl": "https://www.dsharon.org.il/",
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "muni-emek-yizrael",
@@ -1113,13 +1150,13 @@
       "ok": true,
       "scanned": 242,
       "count": 0,
-      "ms": 840,
+      "ms": 1630,
       "warn": "",
       "discovered": [
         "https://www.eyz.org.il/bids/"
       ],
       "searchUrl": "https://www.eyz.org.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "rail",
@@ -1129,7 +1166,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 232,
+      "ms": 308,
       "searchUrl": "https://www.rail.co.il/",
       "lastOkAt": "",
       "failingSince": "2026-08-25"
@@ -1142,26 +1179,10 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 724,
+      "ms": 812,
       "searchUrl": "https://www.mekorot.co.il/",
       "lastOkAt": "",
       "failingSince": "2026-08-25"
-    },
-    {
-      "id": "muni-drom-hasharon",
-      "name": "מועצה אזורית דרום השרון",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 1268,
-      "count": 4,
-      "ms": 3523,
-      "warn": "",
-      "discovered": [
-        "https://www.dsharon.org.il/bids/#bids_3",
-        "https://www.dsharon.org.il/bids/"
-      ],
-      "searchUrl": "https://www.dsharon.org.il/",
-      "lastOkAt": "2026-10-16"
     },
     {
       "id": "haifa-port",
@@ -1171,7 +1192,7 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 629,
+      "ms": 614,
       "searchUrl": "https://www.haifaport.co.il/",
       "lastOkAt": "",
       "failingSince": "2026-08-25"
@@ -1184,7 +1205,7 @@
       "scanned": 0,
       "count": 0,
       "error": "fetch failed (ECONNRESET)",
-      "ms": 2463,
+      "ms": 3026,
       "searchUrl": "https://www.ashdodport.co.il/",
       "lastOkAt": "",
       "failingSince": "2026-08-25"
@@ -1196,13 +1217,28 @@
       "ok": true,
       "scanned": 212,
       "count": 0,
-      "ms": 1407,
+      "ms": 1362,
       "warn": "",
       "discovered": [
         "https://www.btl.gov.il/About/tenders/Pages/default.aspx"
       ],
       "searchUrl": "https://www.btl.gov.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
+    },
+    {
+      "id": "post",
+      "name": "דואר ישראל",
+      "category": "חברות ממשלתיות וגופים גדולים",
+      "ok": true,
+      "scanned": 0,
+      "count": 0,
+      "ms": 3166,
+      "warn": "",
+      "discovered": [
+        "https://doar.israelpost.co.il/content/tenders/"
+      ],
+      "searchUrl": "https://www.israelpost.co.il/",
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "clalit",
@@ -1212,25 +1248,10 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 187,
+      "ms": 438,
       "searchUrl": "https://www.clalit.co.il/",
       "lastOkAt": "",
       "failingSince": "2026-08-25"
-    },
-    {
-      "id": "post",
-      "name": "דואר ישראל",
-      "category": "חברות ממשלתיות וגופים גדולים",
-      "ok": true,
-      "scanned": 0,
-      "count": 0,
-      "ms": 3363,
-      "warn": "",
-      "discovered": [
-        "https://doar.israelpost.co.il/content/tenders/"
-      ],
-      "searchUrl": "https://www.israelpost.co.il/",
-      "lastOkAt": "2026-10-16"
     },
     {
       "id": "tau",
@@ -1239,13 +1260,13 @@
       "ok": true,
       "scanned": 116,
       "count": 0,
-      "ms": 1350,
+      "ms": 1482,
       "warn": "",
       "discovered": [
         "https://www.tau.ac.il/bidding"
       ],
       "searchUrl": "https://www.tau.ac.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "huji",
@@ -1254,28 +1275,13 @@
       "ok": true,
       "scanned": 2,
       "count": 0,
-      "ms": 1379,
+      "ms": 4264,
       "warn": "",
       "discovered": [
         "https://tenders.huji.ac.il/"
       ],
       "searchUrl": "https://www.huji.ac.il/",
-      "lastOkAt": "2026-10-16"
-    },
-    {
-      "id": "openu",
-      "name": "האוניברסיטה הפתוחה",
-      "category": "מוסדות אקדמיים",
-      "ok": true,
-      "scanned": 8,
-      "count": 0,
-      "ms": 808,
-      "warn": "",
-      "discovered": [
-        "https://www.openu.ac.il/bid/"
-      ],
-      "searchUrl": "https://www.openu.ac.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "weizmann",
@@ -1284,13 +1290,13 @@
       "ok": true,
       "scanned": 7,
       "count": 0,
-      "ms": 2193,
+      "ms": 2531,
       "warn": "",
       "discovered": [
         "https://www.weizmann.ac.il/purchasing/tenders"
       ],
       "searchUrl": "https://www.weizmann.ac.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "sapir",
@@ -1299,13 +1305,28 @@
       "ok": true,
       "scanned": 117,
       "count": 0,
-      "ms": 980,
+      "ms": 1190,
       "warn": "",
       "discovered": [
         "https://www.sapir.ac.il/tenders"
       ],
       "searchUrl": "https://www.sapir.ac.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
+    },
+    {
+      "id": "openu",
+      "name": "האוניברסיטה הפתוחה",
+      "category": "מוסדות אקדמיים",
+      "ok": true,
+      "scanned": 8,
+      "count": 0,
+      "ms": 2933,
+      "warn": "",
+      "discovered": [
+        "https://www.openu.ac.il/bid/"
+      ],
+      "searchUrl": "https://www.openu.ac.il/",
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "afeka",
@@ -1314,13 +1335,13 @@
       "ok": true,
       "scanned": 135,
       "count": 0,
-      "ms": 1177,
+      "ms": 1394,
       "warn": "",
       "discovered": [
         "https://www.afeka.ac.il/about-afeka/general-information/tenders/"
       ],
       "searchUrl": "https://www.afeka.ac.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "hit",
@@ -1329,28 +1350,13 @@
       "ok": true,
       "scanned": 89,
       "count": 0,
-      "ms": 982,
+      "ms": 1172,
       "warn": "",
       "discovered": [
         "https://www.hit.ac.il/tenders/"
       ],
       "searchUrl": "https://www.hit.ac.il/",
-      "lastOkAt": "2026-10-16"
-    },
-    {
-      "id": "braude",
-      "name": "מכללת בראודה",
-      "category": "מוסדות אקדמיים",
-      "ok": true,
-      "scanned": 214,
-      "count": 0,
-      "ms": 1052,
-      "warn": "",
-      "discovered": [
-        "https://w3.braude.ac.il/about/tenders/"
-      ],
-      "searchUrl": "https://www.braude.ac.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "shenkar",
@@ -1359,43 +1365,28 @@
       "ok": true,
       "scanned": 82,
       "count": 0,
-      "ms": 1911,
+      "ms": 924,
       "warn": "",
       "discovered": [
         "https://www.shenkar.ac.il/about-shenkar/tenders-offers/"
       ],
       "searchUrl": "https://www.shenkar.ac.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
-      "id": "jce",
-      "name": "מכללת עזריאלי ירושלים",
+      "id": "braude",
+      "name": "מכללת בראודה",
       "category": "מוסדות אקדמיים",
       "ok": true,
-      "scanned": 104,
+      "scanned": 214,
       "count": 0,
-      "ms": 3328,
+      "ms": 1271,
       "warn": "",
       "discovered": [
-        "https://www.jce.ac.il/tenders"
+        "https://w3.braude.ac.il/about/tenders/"
       ],
-      "searchUrl": "https://www.jce.ac.il/",
-      "lastOkAt": "2026-10-16"
-    },
-    {
-      "id": "telhai",
-      "name": "המכללה האקדמית תל חי",
-      "category": "מוסדות אקדמיים",
-      "ok": true,
-      "scanned": 220,
-      "count": 0,
-      "ms": 3297,
-      "warn": "",
-      "discovered": [
-        "https://www.telhai.ac.il/tenders"
-      ],
-      "searchUrl": "https://www.telhai.ac.il/",
-      "lastOkAt": "2026-10-16"
+      "searchUrl": "https://www.braude.ac.il/",
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "ports",
@@ -1405,10 +1396,25 @@
       "scanned": 0,
       "count": 0,
       "error": "fetch failed (UND_ERR_CONNECT_TIMEOUT)",
-      "ms": 22124,
+      "ms": 22363,
       "searchUrl": "https://www.israports.co.il/",
       "lastOkAt": "",
       "failingSince": "2026-08-25"
+    },
+    {
+      "id": "jce",
+      "name": "מכללת עזריאלי ירושלים",
+      "category": "מוסדות אקדמיים",
+      "ok": true,
+      "scanned": 104,
+      "count": 0,
+      "ms": 4038,
+      "warn": "",
+      "discovered": [
+        "https://www.jce.ac.il/tenders"
+      ],
+      "searchUrl": "https://www.jce.ac.il/",
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "yvc",
@@ -1417,13 +1423,28 @@
       "ok": true,
       "scanned": 160,
       "count": 0,
-      "ms": 1136,
+      "ms": 1263,
       "warn": "",
       "discovered": [
         "https://www.yvc.ac.il/tender/"
       ],
       "searchUrl": "https://www.yvc.ac.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
+    },
+    {
+      "id": "telhai",
+      "name": "המכללה האקדמית תל חי",
+      "category": "מוסדות אקדמיים",
+      "ok": true,
+      "scanned": 220,
+      "count": 0,
+      "ms": 3801,
+      "warn": "",
+      "discovered": [
+        "https://www.telhai.ac.il/tenders"
+      ],
+      "searchUrl": "https://www.telhai.ac.il/",
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "beitberl",
@@ -1432,28 +1453,13 @@
       "ok": true,
       "scanned": 117,
       "count": 0,
-      "ms": 1351,
+      "ms": 1724,
       "warn": "",
       "discovered": [
         "https://www.beitberl.ac.il/about-information/auctions/"
       ],
       "searchUrl": "https://www.beitberl.ac.il/",
-      "lastOkAt": "2026-10-16"
-    },
-    {
-      "id": "levinsky",
-      "name": "סמינר הקיבוצים – לוינסקי",
-      "category": "מוסדות אקדמיים",
-      "ok": true,
-      "scanned": 161,
-      "count": 2,
-      "ms": 1083,
-      "warn": "",
-      "discovered": [
-        "https://www.smkb.ac.il/us/contact-us/biddings/bidding/"
-      ],
-      "searchUrl": "https://www.smkb.ac.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "hac",
@@ -1462,13 +1468,28 @@
       "ok": true,
       "scanned": 129,
       "count": 0,
-      "ms": 1103,
+      "ms": 1139,
       "warn": "",
       "discovered": [
         "https://www.jmc.ac.il/%D7%A2%D7%9C-%D7%94%D7%9E%D7%A8%D7%9B%D7%96/%D7%93%D7%A8%D7%95%D7%A9%D7%99%D7%9D-%D7%95%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D/%D7%A7%D7%95%D7%9C-%D7%A7%D7%95%D7%A8%D7%90-%D7%9C%D7%9E%D7%99%D7%A0%D7%95%D7%99-%D7%9E%D7%A9%D7%A0%D7%94-%D7%9C%D7%A0%D7%A9%D7%99%D7%90%D7%94-%D7%9C%D7%A2%D7%A0%D7%99%D7%99%D7%A0%D7%99%D7%9D-%D7%90%D7%A7%D7%93%D7%9E%D7%99%D7%99%D7%9D/"
       ],
       "searchUrl": "https://www.hac.ac.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
+    },
+    {
+      "id": "levinsky",
+      "name": "סמינר הקיבוצים – לוינסקי",
+      "category": "מוסדות אקדמיים",
+      "ok": true,
+      "scanned": 161,
+      "count": 2,
+      "ms": 1369,
+      "warn": "",
+      "discovered": [
+        "https://www.smkb.ac.il/us/contact-us/biddings/bidding/"
+      ],
+      "searchUrl": "https://www.smkb.ac.il/",
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "muni-yehud-monosson",
@@ -1477,28 +1498,13 @@
       "ok": true,
       "scanned": 31,
       "count": 0,
-      "ms": 878,
+      "ms": 1062,
       "warn": "",
       "discovered": [
         "https://yehud-monosson.muni.il/%d7%9e%d7%9b%d7%a8%d7%96%d7%99%d7%9d-%d7%95%d7%93%d7%a8%d7%95%d7%a9%d7%99%d7%9d/"
       ],
       "searchUrl": "https://www.yehud-monosson.muni.il/",
-      "lastOkAt": "2026-10-16"
-    },
-    {
-      "id": "muni-modiin",
-      "name": "עיריית מודיעין-מכבים-רעות",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 1,
-      "count": 0,
-      "ms": 1456,
-      "warn": "",
-      "discovered": [
-        "https://www.modiin.muni.il/bids"
-      ],
-      "searchUrl": "https://www.modiin.muni.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "muni-brener",
@@ -1508,40 +1514,10 @@
       "scanned": 0,
       "count": 0,
       "error": "HTTP 403",
-      "ms": 105,
+      "ms": 168,
       "searchUrl": "https://www.brener.org.il/",
       "lastOkAt": "2026-09-21",
       "failingSince": "2026-09-22"
-    },
-    {
-      "id": "muni-golan",
-      "name": "מועצה אזורית גולן",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 132,
-      "count": 0,
-      "ms": 689,
-      "warn": "",
-      "discovered": [
-        "https://www.golan.org.il/bids/"
-      ],
-      "searchUrl": "https://www.golan.org.il/",
-      "lastOkAt": "2026-10-16"
-    },
-    {
-      "id": "muni-galil-elion",
-      "name": "מועצה אזורית גליל עליון",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 334,
-      "count": 0,
-      "ms": 922,
-      "warn": "",
-      "discovered": [
-        "https://www.galil-elion.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D-2021"
-      ],
-      "searchUrl": "https://www.galil-elion.org.il/",
-      "lastOkAt": "2026-10-16"
     },
     {
       "id": "muni-ramat-hasharon",
@@ -1550,13 +1526,58 @@
       "ok": true,
       "scanned": 128,
       "count": 0,
-      "ms": 2431,
+      "ms": 2379,
       "warn": "",
       "discovered": [
         "https://ramat-hasharon.muni.il/all-tenders/#tab_2"
       ],
       "searchUrl": "https://www.ramat-hasharon.muni.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
+    },
+    {
+      "id": "muni-modiin",
+      "name": "עיריית מודיעין-מכבים-רעות",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 1,
+      "count": 0,
+      "ms": 2503,
+      "warn": "",
+      "discovered": [
+        "https://www.modiin.muni.il/bids"
+      ],
+      "searchUrl": "https://www.modiin.muni.il/",
+      "lastOkAt": "2026-10-17"
+    },
+    {
+      "id": "muni-golan",
+      "name": "מועצה אזורית גולן",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 132,
+      "count": 0,
+      "ms": 860,
+      "warn": "",
+      "discovered": [
+        "https://www.golan.org.il/bids/"
+      ],
+      "searchUrl": "https://www.golan.org.il/",
+      "lastOkAt": "2026-10-17"
+    },
+    {
+      "id": "muni-galil-elion",
+      "name": "מועצה אזורית גליל עליון",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 334,
+      "count": 0,
+      "ms": 893,
+      "warn": "",
+      "discovered": [
+        "https://www.galil-elion.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D-2021"
+      ],
+      "searchUrl": "https://www.galil-elion.org.il/",
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "muni-lachish",
@@ -1565,58 +1586,13 @@
       "ok": true,
       "scanned": 333,
       "count": 4,
-      "ms": 1327,
+      "ms": 1518,
       "warn": "",
       "discovered": [
         "https://lachish.org.il/%d7%9e%d7%9b%d7%a8%d7%96%d7%99%d7%9d/"
       ],
       "searchUrl": "https://www.lachish.org.il/",
-      "lastOkAt": "2026-10-16"
-    },
-    {
-      "id": "muni-azor",
-      "name": "מועצת אזור",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 184,
-      "count": 0,
-      "ms": 834,
-      "warn": "",
-      "discovered": [
-        "https://www.azor.muni.il/bids/"
-      ],
-      "searchUrl": "https://www.azor.muni.il/",
-      "lastOkAt": "2026-10-16"
-    },
-    {
-      "id": "muni-sng",
-      "name": "מועצה אזורית שער הנגב",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 97,
-      "count": 0,
-      "ms": 968,
-      "warn": "",
-      "discovered": [
-        "https://www.sng.org.il/bids/"
-      ],
-      "searchUrl": "https://www.sng.org.il/",
-      "lastOkAt": "2026-10-16"
-    },
-    {
-      "id": "muni-abugosh",
-      "name": "מועצת אבו גוש",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 47,
-      "count": 0,
-      "ms": 792,
-      "warn": "",
-      "discovered": [
-        "https://abugosh.muni.il/he/category/%D7%9E%D7%9B%D7%A8%D7%96/"
-      ],
-      "searchUrl": "https://www.abugosh.muni.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "muni-zy1882",
@@ -1625,13 +1601,45 @@
       "ok": true,
       "scanned": 48,
       "count": 0,
-      "ms": 2069,
+      "ms": 688,
       "warn": "",
       "discovered": [
         "https://www.zy1882.co.il/Branches/Branches.aspx?nodeId=1265"
       ],
       "searchUrl": "https://www.zy1882.co.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
+    },
+    {
+      "id": "muni-sng",
+      "name": "מועצה אזורית שער הנגב",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 195,
+      "count": 0,
+      "ms": 4101,
+      "warn": "",
+      "discovered": [
+        "https://www.sng.org.il/bids/",
+        "https://www.sng.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D-%D7%A4%D7%90%D7%A8%D7%A7-%D7%A1%D7%A4%D7%99%D7%A8%D7%99%D7%9D/"
+      ],
+      "searchUrl": "https://www.sng.org.il/",
+      "lastOkAt": "2026-10-17"
+    },
+    {
+      "id": "muni-azor",
+      "name": "מועצת אזור",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 380,
+      "count": 0,
+      "ms": 3227,
+      "warn": "",
+      "discovered": [
+        "https://www.azor.muni.il/bids/",
+        "https://www.azor.muni.il/14/"
+      ],
+      "searchUrl": "https://www.azor.muni.il/",
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "muni-kadima-zoran",
@@ -1640,13 +1648,13 @@
       "ok": true,
       "scanned": 300,
       "count": 0,
-      "ms": 2475,
+      "ms": 2361,
       "warn": "",
       "discovered": [
         "https://www.kadima-zoran.muni.il/tender/"
       ],
       "searchUrl": "https://www.kadima-zoran.muni.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "muni-hevel-yavne",
@@ -1655,58 +1663,28 @@
       "ok": true,
       "scanned": 295,
       "count": 0,
-      "ms": 1556,
+      "ms": 744,
       "warn": "",
       "discovered": [
         "https://www.hevel-yavne.org.il/bids/"
       ],
       "searchUrl": "https://www.hevel-yavne.org.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
-      "id": "muni-beit-dagan",
-      "name": "מועצת בית דגן",
+      "id": "muni-abugosh",
+      "name": "מועצת אבו גוש",
       "category": "רשויות מקומיות",
       "ok": true,
-      "scanned": 120,
-      "count": 2,
-      "ms": 1367,
-      "warn": "",
-      "discovered": [
-        "https://www.beitdagan.muni.il/info/bids-jobs/contractor-centers/"
-      ],
-      "searchUrl": "https://www.beitdagan.muni.il/",
-      "lastOkAt": "2026-10-16"
-    },
-    {
-      "id": "muni-or-akiva",
-      "name": "עיריית אור עקיבא",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 71,
+      "scanned": 47,
       "count": 0,
-      "ms": 1492,
+      "ms": 1113,
       "warn": "",
       "discovered": [
-        "https://www.orakiva.muni.il/tenders/"
+        "https://abugosh.muni.il/he/category/%D7%9E%D7%9B%D7%A8%D7%96/"
       ],
-      "searchUrl": "https://www.orakiva.muni.il/",
-      "lastOkAt": "2026-10-16"
-    },
-    {
-      "id": "muni-hof-ashkelon",
-      "name": "מועצה אזורית חוף אשקלון",
-      "category": "רשויות מקומיות",
-      "ok": true,
-      "scanned": 140,
-      "count": 0,
-      "ms": 833,
-      "warn": "",
-      "discovered": [
-        "https://www.hofashkelon.org.il/tenders"
-      ],
-      "searchUrl": "https://www.hofashkelon.org.il/",
-      "lastOkAt": "2026-10-16"
+      "searchUrl": "https://www.abugosh.muni.il/",
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "muni-kiryat-ekron",
@@ -1715,28 +1693,59 @@
       "ok": true,
       "scanned": 39,
       "count": 0,
-      "ms": 2824,
+      "ms": 885,
       "warn": "",
       "discovered": [
         "https://kiryat-ekron.muni.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D-%D7%95%D7%93%D7%A8%D7%95%D7%A9%D7%99%D7%9D/"
       ],
       "searchUrl": "https://www.kiryat-ekron.muni.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
-      "id": "cluster-west-negev",
-      "name": "אשכול רשויות נגב מערבי",
+      "id": "muni-or-akiva",
+      "name": "עיריית אור עקיבא",
       "category": "רשויות מקומיות",
       "ok": true,
-      "scanned": 560,
-      "count": 8,
-      "ms": 1365,
+      "scanned": 71,
+      "count": 0,
+      "ms": 1793,
       "warn": "",
       "discovered": [
-        "https://www.westnegev.org.il/services"
+        "https://www.orakiva.muni.il/tenders/"
       ],
-      "searchUrl": "https://www.westnegev.org.il/",
-      "lastOkAt": "2026-10-16"
+      "searchUrl": "https://www.orakiva.muni.il/",
+      "lastOkAt": "2026-10-17"
+    },
+    {
+      "id": "muni-hof-ashkelon",
+      "name": "מועצה אזורית חוף אשקלון",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 140,
+      "count": 0,
+      "ms": 962,
+      "warn": "",
+      "discovered": [
+        "https://www.hofashkelon.org.il/tenders"
+      ],
+      "searchUrl": "https://www.hofashkelon.org.il/",
+      "lastOkAt": "2026-10-17"
+    },
+    {
+      "id": "muni-beit-dagan",
+      "name": "מועצת בית דגן",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 226,
+      "count": 2,
+      "ms": 4719,
+      "warn": "",
+      "discovered": [
+        "https://www.beitdagan.muni.il/info/bids-jobs/contractor-centers/",
+        "https://www.beitdagan.muni.il/info/bids-jobs/human-resources-and-recruitment-centers/"
+      ],
+      "searchUrl": "https://www.beitdagan.muni.il/",
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "muni-sdan",
@@ -1745,13 +1754,13 @@
       "ok": true,
       "scanned": 102,
       "count": 0,
-      "ms": 1551,
+      "ms": 1142,
       "warn": "",
       "discovered": [
         "https://www.sdan.org.il/bids/"
       ],
       "searchUrl": "https://www.sdan.org.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "muni-harish",
@@ -1760,28 +1769,28 @@
       "ok": true,
       "scanned": 88,
       "count": 0,
-      "ms": 1839,
+      "ms": 2315,
       "warn": "",
       "discovered": [
         "https://www.harish.muni.il/bids"
       ],
       "searchUrl": "https://www.harish.muni.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
-      "id": "cluster-hasharon",
-      "name": "אשכול רשויות השרון",
+      "id": "cluster-west-negev",
+      "name": "אשכול רשויות נגב מערבי",
       "category": "רשויות מקומיות",
       "ok": true,
-      "scanned": 20,
-      "count": 0,
-      "ms": 2046,
+      "scanned": 560,
+      "count": 8,
+      "ms": 1289,
       "warn": "",
       "discovered": [
-        "https://esharon.co.il/%d7%9e%d7%9b%d7%a8%d7%96%d7%99%d7%9d-%d7%a4%d7%a2%d7%99%d7%9c%d7%99%d7%9d/"
+        "https://www.westnegev.org.il/services"
       ],
-      "searchUrl": "https://www.esharon.co.il/",
-      "lastOkAt": "2026-10-16"
+      "searchUrl": "https://www.westnegev.org.il/",
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "cluster-hamifrats",
@@ -1790,13 +1799,28 @@
       "ok": true,
       "scanned": 12,
       "count": 0,
-      "ms": 2736,
+      "ms": 2647,
       "warn": "",
       "discovered": [
         "https://www.hamifrats.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D"
       ],
       "searchUrl": "https://www.hamifrats.org.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
+    },
+    {
+      "id": "cluster-hasharon",
+      "name": "אשכול רשויות השרון",
+      "category": "רשויות מקומיות",
+      "ok": true,
+      "scanned": 20,
+      "count": 0,
+      "ms": 2053,
+      "warn": "",
+      "discovered": [
+        "https://esharon.co.il/%d7%9e%d7%9b%d7%a8%d7%96%d7%99%d7%9d-%d7%a4%d7%a2%d7%99%d7%9c%d7%99%d7%9d/"
+      ],
+      "searchUrl": "https://www.esharon.co.il/",
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "cluster-east-galil",
@@ -1805,13 +1829,13 @@
       "ok": true,
       "scanned": 192,
       "count": 0,
-      "ms": 6044,
+      "ms": 5384,
       "warn": "",
       "discovered": [
         "https://www.eastgalil.org.il/%D7%9E%D7%9B%D7%A8%D7%96%D7%99%D7%9D"
       ],
       "searchUrl": "https://www.eastgalil.org.il/",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     },
     {
       "id": "mr-gov",
@@ -1820,10 +1844,10 @@
       "ok": true,
       "scanned": 1508,
       "count": 0,
-      "ms": 94059,
+      "ms": 100517,
       "warn": "",
       "searchUrl": "https://mr.gov.il/ilgstorefront/he/search/?s=TENDER",
-      "lastOkAt": "2026-10-16"
+      "lastOkAt": "2026-10-17"
     }
   ],
   "tenders": [
@@ -1857,7 +1881,7 @@
         "תקשוב"
       ],
       "firstSeen": "2026-08-24",
-      "lastSeen": "2026-10-16",
+      "lastSeen": "2026-10-17",
       "deadlineChecked": true
     },
     {
@@ -1883,7 +1907,7 @@
         "IT"
       ],
       "firstSeen": "2026-09-16",
-      "lastSeen": "2026-10-16",
+      "lastSeen": "2026-10-17",
       "deadlineChecked": true
     },
     {
@@ -1908,8 +1932,8 @@
       "matched": [
         "שליטה ובקרה"
       ],
-      "firstSeen": "2026-10-16",
-      "lastSeen": "2026-10-16",
+      "firstSeen": "2026-10-17",
+      "lastSeen": "2026-10-17",
       "aiMatched": true,
       "aiReviewer": "external",
       "aiReason": "מערך שליטה ובקרה טכנולוגי — עיר חכמה"
