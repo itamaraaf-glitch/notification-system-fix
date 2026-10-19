@@ -1,4 +1,4 @@
-const CACHE = 'hot-crm-v14';   // v14: תקציר הרקע כולל גם משימות שוטפות (לא רק פגישות)
+const CACHE = 'hot-crm-v15';   // v15: תקציר הרקע כולל גם תזכורת מכרז — מועד שחל בעוד יומיים
 const META_CACHE = 'hot-crm-meta';
 const ASSETS = ['./manifest.json', './office-bg.jpg', './mountains-bg.mp4', './icon-192.png', './icon-512.png', './badge-96.png'];
 
@@ -120,6 +120,19 @@ async function digestFromBackup() {
       ? '📅 ' + mtgs.length + ' פגישות היום: ' + mtgs.map(m => (m.time ? m.time + ' – ' : '') + (m.cl || '')).join(', ')
       : '📅 אין פגישות ביומן היום'];
     if (tToday.length || tOver) lines.push('✅ ' + (tToday.length ? tToday.length + ' משימות היום' + (tOver ? ' · ' : '') : '') + (tOver ? tOver + ' באיחור' : '') + (tToday.length ? ': ' + tToday.map(t => (t.time ? t.time + ' – ' : '') + (t.t || '')).join(', ') : ''));
+    // מכרזים: מועד שאלות הבהרה / הגשה / קבלת תשובות שחל בעוד יומיים בדיוק
+    const twoDays = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
+    const tenderHits = [];
+    (D.tenders || []).forEach(tn => {
+      if (!tn || tn.result) return;
+      [['questions', 'שאלות הבהרה'], ['deadline', 'הגשת מכרז'], ['resultsDate', 'קבלת תשובות']].forEach(([f, lbl]) => {
+        const dv = tn[f]; if (!dv || dv !== twoDays) return;
+        if ((f === 'questions' || f === 'deadline') && tn.submitted === 'כן') return;
+        if (f === 'resultsDate' && tn.submitted !== 'כן') return;
+        tenderHits.push(lbl + ' – ' + (tn.name || 'מכרז'));
+      });
+    });
+    if (tenderHits.length) lines.push('📋 מכרזים בעוד יומיים: ' + tenderHits.join(', '));
     lines.push('פתח את המערכת לפרטים ולהתראות');
     const body = lines.join('\n');
     await self.registration.showNotification('📣 תקציר בוקר — HOT CRM', {
