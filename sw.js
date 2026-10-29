@@ -1,4 +1,4 @@
-const CACHE = 'hot-crm-v15';   // v15: תקציר הרקע כולל גם תזכורת מכרז — מועד שחל בעוד יומיים
+const CACHE = 'hot-crm-v16';   // v16: שחזור מלא (החלפה) בגיבויים האוטומטיים — לצד המיזוג הקיים
 const META_CACHE = 'hot-crm-meta';
 const ASSETS = ['./manifest.json', './office-bg.jpg', './mountains-bg.mp4', './icon-192.png', './icon-512.png', './badge-96.png'];
 

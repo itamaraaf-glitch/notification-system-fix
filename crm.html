@@ -2280,7 +2280,7 @@ body.logged-in #ai-fab{display:flex}
 <!-- AUTO-BACKUPS MODAL -->
 <div class="mw" id="mbackups"><div class="modal">
   <div class="mhdr"><h3>🛡️ גיבויים אוטומטיים</h3><button class="mcls" onclick="closeM('mbackups')">✕</button></div>
-  <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">גיבוי אוטומטי כל 2 דקות (<b style="color:var(--teal)">עד 300 גיבויים</b>) + <b style="color:#a78bfa">גיבוי יומי ל-14 ימים אחרונים</b>. בחר נקודת זמן לשחזור:</div>
+  <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">גיבוי אוטומטי כל 2 דקות (<b style="color:var(--teal)">עד 300 גיבויים</b>) + <b style="color:#a78bfa">גיבוי יומי ל-14 ימים אחרונים</b>. בחר נקודת זמן לשחזור:<br><span style="color:#fbbf24">🔁 החלפה מלאה</span> = מחליף את כל הנתונים בדיוק למצב של אותה שעה (מה שלא היה קיים אז — יוסר). <span style="color:var(--teal)">↩ מזג</span> = רק מוסיף רשומות חסרות, בלי למחוק. הנתונים הנוכחיים נשמרים כגיבוי לפני כל פעולה.</div>
   <div id="bk-list" style="max-height:50vh;overflow-y:auto"></div>
 </div></div>
 
@@ -18523,7 +18523,7 @@ async function openAutoBackups(){
         <div style="font-size:12px;font-weight:700">${badge}${timeStr} <span style="color:var(--text2);font-weight:400">${dateStr}</span></div>
         <div style="font-size:10px;color:var(--text2);margin-top:2px">${cnt} · סה"כ ${ttl} רשומות</div>
       </div>
-      <button class="btn btns" onclick="restoreFromIdb(${s.ts})" style="border-color:#06d6a0;color:#06d6a0;white-space:nowrap">↩ שחזר</button>
+      <div style="display:flex;flex-direction:column;gap:4px"><button class="btn btns" onclick="restoreFromIdb(${s.ts})" style="border-color:#06d6a0;color:#06d6a0;white-space:nowrap">↩ מזג</button><button class="btn btns" onclick="restoreFromIdbFull(${s.ts})" style="border-color:#fbbf24;color:#fbbf24;white-space:nowrap">🔁 החלפה מלאה</button></div>
     </div>`;
   }
 
@@ -18549,7 +18549,7 @@ async function openAutoBackups(){
           <div style="font-size:12px;font-weight:700">${badge}${s.day} <span style="color:var(--text2);font-weight:400;font-size:10px">נשמר ${timeStr}</span></div>
           <div style="font-size:10px;color:var(--text2);margin-top:2px">${cnt} · סה"כ ${ttl} רשומות</div>
         </div>
-        <button class="btn btns" onclick="restoreFromDailyIdb('${s.day}')" style="border-color:#a78bfa;color:#a78bfa;white-space:nowrap">↩ שחזר</button>
+        <div style="display:flex;flex-direction:column;gap:4px"><button class="btn btns" onclick="restoreFromDailyIdb('${s.day}')" style="border-color:#a78bfa;color:#a78bfa;white-space:nowrap">↩ מזג</button><button class="btn btns" onclick="restoreFromDailyIdbFull('${s.day}')" style="border-color:#fbbf24;color:#fbbf24;white-space:nowrap">🔁 החלפה מלאה</button></div>
       </div>`;
     }).join('');
   }
@@ -18667,6 +18667,47 @@ async function restoreFromIdb(ts){
       showToast(`✅ שוחזרו ${totalRestored} רשומות מגיבוי ${dateLabel} ${timeLabel}`,'ok');
     }catch(e){alert('שגיאה בשחזור: '+e.message);}
   },currentlyEmpty?'כן, שחזר הכל':'כן, שחזר ומזג');
+}
+// שחזור מלא (החלפה) — מחליף את כל הנתונים בדיוק למצב של אותה נקודת זמן, בניגוד
+// למיזוג שרק מוסיף. מבצע בדיוק כמו "שחזור מקובץ JSON": D=emptyData()+snapshot.
+// נשמר גיבוי בטיחות של המצב הנוכחי לפני ההחלפה — כך אפשר תמיד לחזור אחורה.
+async function restoreFromIdbFull(ts){
+  const list=await idbList();
+  const snap=list.find(s=>s.ts===ts);
+  if(!snap)return;
+  const timeLabel=new Date(ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  const dateLabel=new Date(ts).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'});
+  confirmAct(`🔁 שחזור מלא מ-${dateLabel} ${timeLabel}?\n\n⚠️ כל הנתונים הנוכחיים יוחלפו בדיוק במצב של אותה שעה — רשומות שלא היו קיימות אז יוסרו.\n\nהמצב הנוכחי נשמר כגיבוי אוטומטי לפני ההחלפה, כך שתמיד אפשר לחזור אחורה.`,()=>{
+    try{
+      idbBackup(JSON.stringify(D)); // safety snapshot of current before replacing
+      D=Object.assign(emptyData(),JSON.parse(snap.data));
+      saveAll();rAll();
+      if(typeof _reconcileFiles==='function')_reconcileFiles();
+      const bkModal=document.getElementById('mbackups');
+      if(bkModal)bkModal.classList.remove('open');
+      const eb=document.getElementById('emergency-recovery-bar');
+      if(eb)eb.remove();
+      const totalRestored=DATA_COLS.reduce((s,c)=>s+(D[c]||[]).length,0);
+      showToast(`✅ החלפה מלאה: ${totalRestored} רשומות מ-${dateLabel} ${timeLabel}`,'ok');
+    }catch(e){alert('שגיאה בשחזור מלא: '+e.message);}
+  },'כן, החלף הכל');
+}
+async function restoreFromDailyIdbFull(day){
+  const dailyList=await idbDailyList();
+  const snap=dailyList.find(s=>s.day===day);
+  if(!snap){showToast('⚠️ הגיבוי היומי לא נמצא','warn');return;}
+  confirmAct(`🔁 שחזור מלא מגיבוי יומי של ${day}?\n\n⚠️ כל הנתונים הנוכחיים יוחלפו בדיוק במצב של אותו יום — רשומות שלא היו קיימות אז יוסרו.\n\nהמצב הנוכחי נשמר כגיבוי אוטומטי לפני ההחלפה.`,()=>{
+    try{
+      idbBackup(JSON.stringify(D));
+      D=Object.assign(emptyData(),JSON.parse(snap.data));
+      saveAll();rAll();
+      if(typeof _reconcileFiles==='function')_reconcileFiles();
+      const bkModal=document.getElementById('mbackups');
+      if(bkModal)bkModal.classList.remove('open');
+      const totalRestored=DATA_COLS.reduce((s,c)=>s+(D[c]||[]).length,0);
+      showToast(`✅ החלפה מלאה: ${totalRestored} רשומות מגיבוי ${day}`,'ok');
+    }catch(e){alert('שגיאה בשחזור מלא: '+e.message);}
+  },'כן, החלף הכל');
 }
 async function dumpAllBackups(){
   try{
