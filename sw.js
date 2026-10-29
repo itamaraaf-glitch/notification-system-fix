@@ -1,4 +1,4 @@
-const CACHE = 'hot-crm-v16';   // v16: שחזור מלא (החלפה) בגיבויים האוטומטיים — לצד המיזוג הקיים
+const CACHE = 'hot-crm-v17';   // v17: תיקון פריסת חלון הגיבויים (מובייל/RTL) — שורות קומפקטיות, בלי גלישה
 const META_CACHE = 'hot-crm-meta';
 const ASSETS = ['./manifest.json', './office-bg.jpg', './mountains-bg.mp4', './icon-192.png', './icon-512.png', './badge-96.png'];
 

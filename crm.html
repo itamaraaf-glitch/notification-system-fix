@@ -1193,7 +1193,10 @@ tr:hover td{background:rgba(200,169,110,.055)!important}
 .gbar-fill::after{content:'';position:absolute;top:0;bottom:0;width:50%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:barShine 2.8s linear infinite}
 
 /* ── Backup modal snapshot row hover ── */
-.bk-snap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);transition:background .15s;cursor:default}
+.bk-snap{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;overflow-x:hidden;padding:9px 12px;border-bottom:1px solid var(--border);transition:background .15s;cursor:default;direction:rtl}
+.bk-snap > div:first-child{min-width:0;flex:1 1 150px}
+.bk-snap .bk-acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0}
+.bk-snap .bk-acts .btn{font-size:11px;padding:5px 10px}
 .bk-snap:hover{background:rgba(255,255,255,.05)!important}
 
 /* ── Table progress bar shimmer ── */
@@ -2281,7 +2284,7 @@ body.logged-in #ai-fab{display:flex}
 <div class="mw" id="mbackups"><div class="modal">
   <div class="mhdr"><h3>🛡️ גיבויים אוטומטיים</h3><button class="mcls" onclick="closeM('mbackups')">✕</button></div>
   <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">גיבוי אוטומטי כל 2 דקות (<b style="color:var(--teal)">עד 300 גיבויים</b>) + <b style="color:#a78bfa">גיבוי יומי ל-14 ימים אחרונים</b>. בחר נקודת זמן לשחזור:<br><span style="color:#fbbf24">🔁 החלפה מלאה</span> = מחליף את כל הנתונים בדיוק למצב של אותה שעה (מה שלא היה קיים אז — יוסר). <span style="color:var(--teal)">↩ מזג</span> = רק מוסיף רשומות חסרות, בלי למחוק. הנתונים הנוכחיים נשמרים כגיבוי לפני כל פעולה.</div>
-  <div id="bk-list" style="max-height:50vh;overflow-y:auto"></div>
+  <div id="bk-list" style="max-height:62vh;overflow-y:auto;overflow-x:hidden;direction:rtl"></div>
 </div></div>
 
 <!-- SMART IMPORT MODAL -->
@@ -18523,7 +18526,7 @@ async function openAutoBackups(){
         <div style="font-size:12px;font-weight:700">${badge}${timeStr} <span style="color:var(--text2);font-weight:400">${dateStr}</span></div>
         <div style="font-size:10px;color:var(--text2);margin-top:2px">${cnt} · סה"כ ${ttl} רשומות</div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:4px"><button class="btn btns" onclick="restoreFromIdb(${s.ts})" style="border-color:#06d6a0;color:#06d6a0;white-space:nowrap">↩ מזג</button><button class="btn btns" onclick="restoreFromIdbFull(${s.ts})" style="border-color:#fbbf24;color:#fbbf24;white-space:nowrap">🔁 החלפה מלאה</button></div>
+      <div class="bk-acts"><button class="btn btns" onclick="restoreFromIdbFull(${s.ts})" style="border-color:#fbbf24;color:#fbbf24;white-space:nowrap">🔁 החלפה מלאה</button><button class="btn btns" onclick="restoreFromIdb(${s.ts})" style="border-color:#06d6a0;color:#06d6a0;white-space:nowrap">↩ מזג</button></div>
     </div>`;
   }
 
@@ -18549,7 +18552,7 @@ async function openAutoBackups(){
           <div style="font-size:12px;font-weight:700">${badge}${s.day} <span style="color:var(--text2);font-weight:400;font-size:10px">נשמר ${timeStr}</span></div>
           <div style="font-size:10px;color:var(--text2);margin-top:2px">${cnt} · סה"כ ${ttl} רשומות</div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:4px"><button class="btn btns" onclick="restoreFromDailyIdb('${s.day}')" style="border-color:#a78bfa;color:#a78bfa;white-space:nowrap">↩ מזג</button><button class="btn btns" onclick="restoreFromDailyIdbFull('${s.day}')" style="border-color:#fbbf24;color:#fbbf24;white-space:nowrap">🔁 החלפה מלאה</button></div>
+        <div class="bk-acts"><button class="btn btns" onclick="restoreFromDailyIdbFull('${s.day}')" style="border-color:#fbbf24;color:#fbbf24;white-space:nowrap">🔁 החלפה מלאה</button><button class="btn btns" onclick="restoreFromDailyIdb('${s.day}')" style="border-color:#a78bfa;color:#a78bfa;white-space:nowrap">↩ מזג</button></div>
       </div>`;
     }).join('');
   }
