@@ -1,4 +1,4 @@
-const CACHE = 'hot-crm-v17';   // v17: תיקון פריסת חלון הגיבויים (מובייל/RTL) — שורות קומפקטיות, בלי גלישה
+const CACHE = 'hot-crm-v18';   // v18: SW חדש מכריח רענון אוטומטי של עמודים פתוחים לגרסה הטרייה
 const META_CACHE = 'hot-crm-meta';
 const ASSETS = ['./manifest.json', './office-bg.jpg', './mountains-bg.mp4', './icon-192.png', './icon-512.png', './badge-96.png'];
 
@@ -9,11 +9,19 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE && k !== META_CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
+  // מנקים מטמוני קוד ישנים (לא נוגעים ב-IndexedDB/הגיבויים), תופסים שליטה,
+  // ואז מכריחים כל חלון פתוח להיטען מחדש — כך טאב שנתקע על גרסה ישנה מתעדכן לבד
+  // ברגע שהדפדפן קולט את ה-SW החדש (updateViaCache:'imports' עוקף מטמון ל-sw.js).
+  // ClearContents בלבד של Cache Storage — הנתונים ב-IndexedDB בטוחים.
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k !== CACHE && k !== META_CACHE).map(k => caches.delete(k)));
+    await self.clients.claim();
+    try {
+      const cs = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const c of cs) { try { await c.navigate(c.url); } catch (e) {} }
+    } catch (e) {}
+  })());
 });
 
 self.addEventListener('fetch', e => {
