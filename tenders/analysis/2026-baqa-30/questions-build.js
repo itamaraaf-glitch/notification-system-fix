@@ -3,6 +3,7 @@
 // הגשה: בכתב למנמ"ר העירייה, Khawaja@baqa.co.il, עד 1.11.2026 15:00 (חלק ב' סעיף 1(ו), עמ' 7).
 // החוברת לא קובעת פורמט לשאלות – טבלה: מס"ד | עמוד | מסמך | סעיף | נוסח השאלה,
 // ממוינת לפי עמוד; שאלות על קובץ ה-Excel (טבלת ההצעה) בסוף.
+// שאלות הצוות: team-questions.json (מ-Excel הצוות ומ-Word המשפטי/ביטוח) – בנוסח המקורי.
 // הרצה: node questions-build.js <out.docx>
 const fs = require('fs');
 const {
@@ -164,8 +165,12 @@ const headerRow = new TableRow({
     .map((h, i) => cell([p(h, { bold: true, align: AlignmentType.CENTER })], i, true)),
 });
 // מיון לפי העמוד הראשון; שאלות ה-Excel בסוף (מיון יציב)
+// שאלות הצוות (Excel) והמשפטי/ביטוח (Word) – בנוסח המקורי, ללא שינוי, משובצות לפי עמוד וסעיף
+const TEAM = JSON.parse(fs.readFileSync(__dirname + '/team-questions.json', 'utf8'));
+const ALL = Q.map((q, i) => ({ q, ord: i, xl: 0 }))
+  .concat(TEAM.map((t, i) => ({ q: [t.page, t.doc, t.clause, t.paras], ord: 1000 + i, xl: t.xlkey || 0 })));
 const first = (pg) => (pg === XL ? 1e6 : parseInt(pg, 10));
-const sorted = Q.map((q, i) => [q, i]).sort((a, b) => first(a[0][0]) - first(b[0][0]) || a[1] - b[1]).map(x => x[0]);
+const sorted = ALL.sort((a, b) => first(a.q[0]) - first(b.q[0]) || a.xl - b.xl || a.ord - b.ord).map(x => x.q);
 const rows = sorted.map(([page, docName, clause, text], idx) => new TableRow({
   cantSplit: true,
   children: [
@@ -197,4 +202,4 @@ const doc = new Document({
     ],
   }],
 });
-Packer.toBuffer(doc).then(b => { fs.writeFileSync(process.argv[2], b); console.log('written', Q.length, 'questions'); });
+Packer.toBuffer(doc).then(b => { fs.writeFileSync(process.argv[2], b); console.log('written', ALL.length, 'questions (', Q.length, 'ours +', TEAM.length, 'team )'); });
