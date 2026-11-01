@@ -167,8 +167,17 @@ const headerRow = new TableRow({
 // מיון לפי העמוד הראשון; שאלות ה-Excel בסוף (מיון יציב)
 // שאלות הצוות (Excel) והמשפטי/ביטוח (Word) – בנוסח המקורי, ללא שינוי, משובצות לפי עמוד וסעיף
 const TEAM = JSON.parse(fs.readFileSync(__dirname + '/team-questions.json', 'utf8'));
-const ALL = Q.map((q, i) => ({ q, ord: i, xl: 0 }))
-  .concat(TEAM.map((t, i) => ({ q: [t.page, t.doc, t.clause, t.paras], ord: 1000 + i, xl: t.xlkey || 0 })));
+// שאלת צוות עם "merge" מצורפת לשורה של השאלה שלנו באותו נושא (הסעיף שלנו מתחיל במחרוזת), בנוסחה המקורי
+const QQ = Q.map(q => [q[0], q[1], q[2], q[3].slice()]);
+for (const t of TEAM.filter(t => t.merge).sort((x, y) => (x.xlkey || 0) - (y.xlkey || 0))) {
+  const hit = QQ.filter(q => q[2] === t.merge || q[2].startsWith(t.merge + ' ') || q[2].startsWith(t.merge));
+  if (hit.length !== 1) throw new Error('merge target not unique: ' + t.merge + ' (' + hit.length + ')');
+  // בשאלות על קובץ ה-Excel – מציינים את הפריט, כדי שההקשר יישמר אחרי האיחוד
+  const tag = t.page === XL ? `${t.clause} (${t.doc.replace('מפרט תקשורת – ', '').trim()}): ` : '';
+  hit[0][3].push(tag + t.paras[0], ...t.paras.slice(1));
+}
+const ALL = QQ.map((q, i) => ({ q, ord: i, xl: 0 }))
+  .concat(TEAM.filter(t => !t.merge).map((t, i) => ({ q: [t.page, t.doc, t.clause, t.paras], ord: 1000 + i, xl: t.xlkey || 0 })));
 const first = (pg) => (pg === XL ? 1e6 : parseInt(pg, 10));
 const sorted = ALL.sort((a, b) => first(a.q[0]) - first(b.q[0]) || a.xl - b.xl || a.ord - b.ord).map(x => x.q);
 const rows = sorted.map(([page, docName, clause, text], idx) => new TableRow({
@@ -202,4 +211,4 @@ const doc = new Document({
     ],
   }],
 });
-Packer.toBuffer(doc).then(b => { fs.writeFileSync(process.argv[2], b); console.log('written', ALL.length, 'questions (', Q.length, 'ours +', TEAM.length, 'team )'); });
+Packer.toBuffer(doc).then(b => { fs.writeFileSync(process.argv[2], b); console.log('written', ALL.length, 'rows (', Q.length, 'ours;', TEAM.length, 'team, of which', TEAM.filter(t => t.merge).length, 'merged into ours )'); });
