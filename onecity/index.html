@@ -250,8 +250,14 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
 .clause.on h3{text-shadow:0 0 14px rgba(255,63,191,.6)}
 [hidden]{display:none!important}
 /* pricing */
-.pr-lead{position:absolute;top:168px;right:64px;width:760px;font-size:19px;line-height:1.55;color:#cfd4ea;margin:0}
-.pr-tiles{position:absolute;top:262px;right:64px;width:760px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.pr-lead{position:absolute;top:168px;right:64px;width:820px;font-size:19px;line-height:1.55;color:#cfd4ea;margin:0}
+.pr-tiles{position:absolute;top:262px;right:64px;width:820px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.pr-tiles .ptile .v{font-size:42px}
+.pr-tiles .ptile .v small{font-size:17px}
+.ptile.free{border-color:rgba(93,242,198,.6);background:linear-gradient(270deg,rgba(93,242,198,.14),rgba(17,22,41,.7))}
+.ptile.free .k{color:var(--mint)}
+.ptile .was{font-family:var(--mono);font-size:22px;color:var(--mute);text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:2px;direction:ltr;text-align:right}
+.ptile.free .v{font-size:34px;color:var(--mint);text-shadow:0 0 22px rgba(93,242,198,.55);direction:rtl;text-align:right}
 .ptile{position:relative;overflow:hidden;border:1px solid rgba(255,63,191,.45);border-radius:18px;padding:22px 24px;background:linear-gradient(270deg,rgba(255,42,79,.12),rgba(17,22,41,.7));display:flex;flex-direction:column;gap:6px}
 .ptile::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);transform:translateX(120%)}
 .slide.active .ptile::after{animation:sheen 1.4s ease calc(var(--i,0) * 200ms + 900ms) both}
@@ -259,12 +265,12 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
 .ptile .v{font-family:var(--mono);font-weight:600;font-size:56px;line-height:1.05;color:#fff;text-shadow:0 0 26px rgba(255,63,191,.55);direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
 .ptile .v small{font-size:22px;color:var(--mute);font-weight:400;margin-right:6px}
 .ptile .d{font-size:16px;color:#cfd4ea}
-.pr-inc{position:absolute;top:446px;right:64px;width:760px;border:1px solid #232a4a;border-radius:16px;padding:16px 22px;background:rgba(17,22,41,.55);display:flex;flex-direction:column;gap:10px}
+.pr-inc{position:absolute;top:446px;right:64px;width:820px;border:1px solid #232a4a;border-radius:16px;padding:16px 22px;background:rgba(17,22,41,.55);display:flex;flex-direction:column;gap:10px}
 .pr-inc .tg{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--mint)}
 .pr-inc ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px 22px}
 .pr-inc li{position:relative;padding-right:16px;font-size:16px;line-height:1.4;color:#d6dbef}
 .pr-inc li::before{content:"";position:absolute;right:0;top:.55em;width:7px;height:7px;transform:rotate(45deg);background:var(--mag)}
-.pr-viz{position:absolute;top:170px;left:40px;width:700px;height:620px}
+.pr-viz{position:absolute;top:190px;left:20px;width:620px;height:560px}
 .pr-viz svg{width:100%;height:100%;overflow:visible}
 .why{position:absolute;top:172px;right:64px;width:600px;display:flex;flex-direction:column;gap:10px}
 .why .phase h3{font-size:20px}
@@ -544,6 +550,7 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
     <div class="pr-tiles">
       <div class="ptile rv" style="--i:2"><span class="k">MONTHLY · שירות</span><span class="v" data-n="3500">₪3,500<small>/חודש</small></span><span class="d">עלות חודשית עבור השירות</span></div>
       <div class="ptile rv" style="--i:3"><span class="k">ONE-TIME · ציוד</span><span class="v" data-n="60000">₪60,000</span><span class="d">תשלום חד פעמי עבור הציוד</span></div>
+      <div class="ptile free rv" style="--i:4"><span class="k">INFRASTRUCTURE · תשתית</span><span class="was">₪150,000</span><span class="v">ללא תשלום</span><span class="d">עלויות התשתית</span></div>
     </div>
     <div class="pr-inc rv" style="--i:4"><span class="tg">מה כולל הקלסטר</span><ul>
       <li>2 מתגי Nokia 7250 IXR-e2C בחצר הלקוח</li><li>2 זוגות סיבים 25G ממכונות שונות</li>
