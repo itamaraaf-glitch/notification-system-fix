@@ -248,6 +248,32 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
 .clause p{margin:0;font-size:14.5px;line-height:1.45;color:#cfd4ea}
 .clause.on .tg::after{content:none}
 .clause.on h3{text-shadow:0 0 14px rgba(255,63,191,.6)}
+[hidden]{display:none!important}
+/* IXR cluster */
+.clu .side{gap:12px;top:176px}
+.clu ul.pts{gap:8px}
+.clu ul.pts li{font-size:15.5px;line-height:1.4}
+.modes{display:flex;gap:6px;background:#0b0f1d;border:1px solid #232a4a;border-radius:12px;padding:4px;align-self:flex-start}
+.modes button{all:unset;cursor:pointer;font-weight:600;font-size:15px;padding:8px 16px;border-radius:9px;color:var(--mute);transition:.2s}
+.modes button.on{background:linear-gradient(270deg,var(--red),var(--mag));color:#fff;box-shadow:0 0 18px rgba(255,42,79,.35)}
+.modes button:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+.clu .ctrl button{font-size:14.5px;padding:8px 12px}
+.clu .status{min-height:0;font-size:13px;padding:10px 14px}
+.clu .note{font-size:13px;color:var(--mute);line-height:1.45;margin:0}
+.phases{position:absolute;top:172px;left:64px;right:64px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.phase{border:1px solid #232a4a;border-radius:16px;padding:14px 18px;background:rgba(17,22,41,.6);display:flex;flex-direction:column;gap:8px;min-width:0}
+.phase h3{margin:0;font-family:var(--display);font-weight:400;font-size:22px;color:#fff}
+.phase ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.phase li{position:relative;padding-right:16px;font-size:14.5px;line-height:1.45;color:#d6dbef}
+.phase li::before{content:"";position:absolute;right:0;top:.6em;width:6px;height:6px;transform:rotate(45deg);background:var(--mag)}
+.phase .bk{font-family:var(--mono);font-size:12px;letter-spacing:.06em;padding:3px 10px;border-radius:999px;align-self:flex-start;direction:ltr}
+.phase .bk.cold{color:var(--amber);border:1px solid rgba(255,191,71,.5)}
+.phase .bk.auto{color:var(--mint);border:1px solid rgba(93,242,198,.5)}
+.phase .bk.test{color:var(--peri);border:1px solid rgba(154,168,255,.5)}
+.pflow{position:absolute;top:150px;left:64px;right:64px;height:18px}
+.pflow svg{width:100%;height:100%;overflow:visible}
+.ops{position:absolute;top:548px;left:64px;right:64px;bottom:112px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ops .phase h3{font-size:19px}
 /* nets tabs */
 .tabs{display:flex;flex-direction:column;gap:8px}
 .tabs button{all:unset;cursor:pointer;display:block;position:relative;padding:12px 16px;border-radius:12px;border:1px solid transparent;transition:.25s;overflow:hidden}
@@ -556,6 +582,38 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
     </aside>
   </section>
 
+  <!-- 7b IXR CLUSTER -->
+  <section class="slide clu" data-id="cluster">
+    <header class="hd rv"><div class="eyebrow">קלסטר IXR · משה דיין 4</div><h2>קלסטר <span class="g">בלי נקודת כשל יחידה</span></h2></header>
+    <div class="dia rv" style="--i:1"><svg viewBox="0 0 1000 620"></svg></div>
+    <aside class="side rv" style="--i:2">
+      <div class="modes" role="tablist"><button data-m="asis" role="tab">מצב קיים</button><button data-m="tobe" role="tab" class="on">מצב חדש</button></div>
+      <ul class="pts" data-for="asis" hidden>
+        <li>חיבור ל-Metro בתצורת Layer 2 דרך שני מתגי CPE: Nokia 7210 MXP ו-7210 SAS-T</li>
+        <li>השירותים (ISP, VPLS, Trunks) מפוזרים בין המתגים ללא יתירות מלאה</li>
+        <li>תלות בציוד בודד ובקישור פיזי יחיד</li>
+        <li>אין Failover אוטומטי ברמת ה-CPE. בכשל נדרשת התערבות ידנית</li>
+      </ul>
+      <ul class="pts" data-for="tobe">
+        <li>2 זוגות סיבים 25G ממוקד פ"ת, ממכונות שונות</li>
+        <li>2 מתגי Nokia 7250 IXR-e2C, כל אחד מחובר עצמאית ל-Metro</li>
+        <li>MC-LAG בין המתגים בקישור פנימי 25G</li>
+        <li>2 ספקי AC לכל מתג</li>
+        <li>השירותים נשארים ב-Layer 2: HOTnet, בזב"ל, VPLS / Trunks</li>
+      </ul>
+      <div class="ctrl"><button data-act="pA"><span class="d"></span>ניתוק חשמל · מתג A</button><button data-act="fB"><span class="d"></span>ניתוק סיב · מתג B</button><button data-act="reset">איפוס</button></div>
+      <div class="status" aria-live="polite"></div>
+      <p class="note" data-for="tobe">בשלב 2 הגיבוי בצד הלקוח הוא גיבוי קר. גיבוי אוטומטי מלא בשלב 3.</p>
+    </aside>
+  </section>
+
+  <!-- 7c CLUSTER PHASES -->
+  <section class="slide" data-id="clusterplan">
+    <header class="hd rv"><div class="eyebrow">קלסטר IXR · שלבי ביצוע</div><h2>הקמת הקלסטר <span class="g">בשלושה שלבים</span></h2></header>
+    <div class="phases fx"><div class="phase fx-item rv" style="--i:1"><span class="tg">PHASE 01</span><h3>תשתית ובדיקות VPLS</h3><ul><li>2 זוגות סיבים 25G ממוקד HOT, ממכונות שונות ובתוואים שונים</li><li>2 מכונות Nokia 7250 IXR-e2C: 12 פורטים 25G/10G ו-2 פורטים 100G</li><li>MC-LAG פנימי 25G בין המכונות, ו-2 ספקי AC לכל מכונה</li><li>שכפול שירותי VPLS / Trunk לבדיקות, ללא השבתה של השירותים הקיימים</li></ul><span class="bk test">VPLS TEST</span></div><div class="phase fx-item rv" style="--i:2"><span class="tg">PHASE 02</span><h3>העברת השירותים</h3><ul><li>בכל IXR יוגדרו שירות 014, שירות HOTnet ושירות VPLS Trunk</li><li>בצד הלקוח מכונה ייעודית ל-HOTnet ומכונה ל-בזב"ל, כל אחת מחוברת לשני ה-IXR (MC-LAG מצד HOT, LAG מצד הלקוח)</li><li>2 פורטים בכל מכונה לכל שירות</li><li>שירותי התמסורת משוכפלים לשתי המכונות, ללא MC-LAG</li><li>הגיבוי בשלב זה קר, באחריות הלקוח</li></ul><span class="bk cold">COLD BACKUP</span></div><div class="phase fx-item rv" style="--i:3"><span class="tg">PHASE 03 · עתידי</span><h3>גיבוי אוטומטי</h3><ul><li>חיבור 2 מכונות MX200 חדשות של הלקוח לשני ה-IXR, במועד שהלקוח יקבע</li><li>5 פורטים בכל מכונה: 2 לכל ספקית ופורט VPLS Trunk</li><li>גיבוי אוטומטי בין המכונות</li></ul><span class="bk auto">AUTO FAILOVER</span></div></div>
+    <div class="ops fx"><div class="phase fx-item rv" style="--i:4"><span class="tg">RESILIENCY TESTS</span><h3>בדיקות שרידות</h3><ul><li>ניתוק חשמל יזום של ה-IXR הראשי ווידוא מעבר כל השירותים ל-IXR המשני דרך ה-MC-LAG</li><li>סימולציית ניתוק סיב מאחד המתגים ווידוא מעבר אוטומטי למתג השני</li></ul></div><div class="phase fx-item rv" style="--i:5"><span class="tg">DEPLOYMENT</span><h3>ביצוע וחזרה לאחור</h3><ul><li>זמן השבתה מוערך 2–4 שעות, בחלון עבודה לילי בתיאום מראש</li><li>העבודה מתבצעת במקביל לקיים על סיבים חדשים, בלי פגיעה בשרידות הקיימת</li><li>Rollback: ניתוק הסיבים והקישור הפנימי מה-IXR וחזרה מלאה לתצורה הקיימת</li></ul></div><div class="phase fx-item rv" style="--i:6"><span class="tg">NOTES</span><h3>הערות</h3><ul><li>סיב ITC נשאר ללא שינוי בשלב זה</li><li>אין שינוי כתובות בשכבה 3</li><li>נדרש מקום פנוי של 4U בארון התקשורת</li></ul></div></div>
+  </section>
+
   <!-- 8 POC TOPOLOGY -->
   <section class="slide" data-id="poc">
     <header class="hd rv"><div class="eyebrow">SD-WAN · POC</div><h2>POC לפתרון <span class="g">SD-WAN ברשת סגורה</span></h2></header>
@@ -714,7 +772,7 @@ function drawDevice(kind,model,live,g5){const H=260;let s='',out=[];
     pts.forEach(p=>{s+=`<circle class="dv-mn${p[2]?' big':''}" cx="${p[0]}" cy="${p[1]}" r="${p[2]?8:5}"><animate attributeName="r" values="${p[2]?'8;11;8':'5;6.5;5'}" dur="${(1.5+r()*1.5).toFixed(1)}s" repeatCount="indefinite"/></circle>`;});
     s+=`<text class="dv-t" x="320" y="134" font-size="22" text-anchor="middle" font-weight="600" style="paint-order:stroke;stroke:#0a0d17;stroke-width:6px">${model}</text>`;}
   return `<svg viewBox="0 0 640 ${H}" xmlns="http://www.w3.org/2000/svg">${cables(out,H)}${s}</svg>`;}
-const MODELS={'FG-1500D':['fg2u','NGFW · אתר מרכזי'],'FG-200G':['fg1u','SD-WAN HUB · Fortinet G-Series'],'FG-50G-5G':['fg50','סניף SD-WAN · גיבוי 5G עם אנטנות חיצוניות',1],'FG-50G':['fg50','סניף SD-WAN'],
+const MODELS={'IXR-e2C · A':['nokia','מתג קלסטר A · 7250 IXR-e2C'],'IXR-e2C · B':['nokia','מתג קלסטר B · 7250 IXR-e2C'],'7210 MXP':['nokia','CPE קיים'],'7210 SAS-T':['nokia','CPE קיים'],'MX-109':['fg1u','ציוד לקוח'],'MX-108':['fg1u','ציוד לקוח'],'FG-1000D':['fg2u','ציוד לקוח'],'FG-1500D':['fg2u','NGFW · אתר מרכזי'],'FG-200G':['fg1u','SD-WAN HUB · Fortinet G-Series'],'FG-50G-5G':['fg50','סניף SD-WAN · גיבוי 5G עם אנטנות חיצוניות',1],'FG-50G':['fg50','סניף SD-WAN'],
   'Nokia 7210':['nokia','CPE של HOT · 10G'],'CPE · Nokia':['nokia','CPE של HOT'],'CPE · MTU':['nokia','CPE · MTU'],'CPE':['nokia','CPE'],'MTU':['nokia','MTU · אתר תמסורת'],'Switch':['switch','Switch'],
   'Cable Modem':['modem','Cable Modem · HFC'],'MED1':['rack','חוות שרתים'],'ITC DC':['rack','חוות שרתים · ITC']};
 const TYPEDEV={fw:'fg1u',router:'fg1u',cpe:'nokia',cm:'modem',dc:'rack',site:'building',cloud:'mesh',pill:'mesh'};
@@ -1070,6 +1128,33 @@ hooks.contract={enter(s){s.querySelectorAll('.kt b[data-n]').forEach(b=>{const n
    d3.select(b).transition().delay(400).duration(REDUCED?1:1400).ease(d3.easeCubicOut).tween('t',()=>t=>{b.textContent=Math.round(n*t)+u;});});
   const g=s.querySelector('.cgrid');this.F=Focus(g,[...g.children],{delay:2000,every:2600});
  },leave(){this.F&&this.F.stop();}};
+const CLU=(mode)=>{const tobe=mode==='tobe';
+ const cust=[['c1',170,'MX-109','ISP · HOTnet'],['c2',390,'MX-108','ISP · בזב"ל'],['c3',610,'FG-1000D','VPLS / Trunk'],['c4',830,'FG-1000D','VPLS / Trunk']];
+ const nodes=[],links=[];
+ cust.forEach(([id,x,l,sub])=>nodes.push(N(id,l.startsWith('MX')?'router':'fw',x,78,l,sub,{dev:l.startsWith('MX')?'fg1u':'fg2u',model:l,role:'ציוד לקוח · '+sub})));
+ nodes.push(N('A','cpe',330,292,tobe?'IXR-e2C · A':'7210 MXP',tobe?'2× AC':'CPE קיים',{downIf:'pA',dev:'nokia',model:tobe?'7250 IXR-e2C':'7210 MXP'}));
+ nodes.push(N('B','cpe',670,292,tobe?'IXR-e2C · B':'7210 SAS-T',tobe?'2× AC':'CPE קיים',{dev:'nokia',model:tobe?'7250 IXR-e2C':'7210 SAS-T'}));
+ nodes.push(P('mA',330,474,'Metro','מכונה 1'),P('mB',670,474,'Metro','מכונה 2'),C('metro',500,566,560,76,'HOT Metro','מוקד פ"ת'));
+ links.push(L('A','mA',{label:tobe?'25G · סיב 1':'סיב יחיד'}),L('B','mB',{label:tobe?'25G · סיב 2':'סיב יחיד',downIf:'fB'}),L('mA','metro'),L('mB','metro'));
+ if(tobe){links.push(L('A','B',{kind:'ha',label:'MC-LAG · 25G',pk:s=>s.fB||s.pA?4:1,v:90}));
+   cust.forEach(([id])=>{links.push(L(id,'A',{pk:1}));links.push(L(id,'B',{pk:1}));});}
+ else{[['c1','A'],['c2','B'],['c3','A'],['c4','B']].forEach(([c,t])=>links.push(L(c,t,{downIf:t==='B'?'fB':null})));}
+ return {regions:[{id:'cs',x:40,y:20,w:920,h:116,label:'ציוד לקוח · One City'},{id:'cl',x:200,y:226,w:600,h:150,label:tobe?'קלסטר · משה דיין 4':'CPE קיים · משה דיין 4'}],nodes,links,hud:null};};
+hooks.cluster={enter(s){const T=this.T||(this.T=Topo(svgOf(s)));T.clear();let mode='tobe',st={};
+  const stEl=s.querySelector('.status'),btns=[...s.querySelectorAll('.ctrl button')],mb=[...s.querySelectorAll('.modes button')];
+  const msg=()=>{const t=mode==='tobe',a=!!st.pA,b=!!st.fB;
+    if(!a&&!b)return t?'<span class="ok">● שני המתגים פעילים</span> · כל ציוד לקוח מחובר לשניהם':'<span class="bad">● נקודות כשל יחידות</span> · כל ציוד לקוח תלוי במתג אחד ובסיב אחד';
+    if(t&&a&&b)return '<span class="bad">● שני המתגים לא זמינים</span> · אין מסלול ל-Metro';
+    if(t)return '<span class="bad">● '+(a?'מתג A ללא חשמל':'הסיב של מתג B נותק')+'</span><br><span class="ok">● השירותים עוברים אוטומטית</span> '+(a?'למתג B':'דרך ה-MC-LAG למתג A');
+    return '<span class="bad">● '+(a&&b?'שני ה-CPE מנותקים':a?'MX-109 ו-FG-1000D מנותקים':'MX-108 ו-FG-1000D מנותקים')+'</span> · אין Failover אוטומטי, נדרשת התערבות ידנית';};
+  const draw=()=>{T.render(CLU(mode),st);btns.forEach(b=>b.classList.toggle('on',!!st[b.dataset.act]));mb.forEach(b=>{b.classList.toggle('on',b.dataset.m===mode);b.setAttribute('aria-selected',b.dataset.m===mode);});s.querySelectorAll('[data-for]').forEach(e=>e.hidden=e.dataset.for!==mode);
+    stEl.innerHTML=msg()+' <span class="cur"></span>';
+    if(st.pA)T.hl('A',{tag:'POWER OFF',tone:'red'});else if(st.fB)T.hl('B',{tag:'FIBER CUT',tone:'red'});else if(mode==='asis')T.hl('A',{tag:'SPOF',tone:'red'});else T.hl(null);};
+  mb.forEach(b=>b.onclick=()=>{if(mode!==b.dataset.m){mode=b.dataset.m;T.clear();draw();T.start();}});
+  btns.forEach(b=>b.onclick=()=>{const a=b.dataset.act;if(a==='reset')st={};else st=Object.assign({},st,{[a]:!st[a]});draw();});
+  draw();T.start();
+ },leave(){this.T&&this.T.stop();}};
+hooks.clusterplan={enter(s){const a=s.querySelector('.phases'),b=s.querySelector('.ops');Focus(a,[...a.children]);Focus(b,[...b.children]);}};
 hooks.isp=interactive(ISPNEW,s=>(s.isp1?'<span class="bad">● HOT ISP לא זמין</span> · כל התעבורה ליציאה לאינטרנט עוברת ל-ISP צד ג\'':'<span class="ok">● שני ספקי ISP פעילים</span> · התעבורה מתחלקת בין HOT ISP ל-ISP צד ג\'')+'<br><span class="cur"></span>',
   s=>s.isp1?['hotisp','OFFLINE','red']:null);
 hooks.poc=interactive(POC,s=>(s.cut?'<span class="bad">● SPOKE: הקו הראשי נותק</span> · מעבר אוטומטי ל-5G, המנהרה ל-HUB נשמרת':'<span class="ok">● SPOKE פעיל</span> · מנהרת SD-WAN ל-HUB במשה דיין 4')+'<br><span class="ok">● רשת IPVPN קיימת</span> · ללא שינוי<br><span class="cur"></span>',
