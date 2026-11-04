@@ -249,6 +249,41 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
 .clause.on .tg::after{content:none}
 .clause.on h3{text-shadow:0 0 14px rgba(255,63,191,.6)}
 [hidden]{display:none!important}
+/* pricing */
+.pr-lead{position:absolute;top:168px;right:64px;width:760px;font-size:19px;line-height:1.55;color:#cfd4ea;margin:0}
+.pr-tiles{position:absolute;top:262px;right:64px;width:760px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ptile{position:relative;overflow:hidden;border:1px solid rgba(255,63,191,.45);border-radius:18px;padding:22px 24px;background:linear-gradient(270deg,rgba(255,42,79,.12),rgba(17,22,41,.7));display:flex;flex-direction:column;gap:6px}
+.ptile::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);transform:translateX(120%)}
+.slide.active .ptile::after{animation:sheen 1.4s ease calc(var(--i,0) * 200ms + 900ms) both}
+.ptile .k{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--mint)}
+.ptile .v{font-family:var(--mono);font-weight:600;font-size:56px;line-height:1.05;color:#fff;text-shadow:0 0 26px rgba(255,63,191,.55);direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
+.ptile .v small{font-size:22px;color:var(--mute);font-weight:400;margin-right:6px}
+.ptile .d{font-size:16px;color:#cfd4ea}
+.pr-inc{position:absolute;top:446px;right:64px;width:760px;border:1px solid #232a4a;border-radius:16px;padding:16px 22px;background:rgba(17,22,41,.55);display:flex;flex-direction:column;gap:10px}
+.pr-inc .tg{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--mint)}
+.pr-inc ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px 22px}
+.pr-inc li{position:relative;padding-right:16px;font-size:16px;line-height:1.4;color:#d6dbef}
+.pr-inc li::before{content:"";position:absolute;right:0;top:.55em;width:7px;height:7px;transform:rotate(45deg);background:var(--mag)}
+.pr-viz{position:absolute;top:170px;left:40px;width:700px;height:620px}
+.pr-viz svg{width:100%;height:100%;overflow:visible}
+.why{position:absolute;top:172px;right:64px;width:600px;display:flex;flex-direction:column;gap:10px}
+.why .phase h3{font-size:20px}
+.why .phase p{margin:0;font-size:15.5px;line-height:1.45;color:#cfd4ea}
+.why .phase.good{border-color:rgba(93,242,198,.45);background:linear-gradient(270deg,rgba(93,242,198,.08),rgba(17,22,41,.6))}
+.why .phase.good .tg{color:var(--mint)}
+.calc{position:absolute;top:172px;left:64px;width:780px;bottom:112px;display:flex;flex-direction:column;gap:12px}
+.eq{display:grid;grid-template-columns:1fr auto 1fr auto 1.2fr;gap:12px;align-items:stretch;direction:rtl}
+.eq .op{font-family:var(--mono);font-size:34px;color:var(--mute);display:grid;place-items:center}
+.eq .ptile{padding:16px 18px}
+.eq .ptile .v{font-size:38px}
+.eq .ptile.sum{border-color:rgba(93,242,198,.6);background:linear-gradient(270deg,rgba(93,242,198,.12),rgba(17,22,41,.7))}
+.eq .ptile.sum .v{text-shadow:0 0 26px rgba(93,242,198,.5)}
+.calc .bar{height:150px}
+.calc .bar svg{width:100%;height:100%;overflow:visible}
+.calc .tot{display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(255,63,191,.5);border-radius:16px;padding:16px 22px;background:linear-gradient(270deg,rgba(255,42,79,.16),rgba(17,22,41,.7))}
+.calc .tot span{font-size:18px;color:#fff;font-weight:600}
+.calc .tot b{font-family:var(--mono);font-size:44px;color:#fff;text-shadow:0 0 26px rgba(255,63,191,.6);direction:ltr;font-variant-numeric:tabular-nums}
+.calc .fine{font-size:14.5px;color:var(--mute);line-height:1.5;margin:0}
 /* IXR cluster */
 .clu .side{gap:12px;top:176px}
 .clu ul.pts{gap:8px}
@@ -464,7 +499,7 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
     <div class="dia rv" style="--i:1"><svg viewBox="0 0 1000 620"></svg></div>
     <aside class="side rv" style="--i:2">
       <p class="lead">קווי הגיבוי הקיימים מגבים את <b>אתרי הליבה</b> בלבד. אתרי הקצה מחוברים בקו יחיד, וכשהקו נופל האתר מתנתק.</p>
-      <div class="bk-list fx"><div class="bk-card fx-item"><span class="tg">BACKUP · 10G · HOT NET</span><span class="nm">אינטרנט גיבוי HOT NET</span><span class="ad">אבן סינא 24, חיפה › מת"ם חיפה</span><span class="mt"><span>851536-16020180 · 13/11/2024</span></span></div><div class="bk-card fx-item"><span class="tg">BACKUP · 10G · בזב"ל</span><span class="nm">תשתית בזב"ל לגיבוי אינטרנט</span><span class="ad">אבן סינא 24, חיפה › לשחם 40, פ"ת</span><span class="mt"><span>851536-10020913 · 13/11/2024</span></span></div><div class="bk-card fx-item"><span class="tg">BACKUP · IP 50M</span><span class="nm">עיריית אשקלון · גבורה 7 · גיבוי</span><span class="ad">הגבורה 11, אשקלון › משה דיין 4, פ"ת</span><span class="mt"><span>851536-10023757 · 28/10/2019</span></span></div></div>
+      <div class="bk-list fx"><div class="bk-card fx-item"><span class="tg">BACKUP · 10G · HOT NET</span><span class="nm">אינטרנט גיבוי HOT NET</span><span class="ad">אבן סינא 24, חיפה › מת"ם חיפה</span><span class="mt"><span>851536-16020180 · 13/11/2024</span></span></div><div class="bk-card fx-item"><span class="tg">BACKUP · 10G · בזב"ל</span><span class="nm">תשתית בזב"ל לגיבוי אינטרנט</span><span class="ad">אבן סינא 24, חיפה › לשחם 40, פ"ת</span><span class="mt"><span>851536-10020913 · 13/11/2024</span></span></div></div>
       <div class="ctrl"><button data-act="cutE"><span class="d"></span>נתק קו ראשי · סניף 03</button><button data-act="reset">איפוס</button></div>
       <div class="status" aria-live="polite"></div>
     </aside>
@@ -500,6 +535,21 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
     <header class="hd rv"><div class="eyebrow">קלסטר IXR · שלבי ביצוע</div><h2>הקמת הקלסטר <span class="g">בשלושה שלבים</span></h2></header>
     <div class="phases fx"><div class="phase fx-item rv" style="--i:1"><span class="tg">PHASE 01</span><h3>תשתית ובדיקות VPLS</h3><ul><li>2 זוגות סיבים 25G ממוקד HOT, ממכונות שונות ובתוואים שונים</li><li>2 מכונות Nokia 7250 IXR-e2C: 12 פורטים 25G/10G ו-2 פורטים 100G</li><li>MC-LAG פנימי 25G בין המכונות, ו-2 ספקי AC לכל מכונה</li><li>שכפול שירותי VPLS / Trunk לבדיקות, ללא השבתה של השירותים הקיימים</li></ul><span class="bk test">VPLS TEST</span></div><div class="phase fx-item rv" style="--i:2"><span class="tg">PHASE 02</span><h3>העברת השירותים</h3><ul><li>בכל IXR יוגדרו שירות 014, שירות HOTnet ושירות VPLS Trunk</li><li>בצד הלקוח מכונה ייעודית ל-HOTnet ומכונה ל-בזב"ל, כל אחת מחוברת לשני ה-IXR (MC-LAG מצד HOT, LAG מצד הלקוח)</li><li>2 פורטים בכל מכונה לכל שירות</li><li>שירותי התמסורת משוכפלים לשתי המכונות, ללא MC-LAG</li><li>הגיבוי בשלב זה קר, באחריות הלקוח</li></ul><span class="bk cold">COLD BACKUP</span></div><div class="phase fx-item rv" style="--i:3"><span class="tg">PHASE 03 · עתידי</span><h3>גיבוי אוטומטי</h3><ul><li>חיבור 2 מכונות MX200 חדשות של הלקוח לשני ה-IXR, במועד שהלקוח יקבע</li><li>5 פורטים בכל מכונה: 2 לכל ספקית ופורט VPLS Trunk</li><li>גיבוי אוטומטי בין המכונות</li></ul><span class="bk auto">AUTO FAILOVER</span></div></div>
     <div class="ops fx"><div class="phase fx-item rv" style="--i:4"><span class="tg">RESILIENCY TESTS</span><h3>בדיקות שרידות</h3><ul><li>ניתוק חשמל יזום של ה-IXR הראשי ווידוא מעבר כל השירותים ל-IXR המשני דרך ה-MC-LAG</li><li>סימולציית ניתוק סיב מאחד המתגים ווידוא מעבר אוטומטי למתג השני</li></ul></div><div class="phase fx-item rv" style="--i:5"><span class="tg">DEPLOYMENT</span><h3>ביצוע וחזרה לאחור</h3><ul><li>זמן השבתה מוערך 2–4 שעות, בחלון עבודה לילי בתיאום מראש</li><li>העבודה מתבצעת במקביל לקיים על סיבים חדשים, בלי פגיעה בשרידות הקיימת</li><li>Rollback: ניתוק הסיבים והקישור הפנימי מה-IXR וחזרה מלאה לתצורה הקיימת</li></ul></div><div class="phase fx-item rv" style="--i:6"><span class="tg">NOTES</span><h3>הערות</h3><ul><li>סיב ITC נשאר ללא שינוי בשלב זה</li><li>אין שינוי כתובות בשכבה 3</li><li>נדרש מקום פנוי של 4U בארון התקשורת</li></ul></div></div>
+  </section>
+
+  <!-- 4b CLUSTER PRICE -->
+  <section class="slide" data-id="clusterprice">
+    <header class="hd rv"><div class="eyebrow">קלסטר · עלויות</div><h2>קלסטר כגיבוי <span class="g">לאתר המרכזי</span></h2></header>
+    <p class="pr-lead rv" style="--i:1">בהמשך לשיחות שלנו על המעבר לפתרון SD-WAN, הקלסטר נותן מענה לגיבוי האתר המרכזי שלכם, לפי בקשתכם.</p>
+    <div class="pr-tiles">
+      <div class="ptile rv" style="--i:2"><span class="k">MONTHLY · שירות</span><span class="v" data-n="3500">₪3,500<small>/חודש</small></span><span class="d">עלות חודשית עבור השירות</span></div>
+      <div class="ptile rv" style="--i:3"><span class="k">ONE-TIME · ציוד</span><span class="v" data-n="60000">₪60,000</span><span class="d">תשלום חד פעמי עבור הציוד</span></div>
+    </div>
+    <div class="pr-inc rv" style="--i:4"><span class="tg">מה כולל הקלסטר</span><ul>
+      <li>2 מתגי Nokia 7250 IXR-e2C בחצר הלקוח</li><li>2 זוגות סיבים 25G ממכונות שונות</li>
+      <li>MC-LAG בין המתגים בקישור 25G</li><li>2 ספקי AC לכל מתג</li>
+      <li>השירותים נשארים ב-Layer 2: HOTnet, בזב"ל, VPLS / Trunks</li><li>ניהול מקצה לקצה ע"י HOT</li></ul></div>
+    <div class="pr-viz rv" style="--i:2"><svg viewBox="0 0 700 620"></svg></div>
   </section>
 
   <!-- 2 SERVICES -->
@@ -647,6 +697,28 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
     <div class="fchart rv" style="--i:6">
       <svg viewBox="0 0 900 240"></svg>
       <div class="cap">כך נראה מעבר לגיבוי בזמן אמת: הקו הראשי נופל, ה-FortiGate מעביר את התעבורה ל-5G, והשירות באתר ממשיך.<small>המחשה עקרונית, לא נתוני מדידה</small></div>
+    </div>
+  </section>
+
+  <!-- 10b SD-WAN PRICE -->
+  <section class="slide" data-id="sdwanprice">
+    <header class="hd rv"><div class="eyebrow">SD-WAN · עלויות</div><h2>מעבר לניהול ישיר <span class="g">של HOT</span></h2></header>
+    <div class="why fx">
+      <div class="phase fx-item rv" style="--i:1"><span class="tg">3RD-PARTY LINES</span><h3>תקלות בקווי צד ג'</h3><p>לאחרונה היו מספר אירועים בקווי בזק שמרכיבים את הפתרון שלכם.</p></div>
+      <div class="phase fx-item rv" style="--i:2"><span class="tg">PRICING</span><h3>עליית מחירים של בזק</h3><p>השירות באתרים אלו מנוהל דרך ספק צד ג', ואינו מספק.</p></div>
+      <div class="phase fx-item good rv" style="--i:3"><span class="tg">HOT DIRECT</span><h3>ניהול ישיר של HOT</h3><p>בלי תלות בגורם נוסף בדרך: שירות טוב יותר ופתרון טכנולוגי מתקדם יותר.</p></div>
+    </div>
+    <div class="calc">
+      <div class="eq">
+        <div class="ptile rv" style="--i:2"><span class="k">PER SITE</span><span class="v" data-n="54">₪54</span><span class="d">תוספת לאתר</span></div>
+        <div class="op rv" style="--i:2">×</div>
+        <div class="ptile rv" style="--i:3"><span class="k">SITES</span><span class="v" data-n="210" data-c="">210</span><span class="d">אתרי IPVPN</span></div>
+        <div class="op rv" style="--i:3">=</div>
+        <div class="ptile sum rv" style="--i:4"><span class="k">SD-WAN</span><span class="v" data-n="11340">₪11,340</span><span class="d">תוספת חודשית</span></div>
+      </div>
+      <div class="bar rv" style="--i:5"><svg viewBox="0 0 780 150"></svg></div>
+      <div class="tot rv" style="--i:6"><span>סה"כ תוספת חודשית · SD-WAN + קלסטר</span><b data-n="14840">₪14,840</b></div>
+      <p class="fine rv" style="--i:7">התוספת כוללת התקנת ציוד חדש באתרי ה-IPVPN והמעבר לפתרון טכנולוגי מתקדם יותר. הקלסטר (₪3,500 לחודש) נדרש בכל מקרה, לבקשתכם.</p>
     </div>
   </section>
 
@@ -978,10 +1050,10 @@ const ISPNEW={regions:[...hubs(300,700),{id:'rC',x:405,y:448,w:190,h:150,label:'
 
 const BK=(()=>{const ex=[120,272,424,576,728,880];
  const nodes=[N('haifa','site',140,92,'אבן סינא 24','חיפה',{role:'אתר One City · חיפה'}),P('hotnet',140,212,'HOT NET','מת"ם חיפה'),
-  N('lashcham','site',400,92,'לשחם 40','פתח תקווה',{role:'אתר תמסורת · בזב"ל'}),N('md4','router',640,92,'משה דיין 4','One City · פ"ת',{dev:'building',role:'אתר מרכזי One City'}),
-  N('ashk','site',870,92,'הגבורה 11','אשקלון',{role:'עיריית אשקלון · גבורה 7'}),C('ipvpn',500,328,420,84,'IPVPN','רשת One City')];
+  N('lashcham','site',400,92,'לשחם 40','פתח תקווה',{role:'אתר תמסורת · בזב"ל'}),N('md4','router',800,92,'משה דיין 4','One City · פ"ת',{dev:'building',role:'אתר מרכזי One City'}),
+  C('ipvpn',500,328,420,84,'IPVPN','רשת One City')];
  const links=[L('haifa','hotnet',{kind:'direct',pk:2}),L('haifa','lashcham',{kind:'direct',label:'10G · בזב"ל',curve:-34,pk:2}),
-  L('ashk','md4',{kind:'direct',label:'50M · תמסורת IP',pk:2}),L('haifa','ipvpn'),L('md4','ipvpn')];
+  L('haifa','ipvpn'),L('md4','ipvpn')];
  ex.forEach((x,i)=>{const id='e'+(i+1);nodes.push(N(id,'fw',x,466,'סניף 0'+(i+1),'',{downIf:i===2?'cutE':null,role:'אתר קצה · IPVPN'}));
   nodes.push(P('b'+(i+1),x,598,'גיבוי','לא קיים',{downIf:'nb'}));
   links.push(L(id,'ipvpn',{downIf:i===2?'cutE':null,label:i===0?'קו יחיד':''}));links.push(L(id,'b'+(i+1),{kind:'cell',downIf:'nb'}));});
@@ -1105,8 +1177,8 @@ hooks.sdwan=interactive(SDWAN,s=>{const L=[];
   (s,last)=>{const c=s.cut&&['s2','FAILOVER → 5G','red'],h=s.hubA&&['hubA','OFFLINE','red'];return last==='cut'?c||h:last==='hubA'?h||c:h||c||null;});
 hooks.backup={enter(s){const T=this.T||(this.T=Topo(svgOf(s)));T.clear();T.render(BK,{nb:true});T.start();
   const st=s.querySelector('.status'),btn=s.querySelector('[data-act="cutE"]'),box=s.querySelector('.bk-list'),cards=[...box.children];
-  const map=[['hotnet','BACKUP 10G · ACTIVE'],['lashcham','BACKUP 10G · ACTIVE'],['ashk','BACKUP 50M · ACTIVE']];
-  const paint=()=>{const c=!!T.state.cutE;btn.classList.toggle('on',c);st.innerHTML=(c?'<span class="bad">● סניף 03: הקו הראשי נפל</span> · אין קו גיבוי, האתר מנותק':'<span class="ok">● אתרי הליבה מגובים</span> · 3 קווי גיבוי פעילים')+'<br><span class="bad">● 6 אתרי קצה</span> · ללא גיבוי <span class="cur"></span>';};paint();
+  const map=[['hotnet','BACKUP 10G · ACTIVE'],['lashcham','BACKUP 10G · ACTIVE']];
+  const paint=()=>{const c=!!T.state.cutE;btn.classList.toggle('on',c);st.innerHTML=(c?'<span class="bad">● סניף 03: הקו הראשי נפל</span> · אין קו גיבוי, האתר מנותק':'<span class="ok">● אתרי הליבה מגובים</span> · 2 קווי גיבוי פעילים')+'<br><span class="bad">● 6 אתרי קצה</span> · ללא גיבוי <span class="cur"></span>';};paint();
   this.F=Focus(box,cards,{delay:2200,every:3200,onSet:i=>{if(T.state.cutE)return;i<0?T.hl(null):T.hl(map[i][0],{tag:map[i][1]});}});
   btn.onclick=()=>{T.set({cutE:!T.state.cutE});paint();T.state.cutE?T.hl('e3',{tag:'NO BACKUP · OFFLINE',tone:'red'}):T.hl(null);};
   s.querySelector('[data-act="reset"]').onclick=()=>{T.set({cutE:false});paint();T.hl(null);};
@@ -1142,6 +1214,34 @@ hooks.cluster={enter(s){const T=this.T||(this.T=Topo(svgOf(s)));T.clear();let mo
   btns.forEach(b=>b.onclick=()=>{const a=b.dataset.act;if(a==='reset')st={};else st=Object.assign({},st,{[a]:!st[a]});draw();});
   draw();T.start();
  },leave(){this.T&&this.T.stop();}};
+function countUp(s){s.querySelectorAll('[data-n]').forEach(el=>{if(el.closest('.kt'))return;const n=+el.dataset.n,cur=el.dataset.c===undefined,sm=el.querySelector('small'),tail=sm?sm.outerHTML:'';
+  d3.select(el).interrupt().transition().delay(500).duration(REDUCED?1:1500).ease(d3.easeCubicOut).tween('t',()=>t=>{el.innerHTML=(cur?'₪':'')+Math.round(n*t).toLocaleString('en-US')+tail;});});}
+hooks.clusterprice={enter(s){countUp(s);const svg=d3.select(s.querySelector('.pr-viz svg'));svg.selectAll('*').remove();
+  // two IXR nodes bonded by MC-LAG, a coin-like ring showing the monthly fee orbiting
+  const g=svg.append('g').attr('transform','translate(350,300)');
+  const ring=g.append('circle').attr('r',0).attr('fill','none').attr('stroke','url(#gHotB)').attr('stroke-width',2).attr('stroke-dasharray','4 8');ring.transition().duration(1000).attr('r',230);
+  const ring2=g.append('circle').attr('r',0).attr('fill','none').attr('stroke','#5df2c6').attr('stroke-opacity',.5).attr('stroke-dasharray','30 14');ring2.transition().duration(1200).attr('r',180);
+  [[-110,'A'],[110,'B']].forEach(([x,l],i)=>{const n=g.append('g').attr('transform',`translate(${x},0) scale(0)`);
+    n.append('polygon').attr('points',d3.range(6).map(k=>{const a=Math.PI/3*k+Math.PI/6;return [Math.cos(a)*58,Math.sin(a)*58].join(',')}).join(' ')).attr('fill','#111629').attr('stroke','url(#gHotB)').attr('stroke-width',2.5).attr('filter','url(#glow)');
+    n.append('use').attr('href','#i-cpe').attr('x',-22).attr('y',-30).attr('width',44).attr('height',44).style('color','#fff');
+    n.append('text').attr('y',84).attr('text-anchor','middle').attr('direction','ltr').attr('font-family','IBM Plex Mono, monospace').attr('font-size',14).attr('fill','#fff').text('IXR-e2C · '+l);
+    n.transition().delay(300+i*200).duration(700).ease(d3.easeBackOut).attr('transform',`translate(${x},0) scale(1)`);});
+  const lag=g.append('line').attr('x1',-52).attr('x2',52).attr('stroke','#fff').attr('stroke-width',2).attr('stroke-dasharray','10 5').style('animation','march 1s linear infinite').attr('opacity',0);lag.transition().delay(900).attr('opacity',.9);
+  g.append('text').attr('y',-24).attr('text-anchor','middle').attr('direction','ltr').attr('font-family','IBM Plex Mono, monospace').attr('font-size',12).attr('fill','#5df2c6').text('MC-LAG');
+  const sats=g.append('g');d3.range(10).forEach(k=>sats.append('circle').attr('r',k%5===0?6:3).attr('fill',k%5===0?'#ff3fbf':'#5df2c6').attr('filter','url(#glow)').datum(k));
+  this.t=REDUCED?null:d3.timer(el=>{const t=el/1000;sats.selectAll('circle').attr('cx',k=>Math.cos(t*.4+k*Math.PI/5)*(k%2?180:230)).attr('cy',k=>Math.sin(t*.4+k*Math.PI/5)*(k%2?180:230));});
+ },leave(){this.t&&this.t.stop();}};
+hooks.sdwanprice={enter(s){countUp(s);const w=s.querySelector('.why');Focus(w,[...w.children]);
+  const svg=d3.select(s.querySelector('.bar svg'));svg.selectAll('*').remove();
+  const x=d3.scaleLinear([0,14840],[0,780]),segs=[{v:11340,l:'SD-WAN · ₪11,340',c:'url(#gHotB)',x0:0},{v:3500,l:'קלסטר · ₪3,500',c:'#5df2c6',x0:11340}];
+  // RTL: grow from the right edge
+  const g=svg.selectAll('g.seg').data(segs).join('g').attr('class','seg');
+  g.append('rect').attr('y',30).attr('height',56).attr('rx',10).attr('x',d=>780-x(d.x0)).attr('width',0).attr('fill',d=>d.c)
+    .transition().delay((d,i)=>700+i*500).duration(900).ease(d3.easeCubicOut).attr('x',d=>780-x(d.x0+d.v)).attr('width',d=>x(d.v)-4);
+  g.append('text').attr('y',116).attr('x',d=>780-x(d.x0)-8).attr('text-anchor','start').attr('direction','rtl').attr('font-family','IBM Plex Mono, monospace').attr('font-size',14).attr('fill','#cfd4ea').text(d=>d.l).style('opacity',0)
+    .transition().delay((d,i)=>1300+i*500).style('opacity',1);
+  svg.append('text').attr('x',780).attr('y',18).attr('text-anchor','start').attr('direction','rtl').attr('font-family','IBM Plex Mono, monospace').attr('font-size',12).attr('fill','#5df2c6').attr('letter-spacing','.12em').text('הרכב התוספת החודשית');
+ }};
 hooks.clusterplan={enter(s){const a=s.querySelector('.phases'),b=s.querySelector('.ops');Focus(a,[...a.children]);Focus(b,[...b.children]);}};
 hooks.isp=interactive(ISPNEW,s=>(s.isp1?'<span class="bad">● HOT ISP לא זמין</span> · כל התעבורה ליציאה לאינטרנט עוברת ל-ISP צד ג\'':'<span class="ok">● שני ספקי ISP פעילים</span> · התעבורה מתחלקת בין HOT ISP ל-ISP צד ג\'')+'<br><span class="cur"></span>',
   s=>s.isp1?['hotisp','OFFLINE','red']:null);
