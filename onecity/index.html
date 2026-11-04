@@ -470,16 +470,36 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
     </aside>
   </section>
 
-  <!-- 1c CONTRACT -->
-  <section class="slide" data-id="contract">
-    <header class="hd rv"><div class="eyebrow">מצב גיבוי קיים · ההסכם</div><h2>גיבוי סלולרי · <span class="g">מה מוגדר בהסכם</span></h2></header>
-    <div class="kstrip">
-      <div class="kt rv" style="--i:1"><b data-n="10" data-u="GB">10GB</b><span>שרידות תשתיות בגיבוי סלולרי</span></div>
-      <div class="kt rv" style="--i:2"><b data-n="7" data-u="TB">7TB</b><span>חבילה מצרפית לגיבוי כלל הנתבים</span></div>
-      <div class="kt rv" style="--i:3"><b>24/7</b><span>תמיכה כלולה בחיוב החודשי</span></div>
-      <div class="kt rv" style="--i:4"><b>IL</b><span>שימוש בישראל בלבד, ללא Roaming</span></div>
-    </div>
-    <div class="cgrid fx"><div class="clause fx-item rv" style="--i:3"><span class="tg"><span>CLAUSE 01</span><em>§9 · p.2</em></span><h3>כלול במחיר</h3><p>חבילת גיבוי סלולרי כלולה בתוך מחיר ה-CM/ADSL (תוספות וסייגים).</p></div><div class="clause fx-item rv" style="--i:4"><span class="tg"><span>CLAUSE 02</span><em>p.3</em></span><h3>יתרון השירות</h3><p>שרידות תשתיות באמצעות גיבוי סלולרי של 10GB.</p></div><div class="clause fx-item rv" style="--i:5"><span class="tg"><span>CLAUSE 03</span><em>p.4</em></span><h3>חיוב חודשי</h3><p>חיוב חודשי קבוע לכל חיבור IPVPN, הכולל תשתית א-סימטרית, נתב, גיבוי סלולרי ותמיכה 24/7.</p></div><div class="clause fx-item rv" style="--i:6"><span class="tg"><span>CLAUSE 04</span><em>p.6</em></span><h3>תנאי שירות ל-IPVPN</h3><p>ללקוחות עסקיים בלבד, לשימוש הוגן, רגיל וסביר. חבילה מצרפית של עד 7TB לגיבוי כלל הנתבים.</p></div><div class="clause fx-item rv" style="--i:7"><span class="tg"><span>CLAUSE 05</span><em>p.6</em></span><h3>אחריות כיסוי סלולרי</h3><p>HOT אחראית לכיסוי סלולרי מספק בכל אתר. אם אין רציפות עסקית, יסופק פתרון סלולרי חלופי ללא תוספת תשלום. הכיסוי נבדק לפי צ'ק ליסט בכל התקנה.</p></div><div class="clause fx-item rv" style="--i:8"><span class="tg"><span>CLAUSE 06</span><em>p.6</em></span><h3>שימוש בישראל בלבד</h3><p>גלישה סלולרית בשטחי ישראל בלבד. לא יתאפשרו שימושי Roaming.</p></div><div class="clause fx-item rv" style="--i:9"><span class="tg"><span>CLAUSE 07</span><em>p.6</em></span><h3>תשלום</h3><p>נגבה ע"י HOT Business וכלול בחשבונית החודשית לשירותי IPVPN.</p></div><div class="clause fx-item rv" style="--i:10"><span class="tg"><span>CLAUSE 08</span><em>p.6</em></span><h3>ניתוק</h3><p>בניתוק משירותי הסלולר או בסיום ההסכם, הלקוח מנותק אוטומטית מכל שירותי התכנית (גיבוי סלולרי בלבד).</p></div><div class="clause fx-item rv" style="--i:11"><span class="tg"><span>CLAUSE 09</span><em>p.7</em></span><h3>אי-העברה</h3><p>השירותים אינם ניתנים להעברה בין מנויים. אין החזר בגין אי ניצול.</p></div><div class="clause fx-item rv" style="--i:12"><span class="tg"><span>CLAUSE 10</span><em>§19 · p.6</em></span><h3>גיבוי נתונים</h3><p>מומלץ ללקוח לגבות נתונים באופן שוטף. HOT Business לא תישא באחריות לאובדן נתונים עקב תקלה.</p></div></div>
+  <!-- 7b IXR CLUSTER -->
+  <section class="slide clu" data-id="cluster">
+    <header class="hd rv"><div class="eyebrow">קלסטר IXR · משה דיין 4</div><h2>קלסטר <span class="g">בלי נקודת כשל יחידה</span></h2></header>
+    <div class="dia rv" style="--i:1"><svg viewBox="0 0 1000 620"></svg></div>
+    <aside class="side rv" style="--i:2">
+      <div class="modes" role="tablist"><button data-m="asis" role="tab">מצב קיים</button><button data-m="tobe" role="tab" class="on">מצב חדש</button></div>
+      <ul class="pts" data-for="asis" hidden>
+        <li>חיבור ל-Metro בתצורת Layer 2 דרך שני מתגי CPE: Nokia 7210 MXP ו-7210 SAS-T</li>
+        <li>השירותים (ISP, VPLS, Trunks) מפוזרים בין המתגים ללא יתירות מלאה</li>
+        <li>תלות בציוד בודד ובקישור פיזי יחיד</li>
+        <li>אין Failover אוטומטי ברמת ה-CPE. בכשל נדרשת התערבות ידנית</li>
+      </ul>
+      <ul class="pts" data-for="tobe">
+        <li>2 זוגות סיבים 25G ממוקד פ"ת, ממכונות שונות</li>
+        <li>2 מתגי Nokia 7250 IXR-e2C, כל אחד מחובר עצמאית ל-Metro</li>
+        <li>MC-LAG בין המתגים בקישור פנימי 25G</li>
+        <li>2 ספקי AC לכל מתג</li>
+        <li>השירותים נשארים ב-Layer 2: HOTnet, בזב"ל, VPLS / Trunks</li>
+      </ul>
+      <div class="ctrl"><button data-act="pA"><span class="d"></span>ניתוק חשמל · מתג A</button><button data-act="fB"><span class="d"></span>ניתוק סיב · מתג B</button><button data-act="reset">איפוס</button></div>
+      <div class="status" aria-live="polite"></div>
+      <p class="note" data-for="tobe">בשלב 2 הגיבוי בצד הלקוח הוא גיבוי קר. גיבוי אוטומטי מלא בשלב 3.</p>
+    </aside>
+  </section>
+
+  <!-- 7c CLUSTER PHASES -->
+  <section class="slide" data-id="clusterplan">
+    <header class="hd rv"><div class="eyebrow">קלסטר IXR · שלבי ביצוע</div><h2>הקמת הקלסטר <span class="g">בשלושה שלבים</span></h2></header>
+    <div class="phases fx"><div class="phase fx-item rv" style="--i:1"><span class="tg">PHASE 01</span><h3>תשתית ובדיקות VPLS</h3><ul><li>2 זוגות סיבים 25G ממוקד HOT, ממכונות שונות ובתוואים שונים</li><li>2 מכונות Nokia 7250 IXR-e2C: 12 פורטים 25G/10G ו-2 פורטים 100G</li><li>MC-LAG פנימי 25G בין המכונות, ו-2 ספקי AC לכל מכונה</li><li>שכפול שירותי VPLS / Trunk לבדיקות, ללא השבתה של השירותים הקיימים</li></ul><span class="bk test">VPLS TEST</span></div><div class="phase fx-item rv" style="--i:2"><span class="tg">PHASE 02</span><h3>העברת השירותים</h3><ul><li>בכל IXR יוגדרו שירות 014, שירות HOTnet ושירות VPLS Trunk</li><li>בצד הלקוח מכונה ייעודית ל-HOTnet ומכונה ל-בזב"ל, כל אחת מחוברת לשני ה-IXR (MC-LAG מצד HOT, LAG מצד הלקוח)</li><li>2 פורטים בכל מכונה לכל שירות</li><li>שירותי התמסורת משוכפלים לשתי המכונות, ללא MC-LAG</li><li>הגיבוי בשלב זה קר, באחריות הלקוח</li></ul><span class="bk cold">COLD BACKUP</span></div><div class="phase fx-item rv" style="--i:3"><span class="tg">PHASE 03 · עתידי</span><h3>גיבוי אוטומטי</h3><ul><li>חיבור 2 מכונות MX200 חדשות של הלקוח לשני ה-IXR, במועד שהלקוח יקבע</li><li>5 פורטים בכל מכונה: 2 לכל ספקית ופורט VPLS Trunk</li><li>גיבוי אוטומטי בין המכונות</li></ul><span class="bk auto">AUTO FAILOVER</span></div></div>
+    <div class="ops fx"><div class="phase fx-item rv" style="--i:4"><span class="tg">RESILIENCY TESTS</span><h3>בדיקות שרידות</h3><ul><li>ניתוק חשמל יזום של ה-IXR הראשי ווידוא מעבר כל השירותים ל-IXR המשני דרך ה-MC-LAG</li><li>סימולציית ניתוק סיב מאחד המתגים ווידוא מעבר אוטומטי למתג השני</li></ul></div><div class="phase fx-item rv" style="--i:5"><span class="tg">DEPLOYMENT</span><h3>ביצוע וחזרה לאחור</h3><ul><li>זמן השבתה מוערך 2–4 שעות, בחלון עבודה לילי בתיאום מראש</li><li>העבודה מתבצעת במקביל לקיים על סיבים חדשים, בלי פגיעה בשרידות הקיימת</li><li>Rollback: ניתוק הסיבים והקישור הפנימי מה-IXR וחזרה מלאה לתצורה הקיימת</li></ul></div><div class="phase fx-item rv" style="--i:6"><span class="tg">NOTES</span><h3>הערות</h3><ul><li>סיב ITC נשאר ללא שינוי בשלב זה</li><li>אין שינוי כתובות בשכבה 3</li><li>נדרש מקום פנוי של 4U בארון התקשורת</li></ul></div></div>
   </section>
 
   <!-- 2 SERVICES -->
@@ -580,38 +600,6 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
       </div>
       <div class="status" aria-live="polite"></div>
     </aside>
-  </section>
-
-  <!-- 7b IXR CLUSTER -->
-  <section class="slide clu" data-id="cluster">
-    <header class="hd rv"><div class="eyebrow">קלסטר IXR · משה דיין 4</div><h2>קלסטר <span class="g">בלי נקודת כשל יחידה</span></h2></header>
-    <div class="dia rv" style="--i:1"><svg viewBox="0 0 1000 620"></svg></div>
-    <aside class="side rv" style="--i:2">
-      <div class="modes" role="tablist"><button data-m="asis" role="tab">מצב קיים</button><button data-m="tobe" role="tab" class="on">מצב חדש</button></div>
-      <ul class="pts" data-for="asis" hidden>
-        <li>חיבור ל-Metro בתצורת Layer 2 דרך שני מתגי CPE: Nokia 7210 MXP ו-7210 SAS-T</li>
-        <li>השירותים (ISP, VPLS, Trunks) מפוזרים בין המתגים ללא יתירות מלאה</li>
-        <li>תלות בציוד בודד ובקישור פיזי יחיד</li>
-        <li>אין Failover אוטומטי ברמת ה-CPE. בכשל נדרשת התערבות ידנית</li>
-      </ul>
-      <ul class="pts" data-for="tobe">
-        <li>2 זוגות סיבים 25G ממוקד פ"ת, ממכונות שונות</li>
-        <li>2 מתגי Nokia 7250 IXR-e2C, כל אחד מחובר עצמאית ל-Metro</li>
-        <li>MC-LAG בין המתגים בקישור פנימי 25G</li>
-        <li>2 ספקי AC לכל מתג</li>
-        <li>השירותים נשארים ב-Layer 2: HOTnet, בזב"ל, VPLS / Trunks</li>
-      </ul>
-      <div class="ctrl"><button data-act="pA"><span class="d"></span>ניתוק חשמל · מתג A</button><button data-act="fB"><span class="d"></span>ניתוק סיב · מתג B</button><button data-act="reset">איפוס</button></div>
-      <div class="status" aria-live="polite"></div>
-      <p class="note" data-for="tobe">בשלב 2 הגיבוי בצד הלקוח הוא גיבוי קר. גיבוי אוטומטי מלא בשלב 3.</p>
-    </aside>
-  </section>
-
-  <!-- 7c CLUSTER PHASES -->
-  <section class="slide" data-id="clusterplan">
-    <header class="hd rv"><div class="eyebrow">קלסטר IXR · שלבי ביצוע</div><h2>הקמת הקלסטר <span class="g">בשלושה שלבים</span></h2></header>
-    <div class="phases fx"><div class="phase fx-item rv" style="--i:1"><span class="tg">PHASE 01</span><h3>תשתית ובדיקות VPLS</h3><ul><li>2 זוגות סיבים 25G ממוקד HOT, ממכונות שונות ובתוואים שונים</li><li>2 מכונות Nokia 7250 IXR-e2C: 12 פורטים 25G/10G ו-2 פורטים 100G</li><li>MC-LAG פנימי 25G בין המכונות, ו-2 ספקי AC לכל מכונה</li><li>שכפול שירותי VPLS / Trunk לבדיקות, ללא השבתה של השירותים הקיימים</li></ul><span class="bk test">VPLS TEST</span></div><div class="phase fx-item rv" style="--i:2"><span class="tg">PHASE 02</span><h3>העברת השירותים</h3><ul><li>בכל IXR יוגדרו שירות 014, שירות HOTnet ושירות VPLS Trunk</li><li>בצד הלקוח מכונה ייעודית ל-HOTnet ומכונה ל-בזב"ל, כל אחת מחוברת לשני ה-IXR (MC-LAG מצד HOT, LAG מצד הלקוח)</li><li>2 פורטים בכל מכונה לכל שירות</li><li>שירותי התמסורת משוכפלים לשתי המכונות, ללא MC-LAG</li><li>הגיבוי בשלב זה קר, באחריות הלקוח</li></ul><span class="bk cold">COLD BACKUP</span></div><div class="phase fx-item rv" style="--i:3"><span class="tg">PHASE 03 · עתידי</span><h3>גיבוי אוטומטי</h3><ul><li>חיבור 2 מכונות MX200 חדשות של הלקוח לשני ה-IXR, במועד שהלקוח יקבע</li><li>5 פורטים בכל מכונה: 2 לכל ספקית ופורט VPLS Trunk</li><li>גיבוי אוטומטי בין המכונות</li></ul><span class="bk auto">AUTO FAILOVER</span></div></div>
-    <div class="ops fx"><div class="phase fx-item rv" style="--i:4"><span class="tg">RESILIENCY TESTS</span><h3>בדיקות שרידות</h3><ul><li>ניתוק חשמל יזום של ה-IXR הראשי ווידוא מעבר כל השירותים ל-IXR המשני דרך ה-MC-LAG</li><li>סימולציית ניתוק סיב מאחד המתגים ווידוא מעבר אוטומטי למתג השני</li></ul></div><div class="phase fx-item rv" style="--i:5"><span class="tg">DEPLOYMENT</span><h3>ביצוע וחזרה לאחור</h3><ul><li>זמן השבתה מוערך 2–4 שעות, בחלון עבודה לילי בתיאום מראש</li><li>העבודה מתבצעת במקביל לקיים על סיבים חדשים, בלי פגיעה בשרידות הקיימת</li><li>Rollback: ניתוק הסיבים והקישור הפנימי מה-IXR וחזרה מלאה לתצורה הקיימת</li></ul></div><div class="phase fx-item rv" style="--i:6"><span class="tg">NOTES</span><h3>הערות</h3><ul><li>סיב ITC נשאר ללא שינוי בשלב זה</li><li>אין שינוי כתובות בשכבה 3</li><li>נדרש מקום פנוי של 4U בארון התקשורת</li></ul></div></div>
   </section>
 
   <!-- 8 POC TOPOLOGY -->
