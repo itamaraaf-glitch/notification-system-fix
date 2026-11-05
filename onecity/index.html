@@ -565,7 +565,7 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
     </aside>
     <div class="inc-con rv" style="--i:5">
       <h3><span>CONCLUSION</span>עם SD-WAN זה לא היה קורה</h3>
-      <div class="r"><i>1</i>גיבוי 5G אלחוטי, בלי תוואי פיזי משותף עם הסיב</div>
+      <div class="r"><i>1</i><span>קו סיב ישיר מהעירייה לרשת <bdi style="white-space:nowrap">SD-WAN</bdi>, בתוואי נפרד מזה שנפגע</span></div>
       <div class="r"><i>2</i>מעבר אוטומטי לגיבוי ברגע שהקו הראשי נופל, בלי התערבות ידנית</div>
       <div class="r"><i>3</i>ניטור רציף של כל הקווים ובחירת המסלול התקין</div>
     </div>
@@ -1309,20 +1309,21 @@ hooks.incident={enter(s){const svg=d3.select(s.querySelector('.inc-map svg'));sv
   sPulse.append('animate').attr('attributeName','opacity').attr('values','.8;0').attr('dur','1.6s').attr('repeatCount','indefinite');
   const sTag=gM.append('text').attr('class','mtag').attr('x',SITE[0]-10).attr('y',SITE[1]-84).attr('text-anchor','middle').attr('direction','ltr');
   const sSub=gM.append('text').attr('class','mtag s').attr('x',SITE[0]-10).attr('y',SITE[1]-54).attr('text-anchor','middle').attr('direction','rtl');
-  // 5G (SD-WAN mode)
-  const tw=gW.append('g').attr('transform',`translate(${TOWER})`).style('opacity',0);
-  tw.append('path').attr('d','M0,-46 L-22,40 M0,-46 L22,40 M-14,10 L14,10 M-18,25 L18,25').attr('stroke','#5df2c6').attr('stroke-width',4).attr('stroke-linecap','round').attr('fill','none').attr('filter','url(#glow)');
-  [16,30,44].forEach((r,k)=>tw.append('path').attr('d',`M${-r*.8},${-46-r*.6} A${r},${r} 0 0 1 ${r*.8},${-46-r*.6}`).attr('fill','none').attr('stroke','#5df2c6').attr('stroke-width',3).attr('stroke-linecap','round')
-    .call(p=>{p.append('animate').attr('attributeName','opacity').attr('values','0;1;0').attr('dur','1.6s').attr('begin',`${k*.25}s`).attr('repeatCount','indefinite');}));
-  tw.append('text').attr('class','mtag s').attr('y',72).attr('text-anchor','middle').attr('direction','ltr').attr('fill','#5df2c6').text('5G');
-  const wl=gW.append('line').attr('x1',TOWER[0]).attr('y1',TOWER[1]).attr('x2',SITE[0]).attr('y2',SITE[1]).attr('stroke','#5df2c6').attr('stroke-width',4).attr('stroke-dasharray','10 9').style('animation','march .8s linear infinite').style('opacity',0);
-  const wTag=gW.append('text').attr('class','mtag s').attr('x',(TOWER[0]+SITE[0])/2+20).attr('y',(TOWER[1]+SITE[1])/2-16).attr('text-anchor','middle').attr('direction','rtl').attr('fill','#5df2c6').text('מסלול אלחוטי נפרד').style('opacity',0);
-  const wpk=gW.append('circle').attr('r',7).attr('fill','#fff').attr('filter','url(#glow)').style('opacity',0);
+  // SD-WAN mode: a dedicated fiber from the municipality straight to the SD-WAN network, on a separate route
+  const FIB=[[SITE[0]+40,SITE[1]-14],[1180,401],[1180,240],[TOWER[0]-62,240]];
+  const tw=gW.append('g').attr('transform',`translate(${TOWER[0]},240)`).style('opacity',0);
+  tw.append('rect').attr('x',-62).attr('y',-38).attr('width',124).attr('height',76).attr('rx',38).attr('fill','#0d1120').attr('stroke','#5df2c6').attr('stroke-width',4).attr('filter','url(#glow)');
+  tw.append('text').attr('class','mtag').attr('y',10).attr('text-anchor','middle').attr('direction','ltr').attr('fill','#fff').text('SD-WAN');
+  const fibGlow=gW.append('path').attr('d',line(FIB)).attr('fill','none').attr('stroke','#5df2c6').attr('stroke-width',20).attr('stroke-linejoin','round').attr('stroke-opacity',.45).attr('filter','url(#glowBig)').style('opacity',0);
+  const wl=gW.append('path').attr('d',line(FIB)).attr('fill','none').attr('stroke','#9ff8de').attr('stroke-width',7).attr('stroke-linejoin','round').style('opacity',0);
+  const fLen=wl.node().getTotalLength();
+  const wTag=gW.append('g').style('opacity',0);wTag.append('text').attr('class','mtag s').attr('x',1200).attr('y',318).attr('text-anchor','end').attr('direction','rtl').attr('fill','#5df2c6').text('סיב ישיר');wTag.append('text').attr('class','mtag s').attr('x',1200).attr('y',348).attr('text-anchor','end').attr('direction','rtl').attr('fill','#5df2c6').text('בתוואי נפרד');
+  const wpk=gW.append('circle').attr('r',8).attr('fill','#fff').attr('filter','url(#glow)').style('opacity',0);
   const con=s.querySelector('.inc-con');let mode='today',hl=null;
   const paint=()=>{const sd=mode==='sdwan';
     sRing.attr('stroke',sd?'#5df2c6':'#ff2a4f');sPulse.attr('stroke',sd?'#5df2c6':'#ff2a4f');
-    sTag.attr('fill',sd?'#5df2c6':'#ff2a4f').text(sd?'ONLINE':'OFFLINE');sSub.attr('fill',sd?'#5df2c6':'#ff2a4f').text(sd?'השירות ממשיך ב-5G':'סיב + כבל מודם');
-    tw.transition().duration(500).style('opacity',sd?1:0);wl.transition().duration(500).style('opacity',sd?1:0);wTag.transition().duration(500).style('opacity',sd?1:0);wpk.style('opacity',sd?1:0);
+    sTag.attr('fill',sd?'#5df2c6':'#ff2a4f').text(sd?'ONLINE':'OFFLINE');sSub.attr('fill',sd?'#5df2c6':'#ff2a4f').text(sd?'השירות ממשיך דרך SD-WAN':'סיב + כבל מודם');
+    tw.transition().duration(500).style('opacity',sd?1:0);wl.transition().duration(500).style('opacity',sd?1:0);fibGlow.transition().duration(500).style('opacity',sd?1:0);if(sd){wl.attr('stroke-dasharray',`${fLen} ${fLen}`).attr('stroke-dashoffset',fLen).transition().duration(900).attr('stroke-dashoffset',0);}wTag.transition().duration(500).style('opacity',sd?1:0);wpk.style('opacity',sd?1:0);
     con.classList.toggle('lit',sd);
     s.querySelectorAll('.modes button').forEach(b=>{b.classList.toggle('on',b.dataset.m===mode);b.setAttribute('aria-selected',b.dataset.m===mode);});
     glow.attr('stroke-opacity',hl==='route'?.6:.28).attr('stroke-width',hl==='route'?24:16);
@@ -1335,7 +1336,7 @@ hooks.incident={enter(s){const svg=d3.select(s.querySelector('.inc-map svg'));sv
   run.attr('stroke-dashoffset',0);
   this.t=REDUCED?null:d3.timer(el=>{const f=(el/4200)%1;const p=run.node().getPointAtLength(f*len);dot.attr('cx',p.x).attr('cy',p.y).attr('opacity',mode==='sdwan'?0:1);
     run.attr('stroke-dashoffset',-el/30);
-    const g=(el/1400)%1;wpk.attr('cx',TOWER[0]+(SITE[0]-TOWER[0])*g).attr('cy',TOWER[1]+(SITE[1]-TOWER[1])*g);});
+    const g=(el/1800)%1,q=wl.node().getPointAtLength(g*fLen);wpk.attr('cx',q.x).attr('cy',q.y);});
  },leave(){this.t&&this.t.stop();}};
 hooks.cluster={enter(s){const T=this.T||(this.T=Topo(svgOf(s)));T.clear();let mode='tobe',st={};
   const stEl=s.querySelector('.status'),btns=[...s.querySelectorAll('.ctrl button')],mb=[...s.querySelectorAll('.modes button')];
