@@ -102,6 +102,7 @@ svg text{unicode-bidi:embed}
 .link.k-cell{stroke:var(--mint);stroke-width:2;stroke-dasharray:8 6;animation:march 1s linear infinite}
 .link.k-tunnel{stroke:var(--peri);stroke-width:1.6;stroke-dasharray:2 6;animation:march 1.4s linear infinite}
 .link.k-dark{stroke:#c9cfe3;stroke-width:1.6;stroke-dasharray:1 5;opacity:.75}
+.link.k-lan{stroke:#c9cfe3;stroke-width:2.6}
 .link.k-ha{stroke:#fff;stroke-width:1.6;stroke-dasharray:10 5;opacity:.85;animation:march 2s linear infinite}
 .link.idle{opacity:.2}
 .link.k-tunnel.idle{opacity:.1}
@@ -110,7 +111,7 @@ svg text{unicode-bidi:embed}
 @keyframes march{to{stroke-dashoffset:-28}}
 .llabel{font-family:var(--mono);font-size:11px;fill:#b9c0de;paint-order:stroke;stroke:var(--stage);stroke-width:5px;stroke-linejoin:round}
 .pk{stroke:rgba(255,255,255,.35);stroke-width:2}
-.pk.k-fiber{fill:#ff7fa0}.pk.k-cell{fill:var(--mint)}.pk.k-tunnel{fill:#c3cbff}.pk.k-direct{fill:var(--amber)}.pk.k-dark{fill:#fff}.pk.k-ha{fill:#fff}
+.pk.k-fiber{fill:#ff7fa0}.pk.k-cell{fill:var(--mint)}.pk.k-tunnel{fill:#c3cbff}.pk.k-direct{fill:var(--amber)}.pk.k-dark{fill:#fff}.pk.k-ha{fill:#fff}.pk.k-lan{fill:#fff}
 .hex{fill:var(--node);stroke:url(#gHotB);stroke-width:1.8}
 .t-router .hex{stroke:var(--mint)}
 .t-cpe .hex{stroke:var(--peri)}
@@ -1285,6 +1286,7 @@ const CLU=(mode)=>{const tobe=mode==='tobe';
  nodes.push(N('A','cpe',330,292,tobe?'IXR-e2C · A':'7210 MXP',tobe?'2× AC':'CPE קיים',{downIf:'pA',dev:'nokia',model:tobe?'7250 IXR-e2C':'7210 MXP'}));
  nodes.push(N('B','cpe',670,292,tobe?'IXR-e2C · B':'7210 SAS-T',tobe?'2× AC':'CPE קיים',{dev:'nokia',model:tobe?'7250 IXR-e2C':'7210 SAS-T'}));
  nodes.push(P('mA',330,474,'Metro','מכונה 1'),P('mB',670,474,'Metro','מכונה 2'),C('metro',500,566,560,76,'HOT Metro','מוקד פ"ת'));
+ links.push(L('c1','c2',{kind:'lan',label:'כבל רשת',pk:1,v:80}),L('c3','c4',{kind:'lan',label:'כבל רשת',pk:1,v:80}));
  links.push(L('A','mA',{label:tobe?'25G · סיב 1':'סיב יחיד'}),L('B','mB',{label:tobe?'25G · סיב 2':'סיב יחיד',downIf:'fB'}),L('mA','metro'),L('mB','metro'));
  if(tobe){links.push(L('A','B',{kind:'ha',label:'MC-LAG · 25G',pk:s=>s.fB||s.pA?4:1,v:90}));
    cust.forEach(([id])=>{links.push(L(id,'A',{pk:1}));links.push(L(id,'B',{pk:1}));});}
