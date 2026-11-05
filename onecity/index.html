@@ -1354,11 +1354,11 @@ hooks.cluster={enter(s){const T=this.T||(this.T=Topo(svgOf(s)));T.clear();let mo
   const msg=()=>{const t=mode==='tobe',a=!!st.pA,b=!!st.fB;
     if(!a&&!b)return t?'<span class="ok">● שני המתגים פעילים</span> · כל ציוד לקוח מחובר לשניהם':'<span class="bad">● נקודות כשל יחידות</span> · כל ציוד לקוח תלוי במתג אחד ובסיב אחד';
     if(t&&a&&b)return '<span class="bad">● שני המתגים לא זמינים</span> · אין מסלול ל-Metro';
-    if(t)return '<span class="bad">● '+(a?'מתג A ללא חשמל':'הסיב של מתג B נותק')+'</span><br><span class="ok">● השירותים עוברים אוטומטית</span> '+(a?'למתג B':'דרך ה-MC-LAG למתג A');
+    if(t)return '<span class="bad">● '+(a?'ניתוק · מתג A':'ניתוק · מתג B')+'</span><br><span class="ok">● השירותים עוברים אוטומטית</span> '+(a?'למתג B':'דרך ה-MC-LAG למתג A');
     return '<span class="bad">● '+(a&&b?'שני ה-CPE מנותקים':a?'MX-109 ו-FG-1000D מנותקים':'MX-108 ו-FG-1000D מנותקים')+'</span> · אין Failover אוטומטי, נדרשת התערבות ידנית';};
   const draw=()=>{T.render(CLU(mode),st);btns.forEach(b=>b.classList.toggle('on',!!st[b.dataset.act]));mb.forEach(b=>{b.classList.toggle('on',b.dataset.m===mode);b.setAttribute('aria-selected',b.dataset.m===mode);});s.querySelectorAll('[data-for]').forEach(e=>e.hidden=e.dataset.for!==mode);
     stEl.innerHTML=msg()+' <span class="cur"></span>';
-    if(st.pA)T.hl('A',{tag:'POWER OFF',tone:'red'});else if(st.fB)T.hl('B',{tag:'FIBER CUT',tone:'red'});else if(mode==='asis')T.hl('A',{tag:'SPOF',tone:'red'});else T.hl(null);};
+    if(st.pA)T.hl('A',{tag:'ניתוק',tone:'red'});else if(st.fB)T.hl('B',{tag:'ניתוק',tone:'red'});else if(mode==='asis')T.hl('A',{tag:'SPOF',tone:'red'});else T.hl(null);};
   mb.forEach(b=>b.onclick=()=>{if(mode!==b.dataset.m){mode=b.dataset.m;T.clear();draw();T.start();}});
   btns.forEach(b=>b.onclick=()=>{const a=b.dataset.act;if(a==='reset')st={};else st=Object.assign({},st,{[a]:!st[a]});draw();});
   draw();T.start();
