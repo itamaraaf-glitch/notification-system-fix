@@ -267,6 +267,7 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
 .inc-con .r{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.4;color:#d6dbef}
 .inc-con .r i{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-family:var(--mono);font-size:12px;color:#06080e;background:var(--mint)}
 .inc-side .modes{margin-top:4px}
+.inc-side .modes button{padding:8px 11px;font-size:14.5px}
 /* pricing */
 .pr-lead{position:absolute;top:168px;right:64px;width:820px;font-size:19px;line-height:1.55;color:#cfd4ea;margin:0}
 .pr-tiles{position:absolute;top:262px;right:64px;width:820px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
@@ -561,11 +562,11 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
       <div class="phase fx-item rv" style="--i:2" data-k="cut"><span class="tg">01 · FIBER CUT</span><h3>קרע בסיב</h3><p>קבלן של הרכבת הקלה פגע בסיב, בעבודה ללא היתר מ-HOT.</p></div>
       <div class="phase fx-item rv" style="--i:3" data-k="route"><span class="tg">02 · SHARED ROUTE</span><h3>תוואי משותף</h3><p>הסיב האופטי והכבל מודם עוברים באותו תוואי, עד ארון הסעף של HOT.</p></div>
       <div class="phase fx-item rv" style="--i:4" data-k="site"><span class="tg">03 · DOUBLE FAILURE</span><h3>שתי התשתיות נפלו</h3><p>הקרע היה לפני הארון ופגע בשתי התשתיות. אילו היה אחרי ארון הסעף, הכבל מודם לא היה מושפע.</p></div>
-      <div class="modes rv" style="--i:5" role="tablist"><button data-m="today" class="on" role="tab">מה קרה</button><button data-m="sdwan" role="tab">עם SD-WAN</button></div>
+      <div class="modes rv" style="--i:5" role="tablist"><button data-m="today" class="on" role="tab">מה קרה</button><button data-m="g5" role="tab">SD-WAN + 5G</button><button data-m="fiber" role="tab">SD-WAN + סיב נוסף</button></div>
     </aside>
     <div class="inc-con rv" style="--i:5">
       <h3><span>CONCLUSION</span>עם SD-WAN זה לא היה קורה</h3>
-      <div class="r"><i>1</i><span>קו סיב ישיר מהעירייה לרשת <bdi style="white-space:nowrap">SD-WAN</bdi>, בתוואי נפרד מזה שנפגע</span></div>
+      <div class="r"><i>1</i><span>גיבוי 5G או סיב נוסף לרשת <bdi style="white-space:nowrap">SD-WAN</bdi>, בתוואי נפרד מזה שנפגע</span></div>
       <div class="r"><i>2</i>מעבר אוטומטי לגיבוי ברגע שהקו הראשי נופל, בלי התערבות ידנית</div>
       <div class="r"><i>3</i>ניטור רציף של כל הקווים ובחירת המסלול התקין</div>
     </div>
@@ -1319,11 +1320,21 @@ hooks.incident={enter(s){const svg=d3.select(s.querySelector('.inc-map svg'));sv
   const fLen=wl.node().getTotalLength();
   const wTag=gW.append('g').style('opacity',0);wTag.append('text').attr('class','mtag s').attr('x',1200).attr('y',318).attr('text-anchor','end').attr('direction','rtl').attr('fill','#5df2c6').text('סיב ישיר');wTag.append('text').attr('class','mtag s').attr('x',1200).attr('y',348).attr('text-anchor','end').attr('direction','rtl').attr('fill','#5df2c6').text('בתוואי נפרד');
   const wpk=gW.append('circle').attr('r',8).attr('fill','#fff').attr('filter','url(#glow)').style('opacity',0);
+  // option 2: 5G wireless backup
+  const T5=[1450,360];const g5=gW.append('g').style('opacity',0);
+  const tw5=g5.append('g').attr('transform',`translate(${T5})`);
+  tw5.append('path').attr('d','M0,-46 L-22,40 M0,-46 L22,40 M-14,10 L14,10 M-18,25 L18,25').attr('stroke','#5df2c6').attr('stroke-width',4).attr('stroke-linecap','round').attr('fill','none').attr('filter','url(#glow)');
+  [16,30,44].forEach((r,k)=>tw5.append('path').attr('d',`M${-r*.8},${-46-r*.6} A${r},${r} 0 0 1 ${r*.8},${-46-r*.6}`).attr('fill','none').attr('stroke','#5df2c6').attr('stroke-width',3).attr('stroke-linecap','round')
+    .call(p=>{p.append('animate').attr('attributeName','opacity').attr('values','0;1;0').attr('dur','1.6s').attr('begin',`${k*.25}s`).attr('repeatCount','indefinite');}));
+  tw5.append('text').attr('class','mtag s').attr('y',74).attr('text-anchor','middle').attr('direction','ltr').attr('fill','#5df2c6').text('5G');
+  g5.append('line').attr('x1',T5[0]).attr('y1',T5[1]).attr('x2',SITE[0]+40).attr('y2',SITE[1]).attr('stroke','#5df2c6').attr('stroke-width',5).attr('stroke-dasharray','12 10').style('animation','march .8s linear infinite');
+  g5.append('text').attr('class','mtag s').attr('x',(T5[0]+SITE[0])/2+30).attr('y',(T5[1]+SITE[1])/2+40).attr('text-anchor','middle').attr('direction','rtl').attr('fill','#5df2c6').text('מסלול אלחוטי נפרד');
+  const pk5=g5.append('circle').attr('r',8).attr('fill','#fff').attr('filter','url(#glow)');
   const con=s.querySelector('.inc-con');let mode='today',hl=null;
-  const paint=()=>{const sd=mode==='sdwan';
+  const paint=()=>{const sd=mode!=='today',fb=mode==='fiber',w5=mode==='g5';
     sRing.attr('stroke',sd?'#5df2c6':'#ff2a4f');sPulse.attr('stroke',sd?'#5df2c6':'#ff2a4f');
-    sTag.attr('fill',sd?'#5df2c6':'#ff2a4f').text(sd?'ONLINE':'OFFLINE');sSub.attr('fill',sd?'#5df2c6':'#ff2a4f').text(sd?'השירות ממשיך דרך SD-WAN':'סיב + כבל מודם');
-    tw.transition().duration(500).style('opacity',sd?1:0);wl.transition().duration(500).style('opacity',sd?1:0);fibGlow.transition().duration(500).style('opacity',sd?1:0);if(sd){wl.attr('stroke-dasharray',`${fLen} ${fLen}`).attr('stroke-dashoffset',fLen).transition().duration(900).attr('stroke-dashoffset',0);}wTag.transition().duration(500).style('opacity',sd?1:0);wpk.style('opacity',sd?1:0);
+    sTag.attr('fill',sd?'#5df2c6':'#ff2a4f').text(sd?'ONLINE':'OFFLINE');sSub.attr('fill',sd?'#5df2c6':'#ff2a4f').text(fb?'השירות ממשיך בסיב הנוסף':w5?'השירות ממשיך ב-5G':'סיב + כבל מודם');
+    g5.transition().duration(500).style('opacity',w5?1:0);tw.transition().duration(500).style('opacity',fb?1:0);wl.transition().duration(500).style('opacity',fb?1:0);fibGlow.transition().duration(500).style('opacity',fb?1:0);if(fb){wl.attr('stroke-dasharray',`${fLen} ${fLen}`).attr('stroke-dashoffset',fLen).transition().duration(900).attr('stroke-dashoffset',0);}wTag.transition().duration(500).style('opacity',fb?1:0);wpk.style('opacity',fb?1:0);
     con.classList.toggle('lit',sd);
     s.querySelectorAll('.modes button').forEach(b=>{b.classList.toggle('on',b.dataset.m===mode);b.setAttribute('aria-selected',b.dataset.m===mode);});
     glow.attr('stroke-opacity',hl==='route'?.6:.28).attr('stroke-width',hl==='route'?24:16);
@@ -1334,9 +1345,9 @@ hooks.incident={enter(s){const svg=d3.select(s.querySelector('.inc-map svg'));sv
   paint();
   // draw the route, then run a packet from the cut toward the site
   run.attr('stroke-dashoffset',0);
-  this.t=REDUCED?null:d3.timer(el=>{const f=(el/4200)%1;const p=run.node().getPointAtLength(f*len);dot.attr('cx',p.x).attr('cy',p.y).attr('opacity',mode==='sdwan'?0:1);
+  this.t=REDUCED?null:d3.timer(el=>{const f=(el/4200)%1;const p=run.node().getPointAtLength(f*len);dot.attr('cx',p.x).attr('cy',p.y).attr('opacity',mode==='today'?1:0);
     run.attr('stroke-dashoffset',-el/30);
-    const g=(el/1800)%1,q=wl.node().getPointAtLength(g*fLen);wpk.attr('cx',q.x).attr('cy',q.y);});
+    const g=(el/1800)%1,q=wl.node().getPointAtLength(g*fLen);wpk.attr('cx',q.x).attr('cy',q.y);const h=(el/1400)%1;pk5.attr('cx',T5[0]+(SITE[0]+40-T5[0])*h).attr('cy',T5[1]+(SITE[1]-T5[1])*h);});
  },leave(){this.t&&this.t.stop();}};
 hooks.cluster={enter(s){const T=this.T||(this.T=Topo(svgOf(s)));T.clear();let mode='tobe',st={};
   const stEl=s.querySelector('.status'),btns=[...s.querySelectorAll('.ctrl button')],mb=[...s.querySelectorAll('.modes button')];
