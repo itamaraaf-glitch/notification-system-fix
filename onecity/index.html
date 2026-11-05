@@ -395,7 +395,7 @@ h2.alert .yes::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6
 .gaxis{font-family:var(--mono);font-size:13px;fill:var(--mute)}
 
 /* metrics */
-.mcards{position:absolute;top:184px;left:64px;right:64px;display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.mcards{position:absolute;top:184px;left:64px;right:64px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .mcard{border:1px solid #232a4a;background:rgba(17,22,41,.6);border-radius:16px;padding:20px 18px;display:flex;flex-direction:column;gap:14px;align-items:flex-start;min-width:0}
 .mcard svg{width:96px;height:96px;transition:transform .4s,filter .4s}
 .mcard.on svg{transform:scale(1.1);filter:drop-shadow(0 0 14px rgba(255,63,191,.6))}
@@ -702,43 +702,11 @@ h2.alert .yes::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6
     <div class="cmp fx">
       <div class="crow hdr"><div></div><div class="h rv">מצב קיים</div><div></div><div class="h new rv">מצב חדש</div></div>
       <div class="crow fx-item rv" style="--i:1"><div class="cat"><span class="tg">MGMT</span>ניהול</div><div class="old">פתרון מנוהל בשיתוף אינטגרטור חיצוני</div><div class="arr"><svg viewBox="0 0 80 30"></svg></div><div class="new-c">פתרון מנוהל באופן מלא ע"י HOT (One Stop Shop)</div></div>
-      <div class="crow fx-item rv" style="--i:2"><div class="cat"><span class="tg">HARDWARE</span>ציוד</div><div class="old">ציוד Fortinet ישן (EOL) ללא תמיכה עתידית</div><div class="arr"><svg viewBox="0 0 80 30"></svg></div><div class="new-c">ציוד Fortinet חדש מסדרת G: ביצועים גבוהים ותמיכה ארוכת טווח</div></div>
+      <div class="crow fx-item rv" style="--i:2"><div class="cat"><span class="tg">HARDWARE</span>ציוד</div><div class="old">ציוד Fortinet ישן (EOL) ללא תמיכה עתידית</div><div class="arr"><svg viewBox="0 0 80 30"></svg></div><div class="new-c">אופציה לציוד Fortinet חדש מסדרת G: ביצועים גבוהים ותמיכה ארוכת טווח</div></div>
       <div class="crow fx-item rv" style="--i:3"><div class="cat"><span class="tg">BACKUP</span>גיבוי</div><div class="old">גיבוי LTE: מהירות מוגבלת ותלות ברשת עמוסה</div><div class="arr"><svg viewBox="0 0 80 30"></svg></div><div class="new-c">גיבוי 5G: מהירויות גבוהות, Latency נמוך ו-SLA משופר</div></div>
       <div class="crow fx-item rv" style="--i:4"><div class="cat"><span class="tg">RF</span>קליטה</div><div class="old">אנטנות מובנות ב-FW, מוגבלות בהצבה פיזית ובקליטה</div><div class="arr"><svg viewBox="0 0 80 30"></svg></div><div class="new-c">אנטנות חיצוניות שניתן להתקין מחוץ לארון: קליטה משופרת ועמידות בתנאי RF מורכבים</div></div>
       <div class="crow fx-item rv" style="--i:5"><div class="cat"><span class="tg">DEPLOY</span>הקמה</div><div class="old">תהליך הקמה ארוך</div><div class="arr"><svg viewBox="0 0 80 30"></svg></div><div class="new-c">הקמה מהירה עם Provisioning אוטומטי</div></div>
     </div>
-  </section>
-
-  <!-- 7 ISP -->
-  <section class="slide" data-id="isp">
-    <header class="hd rv"><div class="eyebrow">ISP · מצב חדש</div><h2>שינוי פתרון <span class="g">לרשת ה-ISP</span></h2></header>
-    <div class="dia rv" style="--i:1"><svg viewBox="0 0 1000 620"></svg></div>
-    <aside class="side rv" style="--i:2">
-      <ul class="pts">
-        <li>חיבור ה-HUBs לרשת ה-ISP ישירות על גבי HOT Metro</li>
-        <li>שני ספקי ISP פעילים במקביל: HOT ו-ISP צד ג'</li>
-        <li>צמצום אתרי תמסורת עם צד ג' לאתר תמסורת אחד</li>
-      </ul>
-      <div class="ctrl">
-        <button data-act="isp1"><span class="d"></span>השבת ISP ראשי</button>
-        <button data-act="reset">איפוס</button>
-      </div>
-      <div class="status" aria-live="polite"></div>
-    </aside>
-  </section>
-
-  <!-- 8 POC TOPOLOGY -->
-  <section class="slide" data-id="poc">
-    <header class="hd rv"><div class="eyebrow">SD-WAN</div><h2>פתרון <span class="g">SD-WAN ברשת סגורה</span></h2></header>
-    <div class="dia rv" style="--i:1"><svg viewBox="0 0 1000 620"></svg></div>
-    <aside class="side rv" style="--i:2">
-      <p class="lead">HUB אחד באתר One City במשה דיין 4, ואתר SPOKE אחד בלקוח קצה של <b>אוטומציה</b>. רשת ה-IPVPN הקיימת ממשיכה לעבוד במקביל.</p>
-      <div class="ctrl">
-        <button data-act="cut"><span class="d"></span>בדיקת שרידות: נתק קו ראשי</button>
-        <button data-act="reset">איפוס</button>
-      </div>
-      <div class="status" aria-live="polite"></div>
-    </aside>
   </section>
 
   <!-- 8b SECURED END SITES -->
@@ -760,7 +728,7 @@ h2.alert .yes::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6
   <!-- 9 POC PLAN -->
   <section class="slide" data-id="plan">
     <header class="hd rv"><div class="eyebrow">שינוי פתרון · הקמה</div><h2>תוכנית <span class="g">ההקמה</span></h2></header>
-    <div class="goalbox rv" style="--i:1"><p class="lead">מטרת ה-POC: להציג ללקוח את איכות הפתרון לפי ה-SOW, בשני חודשים מרגע האישור.</p></div>
+    <div class="goalbox rv" style="--i:1"><p class="lead">המטרה: להציג ללקוח את איכות הפתרון לפי ה-SOW, בשני חודשים מרגע האישור.</p></div>
     <div class="gantt rv" style="--i:2"><svg viewBox="0 0 1000 455"></svg></div>
     <aside class="side rv" style="--i:2">
       <ol class="steps fx">
@@ -782,8 +750,6 @@ h2.alert .yes::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6
       <div class="mcard fx-item rv" style="--i:1"><svg viewBox="0 0 96 96"></svg><span class="k tg">רשת קיימת</span><p>הקמת ה-HUB ללא פגיעה ברשת ה-IPVPN הקיימת</p></div>
       <div class="mcard fx-item rv" style="--i:2"><svg viewBox="0 0 96 96"></svg><span class="k tg">אתר SPOKE</span><p>כל השירותים באתר הקצה עובדים תקין, ללא ניתוקים וללא איטיות</p></div>
       <div class="mcard fx-item rv" style="--i:3"><svg viewBox="0 0 96 96"></svg><span class="k tg">שרידות</span><p>מעבר תקין ומהיר לגיבוי סלולרי</p></div>
-      <div class="mcard fx-item rv" style="--i:4"><svg viewBox="0 0 96 96"></svg><span class="k tg">לו"ז הקמה</span><p>חודש מרגע אישור One City, כולל הזמנת ציוד</p></div>
-      <div class="mcard fx-item rv" style="--i:5"><svg viewBox="0 0 96 96"></svg><span class="k tg">לו"ז POC</span><p>חודש מרגע הקמת אתר הקצה</p></div>
     </div>
     <div class="fchart rv" style="--i:6">
       <svg viewBox="0 0 900 240"></svg>
@@ -1455,7 +1421,7 @@ hooks.plan={enter(s){const el=s.querySelector('.gantt svg');const T=this.T||(thi
   bg.append('line').attr('x1',x(0)).attr('x2',x(60)).attr('y1',425).attr('y2',425).attr('stroke','#39426e');
   bg.selectAll('line.tk').data(d3.range(0,61,2)).join('line').attr('class','tk').attr('x1',x).attr('x2',x).attr('y1',425).attr('y2',d=>d%10?419:413).attr('stroke',d=>d%30?'#39426e':'#ff3fbf');
   [[0,'D+0'],[30,'D+30'],[60,'D+60']].forEach(([d,l])=>bg.append('text').attr('class','gaxis').attr('x',x(d)).attr('y',443).attr('text-anchor','middle').attr('direction','ltr').text(l));
-  [[15,'שלב 1 · הקמה · חודש 1'],[45,'שלב 2 · POC · חודש 2']].forEach(([d,l])=>bg.append('text').attr('class','gaxis').attr('x',x(d)).attr('y',443).attr('text-anchor','middle').attr('direction','rtl').attr('fill','#5df2c6').text(l));
+  [[15,'שלב 1 · הקמה · חודש 1'],[45,'שלב 2 · הרצה ומעקב · חודש 2']].forEach(([d,l])=>bg.append('text').attr('class','gaxis').attr('x',x(d)).attr('y',443).attr('text-anchor','middle').attr('direction','rtl').attr('fill','#5df2c6').text(l));
   const sc=bg.append('g').style('opacity',REDUCED?0:1);
   sc.append('rect').attr('x',-40).attr('y',36).attr('width',40).attr('height',384).attr('fill','url(#gScan)');
   sc.append('line').attr('y1',36).attr('y2',425).attr('stroke','#5df2c6').attr('stroke-opacity',.7);
@@ -1463,9 +1429,9 @@ hooks.plan={enter(s){const el=s.querySelector('.gantt svg');const T=this.T||(thi
   this.t=REDUCED?null:d3.timer(e=>{const d=((e/1000)%9)/9*60;sc.attr('transform',`translate(${x(d)},0)`);});
   // network-style timeline
   const st=[[4,115,'dc','SD-WAN Cloud','מערכות HOT',{dev:'mesh',role:'הקמת ענן SD-WAN במערכות HOT'}],[10,350,'router','HUB','משה דיין 4',{dev:'fg1u',model:'FG-200G',role:'HUB בארון התקשורת באתר One City'}],[16,115,'fw','FW 1500D','חיבור ל-HUB',{dev:'fg2u',model:'FG-1500D',role:'חיבור ה-HUB ל-FW 1500D'}],[22,350,'cpe','Routing','One City + PS',{dev:'nokia',model:'7210 SAS',role:'ניתובים בין FW 1500D ל-HUB'}],[28,115,'site','SPOKE','אוטומציה',{dev:'fg50',g5:1,model:'FG-50G-5G',role:'אתר SPOKE בלקוח קצה של אוטומציה'}]];
-  const nodes=[N('m0','site',x(0),250,'אישור One City','D+0'),N('m1','router',x(30),250,'אתר קצה פעיל','D+30',{dev:'fg50',g5:1,model:'FG-50G-5G',role:'אתר הקצה פעיל, תחילת חודש ה-POC'}),N('m2','site',x(60),250,'סיכום POC','D+60')];
+  const nodes=[N('m0','site',x(0),250,'אישור One City','D+0'),N('m1','router',x(30),250,'אתר קצה פעיל','D+30',{dev:'fg50',g5:1,model:'FG-50G-5G',role:'אתר הקצה פעיל, תחילת חודש ההרצה'}),N('m2','site',x(60),250,'סיכום','D+60')];
   st.forEach(([d,y,t,l,sub,o],i)=>nodes.push(N('p'+(i+1),t,x(d),y,l,sub,o)));
-  nodes.push(C('p6',x(45),250,300,76,'POC פעיל','מעקב צוות האינטגרציה'));
+  nodes.push(C('p6',x(45),250,300,76,'הרצה ומעקב','צוות האינטגרציה של HOT'));
   const links=[L('m0','m1',{kind:'ha',pk:1,v:60,oneway:true}),L('m1','m2',{kind:'ha',pk:1,v:60,oneway:true}),
     L('m0','p1',{oneway:true}),L('p1','p2',{oneway:true}),L('p2','p3',{oneway:true}),L('p3','p4',{oneway:true}),L('p4','p5',{oneway:true}),L('p5','m1',{oneway:true}),
     L('m1','p6',{oneway:true,pk:3}),L('p6','m2',{oneway:true,pk:3}),L('p6','p6x',{kind:'tunnel'})].filter(l=>l.t!=='p6x');
