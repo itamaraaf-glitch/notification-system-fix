@@ -333,6 +333,14 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
 .pflow svg{width:100%;height:100%;overflow:visible}
 .ops{position:absolute;top:548px;left:64px;right:64px;bottom:112px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
 .ops .phase h3{font-size:19px}
+/* secured end sites (mirror of the backup slide) */
+.ok-chip{align-self:flex-start;font-family:var(--mono);font-size:13px;letter-spacing:.14em;color:var(--mint);border:1px solid var(--mint);border-radius:999px;padding:5px 14px;display:flex;align-items:center;gap:10px;background:rgba(93,242,198,.08);animation:okP 1.6s ease-in-out infinite;direction:ltr}
+.ok-chip i{width:9px;height:9px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px var(--mint)}
+@keyframes okP{50%{box-shadow:0 0 26px rgba(93,242,198,.5)}}
+h2.alert .yes{position:relative;display:inline-block;color:var(--mint);text-shadow:0 0 22px rgba(93,242,198,.65)}
+h2.alert .yes::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6px;height:5px;border-radius:3px;background:linear-gradient(270deg,#2fd3a6,var(--mint));box-shadow:0 0 14px var(--mint);transform-origin:right;animation:okLine 1.2s cubic-bezier(.2,.8,.2,1) .6s both}
+@keyframes okLine{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.bk-card.good .tg{color:var(--mint)}
 /* nets tabs */
 .tabs{display:flex;flex-direction:column;gap:8px}
 .tabs button{all:unset;cursor:pointer;display:block;position:relative;padding:12px 16px;border-radius:12px;border:1px solid transparent;transition:.25s;overflow:hidden}
@@ -729,6 +737,22 @@ h2.alert .no::after{content:"";position:absolute;right:-4px;left:-4px;bottom:-6p
         <button data-act="cut"><span class="d"></span>בדיקת שרידות: נתק קו ראשי</button>
         <button data-act="reset">איפוס</button>
       </div>
+      <div class="status" aria-live="polite"></div>
+    </aside>
+  </section>
+
+  <!-- 8b SECURED END SITES -->
+  <section class="slide bk" data-id="secured">
+    <header class="hd rv"><div class="ok-chip"><i></i>SECURED · END-SITE BACKUP: ACTIVE</div><h2 class="alert">עם SD-WAN <span class="yes">יש גיבוי</span> ללקוחות הקצה</h2></header>
+    <div class="dia rv" style="--i:1"><svg viewBox="0 0 1000 620"></svg></div>
+    <aside class="side rv" style="--i:2">
+      <p class="lead">בפתרון SD-WAN לכל אתר קצה יש קו ראשי <b>וגיבוי 5G</b>. כשהקו הראשי נופל, האתר נשאר מחובר.</p>
+      <div class="bk-list fx">
+        <div class="bk-card good fx-item"><span class="tg">5G · BACKUP</span><span class="nm">גיבוי 5G בכל אתר קצה</span><span class="ad">FortiGate 50G-5G עם אנטנות חיצוניות</span></div>
+        <div class="bk-card good fx-item"><span class="tg">AUTO FAILOVER</span><span class="nm">מעבר אוטומטי</span><span class="ad">כשהקו הראשי נופל, התעבורה עוברת ל-5G בלי התערבות ידנית</span></div>
+        <div class="bk-card good fx-item"><span class="tg">HOT MANAGED</span><span class="nm">ניהול מקצה לקצה</span><span class="ad">הכול בתוך הרשת הסגורה של HOT</span></div>
+      </div>
+      <div class="ctrl"><button data-act="c3"><span class="d"></span>ניתוק · סניף 03</button><button data-act="all"><span class="d"></span>ניתוק · כל הסניפים</button><button data-act="reset">איפוס</button></div>
       <div class="status" aria-live="polite"></div>
     </aside>
   </section>
@@ -1255,6 +1279,26 @@ hooks.sdwan=interactive(SDWAN,s=>{const L=[];
   L.push(s.cut?'<span class="bad">● סניף ADSL: הקו הראשי נותק</span> · התעבורה עברה ל-5G דרך APN SD-WAN':'<span class="ok">● כל קווי הגישה פעילים</span> · 5G בכוננות');
   return L.join('<br>')+'<br><span class="cur"></span>';},
   (s,last)=>{const c=s.cut&&['s2','FAILOVER → 5G','red'],h=s.hubA&&['hubA','OFFLINE','red'];return last==='cut'?c||h:last==='hubA'?h||c:h||c||null;});
+const BKS=(st)=>{const ex=[120,272,424,576,728,880],cut=i=>!!(st.all||(i===2&&st.c3));
+ const nodes=[N('hubA','router',330,92,'FG-200G','SD-WAN HUB 1'),N('hubB','router',670,92,'FG-200G','SD-WAN HUB 2'),C('cloud',500,300,460,90,'HOT Metro','SD-WAN · רשת סגורה')];
+ const links=[L('hubA','hubB',{kind:'ha',label:'GEO Cluster · HA',pk:1,v:70}),L('hubA','cloud'),L('hubB','cloud')];
+ ex.forEach((x,i)=>{const id='e'+(i+1),c=cut(i);
+  nodes.push(N(id,'fw',x,478,'סניף 0'+(i+1),c?'5G · פעיל':'5G · בכוננות',{dev:'fg50',g5:1,model:'FG-50G-5G',role:'אתר קצה · SD-WAN עם גיבוי 5G'}));
+  links.push(L(id,'cloud',{downIf:'p'+i,label:i===0?'קו ראשי':''}));
+  links.push(L(id,'cloud',{id:id+'>5g',kind:'cell',upIf:'p'+i,curve:x<500?70:-70,pk:3,label:i===5?'5G':''}));});
+ return {regions:[{id:'core',x:150,y:30,w:700,h:120,label:'ליבה · SD-WAN HUBs'},{id:'edge',x:40,y:418,w:920,h:150,label:'לקוחות קצה · עם גיבוי 5G'}],nodes,links};};
+hooks.secured={enter(s){const T=this.T||(this.T=Topo(svgOf(s)));T.clear();let st={};
+  const stEl=s.querySelector('.status'),btns=[...s.querySelectorAll('.ctrl button')];
+  const state=()=>{const o={};for(let i=0;i<6;i++)if(st.all||(i===2&&st.c3))o['p'+i]=true;return o;};
+  const draw=()=>{T.render(BKS(st),state());btns.forEach(b=>b.classList.toggle('on',!!st[b.dataset.act]));
+    stEl.innerHTML=(st.all?'<span class="bad">● כל הקווים הראשיים נפלו</span><br><span class="ok">● כל 6 האתרים עברו ל-5G ונשארו מחוברים</span>':
+      st.c3?'<span class="bad">● סניף 03: הקו הראשי נפל</span><br><span class="ok">● מעבר אוטומטי ל-5G, האתר מחובר</span>':
+      '<span class="ok">● 6 אתרי קצה מגובים</span> · 5G בכוננות בכל אתר')+' <span class="cur"></span>';
+    if(st.all)T.hl('cloud',{tag:'6/6 ONLINE · 5G'});else if(st.c3)T.hl('e3',{tag:'FAILOVER → 5G'});else T.hl(null);};
+  btns.forEach(b=>b.onclick=()=>{const a=b.dataset.act;if(a==='reset')st={};else st=Object.assign({},st,{[a]:!st[a]});draw();});
+  const box=s.querySelector('.bk-list');this.F=Focus(box,[...box.children]);
+  draw();T.start();
+ },leave(){this.T&&this.T.stop();}};
 hooks.backup={enter(s){const T=this.T||(this.T=Topo(svgOf(s)));T.clear();T.render(BK,{nb:true});T.start();
   const st=s.querySelector('.status'),btn=s.querySelector('[data-act="cutE"]'),box=s.querySelector('.bk-list'),cards=[...box.children];
   const map=[['hotnet','BACKUP 10G · ACTIVE'],['lashcham','BACKUP 10G · ACTIVE']];
