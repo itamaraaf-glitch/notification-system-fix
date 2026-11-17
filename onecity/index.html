@@ -1285,9 +1285,11 @@ const CLU=(mode)=>{const tobe=mode==='tobe';
  cust.forEach(([id,x,l,sub])=>nodes.push(N(id,l.startsWith('MX')?'router':'fw',x,78,l,sub,{dev:l.startsWith('MX')?'fg1u':'fg2u',model:l,role:'ציוד לקוח · '+sub})));
  nodes.push(N('A','cpe',330,292,tobe?'IXR-e2C · A':'7210 MXP',tobe?'2× AC':'CPE קיים',{downIf:'pA',dev:'nokia',model:tobe?'7250 IXR-e2C':'7210 MXP'}));
  nodes.push(N('B','cpe',670,292,tobe?'IXR-e2C · B':'7210 SAS-T',tobe?'2× AC':'CPE קיים',{dev:'nokia',model:tobe?'7250 IXR-e2C':'7210 SAS-T'}));
- nodes.push(P('mA',330,474,'Metro','מכונה 1'),P('mB',670,474,'Metro','מכונה 2'),C('metro',500,566,560,76,'HOT Metro','מוקד פ"ת'));
+ if(tobe)nodes.push(P('mA',330,474,'Metro','מכונה 1'),P('mB',670,474,'Metro','מכונה 2'));else nodes.push(P('mA',500,474,'Metro','מכונה אחת'));
+ nodes.push(C('metro',500,566,560,76,'HOT Metro','מוקד פ"ת'));
  links.push(L('c1','c2',{kind:'lan',label:'כבל רשת',pk:1,v:80}),L('c3','c4',{kind:'lan',label:'כבל רשת',pk:1,v:80}));
- links.push(L('A','mA',{label:tobe?'25G · סיב 1':'סיב יחיד'}),L('B','mB',{label:tobe?'25G · סיב 2':'סיב יחיד',downIf:'fB'}),L('mA','metro'),L('mB','metro'));
+ links.push(L('A','mA',{label:tobe?'25G · סיב 1':'סיב יחיד'}),L('B',tobe?'mB':'mA',{label:tobe?'25G · סיב 2':'סיב יחיד',downIf:'fB'}),L('mA','metro'));
+ if(tobe)links.push(L('mB','metro'));
  if(tobe){links.push(L('A','B',{kind:'ha',label:'MC-LAG · 25G',pk:s=>s.fB||s.pA?4:1,v:90}));
    cust.forEach(([id])=>{links.push(L(id,'A',{pk:1}));links.push(L(id,'B',{pk:1}));});}
  else{[['c1','A'],['c2','B'],['c3','A'],['c4','B']].forEach(([c,t])=>links.push(L(c,t,{downIf:t==='B'?'fB':null})));}
