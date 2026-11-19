@@ -81,7 +81,7 @@ for i, (t, f) in enumerate([
     ('הנחות – תקופה, הנחה לכל קטגוריה, פיגור תשלום, היוון, האם הספק המכהן מגיש.', BLACK),
     ('כתב כמויות – 29 הסעיפים, מחיר מרבי, ההצעה שלנו, עלות, מרווח, וחלוקה לחודשי / חד-פעמי.', BLACK),
     ('סיכום והשוואה – בסיס ההשוואה (חודשי), רווחיות לפי קטגוריה כולל סיכון פיצויים מוסכמים, סימולציית ניקוד מול מתחרה, ורמזור עובר / לא עובר (שורות 38–45).', BLACK),
-    ('הזנת המחירים שלנו: כתב כמויות, עמודה N (ריק = המחיר המרבי פחות ההנחה). הניקוד והרמזור מתעדכנים אוטומטית.', BOLD),
+    ('הזנת המחירים שלנו: גיליון "הצעת המחיר שלנו", עמודה F (ריק = המחיר המרבי פחות ההנחה). הסה"כ, הניקוד והרמזור מתעדכנים אוטומטית.', BOLD),
     ('תזרים – 60 חודשים: חומרה ועבודה מראש, הכנסה חודשית, NPV וחשיפה מרבית.', BLACK),
     ('שגיאות בטופס – ליקויים בכתב הכמויות שמשפיעים על ההשוואה (בסיס לשאלות ההבהרה).', BLACK),
     ('תשובות הבהרה – מה נענה, ואיך זה נכנס למודל.', BLACK),
@@ -139,7 +139,7 @@ ws['A1'] = 'כתב כמויות – מחירים מרביים, ההצעה שלנ
 ws['A1'].font = TITLE
 header(ws, 3, ['#', 'רכיב', 'קטגוריה', 'סוג תשלום', 'כמות', 'מחיר מרבי ליחידה', 'המחיר שלנו ליחידה', 'עלות שלנו ליחידה',
                'סה"כ מרבי', 'סה"כ שלנו', 'סה"כ עלות', 'מרווח', 'הערת עלות (הערכה – לאמת)',
-               'המחיר שלנו – הזנה ידנית (ריק = לפי ההנחה בגיליון הנחות)', 'בדיקה'])
+               'המחיר שהוזן (מגיליון "הצעת המחיר שלנו")', 'בדיקה'])
 # (n, name, category, pay, qty, max, cost, note)  pay: חודשי / חד-פעמי / חודשי משנה 4
 L, P, S, HW, LB, MT = 'קווים', 'מרכזייה', 'Fortinet SaaS', 'חומרה', 'שעות עבודה', 'תחזוקה'
 DISC = {L: 'B6', P: 'B7', S: 'B8', HW: 'B9', LB: 'B10', MT: 'B11'}
@@ -184,7 +184,7 @@ for i, (n, name, cat, pay, qty, mx, cost, note) in enumerate(items):
     put(ws, f'E{r}', qty, BLUE, NUM, YEL if n == 22 else None)
     put(ws, f'F{r}', mx, BLUE, ILS)
     put(ws, f'G{r}', f'=IF(N{r}<>"",N{r},F{r}*(1-{H}{DISC[cat]}))', fmt=ILS2)
-    put(ws, f'N{r}', None, BLUE, ILS2, YEL)
+    put(ws, f'N{r}', f"=IF('הצעת המחיר שלנו'!F{r}<>\"\",'הצעת המחיר שלנו'!F{r},\"\")", GREEN, ILS2)
     put(ws, f'O{r}', f'=IF(E{r}=0,"-",IF(G{r}>F{r},"לא עובר – מעל המרבי",IF(G{r}<H{r},"גבולי – מתחת לעלות","עובר")))')
     put(ws, f'H{r}', cost, GREEN if str(cost).startswith('=') else BLUE, ILS2, YEL)
     put(ws, f'I{r}', f'=E{r}*F{r}', fmt=ILS)
@@ -196,7 +196,7 @@ for i, (n, name, cat, pay, qty, mx, cost, note) in enumerate(items):
 RL = R0 + len(items) - 1
 ws.conditional_formatting.add(f'L{R0}:L{RL}', CellIsRule(operator='lessThan', formula=['0'], **RED))
 traffic(ws, f'O{R0}:O{RL}')
-put(ws, f'B{RL + 2}', 'להזנת מחיר: לכתוב בעמודה N את המחיר ליחידה. ריק = המחיר המרבי פחות ההנחה לקטגוריה (גיליון הנחות). הניקוד והרמזור בגיליון "סיכום והשוואה" מתעדכנים אוטומטית.', BOLD).alignment = WRAP
+put(ws, f'B{RL + 2}', 'את המחירים שלנו מזינים בגיליון "הצעת המחיר שלנו" (עמודה F). ריק = המחיר המרבי פחות ההנחה לקטגוריה (גיליון הנחות). הניקוד והרמזור מתעדכנים אוטומטית.', BOLD).alignment = WRAP
 ws.merge_cells(f'B{RL + 2}:M{RL + 2}')
 ws.row_dimensions[RL + 2].height = 30
 ws.freeze_panes = 'C4'
@@ -396,6 +396,81 @@ for i, (t, a, m) in enumerate(ans):
     put(ws, f'C{r}', a).alignment = WRAP
     put(ws, f'D{r}', m).alignment = WRAP
     ws.row_dimensions[r].height = 30
+
+# ------------------------------------------------------------------ הצעת המחיר שלנו
+PR_ = 'הצעת המחיר שלנו'
+ws = sheet(PR_, {'A': 5, 'B': 44, 'C': 13, 'D': 8, 'E': 13, 'F': 15, 'G': 14, 'H': 14, 'I': 14, 'J': 11, 'K': 13, 'L': 10, 'M': 22})
+wb.move_sheet(PR_, offset=-(len(wb.sheetnames) - 2))
+ws['A1'] = 'הצעת המחיר שלנו – הזנת מחיר ליחידה, סה"כ אוטומטי ורמזור עובר / לא עובר'
+ws['A1'].font = TITLE
+put(ws, 'B2', 'סטטוס כולל (שורה תחתונה):', BOLD)
+put(ws, 'C2', "='סיכום והשוואה'!C45", BOLD).alignment = Alignment(horizontal='center')
+ws.merge_cells('C2:E2')
+traffic(ws, 'C2:E2')
+header(ws, 3, ['#', 'רכיב', 'סוג תשלום', 'כמות', 'מחיר מרבי ליחידה', 'המחיר שלנו ליחידה – הזנה (ריק = לפי ההנחה)',
+               'המחיר שלנו ליחידה (בפועל)', 'סה"כ שלנו', 'סה"כ מרבי', 'הנחה מהמרבי', 'עלות ליחידה', 'מרווח', 'בדיקה'])
+for i in range(len(items)):
+    r = R0 + i
+    put(ws, f'A{r}', f'={K}A{r}')
+    put(ws, f'B{r}', f'={K}B{r}').alignment = WRAP
+    put(ws, f'C{r}', f'={K}D{r}')
+    put(ws, f'D{r}', f'={K}E{r}', GREEN, NUM)
+    put(ws, f'E{r}', f'={K}F{r}', GREEN, ILS2)
+    put(ws, f'F{r}', None, BLUE, ILS2, YEL)
+    put(ws, f'G{r}', f'={K}G{r}', fmt=ILS2)
+    put(ws, f'H{r}', f'=D{r}*G{r}', fmt=ILS)
+    put(ws, f'I{r}', f'=D{r}*E{r}', fmt=ILS)
+    put(ws, f'J{r}', f'=IF(E{r}>0,1-G{r}/E{r},0)', fmt=PCT)
+    put(ws, f'K{r}', f'={K}H{r}', GREEN, ILS2)
+    put(ws, f'L{r}', f'={K}L{r}', fmt=PCT)
+    put(ws, f'M{r}', f'={K}O{r}').alignment = Alignment(horizontal='center', wrap_text=True)
+    ws.row_dimensions[r].height = 30
+ws.conditional_formatting.add(f'L{R0}:L{RL}', CellIsRule(operator='lessThan', formula=['0'], **RED))
+ws.conditional_formatting.add(f'J{R0}:J{RL}', CellIsRule(operator='lessThan', formula=['0'], **RED))
+traffic(ws, f'M{R0}:M{RL}')
+T = RL + 2
+header(ws, T, ['', 'סיכום ההצעה', '', '', '', '', '', 'סה"כ שלנו', 'סה"כ מרבי', 'הנחה מהמרבי', '', '', ''])
+for j, (lab, pay) in enumerate([('חודשי (מהחודש הראשון) – בסיס ציון המחיר', 'חודשי'),
+                                ('חודשי משנה רביעית (סעיף 9)', 'חודשי משנה 4'),
+                                ('חד-פעמי (חומרה, שעות, פירוק)', 'חד-פעמי')]):
+    r = T + 1 + j
+    put(ws, f'B{r}', lab, BOLD if j == 0 else BLACK)
+    put(ws, f'H{r}', f'=SUMIFS(H{R0}:H{RL},C{R0}:C{RL},"{pay}")', BOLD if j == 0 else BLACK, ILS)
+    put(ws, f'I{r}', f'=SUMIFS(I{R0}:I{RL},C{R0}:C{RL},"{pay}")', fmt=ILS)
+    put(ws, f'J{r}', f'=IF(I{r}>0,1-H{r}/I{r},0)', fmt=PCT)
+r = T + 4
+put(ws, f'B{r}', 'סה"כ לכל התקופה (חודשי × חודשים + חד-פעמי)', BOLD)
+put(ws, f'H{r}', f"=H{T+1}*{H}B19+H{T+2}*{H}B20+H{T+3}", BOLD, ILS)
+put(ws, f'I{r}', f"=I{T+1}*{H}B19+I{T+2}*{H}B20+I{T+3}", BOLD, ILS)
+put(ws, f'J{r}', f'=IF(I{r}>0,1-H{r}/I{r},0)', BOLD, PCT)
+
+S2 = "'סיכום והשוואה'!"
+r0 = T + 6
+header(ws, r0, ['', 'ההשלכה על הניקוד והתוצאה', '', '', '', '', '', 'ערך', 'סטטוס', '', '', '', ''])
+res = [
+    ('מחיר המתחרה (חודשי) – לשינוי בגיליון "סיכום והשוואה" D27', f'={S2}D27', ILS, None),
+    ('ציון מחיר HOT (מתוך 70)', f'={S2}C28', '0.0', None),
+    ('ציון כולל HOT / מתחרה', f'=TEXT({S2}C33,"0.0")&" / "&TEXT({S2}D33,"0.0")', None, None),
+    ('פער ציונים (HOT פחות מתחרה)', f'={S2}B40', '0.0;[Red]-0.0', f'={S2}C40'),
+    ('הצעה חודשית מרבית לזכייה (שוויון ציונים)', f'={S2}C35', ILS, None),
+    ('מחירים מעל המרבי (פסילה)', f'={S2}B41', NUM, f'={S2}C41'),
+    ('סעיפים מתחת לעלות', f'={S2}B42', NUM, f'={S2}C42'),
+    ('מרווח רווח לתקופה', f'={S2}B43', PCT, f'={S2}C43'),
+    ('NPV של התזרים', f'={S2}B44', ILS, f'={S2}C44'),
+    ('שורה תחתונה', None, None, f'={S2}C45'),
+]
+for j, (lab, val, fmt, st) in enumerate(res):
+    r = r0 + 1 + j
+    put(ws, f'B{r}', lab, BOLD if j == len(res) - 1 else BLACK).alignment = WRAP
+    put(ws, f'H{r}', val, fmt=fmt)
+    put(ws, f'I{r}', st, BOLD).alignment = Alignment(horizontal='center', wrap_text=True)
+    ws.merge_cells(f'I{r}:L{r}')
+    ws.row_dimensions[r].height = 22
+traffic(ws, f'I{r0+1}:I{r0+len(res)}')
+put(ws, f'B{r0+len(res)+2}', 'איך משתמשים: מזינים מחיר ליחידה בעמודה F (צהוב). הסה"כ, ההנחה, המרווח, הבדיקה לכל סעיף, הניקוד מול המתחרה והשורה התחתונה מתעדכנים אוטומטית. תא ריק = המחיר המרבי פחות ההנחה לקטגוריה בגיליון "הנחות".', BOLD).alignment = WRAP
+ws.merge_cells(f'B{r0+len(res)+2}:M{r0+len(res)+2}')
+ws.row_dimensions[r0+len(res)+2].height = 36
+ws.freeze_panes = 'C4'
 
 wb.save(OUT)
 print('saved', OUT)
