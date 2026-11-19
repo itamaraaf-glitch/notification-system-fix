@@ -7,7 +7,7 @@ import sys
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.comments import Comment
-from openpyxl.formatting.rule import CellIsRule
+from openpyxl.formatting.rule import CellIsRule, FormulaRule
 
 OUT = sys.argv[1]
 F = 'Arial'
@@ -21,6 +21,15 @@ ILS, ILS2 = '#,##0 ₪;(#,##0 ₪);-', '#,##0.00 ₪;(#,##0.00 ₪);-'
 NUM, PCT = '#,##0;(#,##0);-', '0.0%;(0.0%);-'
 WRAP = Alignment(wrap_text=True, vertical='top', horizontal='right')
 RED = dict(font=Font(name=F, color='FFFFFF', bold=True), fill=PatternFill('solid', fgColor='C00000'))
+TL_G = dict(font=Font(name=F, color='006100', bold=True), fill=PatternFill('solid', fgColor='C6EFCE'))
+TL_Y = dict(font=Font(name=F, color='9C5700', bold=True), fill=PatternFill('solid', fgColor='FFEB9C'))
+TL_R = dict(font=Font(name=F, color='9C0006', bold=True), fill=PatternFill('solid', fgColor='FFC7CE'))
+
+
+def traffic(ws, rng_, green='עובר', yellow='גבולי', red='לא עובר'):
+    first = rng_.split(':')[0]
+    for txt, st in ((green, TL_G), (yellow, TL_Y), (red, TL_R)):
+        ws.conditional_formatting.add(rng_, FormulaRule(formula=[f'ISNUMBER(SEARCH("{txt}",{first}))'], stopIfTrue=True, **st))
 
 wb = Workbook()
 
@@ -71,7 +80,8 @@ for i, (t, f) in enumerate([
     ('גיליונות:', BOLD),
     ('הנחות – תקופה, הנחה לכל קטגוריה, פיגור תשלום, היוון, האם הספק המכהן מגיש.', BLACK),
     ('כתב כמויות – 29 הסעיפים, מחיר מרבי, ההצעה שלנו, עלות, מרווח, וחלוקה לחודשי / חד-פעמי.', BLACK),
-    ('סיכום והשוואה – בסיס ההשוואה (חודשי), רווחיות לפי קטגוריה כולל סיכון פיצויים מוסכמים, וסימולציית ניקוד מול מתחרה.', BLACK),
+    ('סיכום והשוואה – בסיס ההשוואה (חודשי), רווחיות לפי קטגוריה כולל סיכון פיצויים מוסכמים, סימולציית ניקוד מול מתחרה, ורמזור עובר / לא עובר (שורות 38–45).', BLACK),
+    ('הזנת המחירים שלנו: כתב כמויות, עמודה N (ריק = המחיר המרבי פחות ההנחה). הניקוד והרמזור מתעדכנים אוטומטית.', BOLD),
     ('תזרים – 60 חודשים: חומרה ועבודה מראש, הכנסה חודשית, NPV וחשיפה מרבית.', BLACK),
     ('שגיאות בטופס – ליקויים בכתב הכמויות שמשפיעים על ההשוואה (בסיס לשאלות ההבהרה).', BLACK),
     ('תשובות הבהרה – מה נענה, ואיך זה נכנס למודל.', BLACK),
@@ -124,11 +134,12 @@ put(ws, 'A27', 'עלות חודשית מחוץ לכתב הכמויות (הקלט
 put(ws, 'B27', '=B23+B24*B16', fmt=ILS)
 
 # ------------------------------------------------------------------ כתב כמויות
-ws = sheet('כתב כמויות', {'A': 5, 'B': 46, 'C': 12, 'D': 13, 'E': 8, 'F': 12, 'G': 12, 'H': 12, 'I': 13, 'J': 13, 'K': 13, 'L': 10, 'M': 44})
+ws = sheet('כתב כמויות', {'A': 5, 'B': 46, 'C': 12, 'D': 13, 'E': 8, 'F': 12, 'G': 12, 'H': 12, 'I': 13, 'J': 13, 'K': 13, 'L': 10, 'M': 44, 'N': 14, 'O': 16})
 ws['A1'] = 'כתב כמויות – מחירים מרביים, ההצעה שלנו ועלויות'
 ws['A1'].font = TITLE
 header(ws, 3, ['#', 'רכיב', 'קטגוריה', 'סוג תשלום', 'כמות', 'מחיר מרבי ליחידה', 'המחיר שלנו ליחידה', 'עלות שלנו ליחידה',
-               'סה"כ מרבי', 'סה"כ שלנו', 'סה"כ עלות', 'מרווח', 'הערת עלות (הערכה – לאמת)'])
+               'סה"כ מרבי', 'סה"כ שלנו', 'סה"כ עלות', 'מרווח', 'הערת עלות (הערכה – לאמת)',
+               'המחיר שלנו – הזנה ידנית (ריק = לפי ההנחה בגיליון הנחות)', 'בדיקה'])
 # (n, name, category, pay, qty, max, cost, note)  pay: חודשי / חד-פעמי / חודשי משנה 4
 L, P, S, HW, LB, MT = 'קווים', 'מרכזייה', 'Fortinet SaaS', 'חומרה', 'שעות עבודה', 'תחזוקה'
 DISC = {L: 'B6', P: 'B7', S: 'B8', HW: 'B9', LB: 'B10', MT: 'B11'}
@@ -172,7 +183,9 @@ for i, (n, name, cat, pay, qty, mx, cost, note) in enumerate(items):
     put(ws, f'D{r}', pay)
     put(ws, f'E{r}', qty, BLUE, NUM, YEL if n == 22 else None)
     put(ws, f'F{r}', mx, BLUE, ILS)
-    put(ws, f'G{r}', f"=F{r}*(1-{H}{DISC[cat]})", fmt=ILS2)
+    put(ws, f'G{r}', f'=IF(N{r}<>"",N{r},F{r}*(1-{H}{DISC[cat]}))', fmt=ILS2)
+    put(ws, f'N{r}', None, BLUE, ILS2, YEL)
+    put(ws, f'O{r}', f'=IF(E{r}=0,"-",IF(G{r}>F{r},"לא עובר – מעל המרבי",IF(G{r}<H{r},"גבולי – מתחת לעלות","עובר")))')
     put(ws, f'H{r}', cost, GREEN if str(cost).startswith('=') else BLUE, ILS2, YEL)
     put(ws, f'I{r}', f'=E{r}*F{r}', fmt=ILS)
     put(ws, f'J{r}', f'=E{r}*G{r}', fmt=ILS)
@@ -182,6 +195,10 @@ for i, (n, name, cat, pay, qty, mx, cost, note) in enumerate(items):
     ws.row_dimensions[r].height = 30
 RL = R0 + len(items) - 1
 ws.conditional_formatting.add(f'L{R0}:L{RL}', CellIsRule(operator='lessThan', formula=['0'], **RED))
+traffic(ws, f'O{R0}:O{RL}')
+put(ws, f'B{RL + 2}', 'להזנת מחיר: לכתוב בעמודה N את המחיר ליחידה. ריק = המחיר המרבי פחות ההנחה לקטגוריה (גיליון הנחות). הניקוד והרמזור בגיליון "סיכום והשוואה" מתעדכנים אוטומטית.', BOLD).alignment = WRAP
+ws.merge_cells(f'B{RL + 2}:M{RL + 2}')
+ws.row_dimensions[RL + 2].height = 30
 ws.freeze_panes = 'C4'
 rng = lambda c: f'${c}${R0}:${c}${RL}'
 
@@ -263,6 +280,34 @@ put(ws, 'E35', 'ההצעה החודשית הגבוהה ביותר שעדיין �
 put(ws, 'A36', 'שווי נקודת איכות אחת בהצעה החודשית (₪ לחודש)').alignment = WRAP
 put(ws, 'C36', '=C27*C27/(70*MIN(C27,D27))', BOLD, ILS)
 put(ws, 'E36', 'כמה ₪ לחודש צריך להוריד כדי לפצות על נקודה אחת.').alignment = WRAP
+
+put(ws, 'A38', 'רמזור – עובר / לא עובר', TITLE)
+header(ws, 39, ['בדיקה', 'ערך', 'סטטוס', 'סף', 'הסבר'])
+NK = f"{K}$O${R0}:$O${RL}"
+tl = [
+    (40, 'ציון HOT מול המתחרה (פער בנקודות)', '=C34', '0.0;[Red]-0.0',
+     '=IF(C34>=0,"עובר – מובילים",IF(C34>=-2,"גבולי – פער קטן","לא עובר – מפסידים"))', 'עובר ≥ 0; גבולי עד ‎-2', 'לפי סימולציית הניקוד: מחיר 70 + איכות 30. מחיר המתחרה בתא D27.'),
+    (41, 'מחירים מעל המחיר המרבי (פסילה)', f'=COUNTIF({NK},"לא עובר*")', NUM,
+     '=IF(B41=0,"עובר","לא עובר – לתקן מחירים")', '0', 'כל סעיף מעל המרבי בכתב הכמויות – עמודה O.'),
+    (42, 'סעיפים מתחת לעלות', f'=COUNTIF({NK},"גבולי*")', NUM,
+     '=IF(B42=0,"עובר","גבולי – סעיפים מפסידים")', '0', 'מותר טקטית (למשל חומרה), אבל לבדוק.'),
+    (43, 'מרווח רווח לתקופה', '=E23', PCT,
+     '=IF(E23>=0.15,"עובר",IF(E23>=0,"גבולי – מרווח נמוך","לא עובר – הפסד"))', 'עובר ≥ 15%; גבולי 0–15%', 'רווחיות לתקופה כולל פיצויים, הקלטות ואיש NSE.'),
+    (44, 'NPV של התזרים', "='תזרים'!C3", ILS,
+     '=IF(B44>0,"עובר","לא עובר – NPV שלילי")', '> 0', 'כולל עליית עלויות שנתית בלי הצמדה.'),
+    (45, 'שורה תחתונה', None, None,
+     '=IF(COUNTIF(C40:C44,"לא עובר*")>0,"לא עובר",IF(COUNTIF(C40:C44,"גבולי*")>0,"גבולי","עובר"))', '', 'לא עובר אם בדיקה אחת לפחות לא עוברת.'),
+]
+for r, lab, val, fmt, st, thr, note in tl:
+    put(ws, f'A{r}', lab, BOLD if r == 45 else BLACK).alignment = WRAP
+    put(ws, f'B{r}', val, fmt=fmt)
+    put(ws, f'C{r}', st, BOLD).alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    put(ws, f'D{r}', thr).alignment = WRAP
+    put(ws, f'E{r}', note).alignment = WRAP
+    ws.row_dimensions[r].height = 30
+traffic(ws, 'C40:C45')
+ws.column_dimensions['C'].width = 22
+ws.column_dimensions['E'].width = 40
 
 # ------------------------------------------------------------------ תזרים
 ws = sheet('תזרים', {c: 14 for c in 'ABCDEFGH'})
