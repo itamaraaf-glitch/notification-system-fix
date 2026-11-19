@@ -121,7 +121,7 @@ ITEMS = [
 
 ws = wb.create_sheet('כתב כמויות Fortinet – באקה', 0)
 ws.sheet_view.rightToLeft = True
-for c, w in {'A': 8, 'B': 26, 'C': 50, 'D': 9, 'E': 13, 'F': 14, 'G': 12, 'H': 15, 'I': 15, 'J': 15, 'K': 13, 'L': 30}.items():
+for c, w in {'A': 8, 'B': 26, 'C': 50, 'D': 9, 'E': 13, 'F': 14, 'G': 12, 'H': 15, 'I': 15, 'J': 15, 'K': 13, 'L': 30, 'M': 13, 'N': 13, 'O': 13, 'P': 14, 'Q': 11}.items():
     ws.column_dimensions[c].width = w
 ws['A1'] = 'כתב כמויות Fortinet – עיריית באקה אלגרבייה, מכרז 30/2026 (לפי מחשבון OTC V22)'
 ws['A1'].font = TITLE
@@ -181,8 +181,11 @@ for i, t in enumerate(heads2):
     c = ws.cell(row=H2, column=1 + i, value=t)
     c.font, c.fill, c.border = HDR, HFILL, BOX
     c.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
-ws.cell(row=H2, column=12, value='הערה').font = HDR
-ws.cell(row=H2, column=12).fill = HFILL
+for i, t in enumerate(['הערה', 'עלות ליחידה (₪; חודשי = לחודש)', 'מחיר מרבי ליחידה במכרז', 'הנחה נדרשת מהספק – בלי רווח',
+                       'הנחה נדרשת מהספק – עם ההעמסה במחשבון', 'שער דולר לאיזון (בלי רווח)']):
+    c = ws.cell(row=H2, column=12 + i, value=t)
+    c.font, c.fill, c.border = HDR, HFILL, BOX
+    c.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
 ws.row_dimensions[H2].height = 46
 NOTES = {
     2: 'שורת 51G היא ל-24 חודשים (02-24) ולא 36; המחירים ליחידה זהים לבאנדלים בסעיפים 25–27 – לבדוק מול הספק אם הועתקו בטעות.',
@@ -213,6 +216,18 @@ for i, (it, name, pay, q, mx) in enumerate(ITEMS):
     ws[f'J{r}'].alignment = Alignment(horizontal='center', wrap_text=True)
     put(ws, f'K{r}', 'חודשי ל-36 ח\'' if pay == 'חודשי' else 'סה"כ לסעיף')
     put(ws, f'L{r}', NOTES.get(it, '')).alignment = WRAP
+    if pay == 'חודשי':
+        put(ws, f'M{r}', f'=E{r}/$C$6', fmt=ILS)                       # עלות לחודש (נומינלי)
+        put(ws, f'N{r}', mx, fmt=ILS)
+        put(ws, f'O{r}', f'=MAX(0,1-(-PV($C$5,$C$6,G{r}))/E{r})', fmt=PCT)
+        put(ws, f'P{r}', f'=MAX(0,1-(-PV($C$5,$C$6,G{r}))/(E{r}*(1+$C$4)))', fmt=PCT)
+        put(ws, f'Q{r}', f'=$C$3*(-PV($C$5,$C$6,G{r}))/E{r}', fmt='0.00')
+    else:
+        put(ws, f'M{r}', f'=E{r}/D{r}', fmt=ILS)
+        put(ws, f'N{r}', mx, fmt=ILS)
+        put(ws, f'O{r}', f'=MAX(0,1-N{r}/M{r})', fmt=PCT)
+        put(ws, f'P{r}', f'=MAX(0,1-N{r}/(M{r}*(1+$C$4)))', fmt=PCT)
+        put(ws, f'Q{r}', f'=$C$3*N{r}/M{r}', fmt='0.00')
     ws.row_dimensions[r].height = 42 if it in NOTES else 22
 IL = I0 + len(ITEMS) - 1
 traffic(ws, f'J{I0}:J{IL}')
@@ -236,6 +251,7 @@ r += 2
 for t in [
     'איך לקרוא: "העמסה מרבית אפשרית" = כמה אפשר להעמיס על עלות הספק בלי לעבור את המחיר המרבי במכרז. עובר = מעל ההעמסה במחשבון; גבולי = 0% עד ההעמסה במחשבון (צריך אישור מאשר בדרג גבוה יותר); לא עובר = העלות כבר מעל המרבי.',
     'סעיפים 1–3 חודשיים: התשלום החודשי מחושב כמו במחשבון – PMT בריבית החודשית על העלות × (1+העמסה), ל-36 חודשים.',
+    'המחיר המרבי במכרז הוא ליחידה – לכן הבדיקה היא עלות ליחידה מול מרבי ליחידה (עמודות M–N). "הנחה נדרשת מהספק" = כמה הספק צריך להוריד כדי שהיחידה תיכנס במרבי. "שער דולר לאיזון" = השער שבו העלות ליחידה שווה למרבי.',
     'סעיפים 23–28 חד-פעמיים: עלות × (1+העמסה). אלה גם הקלטים של "מחשבון ציוד – עלות חד פעמית" (D28 ציוד, D30 רישיונות / אחריות, תשלום אחד).',
     'מקור: הצעת מחיר של הספק (צילום מסך, 19.11.2026). המחירים ב-USD – לאמת מול ההצעה הרשמית ולעדכן את שער הדולר.',
 ]:
