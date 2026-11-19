@@ -29,7 +29,7 @@ TL_R = dict(font=Font(name=F, color='9C0006', bold=True), fill=PatternFill('soli
 def traffic(ws, rng_, green='עובר', yellow='גבולי', red='לא עובר'):
     first = rng_.split(':')[0]
     for txt, st in ((green, TL_G), (yellow, TL_Y), (red, TL_R)):
-        ws.conditional_formatting.add(rng_, FormulaRule(formula=[f'ISNUMBER(SEARCH("{txt}",{first}))'], stopIfTrue=True, **st))
+        ws.conditional_formatting.add(rng_, FormulaRule(formula=[f'LEFT({first},{len(txt)})="{txt}"'], stopIfTrue=True, **st))
 
 wb = Workbook()
 

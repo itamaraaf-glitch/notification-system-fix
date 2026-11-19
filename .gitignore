@@ -16,3 +16,6 @@ dashboard.log
 
 # חבילות ZIP להורדה – נוצרות מחדש מהקבצים שבמאגר
 tenders/analysis/**/*.zip
+
+# מחשבון OTC פנימי (סודי – מסחרי) – לא נשמר במאגר
+tenders/analysis/*/מחשבון_OTC_*.xlsx
