@@ -19,6 +19,7 @@ from openpyxl.drawing.spreadsheet_drawing import OneCellAnchor, AnchorMarker
 from openpyxl.drawing.xdr import XDRPositiveSize2D
 
 SRC, OUT = sys.argv[1], sys.argv[2]
+BDL_ONLY = '--bdl-only' in sys.argv   # טיוטה: בלי רישוי FortiAnalyzer Cloud לכל מכשיר (בהנחה שכפול ל-BDL)
 wb = openpyxl.load_workbook(SRC)
 
 # ------------------------------------------------------------------ לוגואים מהתבנית
@@ -119,11 +120,13 @@ ITEMS = [
     (28, 'FortiAP 231G + 3Y UTM + FortiCare', 'חד-פעמי', 10, 1200),
 ]
 
+if BDL_ONLY:
+    LINES = [l for l in LINES if l[0] != 2]
 ws = wb.create_sheet('כתב כמויות Fortinet – באקה', 0)
 ws.sheet_view.rightToLeft = True
 for c, w in {'A': 8, 'B': 26, 'C': 50, 'D': 9, 'E': 13, 'F': 14, 'G': 12, 'H': 15, 'I': 15, 'J': 15, 'K': 13, 'L': 30, 'M': 13, 'N': 13, 'O': 13, 'P': 14, 'Q': 11, 'R': 12}.items():
     ws.column_dimensions[c].width = w
-ws['A1'] = 'כתב כמויות Fortinet – עיריית באקה אלגרבייה, מכרז 30/2026 (לפי מחשבון OTC V22)'
+ws['A1'] = 'כתב כמויות Fortinet – עיריית באקה אלגרבייה, מכרז 30/2026 (לפי מחשבון OTC V22)' + (' – טיוטה: BDL בלבד, בלי רישוי FortiAnalyzer Cloud' if BDL_ONLY else '')
 ws['A1'].font = TITLE
 
 put(ws, 'B3', 'שער דולר (₪)', BOLD)
@@ -199,6 +202,7 @@ NOTES = {
     25: 'מחיר זהה לשורת FortiAnalyzer 71G (סעיף 2) – לאמת.',
     27: 'מחיר זהה לשורת FortiAnalyzer 51G (סעיף 2) – לאמת.',
     28: 'הספק הציע FortiAP-231K. לפי תשובה 49 (21.11) מותר דגם שו"ע עם לפחות אותן תכונות, ללא תוספת מחיר – לצרף השוואת מפרט ל-231G.',
+    **({2: 'טיוטה: הוסרו 3 שורות FortiAnalyzer Cloud (בהנחה שהן כפילות של ה-BDL). לאמת מול הספק שהשירות כלול – המכרז דורש FortiAnalyzer Cloud עם שמירת לוגים 24 ח\'.'} if BDL_ONLY else {}),
 }
 I0 = H2 + 1
 for i, (it, name, pay, q, mx) in enumerate(ITEMS):
@@ -227,9 +231,9 @@ for i, (it, name, pay, q, mx) in enumerate(ITEMS):
     if pay == 'חודשי':
         put(ws, f'M{r}', f'=SUMIFS($J${L0}:$J${LL},$A${L0}:$A${LL},A{r})', fmt=ILS)   # כל שורה לפי תקופת הרישוי שלה
         put(ws, f'N{r}', mx, fmt=ILS)
-        put(ws, f'O{r}', f'=MAX(0,1-(-PV($C$5,R{r},G{r}))/E{r})', fmt=PCT)
-        put(ws, f'P{r}', f'=MAX(0,1-(-PV($C$5,R{r},G{r}))/(E{r}*(1+$C$4)))', fmt=PCT)
-        put(ws, f'Q{r}', f'=$C$3*(-PV($C$5,R{r},G{r}))/E{r}', fmt='0.00')
+        put(ws, f'O{r}', f'=IF(E{r}=0,0,MAX(0,1-(-PV($C$5,R{r},G{r}))/E{r}))', fmt=PCT)
+        put(ws, f'P{r}', f'=IF(E{r}=0,0,MAX(0,1-(-PV($C$5,R{r},G{r}))/(E{r}*(1+$C$4))))', fmt=PCT)
+        put(ws, f'Q{r}', f'=IF(E{r}=0,"-",$C$3*(-PV($C$5,R{r},G{r}))/E{r})', fmt='0.00')
     else:
         put(ws, f'M{r}', f'=E{r}/D{r}', fmt=ILS)
         put(ws, f'N{r}', mx, fmt=ILS)
@@ -294,18 +298,18 @@ for i, (it, name, pay, q, mx) in enumerate(ITEMS):
     put(ws, f'E{r}', f'=M{pr}', fmt=ILS)
     put(ws, f'F{r}', f'=N{pr}', fmt=ILS)
     if mon:
-        put(ws, f'G{r}', f'=MIN(PMT($C$5,R{pr},-E{pr}*(1+$C$4)),F{r})', fmt=ILS)
+        put(ws, f'G{r}', f'=IF(E{pr}=0,F{r},MIN(PMT($C$5,R{pr},-E{pr}*(1+$C$4)),F{r}))', fmt=ILS)
     else:
-        put(ws, f'G{r}', f'=MIN(E{r}*(1+$C$4),F{r})', fmt=ILS)
+        put(ws, f'G{r}', f'=IF(E{r}=0,F{r},MIN(E{r}*(1+$C$4),F{r}))', fmt=ILS)
     put(ws, f'H{r}', None, BLUE, ILS, YEL)
     put(ws, f'I{r}', f'=IF(H{r}<>"",H{r},ROUND(G{r},0))', BOLD, ILS)
     put(ws, f'J{r}', f'=I{r}*D{r}', fmt=ILS)
     if mon:
-        put(ws, f'K{r}', f'=IF(E{pr}>0,-PV($C$5,R{pr},J{r})/E{pr}-1,0)', fmt=PCT)
+        put(ws, f'K{r}', f'=IF(E{pr}>0,-PV($C$5,R{pr},J{r})/E{pr}-1,1)', fmt=PCT)
         put(ws, f'M{r}', f'=J{r}', fmt=ILS)
         put(ws, f'N{r}', f'=(J{r}-E{r})*$C$6', fmt=ILS)
     else:
-        put(ws, f'K{r}', f'=IF(E{pr}>0,J{r}/E{pr}-1,0)', fmt=PCT)
+        put(ws, f'K{r}', f'=IF(E{pr}>0,J{r}/E{pr}-1,1)', fmt=PCT)
         put(ws, f'M{r}', f'=J{r}/36', fmt=ILS)
         put(ws, f'N{r}', f'=J{r}-E{pr}', fmt=ILS)
     put(ws, f'L{r}', (f'=IF(I{r}>F{r},"לא עובר – מעל המרבי (פסילה)",IF(ROUND(K{r},3)>={TH[0]},"עובר – מת""ל",'
