@@ -137,7 +137,10 @@ put(ws, 'C5', f'={CALC}Z6', fmt='0.000%')
 put(ws, 'B6', 'חודשי פריסה לרישוי SaaS (סעיפים 1–3)', BOLD)
 put(ws, 'C6', 36, BLUE, '0', YEL)
 put(ws, 'D6', 'הרישוי נקנה מראש ל-36 חודשים ונגבה מהעירייה כתשלום חודשי.')
-for r in (3, 4, 5, 6):
+put(ws, 'B7', 'הנחת פרויקט מהספק (Special Pricing)', BOLD)
+put(ws, 'C7', 0, BLUE, '0%', YEL)
+put(ws, 'D7', 'להזנה אחרי תשובת הספק – מוריד את כל עלויות Fortinet.')
+for r in (3, 4, 5, 6, 7):
     ws.merge_cells(f'D{r}:L{r}')
 
 # ---- שורות הספק
@@ -158,7 +161,7 @@ for i, (it, sku, desc, q, p, kind) in enumerate(LINES):
     put(ws, f'E{r}', p, BLUE, USD, YEL)
     put(ws, f'F{r}', f'=D{r}*E{r}', fmt=USD)
     put(ws, f'G{r}', kind)
-    put(ws, f'H{r}', f'=F{r}*$C$3', fmt=ILS)
+    put(ws, f'H{r}', f'=F{r}*$C$3*(1-$C$7)', fmt=ILS)
 LL = L0 + len(LINES) - 1
 r = LL + 1
 put(ws, f'C{r}', 'סה"כ הצעת הספק', BOLD)
@@ -259,6 +262,85 @@ for t in [
     ws.merge_cells(f'A{r}:L{r}')
     ws.row_dimensions[r].height = 30
     r += 1
+
+# ---- המחירים שלנו להצעה
+r += 1
+put(ws, f'A{r}', 'המחירים שלנו להצעה – מחיר ליחידה, סה"כ, מאשר נדרש והשפעה על הציון', TITLE).border = Border()
+r += 1
+H3 = r
+heads3 = ['סעיף', 'רכיב', 'סוג תשלום', 'כמות', 'עלות ליחידה (₪; חודשי = לחודש)', 'מחיר מרבי ליחידה',
+          'המחיר המחושב (עלות + העמסה, עד המרבי)', 'דריסה ידנית', 'המחיר שלנו ליחידה', 'סה"כ שלנו',
+          'העמסה בפועל', 'מאשר נדרש (לפי טבלת המחשבון)', 'שווי בציון המחיר (₪ לחודש)', 'רווח לתקופה (₪)', 'להעתקה למודל']
+for i, t in enumerate(heads3):
+    c = ws.cell(row=H3, column=1 + i, value=t)
+    c.font, c.fill, c.border = HDR, HFILL, BOX
+    c.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
+ws.row_dimensions[H3].height = 46
+P0 = H3 + 1
+TH = [f'{CALC}$W$26', f'{CALC}$W$27', f'{CALC}$W$28', f'{CALC}$W$29']   # 25% / 20% / 15% / 8%
+for i, (it, name, pay, q, mx) in enumerate(ITEMS):
+    r = P0 + i
+    pr = I0 + i
+    mon = pay == 'חודשי'
+    put(ws, f'A{r}', it)
+    put(ws, f'B{r}', name).alignment = WRAP
+    put(ws, f'C{r}', pay)
+    put(ws, f'D{r}', q, fmt='0')
+    put(ws, f'E{r}', f'=M{pr}', fmt=ILS)
+    put(ws, f'F{r}', f'=N{pr}', fmt=ILS)
+    if mon:
+        put(ws, f'G{r}', f'=MIN(PMT($C$5,$C$6,-E{pr}*(1+$C$4)),F{r})', fmt=ILS)
+    else:
+        put(ws, f'G{r}', f'=MIN(E{r}*(1+$C$4),F{r})', fmt=ILS)
+    put(ws, f'H{r}', None, BLUE, ILS, YEL)
+    put(ws, f'I{r}', f'=IF(H{r}<>"",H{r},ROUND(G{r},0))', BOLD, ILS)
+    put(ws, f'J{r}', f'=I{r}*D{r}', fmt=ILS)
+    if mon:
+        put(ws, f'K{r}', f'=IF(E{pr}>0,-PV($C$5,$C$6,J{r})/E{pr}-1,0)', fmt=PCT)
+        put(ws, f'M{r}', f'=J{r}', fmt=ILS)
+        put(ws, f'N{r}', f'=J{r}*$C$6-E{pr}', fmt=ILS)
+    else:
+        put(ws, f'K{r}', f'=IF(E{pr}>0,J{r}/E{pr}-1,0)', fmt=PCT)
+        put(ws, f'M{r}', f'=J{r}/36', fmt=ILS)
+        put(ws, f'N{r}', f'=J{r}-E{pr}', fmt=ILS)
+    put(ws, f'L{r}', (f'=IF(I{r}>F{r},"לא עובר – מעל המרבי (פסילה)",IF(ROUND(K{r},3)>={TH[0]},"עובר – מת""ל",'
+                      f'IF(ROUND(K{r},3)>={TH[1]},"עובר – מנהל מחלקה/תחום",IF(ROUND(K{r},3)>={TH[2]},"גבולי – מנהל אגף",'
+                      f'IF(ROUND(K{r},3)>={TH[3]},"גבולי – מנהל חטיבה",IF(ROUND(K{r},3)>=0,"לא עובר – מתחת להעמסה המינימלית","לא עובר – הפסד"))))))'))
+    ws[f'L{r}'].alignment = Alignment(horizontal='center', wrap_text=True)
+    put(ws, f'O{r}', f"מודל: 'הצעת המחיר שלנו'!F{it + 3}")
+    ws.row_dimensions[r].height = 28
+PL = P0 + len(ITEMS) - 1
+traffic(ws, f'L{P0}:L{PL}')
+r = PL + 1
+put(ws, f'B{r}', 'סה"כ חודשי (סעיפים 1–3)', BOLD)
+put(ws, f'J{r}', f'=SUMIFS(J{P0}:J{PL},C{P0}:C{PL},"חודשי")', BOLD, ILS)
+put(ws, f'M{r}', f'=SUMIFS(M{P0}:M{PL},C{P0}:C{PL},"חודשי")', BOLD, ILS)
+put(ws, f'N{r}', f'=SUMIFS(N{P0}:N{PL},C{P0}:C{PL},"חודשי")', BOLD, ILS)
+r += 1
+put(ws, f'B{r}', 'סה"כ חד-פעמי (סעיפים 23–28)', BOLD)
+put(ws, f'J{r}', f'=SUMIFS(J{P0}:J{PL},C{P0}:C{PL},"חד-פעמי")', BOLD, ILS)
+put(ws, f'M{r}', f'=SUMIFS(M{P0}:M{PL},C{P0}:C{PL},"חד-פעמי")', BOLD, ILS)
+put(ws, f'N{r}', f'=SUMIFS(N{P0}:N{PL},C{P0}:C{PL},"חד-פעמי")', BOLD, ILS)
+r += 1
+put(ws, f'B{r}', 'Fortinet בציון המחיר (חודשי + חד-פעמי ÷ 36)', BOLD)
+put(ws, f'M{r}', f'=SUM(M{P0}:M{PL})', BOLD, ILS)
+put(ws, f'N{r}', f'=SUM(N{P0}:N{PL})', BOLD, ILS)
+put(ws, f'L{r}', f'=IF(COUNTIF(L{P0}:L{PL},"לא עובר*")>0,"לא עובר – "&COUNTIF(L{P0}:L{PL},"לא עובר*")&" סעיפים",IF(COUNTIF(L{P0}:L{PL},"גבולי*")>0,"גבולי – נדרש מאשר בכיר","עובר"))', BOLD)
+ws[f'L{r}'].alignment = Alignment(horizontal='center', wrap_text=True)
+traffic(ws, f'L{r}:L{r}')
+r += 2
+for t in [
+    'המחיר המחושב = עלות × (1 + אחוז ההעמסה במחשבון), ובחודשי – PMT בריבית המחשבון ל-36 חודשים; בכל מקרה לא יותר מהמחיר המרבי ליחידה. אפשר לדרוס ידנית בעמודה H.',
+    'מאשר נדרש – לפי טבלת ההעמסה המינימלית במחשבון (V26:W29): מת"ל 25%, מנהל מחלקה 20%, מנהל אגף 15%, מנהל חטיבה 8%. מתחת ל-8% – לא ניתן לאשר; מתחת ל-0% – הפסד.',
+    'שווי בציון: לפי תשובה 9 (21.11) החד-פעמי מחולק ל-36 ומתווסף לחודשי. כל 36 ₪ בחד-פעמי = 1 ₪ בציון.',
+    'דגמים: לפי תשובה 49 (21.11) מותר דגם שו"ע עם לפחות אותן תכונות, ללא תוספת מחיר (למשל FortiAP-231K).',
+    'להעתקה למודל הכלכלי: את "המחיר שלנו ליחידה" (עמודה I) מזינים בגיליון "הצעת המחיר שלנו" במודל, בתא שבעמודה O.',
+]:
+    put(ws, f'A{r}', t).alignment = WRAP
+    ws.merge_cells(f'A{r}:O{r}')
+    ws.row_dimensions[r].height = 28
+    r += 1
+ws.column_dimensions['O'].width = 26
 ws.freeze_panes = 'A9'
 
 # ------------------------------------------------------------------ קלטי המחשבון (חומרה, תשלום אחד)
