@@ -121,7 +121,7 @@ ITEMS = [
 
 ws = wb.create_sheet('כתב כמויות Fortinet – באקה', 0)
 ws.sheet_view.rightToLeft = True
-for c, w in {'A': 8, 'B': 26, 'C': 50, 'D': 9, 'E': 13, 'F': 14, 'G': 12, 'H': 15, 'I': 15, 'J': 15, 'K': 13, 'L': 30, 'M': 13, 'N': 13, 'O': 13, 'P': 14, 'Q': 11}.items():
+for c, w in {'A': 8, 'B': 26, 'C': 50, 'D': 9, 'E': 13, 'F': 14, 'G': 12, 'H': 15, 'I': 15, 'J': 15, 'K': 13, 'L': 30, 'M': 13, 'N': 13, 'O': 13, 'P': 14, 'Q': 11, 'R': 12}.items():
     ws.column_dimensions[c].width = w
 ws['A1'] = 'כתב כמויות Fortinet – עיריית באקה אלגרבייה, מכרז 30/2026 (לפי מחשבון OTC V22)'
 ws['A1'].font = TITLE
@@ -134,9 +134,9 @@ put(ws, 'C4', f'={CALC}G17', fmt='0%')
 put(ws, 'D4', 'משנים במחשבון. מינימום לפי מאשר העסקה: מת"ל 25%, מנהל מחלקה 20%, אגף 15%, חטיבה 8%.')
 put(ws, 'B5', 'ריבית חודשית (מהמחשבון, Z6)', BOLD)
 put(ws, 'C5', f'={CALC}Z6', fmt='0.000%')
-put(ws, 'B6', 'חודשי פריסה לרישוי SaaS (סעיפים 1–3)', BOLD)
+put(ws, 'B6', 'תקופת החוזה לחישוב רווח (חודשים)', BOLD)
 put(ws, 'C6', 36, BLUE, '0', YEL)
-put(ws, 'D6', 'הרישוי נקנה מראש ל-36 חודשים ונגבה מהעירייה כתשלום חודשי.')
+put(ws, 'D6', 'כל שורת רישוי נפרסת לפי התקופה שלה (‎-24 = 24 חודשים, ‎-36 = 36 חודשים – עמודה I). רישוי של 24 חודשים מחודש לתקופה הנותרת באותו מחיר לחודש.')
 put(ws, 'B7', 'הנחת פרויקט מהספק (Special Pricing)', BOLD)
 put(ws, 'C7', 0, BLUE, '0%', YEL)
 put(ws, 'D7', 'להזנה אחרי תשובת הספק – מוריד את כל עלויות Fortinet.')
@@ -145,7 +145,7 @@ for r in (3, 4, 5, 6, 7):
 
 # ---- שורות הספק
 H1 = 8
-heads = ['סעיף במכרז', 'SKU', 'תיאור', 'כמות', 'מחיר ליחידה ($)', 'סה"כ ($)', 'סוג', 'סה"כ עלות (₪)']
+heads = ['סעיף במכרז', 'SKU', 'תיאור', 'כמות', 'מחיר ליחידה ($)', 'סה"כ ($)', 'סוג', 'סה"כ עלות (₪)', 'תקופת רישוי (חודשים)', 'עלות לחודש (₪)']
 for i, t in enumerate(heads):
     c = ws.cell(row=H1, column=1 + i, value=t)
     c.font, c.fill, c.border = HDR, HFILL, BOX
@@ -162,6 +162,10 @@ for i, (it, sku, desc, q, p, kind) in enumerate(LINES):
     put(ws, f'F{r}', f'=D{r}*E{r}', fmt=USD)
     put(ws, f'G{r}', kind)
     put(ws, f'H{r}', f'=F{r}*$C$3*(1-$C$7)', fmt=ILS)
+    if kind == 'SaaS':
+        m_ = re.search(r'-(\d{2})$', sku)
+        put(ws, f'I{r}', int(m_.group(1)) if m_ else 36, BLUE, '0', YEL)   # לפי סיומת ה-SKU (‎-24 / ‎-36)
+        put(ws, f'J{r}', f'=H{r}/I{r}', fmt=ILS)
 LL = L0 + len(LINES) - 1
 r = LL + 1
 put(ws, f'C{r}', 'סה"כ הצעת הספק', BOLD)
@@ -185,7 +189,7 @@ for i, t in enumerate(heads2):
     c.font, c.fill, c.border = HDR, HFILL, BOX
     c.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
 for i, t in enumerate(['הערה', 'עלות ליחידה (₪; חודשי = לחודש)', 'מחיר מרבי ליחידה במכרז', 'הנחה נדרשת מהספק – בלי רווח',
-                       'הנחה נדרשת מהספק – עם ההעמסה במחשבון', 'שער דולר לאיזון (בלי רווח)']):
+                       'הנחה נדרשת מהספק – עם ההעמסה במחשבון', 'שער דולר לאיזון (בלי רווח)', 'תקופת רישוי אפקטיבית (חודשים)']):
     c = ws.cell(row=H2, column=12 + i, value=t)
     c.font, c.fill, c.border = HDR, HFILL, BOX
     c.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
@@ -206,10 +210,11 @@ for i, (it, name, pay, q, mx) in enumerate(ITEMS):
     put(ws, f'E{r}', f'=SUMIFS($H${L0}:$H${LL},$A${L0}:$A${LL},A{r})', fmt=ILS)
     if pay == 'חודשי':
         # תשלום חודשי שמחזיר עלות × (1+העמסה) בריבית המחשבון
-        put(ws, f'F{r}', f'=PMT($C$5,$C$6,-E{r}*(1+$C$4))', fmt=ILS)
+        put(ws, f'R{r}', f'=IF(SUMIFS($J${L0}:$J${LL},$A${L0}:$A${LL},A{r})>0,E{r}/SUMIFS($J${L0}:$J${LL},$A${L0}:$A${LL},A{r}),$C$6)', fmt='0.0')
+        put(ws, f'F{r}', f'=PMT($C$5,R{r},-E{r}*(1+$C$4))', fmt=ILS)
         put(ws, f'G{r}', mx, BLUE, ILS)
-        put(ws, f'H{r}', f'=IF(E{r}>0,-PV($C$5,$C$6,G{r})/E{r}-1,0)', fmt=PCT)
-        put(ws, f'I{r}', f'=MIN(F{r},G{r})*$C$6-E{r}', fmt=ILS)
+        put(ws, f'H{r}', f'=IF(E{r}>0,-PV($C$5,R{r},G{r})/E{r}-1,0)', fmt=PCT)
+        put(ws, f'I{r}', f'=(MIN(F{r},G{r})-M{r})*$C$6', fmt=ILS)
     else:
         put(ws, f'F{r}', f'=E{r}*(1+$C$4)', fmt=ILS)
         put(ws, f'G{r}', f'={mx}*D{r}', fmt=ILS)
@@ -220,11 +225,11 @@ for i, (it, name, pay, q, mx) in enumerate(ITEMS):
     put(ws, f'K{r}', 'חודשי ל-36 ח\'' if pay == 'חודשי' else 'סה"כ לסעיף')
     put(ws, f'L{r}', NOTES.get(it, '')).alignment = WRAP
     if pay == 'חודשי':
-        put(ws, f'M{r}', f'=E{r}/$C$6', fmt=ILS)                       # עלות לחודש (נומינלי)
+        put(ws, f'M{r}', f'=SUMIFS($J${L0}:$J${LL},$A${L0}:$A${LL},A{r})', fmt=ILS)   # כל שורה לפי תקופת הרישוי שלה
         put(ws, f'N{r}', mx, fmt=ILS)
-        put(ws, f'O{r}', f'=MAX(0,1-(-PV($C$5,$C$6,G{r}))/E{r})', fmt=PCT)
-        put(ws, f'P{r}', f'=MAX(0,1-(-PV($C$5,$C$6,G{r}))/(E{r}*(1+$C$4)))', fmt=PCT)
-        put(ws, f'Q{r}', f'=$C$3*(-PV($C$5,$C$6,G{r}))/E{r}', fmt='0.00')
+        put(ws, f'O{r}', f'=MAX(0,1-(-PV($C$5,R{r},G{r}))/E{r})', fmt=PCT)
+        put(ws, f'P{r}', f'=MAX(0,1-(-PV($C$5,R{r},G{r}))/(E{r}*(1+$C$4)))', fmt=PCT)
+        put(ws, f'Q{r}', f'=$C$3*(-PV($C$5,R{r},G{r}))/E{r}', fmt='0.00')
     else:
         put(ws, f'M{r}', f'=E{r}/D{r}', fmt=ILS)
         put(ws, f'N{r}', mx, fmt=ILS)
@@ -253,7 +258,7 @@ BOTTOM = r
 r += 2
 for t in [
     'איך לקרוא: "העמסה מרבית אפשרית" = כמה אפשר להעמיס על עלות הספק בלי לעבור את המחיר המרבי במכרז. עובר = מעל ההעמסה במחשבון; גבולי = 0% עד ההעמסה במחשבון (צריך אישור מאשר בדרג גבוה יותר); לא עובר = העלות כבר מעל המרבי.',
-    'סעיפים 1–3 חודשיים: התשלום החודשי מחושב כמו במחשבון – PMT בריבית החודשית על העלות × (1+העמסה), ל-36 חודשים.',
+    'סעיפים 1–3 חודשיים: כל שורת רישוי נפרסת לפי התקופה שלה (24 או 36 חודשים). התשלום החודשי – PMT בריבית המחשבון על העלות × (1+העמסה), לפי תקופת הרישוי האפקטיבית של הסעיף (עמודה R).',
     'המחיר המרבי במכרז הוא ליחידה – לכן הבדיקה היא עלות ליחידה מול מרבי ליחידה (עמודות M–N). "הנחה נדרשת מהספק" = כמה הספק צריך להוריד כדי שהיחידה תיכנס במרבי. "שער דולר לאיזון" = השער שבו העלות ליחידה שווה למרבי.',
     'סעיפים 23–28 חד-פעמיים: עלות × (1+העמסה). אלה גם הקלטים של "מחשבון ציוד – עלות חד פעמית" (D28 ציוד, D30 רישיונות / אחריות, תשלום אחד).',
     'מקור: הצעת מחיר של הספק (צילום מסך, 19.11.2026). המחירים ב-USD – לאמת מול ההצעה הרשמית ולעדכן את שער הדולר.',
@@ -289,16 +294,16 @@ for i, (it, name, pay, q, mx) in enumerate(ITEMS):
     put(ws, f'E{r}', f'=M{pr}', fmt=ILS)
     put(ws, f'F{r}', f'=N{pr}', fmt=ILS)
     if mon:
-        put(ws, f'G{r}', f'=MIN(PMT($C$5,$C$6,-E{pr}*(1+$C$4)),F{r})', fmt=ILS)
+        put(ws, f'G{r}', f'=MIN(PMT($C$5,R{pr},-E{pr}*(1+$C$4)),F{r})', fmt=ILS)
     else:
         put(ws, f'G{r}', f'=MIN(E{r}*(1+$C$4),F{r})', fmt=ILS)
     put(ws, f'H{r}', None, BLUE, ILS, YEL)
     put(ws, f'I{r}', f'=IF(H{r}<>"",H{r},ROUND(G{r},0))', BOLD, ILS)
     put(ws, f'J{r}', f'=I{r}*D{r}', fmt=ILS)
     if mon:
-        put(ws, f'K{r}', f'=IF(E{pr}>0,-PV($C$5,$C$6,J{r})/E{pr}-1,0)', fmt=PCT)
+        put(ws, f'K{r}', f'=IF(E{pr}>0,-PV($C$5,R{pr},J{r})/E{pr}-1,0)', fmt=PCT)
         put(ws, f'M{r}', f'=J{r}', fmt=ILS)
-        put(ws, f'N{r}', f'=J{r}*$C$6-E{pr}', fmt=ILS)
+        put(ws, f'N{r}', f'=(J{r}-E{r})*$C$6', fmt=ILS)
     else:
         put(ws, f'K{r}', f'=IF(E{pr}>0,J{r}/E{pr}-1,0)', fmt=PCT)
         put(ws, f'M{r}', f'=J{r}/36', fmt=ILS)
