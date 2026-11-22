@@ -19,3 +19,6 @@ tenders/analysis/**/*.zip
 
 # מחשבון OTC פנימי (סודי – מסחרי) – לא נשמר במאגר
 tenders/analysis/*/*מחשבון_OTC_*.xlsx
+# מחירי ספקים (סודי מסחרי) ופלטים שמכילים אותם – לא נשמרים במאגר
+tenders/analysis/*/*.local.json
+tenders/analysis/2026-baqa-30/מודל_כלכלי_מכרז_30-2026_באקה_אלגרבייה.xlsx

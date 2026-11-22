@@ -90,24 +90,12 @@ CALC = "'מחשבון ציוד - עלות חד פעמית'!"
 
 # ------------------------------------------------------------------ שורות הצעת הספק (USD) – מהצילום
 # (סעיף במכרז, SKU, תיאור, כמות, מחיר ליחידה USD, סוג: SaaS / חומרה / אחריות)
-LINES = [
-    (1, 'FNC-CAX-VM', 'FortiNAC Control and Application Extended-VM (עד 50,000 נקודות קצה)', 1, 1819, 'SaaS'),
-    (1, 'FC-10-FNVXA-248-02-36', 'FortiNAC Control and Application Extended-VM – 3 Year FortiCare Premium', 1, 1213, 'SaaS'),
-    (1, 'FC5-10-FNAC1-213-01-36', 'FortiNAC Subscription License 3 Year – PLUS, 100 endpoints', 4, 827, 'SaaS'),
-    (2, 'FC-10-GT51G-585-02-24', 'FortiGate-51G – FortiAnalyzer Cloud (שימו לב: 24 חודשים)', 24, 1436, 'SaaS'),
-    (2, 'FC-10-GT71G-585-02-36', 'FortiGate-71G 3 Year FortiAnalyzer Cloud', 4, 2234, 'SaaS'),
-    (2, 'FC-10-F121G-585-02-36', 'FortiGate-121G 3 Year FortiAnalyzer Cloud', 1, 8130, 'SaaS'),
-    (3, 'FC1-10-MVCLD-227-01-36', 'FortiManager Cloud – 10 devices/VDOMs, 3 Year', 5, 2509, 'SaaS'),
-    (23, 'FS-124F-FPOE', 'FortiSwitch-124F-FPOE – 24x GE PoE + 4x 10G SFP+', 15, 880, 'חומרה'),
-    (23, 'FC-10-S124F-247-02-36', 'FortiSwitch-124F-FPOE 3 Year FortiCare Premium', 15, 286, 'אחריות'),
-    (24, 'FS-148F-FPOE', 'FortiSwitch-148F-FPOE – 48x GE PoE + 4x 10G SFP+', 1, 1445, 'חומרה'),
-    (24, 'FC-10-148FF-247-02-36', 'FortiSwitch-148F-FPOE 3 Year FortiCare Premium', 1, 469, 'אחריות'),
-    (25, 'FG-71G-BDL-950-36', 'FortiGate-71G Hardware + 3 Year FortiCare Premium & UTP', 4, 2234, 'חומרה'),
-    (26, 'FG-121G-BDL-950-36', 'FortiGate-121G Hardware + 3 Year FortiCare Premium & UTP', 1, 8130, 'חומרה'),
-    (27, 'FG-51G-BDL-950-36', 'FortiGate-51G Hardware + 3 Year FortiCare Premium & UTP', 24, 1436, 'חומרה'),
-    (28, 'FAP-231K-E', 'FortiAP-231K Indoor Wireless AP (Wi-Fi 7)', 10, 344, 'חומרה'),
-    (28, 'FC-10-P231K-247-02-36', 'FortiAP-231K 3 Year FortiCare Premium', 10, 106, 'אחריות'),
-]
+# שורות הצעת הספק (USD) – נטענות מקובץ מקומי שלא נשמר במאגר (מחירי ספק – סודי מסחרי)
+import json, os
+_VQ = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'vendor-quote.local.json')
+if not os.path.exists(_VQ):
+    sys.exit('חסר vendor-quote.local.json (מחירי הספק). ראו README – הקובץ לא נשמר במאגר.')
+LINES = [(l['item'], l['sku'], l['desc'], l['qty'], l['unit_usd'], l['kind']) for l in json.load(open(_VQ, encoding='utf-8'))['lines']]
 # סעיפי המכרז: (סעיף, שם, סוג תשלום, כמות, מחיר מרבי ליחידה)
 ITEMS = [
     (1, 'FortiNAC Cloud SaaS ל-400 התקנים', 'חודשי', 1, 1700),
@@ -199,10 +187,8 @@ for i, t in enumerate(['הערה', 'עלות ליחידה (₪; חודשי = ל�
     c.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
 ws.row_dimensions[H2].height = 46
 NOTES = {
-    2: 'שורת 51G היא ל-24 חודשים (02-24) ולא 36; המחירים ליחידה זהים לבאנדלים בסעיפים 25–27 – לבדוק מול הספק אם הועתקו בטעות.',
-    25: 'מחיר זהה לשורת FortiAnalyzer 71G (סעיף 2) – לאמת.',
-    27: 'מחיר זהה לשורת FortiAnalyzer 51G (סעיף 2) – לאמת.',
-    28: 'הספק הציע FortiAP-231K. לפי תשובה 49 (21.11) מותר דגם שו"ע עם לפחות אותן תכונות, ללא תוספת מחיר – לצרף השוואת מפרט ל-231G.',
+    2: 'תמחור מעודכן מהיצרן (22.11): FAZ Cloud לכל FortiGate, לשנתיים (‎-24). המחירים בהצעה הראשונה הועתקו מהבאנדלים. הרישוי נפרס על 24 חודשים ומחודש לשארית החוזה באותו מחיר לחודש.',
+    28: 'היצרן (22.11): FAP-231K-E הוא הדגם המוצע – 231G כבר לא ניתן לרכישה. לפי תשובה 49 מותר דגם שו"ע – לצרף השוואת מפרט.',
     **({2: 'טיוטה: הוסרו 3 שורות FortiAnalyzer Cloud (בהנחה שהן כפילות של ה-BDL). לאמת מול הספק שהשירות כלול – המכרז דורש FortiAnalyzer Cloud עם שמירת לוגים 24 ח\'.'} if BDL_ONLY else {}),
 }
 I0 = H2 + 1
@@ -266,7 +252,7 @@ for t in [
     'סעיפים 1–3 חודשיים: כל שורת רישוי נפרסת לפי התקופה שלה (24 או 36 חודשים). התשלום החודשי – PMT בריבית המחשבון על העלות × (1+העמסה), לפי תקופת הרישוי האפקטיבית של הסעיף (עמודה R).',
     'המחיר המרבי במכרז הוא ליחידה – לכן הבדיקה היא עלות ליחידה מול מרבי ליחידה (עמודות M–N). "הנחה נדרשת מהספק" = כמה הספק צריך להוריד כדי שהיחידה תיכנס במרבי. "שער דולר לאיזון" = השער שבו העלות ליחידה שווה למרבי.',
     'סעיפים 23–28 חד-פעמיים: עלות × (1+העמסה). אלה גם הקלטים של "מחשבון ציוד – עלות חד פעמית" (D28 ציוד, D30 רישיונות / אחריות, תשלום אחד).',
-    'מקור: הצעת מחיר של הספק (צילום מסך, 19.11.2026). המחירים ב-USD – לאמת מול ההצעה הרשמית ולעדכן את שער הדולר.',
+    'מקור: הצעת הספק (19.11.2026) + תמחור מעודכן מהיצרן ל-FortiAnalyzer (22.11.2026). המחירים ב-USD, בתוקף עד סוף 2026 בלבד; הצעות רשמיות אחרי אישור הפתרון.',
 ]:
     put(ws, f'A{r}', t).alignment = WRAP
     ws.merge_cells(f'A{r}:L{r}')
