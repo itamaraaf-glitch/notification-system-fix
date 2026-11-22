@@ -14,6 +14,7 @@ import io
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.formatting.rule import FormulaRule
+from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.drawing.image import Image as XLImage
 from openpyxl.drawing.spreadsheet_drawing import OneCellAnchor, AnchorMarker
 from openpyxl.drawing.xdr import XDRPositiveSize2D
@@ -365,6 +366,134 @@ c['G13'] = 3
 c['D26'] = 'כן'
 for ref in ('D28', 'D30'):
     c[ref].number_format = '#,##0 ₪'
+
+# ------------------------------------------------------------------ תנאי סף יב' – ישות מגישה
+tz = wb.create_sheet("תנאי סף יב' – ישות מגישה", 1)
+tz.sheet_view.rightToLeft = True
+for c_, w_ in {'A': 5, 'B': 9, 'C': 46, 'D': 26, 'E': 11, 'F': 11, 'G': 22, 'H': 14, 'I': 34, 'J': 26}.items():
+    tz.column_dimensions[c_].width = w_
+tz['A1'] = "תנאי סף יב' – כל התנאים במציע עצמו (באקה אלגרבייה, מכרז 30/2026)"
+tz['A1'].font = TITLE
+put(tz, 'B3', 'הישות המגישה (שם וח.פ.)', BOLD)
+tz.merge_cells('B3:C3')
+put(tz, 'D3', None, BLUE, None, YEL)
+tz.merge_cells('D3:F3')
+put(tz, 'G3', 'למלא קודם – מחלקת המכרזים', Font(name=F, color='C00000'))
+tz.merge_cells('G3:J3')
+put(tz, 'B4', 'תשובה 5ב (21.11): הבקשה להקל בתנאי יב\' נדחתה; גם ספק משנה לתנאים ג\', ו\', י\' נדחה. רכיב על שם ישות אחרת = פסילה.')
+tz.merge_cells('B4:J4')
+TH0 = 6
+for i_, t_ in enumerate(['#', 'תנאי', 'רכיב שצריך להיות על שם הישות המגישה', 'מחלקה אחראית', 'סוג', 'יש / אין',
+                         'על שם (ח.פ.) – אם שונה', 'תואם לישות?', 'אסמכתא / הערות', 'סטטוס']):
+    c_ = tz.cell(row=TH0, column=1 + i_, value=t_)
+    c_.font, c_.fill, c_.border = HDR, HFILL, BOX
+    c_.alignment = Alignment(wrap_text=True, horizontal='center', vertical='center')
+tz.row_dimensions[TH0].height = 34
+D_T, D_M, D_C, D_S, D_SA, D_F = 'ניהול מכרזים ומנהלה', 'מוקד, NOC ושטח', 'ענן ומרכזי נתונים', 'אבטחת מידע, Fortinet ו-ISO', 'מכירות וניהול לקוח', 'כספים ותמחור'
+ROWS_T = [
+    ("א'", 'תעודת התאגדות / רישום הישות בישראל', D_T, 'תנאי סף'),
+    ("ו'", 'רישיון מפעיל פנים-ארצי (תשובה 4)', D_T, 'תנאי סף'),
+    ("יא'", 'קבלה על רכישת מסמכי המכרז (500 ₪)', D_T, 'תנאי סף'),
+    ("ב'", 'ניסיון 6 שנים ברציפות ב-3 גופים ציבוריים לפחות + המלצות (תשובה 2)', D_SA, 'תנאי סף'),
+    ("ג'", 'Help Desk עם מעל 4 תומכים (בכלל המוקד – תשובה 3)', D_M, 'תנאי סף'),
+    ("ד'", 'מוקד 24/7, הגעה תוך שעתיים בתקלה משביתה', D_M, 'תנאי סף'),
+    ("ה'", 'מערכת קריאות שירות בכל הערוצים, כולל WhatsApp', D_M, 'תנאי סף'),
+    ("ז'", 'אירוח בענן בחזקת המציע / בשכירות + הסכם; תצהיר חתום מול עו"ד (תשובה 4)', D_C, 'תנאי סף'),
+    ("י'", 'מנהל אבטחת מידע (CISO) מועסק בישות + אישור רו"ח', D_S, 'תנאי סף'),
+    ('CCNP', 'איש רשתות NSE 7 (במקום CCNP) מועסק בישות, תעודה בתוקף', D_S, 'תנאי סף'),
+    ("ח'", 'ערבות בנקאית 10,000 ₪ על שם המציע עצמו', D_F, 'תנאי סף'),
+    ('29', 'מערכת SOC/SIEM ברמת הארגון (תשובה 29)', D_S, 'דרישה'),
+    ('ניקוד', 'ISO 27001 על שם הישות (2024/2025)', D_S, 'ניקוד'),
+    ('ניקוד', 'ISO 9001 על שם הישות (2024/2025)', D_S, 'ניקוד'),
+]
+dv = DataValidation(type='list', formula1='"יש,אין,בבדיקה"', allow_blank=True)
+tz.add_data_validation(dv)
+R0T = TH0 + 1
+for i_, (cond, comp, dept, kind) in enumerate(ROWS_T):
+    r_ = R0T + i_
+    put(tz, f'A{r_}', i_ + 1)
+    put(tz, f'B{r_}', cond, BOLD)
+    put(tz, f'C{r_}', comp).alignment = WRAP
+    put(tz, f'D{r_}', dept).alignment = WRAP
+    put(tz, f'E{r_}', kind)
+    put(tz, f'F{r_}', None, BLUE, None, YEL)
+    tz[f'F{r_}'].alignment = Alignment(horizontal='center')
+    dv.add(f'F{r_}')
+    put(tz, f'G{r_}', None, BLUE, None, YEL)
+    put(tz, f'H{r_}', f'=IF(G{r_}="","כן (ברירת מחדל)",IF(G{r_}=$D$3,"כן","לא – ישות אחרת"))')
+    put(tz, f'I{r_}', None).alignment = WRAP
+    bad = '"לא עובר – חוסם"' if kind == 'תנאי סף' else ('"לא עובר – דרישה"' if kind == 'דרישה' else '"גבולי – פוגע בניקוד"')
+    put(tz, f'J{r_}', f'=IF(OR(F{r_}="",F{r_}="בבדיקה"),"בבדיקה – אין תשובה",IF(OR(F{r_}="אין",LEFT(H{r_},2)="לא"),{bad},"עובר"))', BOLD)
+    tz[f'J{r_}'].alignment = Alignment(horizontal='center', wrap_text=True)
+    tz.row_dimensions[r_].height = 30
+RLT = R0T + len(ROWS_T) - 1
+TL4 = TL + [('בבדיקה', '595959', 'E7E6E6')]
+for rng_ in (f'J{R0T}:J{RLT}',):
+    first_ = rng_.split(':')[0]
+    for txt, fc, bg in TL4:
+        tz.conditional_formatting.add(rng_, FormulaRule(formula=[f'LEFT({first_},{len(txt)})="{txt}"'], stopIfTrue=True,
+                                                        font=Font(name=F, bold=True, color=fc), fill=PatternFill('solid', fgColor=bg)))
+# ---- סיכום אוטומטי
+r_ = RLT + 2
+put(tz, f'B{r_}', 'סיכום', TITLE).border = Border()
+r_ += 1
+SUMH = r_
+for i_, t_ in enumerate(['מצב', 'תנאי סף', 'כל השורות']):
+    c_ = tz.cell(row=SUMH, column=3 + i_, value=t_)
+    c_.font, c_.fill, c_.border = HDR, HFILL, BOX
+JR, ER = f'$J${R0T}:$J${RLT}', f'$E${R0T}:$E${RLT}'
+for j_, (lab, pat) in enumerate([('עובר', 'עובר*'), ('לא עובר', 'לא עובר*'), ('גבולי (ניקוד)', 'גבולי*'), ('בבדיקה', 'בבדיקה*')]):
+    rr = SUMH + 1 + j_
+    put(tz, f'C{rr}', lab)
+    put(tz, f'D{rr}', f'=COUNTIFS({JR},"{pat}",{ER},"תנאי סף")', fmt='0')
+    put(tz, f'E{rr}', f'=COUNTIF({JR},"{pat}")', fmt='0')
+rr = SUMH + 5
+put(tz, f'C{rr}', 'שורה תחתונה', BOLD)
+put(tz, f'D{rr}', (f'=IF(COUNTIF({JR},"לא עובר*")>0,"לא עובר – אין להגיש ("&COUNTIF({JR},"לא עובר*")&" רכיבים)",'
+                   f'IF(COUNTIF({JR},"בבדיקה*")>0,"בבדיקה – חסרות "&COUNTIF({JR},"בבדיקה*")&" תשובות",'
+                   f'IF(COUNTIF({JR},"גבולי*")>0,"גבולי – אפשר להגיש, עם פגיעה בניקוד ISO","עובר – אפשר להגיש")))'), BOLD)
+tz.merge_cells(f'D{rr}:J{rr}')
+for txt, fc, bg in TL4:
+    tz.conditional_formatting.add(f'D{rr}:J{rr}', FormulaRule(formula=[f'LEFT($D${rr},{len(txt)})="{txt}"'], stopIfTrue=True,
+                                                             font=Font(name=F, bold=True, color=fc), fill=PatternFill('solid', fgColor=bg)))
+BOTT = rr
+# ---- לפי מחלקה
+rr += 2
+for i_, t_ in enumerate(['מחלקה', 'רכיבים', 'עובר', 'פתוח (בבדיקה)', 'לא עובר / גבולי', 'מצב המחלקה']):
+    c_ = tz.cell(row=rr, column=3 + i_, value=t_)
+    c_.font, c_.fill, c_.border = HDR, HFILL, BOX
+    c_.alignment = Alignment(wrap_text=True, horizontal='center')
+DR = f'$D${R0T}:$D${RLT}'
+D0 = rr + 1
+for k_, d_ in enumerate([D_T, D_M, D_C, D_S, D_SA, D_F]):
+    r2 = D0 + k_
+    put(tz, f'C{r2}', d_).alignment = WRAP
+    put(tz, f'D{r2}', f'=COUNTIF({DR},C{r2})', fmt='0')
+    put(tz, f'E{r2}', f'=COUNTIFS({DR},C{r2},{JR},"עובר*")', fmt='0')
+    put(tz, f'F{r2}', f'=COUNTIFS({DR},C{r2},{JR},"בבדיקה*")', fmt='0')
+    put(tz, f'G{r2}', f'=COUNTIFS({DR},C{r2},{JR},"לא עובר*")+COUNTIFS({DR},C{r2},{JR},"גבולי*")', fmt='0')
+    put(tz, f'H{r2}', f'=IF(COUNTIFS({DR},C{r2},{JR},"לא עובר*")>0,"לא עובר",IF(F{r2}>0,"בבדיקה",IF(G{r2}>0,"גבולי","עובר")))', BOLD)
+    tz[f'H{r2}'].alignment = Alignment(horizontal='center')
+DL = D0 + 5
+for txt, fc, bg in TL4:
+    tz.conditional_formatting.add(f'H{D0}:H{DL}', FormulaRule(formula=[f'LEFT(H{D0},{len(txt)})="{txt}"'], stopIfTrue=True,
+                                                             font=Font(name=F, bold=True, color=fc), fill=PatternFill('solid', fgColor=bg)))
+rr = DL + 2
+for t_ in ['איך ממלאים: (1) D3 – הישות המגישה (מחלקת המכרזים). (2) עמודה F – יש / אין / בבדיקה לכל רכיב. (3) עמודה G – רק אם הרכיב רשום על ישות אחרת: לכתוב אותה; הבדיקה בעמודה H תסמן "לא – ישות אחרת".',
+           'סטטוס: תנאי סף שחסר או על שם ישות אחרת = לא עובר (חוסם – לא מגישים). ISO = ניקוד בלבד (גבולי). SOC/SIEM = דרישה בחוזה.',
+           'משפטי וביטוח לא ברשימה – כל שאלה על מבנה הקבוצה עוברת דרך מחלקת המכרזים.']:
+    put(tz, f'B{rr}', t_).alignment = WRAP
+    tz.merge_cells(f'B{rr}:J{rr}')
+    tz.row_dimensions[rr].height = 30
+    rr += 1
+tz.freeze_panes = f'A{R0T}'
+# קישור לגיליון Fortinet: סטטוס תנאי סף בראש הגיליון
+put(ws, 'B2', 'תנאי סף יב\' (ישות מגישה)', BOLD)
+put(ws, 'C2', f"='תנאי סף יב'' – ישות מגישה'!D{BOTT}", BOLD)
+ws.merge_cells('C2:L2')
+for txt, fc, bg in TL4:
+    ws.conditional_formatting.add('C2:L2', FormulaRule(formula=[f'LEFT($C$2,{len(txt)})="{txt}"'], stopIfTrue=True,
+                                                     font=Font(name=F, bold=True, color=fc), fill=PatternFill('solid', fgColor=bg)))
 
 # הגיליון החדש פעיל בפתיחה
 wb.active = 0
